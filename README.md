@@ -1,0 +1,77 @@
+# Five Grand Endeavors of Science and Engineering for the Betterment of Humanity
+
+It is hard nowadays to connect the dots between science and impact on our daily lives. Many people may not understand why should we fund science and trust scientists. It is as if the rate of scientific discoveries slowed down (particularly outside AI) and "nothing ever happens" anymore.
+
+This is, of course, mostly untrue. But science has a communication problem towards the general public. Here, we take a stance similar to how companies report their progress to their board. Every week, we publish a newsletter updating the humanity on the progress of science and new achievements of engineering.
+
+Scientific research is valuable even to its own end, and that is why many scientists do it. But to be accountable to humanity as a whole, we look at "what's in it for others", and report progress not as isolated discovery by isolated discovery, with its applications more of an afterthought question, but centered around moving the needle on five grand endeavors of humanity that we grappled with for pretty much all of our existence, and that will impact the daily lives of pretty much everyone on the planet.
+
+In some circles, the "degrowth" movement is popular - but what is the credible "growth" alternative we could offer? Not total resource exhaustion of Earth and barren land - but utopic future of abundance, solving all our current (material) problems by unlocking new resources and using our resources exponentially more efficiently. We sincerely believe in this promise, and it is also a big part of why society invests so much in scientific research. We are also aware that it may sound utterly bonkers to the regular sceptic. But this is how people regarded the future 60 or 120 years ago, and it is high time to regard the future this way again. Our newsletter seeks to convince you of it.
+
+## Robots and Automation
+
+Humans were looking to automate their lives in one way or another for most of their existence. From early domesticated animals to microwave ovens and freighter ships, automation adds a huge multiplier on human labor - we can either do more with our time, or spend less time working. The current frontier is automating intelligence - the software (AI) and the hardware (robots).
+
+### Software
+
+**KPI:** 80-percentile METR task length equivalent
+
+**Milestone Countdown:** (tbd)
+
+**Major Open Challenges ("LLM is enough" hypothesis):** (tbd mermaid - hallucination rate, continuous learning, context length, reliable tool use, original connections)
+
+### Hardware
+
+**KPI:** (tbd)
+
+**Milestone Countdown:** (tbd)
+
+**Major Open Challenges OR Mini Tech Tree:** (tbd mermaid)
+
+## Space
+
+What child hasn't looked once at the starry sky in wonder? The universe promises many worlds humanity could spread to - removing some eggs from the "one basket", a new age of discovery, making all raw materials cheap, and vast opportunities for community independence. And if nothing else, transport by orbital flights is the next best thing to travel by teleport, allowing you to reach the opposite side of the globe in 90 minutes.
+
+**KPI:** Cost to LEO ($/kg)
+
+**Milestone Countdown:** (tbd; timeline to reusable spaceship regular manufacturing?)
+
+**Major Open Challenges:** (tbd)
+
+## Fusion and Energy
+
+Energy is the key limiting factor of the material world. It does not have to be. If all electricity bills go to zero, how does that change our lives, from heating (homes, iron or saltwater) to food, to travel, to compute? There are many short-term fixes, but the long-term approach is unlikely to be anything but nuclear fusion (and superconductors make everything easier).
+
+**KPI:** Worldwide average electricity cost ($/MWh)
+
+**Milestone Countdown:** (top 5 shortest projected Fusion-to-grid timelines and their predicted Q)
+
+**Major Open Challenges:** (tbd; fusion - various topologies? energy capture and conversion? other?; solar? sea/geothermal?)
+
+## Cancer and Healthspan
+
+Some people long for immortality, others would just prefer not to die (or live low-quality life) *yet*. The biggest symbol for fixing this is our journey to cure cancer, but the fight with other diseases such as Alzheimer's (or potential pandemics), as well as perfected early diagnostics, are just as important. And to achieve not just plain longevity, but long healthy lifespan, eventually we need to move further to evolve our biology, not just fight off diseases.
+
+**KPI:** Top 5 countries median lifespan or healthspan tbd (y)
+
+**Milestone Countdown:** (top 5 causes of death/disability and timelines to improve efficacy of treatment by 50%?)
+
+**Mini Tech Tree:** (tbd mermaid)
+
+## Climate and Environment
+
+This endeavor is unlike the other four, as it is about fixing the past rather than improving the future. 100 years ago, we would have been talking about terraforming Sahara and Antarctica, but humanity messed up the Earth. Many historic civilizations died of climate change, and we now have to clean up our mess if we are to survive into a better future.
+
+**KPI:** CO2 concentration ppm, methane concentration ppm; and y2y gradient
+
+**Milestone Countdown:** (years to CO2 change breakeven, and years to biggest projected shifts in gradient + why)
+
+## Supplemental
+
+### The Knowledge Beyond
+
+A great enabler for the future is deep understanding of our universe and the ability to manipulate it on fine scale. Paradigm-breaking technologies like quantum computing and nanomachines, as well as new theoretical research, may not impact any of the great endeavors directly, but they will reframe everything in the long run.
+
+### Society and Cohesion
+
+As humanity progresses in its great endeavors, many challenges await our society. To survive into the future, we must pass the great filters - avoid wiping ourselves out with weapons of mass destruction, align our robots (align with *what*?) and learn to coexist with them (a new alien intelligence), as well as keep humans in some relationships with one another and the physical world. Meanwhile, trust is breaking, alienation and polarization is growing, and simulacra are getting more attractive than the real world. But society can adapt - 40 years ago, "open source" wasn't really a concept, but we fought off massive corporate capture and it now underpins vast areas of technology and knowledge (think: Wikipedia). What is the next philosophy, sociology and social technologies best serving humanity's future?
