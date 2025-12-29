@@ -3,7 +3,7 @@
 Tracking humanity's progress in five grand endeavors --- our biggest ongoing R&D projects:
 
 * Robots (and Automation overall)
-* Space
+* Rockets (and Space overall)
 * Fusion (and Energy overall)
 * Cancer (and Healthspan overall)
 * Climate (and Environment overall)
@@ -41,7 +41,7 @@ Humans were looking to automate their lives in one way or another for most of th
 
 **Major Open Challenges OR Mini Tech Tree:** (tbd mermaid)
 
-## Space
+## Rockets and Space
 
 What child hasn't looked once at the starry sky in wonder? The universe promises many worlds humanity could spread to - removing some eggs from the "one basket", a new age of discovery, making all raw materials cheap, and vast opportunities for community independence. And if nothing else, transport by orbital flights is the next best thing to travel by teleport, allowing you to reach the opposite side of the globe in 90 minutes.
 
