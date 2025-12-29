@@ -1,6 +1,12 @@
 # Five Grand Endeavors
 
-A regular report to "the Board of Humanity" about major progress in five grand endeavors --- humanity's biggest ongoing R&D projects.
+A regular report to "the Board of Humanity" about major progress in five grand endeavors --- humanity's biggest ongoing R&D projects:
+
+* Robots (and Automation overall)
+* Space
+* Fusion (and Energy overall)
+* Cancer (and Healthspan overall)
+* Climate (and Environment overall)
 
 ### Manifesto
 
