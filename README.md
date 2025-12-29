@@ -1,12 +1,16 @@
-# Five Grand Endeavors of Science and Engineering for the Betterment of Humanity
+# Five Grand Endeavors
 
-It is hard nowadays to connect the dots between science and impact on our daily lives. Many people may not understand why should we fund science and trust scientists. It is as if the rate of scientific discoveries slowed down (particularly outside AI) and "nothing ever happens" anymore.
+A regular report to "the Board of Humanity" about major progress in five grand endeavors --- humanity's biggest ongoing R&D projects.
 
-This is, of course, mostly untrue. But science has a communication problem towards the general public. Here, we take a stance similar to how companies report their progress to their board. Every week, we publish a newsletter updating the humanity on the progress of science and new achievements of engineering.
+### Manifesto
 
-Scientific research is valuable even to its own end, and that is why many scientists do it. But to be accountable to humanity as a whole, we look at "what's in it for others", and report progress not as isolated discovery by isolated discovery, with its applications more of an afterthought question, but centered around moving the needle on five grand endeavors of humanity that we grappled with for pretty much all of our existence, and that will impact the daily lives of pretty much everyone on the planet.
+It is easy to feel that progress has stalled—that outside of AI, "nothing ever happens." We struggle to connect the dots between scientific funding and the impact on our daily lives.
 
-In some circles, the "degrowth" movement is popular - but what is the credible "growth" alternative we could offer? Not total resource exhaustion of Earth and barren land - but utopic future of abundance, solving all our current (material) problems by unlocking new resources and using our resources exponentially more efficiently. We sincerely believe in this promise, and it is also a big part of why society invests so much in scientific research. We are also aware that it may sound utterly bonkers to the regular sceptic. But this is how people regarded the future 60 or 120 years ago, and it is high time to regard the future this way again. Our newsletter seeks to convince you of it.
+This view is incorrect, but science has a communication problem. It reports isolated discoveries (with the applications often more of an afterthought question), not progress towards the big outcomes. Thus, every week, we publish a newsletter updating the humanity on the progress of science towards such outcomes - just as a company would report its progress to its board.
+
+Scientific research is valuable even to its own end, but is largely expected to be the engine of material abundance. We track the needle on five Grand Endeavors that humanity pursued for all its existence and that will also determine the quality of life for the next 100 years.
+
+In some circles, the "degrowth" movement is popular - and it's no wonder. What is the vision of credible "growth" alternative we could offer? Not total resource exhaustion of Earth and barren land - but utopic future of abundance, solving all our current (material) problems by unlocking new resources and using our resources exponentially more efficiently. We sincerely believe in this promise. We are also aware that it may sound utterly bonkers to the regular sceptic. But this is how people regarded the future 60 or 120 years ago, and it is high time to regard the future this way again. Our newsletter seeks to convince you of it.
 
 ## Robots and Automation
 
