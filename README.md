@@ -13,13 +13,11 @@ The initial purpose of this project is using AI to automatically compose a regul
 
 ### Manifesto
 
-It is easy to feel that progress has stalled—that outside of AI, "nothing ever happens." We struggle to connect the dots between scientific funding and the impact on our daily lives.
-
-This view is incorrect, but science has a communication problem. It reports isolated discoveries (with the applications often more of an afterthought question), not progress towards the big outcomes. Thus, every week, we publish a newsletter updating the humanity on the progress of science towards such outcomes - just as a company would report its progress to its board.
+Science has a communication problem. It reports isolated discoveries (with the applications often more of an afterthought question), not progress towards the big outcomes. Thus, every week, we publish a newsletter updating the humanity on the progress of science towards such outcomes - just as a company would report its progress to its board.
 
 Scientific research is valuable even to its own end, but is largely expected to be the engine of material abundance. We track the needle on five Grand Endeavors that humanity pursued for all its existence and that will also determine the quality of life for the next 100 years.
 
-In some circles, the "degrowth" movement is popular - and it's no wonder. What is the vision of credible "growth" alternative we could offer? Not total resource exhaustion of Earth and barren land - but utopic future of abundance, solving all our current (material) problems by unlocking new resources and using our resources exponentially more efficiently. We sincerely believe in this promise. We are also aware that it may sound utterly bonkers to the regular sceptic. But this is how people regarded the future 60 or 120 years ago, and it is high time to regard the future this way again. Our newsletter seeks to convince you of it.
+Each of the endeavors has a KPI assigned, as well as some key milestones and open challenges we need to solve.  All of these may update and evolve over time, and are on purpose somewhat opinionated - they capture the current consensus rather than all perspectives.  If the top experts' consensus shifts, we will shift.  And we will report also on major progress of alternative approaches in each given area.
 
 ## Robots and Automation
 
