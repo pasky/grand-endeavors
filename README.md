@@ -25,11 +25,18 @@ Humans were looking to automate their lives in one way or another for most of th
 
 ### Software
 
-**KPI:** 80-percentile METR task length equivalent
+**KPI:** 80-percentile METR task length equivalent (Human-hours)
 
-**Milestone Countdown:** (tbd)
+**Milestone Countdown:**
+*   **The Linux Kernel Patch:** An AI-submitted large (10k+ lines diff) patch to the Linux Kernel (or equivalent critical infra) is accepted by maintainers.
+*   **The Nature Author:** An AI-generated research paper is accepted by a top-tier journal (Nature/Science) with AI credited as primary author.
+*   **The $10M Solopreneur:** A single-person company reaches $10M ARR, proving AI capacity for complex economic agency.
 
-**Major Open Challenges ("LLM is enough" hypothesis):** (tbd mermaid - hallucination rate, continuous learning, context length, reliable tool use, original connections)
+**Major Open Challenges** (assuming "LLMs are enough" hypothesis)
+*   **Reliability:** Reducing hallucinations and error compounding in long chains of reasoning.
+*   **Agency:** Robust goal decomposition and self-correction over long time horizons.
+*   **Continuous Learning:** Universal mechanism for rapidly adjusting long-term behavior based on past experiences.
+*   **Novelty:** Consistently producing original connections beyond interpolations of existing knowledge.
 
 ### Hardware
 
