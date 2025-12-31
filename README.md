@@ -59,9 +59,15 @@ What child hasn't looked once at the starry sky in wonder? The universe promises
 
 **KPI:** Cost to LEO ($/kg)
 
-**Milestone Countdown:** (tbd; timeline to reusable spaceship regular manufacturing?)
+**Milestone Countdown:**
+*   **"The Deluge":** 15,000 tons delivered to orbit in a single year.
+*   **"The Homestead":** Permanent crewed base operates 1+ year using local resources (Moon or Mars).
+*   **"The Export":** Product manufactured in space is sold commercially on Earth (beyond novelty items).
 
-**Major Open Challenges:** (tbd)
+**Major Open Challenges:**
+*   **Radiation Shielding:** Protecting crew from cosmic and solar radiation during months-long deep space transits.
+*   **Closed-Loop Life Support:** Years-long operation without resupply from Earth.
+*   **ISRU at Scale:** Production-level extraction of fuel, oxygen, and materials from planetary resources.
 
 ## Fusion and Energy
 
