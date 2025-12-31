@@ -40,11 +40,18 @@ Humans were looking to automate their lives in one way or another for most of th
 
 ### Hardware
 
-**KPI:** (tbd)
+**KPI:** Largest Active Commercial Fleet of General-Purpose Humanoids (Single Site)
 
-**Milestone Countdown:** (tbd)
+**Milestone Countdown:**
+*   **Robotaxi Saturation:** Autonomous robotaxis outnumber human-driven taxis in a major metropolitan area (L5 Transport Solved).
+*   **The "Wozniak" Test:** Robot enters a random, previously unseen home and successfully makes a cup of coffee.
+*   **The "Fukushima" Test:** Robot autonomously navigates a disaster zone and performs a critical repair (valve/switch) within human time limits.
+*   **The "Blue Collar" Shift:** General purpose robot completes a full 8-hour shift in a real workplace (Construction, Factory, Logistics) working collaboratively alongside humans.
 
-**Major Open Challenges OR Mini Tech Tree:** (tbd mermaid)
+**Major Open Challenges:**
+*   **Dexterous Manipulation:** Human-level hands requiring dense tactile sensing, compliant actuators, and real-time control across 10,000+ object types including deformables.
+*   **Generalization:** Few-shot skill acquisition, robust task transfer across environments, recovery from unexpected failures, and long-horizon replanning without human intervention.
+*   **Power/Efficiency/Cost:** Extending 1-2 hour runtimes to full 8-hour shifts via battery breakthroughs or radical actuator efficiency gains, at commercially viable price points.
 
 ## Rockets and Space
 
