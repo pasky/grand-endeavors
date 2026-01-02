@@ -75,9 +75,43 @@ Energy is the key limiting factor of the material world. It does not have to be.
 
 **KPI:** Worldwide average electricity cost ($/MWh)
 
-**Milestone Countdown:** (top 5 shortest projected Fusion-to-grid timelines and their predicted Q)
+**Universal Milestones:**
+*   **"The First Watt":** First commercial fusion plant delivers sustained electricity to a public grid.
+*   **"Grid Parity":** Fusion LCOE falls below $100/MWh, competitive with gas.
 
-**Major Open Challenges:** (tbd; fusion - various topologies? energy capture and conversion? other?; solar? sea/geothermal?)
+### D-T Path (mainstream)
+
+Uses deuterium-tritium fuel — easiest to ignite, but produces 14 MeV neutrons that damage materials and requires breeding tritium.
+
+**Magnetic Confinement (MCF):** Tokamaks (CFS, ITER), stellarators (Type One), Z-pinch (Zap Energy)
+*   *Milestone:* Q>10 sustained — power-plant-viable physics demonstrated.
+*   *Challenges:* Plasma stability and heat exhaust; materials surviving neutron bombardment for years.
+
+**Inertial Confinement (ICF):** Lasers (NIF, Xcimer), projectile (First Light)
+*   *Milestone:* 10 Hz rep-rate with cheap targets — proving pulsed approach can scale.
+*   *Challenges:* Driver efficiency (lasers ~1% today, need 10%+); target cost ($50k→$0.10).
+
+**Shared D-T Challenges:**
+*   **Tritium breeding:** Blankets must achieve TBR>1.05 — never demonstrated at scale.
+*   **14 MeV neutron damage:** No material proven to survive power-plant duty cycles.
+
+### Aneutronic Path (high-risk, high-reward)
+
+Uses fuels like D-He3 (Helion) or p-B11 (TAE) — far fewer neutrons, no tritium breeding needed, but requires 10× higher temperatures and has lower reaction rates.
+
+*   *Milestone:* Net electricity from aneutronic fusion demonstrated.
+*   *Challenges:* Reaching and confining 1+ billion °C plasma; achieving net gain despite unfavorable cross-sections.
+
+**The Race:** Helion (D-He3, pulsed FRC) targets 2028 grid via Microsoft PPA. CFS (D-T tokamak) targets early 2030s. TAE (p-B11) targets early 2030s. ITER's Q=10 demo delayed to late 2030s.
+
+### Alternative Path: Deep Geothermal
+
+If drilling gets cheap enough, Earth's heat is abundant everywhere — no plasma physics required. Enhanced geothermal systems (EGS) fracture hot rock at depth; newer approaches (Quaise, GA Drilling) use millimeter-wave or plasma drilling to reach 10-20 km where rock is 400°C+ anywhere on Earth.
+
+*   *Milestone:* Commercial power from a deep closed-loop well (>10 km depth).
+*   *Challenges:* Drilling cost and speed at extreme depths; long-term reservoir performance unknown.
+
+Potential to leapfrog fusion if drilling breakthroughs arrive first — LCOE projections as low as $20/MWh.
 
 ## Cancer and Healthspan
 
