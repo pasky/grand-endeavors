@@ -13,15 +13,15 @@ The initial purpose of this project is using AI to automatically compose a regul
 
 ### Manifesto
 
-Science has a communication problem. It reports isolated discoveries (with the applications often more of an afterthought question), not progress towards the big outcomes. Thus, every week, we publish a newsletter updating the humanity on the progress of science towards such outcomes - just as a company would report its progress to its board.
+Science has a communication problem. It reports isolated discoveries (with applications often more of an afterthought), not progress towards the big outcomes. Thus, every week, we publish a newsletter updating humanity on the progress of science towards such outcomes — just as a company would report its progress to its board.
 
-Scientific research is valuable even to its own end, but is largely expected to be the engine of material abundance. We track the needle on five Grand Endeavors that humanity pursued for all its existence and that will also determine the quality of life for the next 100 years.
+Scientific research is valuable even to its own end, but is largely expected to be the engine of material abundance. We track the needle on five Grand Endeavors that humanity has pursued for all its existence and that will also determine the quality of life for the next 100 years.
 
-Each of the endeavors has a KPI assigned, as well as some key milestones and open challenges we need to solve.  All of these may update and evolve over time, and are on purpose somewhat opinionated - they capture the current consensus rather than all perspectives.  If the top experts' consensus shifts, we will shift.  And we will report also on major progress of alternative approaches in each given area.
+Each of the endeavors has a KPI assigned, as well as some key milestones and open challenges we need to solve. All of these may update and evolve over time, and are on purpose somewhat opinionated — they capture the current consensus rather than all perspectives. If the top experts' consensus shifts, we will shift. And we will report also on major progress of alternative approaches in each given area.
 
 ## Robots and Automation
 
-Humans were looking to automate their lives in one way or another for most of their existence. From early domesticated animals to microwave ovens and freighter ships, automation adds a huge multiplier on human labor - we can either do more with our time, or spend less time working. The current frontier is automating intelligence - the software (AI) and the hardware (robots).
+Humans have been looking to automate their lives in one way or another for most of their existence. From early domesticated animals to microwave ovens and freighter ships, automation adds a huge multiplier on human labor — we can either do more with our time, or spend less time working. The current frontier is automating intelligence — the software (AI) and the hardware (robots).
 
 ### Software
 
@@ -55,7 +55,7 @@ Humans were looking to automate their lives in one way or another for most of th
 
 ## Rockets and Space
 
-What child hasn't looked once at the starry sky in wonder? The universe promises many worlds humanity could spread to - removing some eggs from the "one basket", a new age of discovery, making all raw materials cheap, and vast opportunities for community independence. And if nothing else, transport by orbital flights is the next best thing to travel by teleport, allowing you to reach the opposite side of the globe in 90 minutes.
+What child hasn't looked at the starry sky in wonder? The universe promises many worlds humanity could spread to — removing some eggs from the "one basket", a new age of discovery, making all raw materials cheap, and vast opportunities for community independence. And if nothing else, transport by orbital flights is the next best thing to teleportation, allowing you to reach the opposite side of the globe in 90 minutes.
 
 **KPI:** Cost to LEO ($/kg)
 
@@ -92,7 +92,7 @@ Energy is the key limiting factor of the material world. It does not have to be.
 
 ## Cancer and Healthspan
 
-Some people long for immortality, others would just prefer not to die (or live low-quality life) *yet*. The biggest symbol for fixing this is our journey to cure cancer, but the fight with other diseases such as Alzheimer's (or potential pandemics), as well as perfected early diagnostics, are just as important. And to achieve not just plain longevity, but long healthy lifespan, eventually we need to move further to evolve our biology, not just fight off diseases.
+Some people long for immortality, others would just prefer not to die (or live a low-quality life) *yet*. The biggest symbol for fixing this is our journey to cure cancer, but the fight against other diseases such as Alzheimer's (or potential pandemics), as well as perfected early diagnostics, are just as important. And to achieve not just plain longevity, but long healthy lifespan, eventually we need to move further — to evolve our biology, not just fight off diseases.
 
 **KPI:** Median country Healthy Life Expectancy (HALE) at birth (years) — currently ~72y (WHO 2021)
 
@@ -111,7 +111,7 @@ Some people long for immortality, others would just prefer not to die (or live l
 
 ## Climate and Environment
 
-This endeavor is unlike the other four, as it is about fixing the past rather than improving the future. 100 years ago, we would have been talking about terraforming Sahara and Antarctica, but humanity messed up the Earth. Many historic civilizations died of climate change, and we now have to clean up our mess if we are to survive into a better future.
+This endeavor is unlike the other four, as it is about fixing the past rather than improving the future. A hundred years ago, we would have been talking about terraforming Sahara and Antarctica, but humanity messed up the Earth. Many historic civilizations fell to climate change, and we now have to clean up our mess if we are to survive into a better future.
 
 **KPI:** Atmospheric CO₂ concentration (ppm) and 10-year trend (ppm/year)
 
@@ -130,8 +130,8 @@ This endeavor is unlike the other four, as it is about fixing the past rather th
 
 ### The Knowledge Beyond
 
-A great enabler for the future is deep understanding of our universe and the ability to manipulate it on fine scale. Paradigm-breaking technologies like quantum computing and nanomachines, as well as new theoretical research, may not impact any of the great endeavors directly, but they will reframe everything in the long run.
+A great enabler for the future is deep understanding of our universe and the ability to manipulate it on a fine scale. Paradigm-breaking technologies like quantum computing and nanomachines, as well as new theoretical research, may not impact any of the great endeavors directly, but they will reframe everything in the long run.
 
 ### Society and Cohesion
 
-As humanity progresses in its great endeavors, many challenges await our society. To survive into the future, we must pass the great filters - avoid wiping ourselves out with weapons of mass destruction, align our robots (align with *what*?) and learn to coexist with them (a new alien intelligence), as well as keep humans in some relationships with one another and the physical world. Meanwhile, trust is breaking, alienation and polarization is growing, and simulacra are getting more attractive than the real world. But society can adapt - 40 years ago, "open source" wasn't really a concept, but we fought off massive corporate capture and it now underpins vast areas of technology and knowledge (think: Wikipedia). What is the next philosophy, sociology and social technologies best serving humanity's future?
+As humanity progresses in its great endeavors, many challenges await our society. To survive into the future, we must pass the great filters — avoid wiping ourselves out with weapons of mass destruction, align our robots (align with *what*?) and learn to coexist with them (a new alien intelligence), as well as keep humans in some relationships with one another and the physical world. Meanwhile, trust is breaking, alienation and polarization are growing, and simulacra are getting more attractive than the real world. But society can adapt — 40 years ago, "open source" wasn't really a concept, but we fought off massive corporate capture and it now underpins vast areas of technology and knowledge (think: Wikipedia). What are the next philosophy, sociology, and social technologies best serving humanity's future?
