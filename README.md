@@ -94,11 +94,20 @@ Energy is the key limiting factor of the material world. It does not have to be.
 
 Some people long for immortality, others would just prefer not to die (or live low-quality life) *yet*. The biggest symbol for fixing this is our journey to cure cancer, but the fight with other diseases such as Alzheimer's (or potential pandemics), as well as perfected early diagnostics, are just as important. And to achieve not just plain longevity, but long healthy lifespan, eventually we need to move further to evolve our biology, not just fight off diseases.
 
-**KPI:** Top 5 countries median lifespan or healthspan tbd (y)
+**KPI:** Median country Healthy Life Expectancy (HALE) at birth (years) — currently ~72y (WHO 2021)
 
-**Milestone Countdown:** (top 5 causes of death/disability and timelines to improve efficacy of treatment by 50%?)
+**Milestone Countdown:**
+*   **Taming Cancer:** 80% of all solid tumor cases reach 10-year survival — metastatic cancer becomes a chronic, manageable condition.
+*   **Precise Screening:** >50% of major non-communicable diseases (cancer, cardiovascular, metabolic, neurodegeneration) caught pre-symptomatic.
+*   **Unbroken Mind:** Dementia prevalence (CDR ≥1) after age 80 falls below 5%.
+*   **The Long Middle Age:** Validated interventions reverse ≥10 years of biological age (epigenetic clocks + functional biomarkers), with corresponding reductions in age-related disease incidence.
 
-**Mini Tech Tree:** (tbd mermaid)
+**Major Open Challenges:**
+*   **Causal Model of Aging:** We lack a unified, predictive model explaining how molecular aging processes cause specific diseases — and which interventions safely extend healthspan without tradeoffs.
+*   **Predictive Biomarkers:** Identifying reliable molecular signatures that detect disease years before symptoms across cancer, cardiovascular, metabolic, and neurodegenerative conditions — with sufficient specificity to avoid overwhelming healthcare with false positives.
+*   **Safe In-Vivo Rejuvenation:** Resetting adult human cells via reprogramming, senolytics, or regeneration without inducing cancer, fibrosis, or loss of cell identity.
+*   **Programmable Immunity:** Continuously monitoring and reprogramming the immune system over decades to prevent cancer, infections, and autoimmunity without breaking tolerance.
+*   **Brain Preservation:** Maintaining cognition and identity for 100+ year lifespans despite protein aggregates, vascular damage, and neuron loss — repair at scale, not just slowing decline.
 
 ## Climate and Environment
 
