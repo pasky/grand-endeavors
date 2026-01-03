@@ -158,60 +158,6 @@ Global greenhouse gas emissions hit **53.2 GtCO₂e** in 2024[^edgar], with foss
 
 ---
 
-### 🔴 "The Siphon" — 10 GtCO₂/year Removal
-
-**Status: ~0.4% of target**
-
-| Technology | Current Capacity | Target | Gap |
-|------------|-----------------|--------|-----|
-| Direct Air Capture (all plants) | ~0.01 MtCO₂/year | — | — |
-| Total CCS (all types) | 41 MtCO₂/year | 10,000 MtCO₂/year | 99.6% |
-
-*Data: [CDR.fyi Market Snapshot 2025][cdr-fyi]*
-
-[cdr-fyi]: https://www.cdr.fyi/blog/direct-air-capture-market-snapshot-2025
-
-#### Major DAC Projects (2025)
-
-| Project | Company | Location | Capacity | Status | Source |
-|---------|---------|----------|----------|--------|--------|
-| **STRATOS** | Occidental / 1PointFive | Ector County, Texas | 500,000 t/year | Launching end of 2025 | [Carbon Herald][stratos], [1PointFive][1pointfive] |
-| **Mammoth** | Climeworks | Iceland | 36,000 t/year (nameplate) | Operational (ramp-up issues) | [Climeworks][mammoth], [Latitude Media][mammoth-issues] |
-| **Project Bison** | CarbonCapture Inc. | Wyoming | 5 Mt/year (original target) | **Paused** — relocated due to data center competition | [Carbon Herald][bison] |
-| **Heirloom Louisiana** | Heirloom Carbon | NW Louisiana | 17,000 t/year (Phase 1, 2026); 320,000 t/year (full) | $475M investment announced | [Heirloom][heirloom], [Louisiana ED][heirloom-la] |
-| **Deep Sky Alpha** | Deep Sky | Alberta, Canada | First cross-technology CDR center | Operational Aug 2025 | [Deep Sky][deepsky] |
-
-[stratos]: https://carbonherald.com/occidentals-stratos-dac-hub-to-launch-operations-by-the-end-of-2025/
-[1pointfive]: https://www.1pointfive.com/projects/ector-county-tx
-[mammoth]: https://climeworks.com/plant-mammoth
-[mammoth-issues]: https://www.latitudemedia.com/news/on-the-ground-at-climeworks-biggest-dac-project/
-[bison]: https://carbonherald.com/carboncapture-inc-pauses-development-of-project-bison-in-wyoming/
-[heirloom]: https://www.heirloomcarbon.com/news/two-direct-air-capture-facilities-in-northwest-louisiana
-[heirloom-la]: https://www.opportunitylouisiana.gov/news/heirloom-carbon-technologies-announces-475-million-investment-to-establish-north-americas-second-direct-air-capture-facility-in-louisiana
-[deepsky]: https://www.deepskyclimate.com/blog/deep-sky-completes-north-americas-first-co2-storage-via-direct-air-capture-with-quebec-based-skyrenu
-
-#### Corporate CDR Purchases (2025)
-
-Microsoft leads with ~$8 billion in carbon removal commitments:
-
-| Supplier | Amount | Method | Date | Source |
-|----------|--------|--------|------|--------|
-| Chestnut Carbon | 7 Mt | Reforestation | Jan 2025 | [TechCrunch][ms-chestnut] |
-| CO280 | 3.7 Mt | Pulp mill capture | Apr 2025 | [TechCrunch][ms-co280] |
-| Vaulted Deep | 4.9 Mt | Biomass geological storage | Jul 2025 | [TechCrunch][ms-vaulted] |
-| C2X | 3.6 Mt | BECCS/biofuels | Dec 2025 | [TechCrunch][ms-c2x] |
-
-[ms-chestnut]: https://techcrunch.com/2025/01/30/microsoft-signs-massive-carbon-credit-deal-with-reforestation-startup-chestnut-carbon/
-[ms-co280]: https://techcrunch.com/2025/04/11/microsoft-inks-massive-carbon-removal-deal-thats-powered-by-a-paper-mill/
-[ms-vaulted]: https://techcrunch.com/2025/07/17/microsoft-is-buying-tons-of-carbon-removal-from-xprize-startup-vaulted-deep/
-[ms-c2x]: https://techcrunch.com/2025/12/12/microsoft-buys-3-6m-metric-tons-of-carbon-removal-from-bioenergy-plant/
-
-**Costs remain high:** DAC runs $500–$1,900/tonne today; BECCS is $40–$120/tonne[^iea-cdr].
-
-[^iea-cdr]: [IEA: Driving Down the Cost of Carbon Removal](https://www.iea.org/commentaries/driving-down-the-cost-of-carbon-removal-why-innovation-matters)
-
----
-
 ### 🟡 "The Ceiling" — Below +2°C
 
 **Status: Under pressure**
@@ -323,9 +269,67 @@ pie showData
 
 ### 🔴 Permanent Removal — Orders of magnitude short
 
-Current CDR capacity (~41 MtCO₂/year) is **~250× smaller** than the 10 GtCO₂/year needed for "The Siphon"[^cdr-gap]. Private DAC investment (2021–H1 2025) totals $2.3 billion[^cdr-fyi], but delivered volumes remain tiny: only ~1,186 tonnes delivered out of 2.47 million contracted[^cdr-fyi].
+Even if we stop all emissions tomorrow, we've already put too much CO₂ in the atmosphere. Reaching "The Balance" and staying under "The Ceiling" will require removing billions of tons of legacy carbon per year. Current capacity is nowhere close.
 
-[^cdr-gap]: [CDR.fyi Market Snapshot 2025][cdr-fyi]
+#### The Gap
+
+| Technology | Current Capacity | What's Needed | Gap |
+|------------|-----------------|---------------|-----|
+| Direct Air Capture (all plants) | ~0.01 MtCO₂/year | — | — |
+| Total CCS (all types) | 41 MtCO₂/year | ~10,000 MtCO₂/year | **99.6%** |
+
+*Data: [CDR.fyi Market Snapshot 2025][cdr-fyi]*
+
+[cdr-fyi]: https://www.cdr.fyi/blog/direct-air-capture-market-snapshot-2025
+
+Private DAC investment (2021–H1 2025) totals $2.3 billion[^cdr-fyi], but delivered volumes remain tiny: only **~1,186 tonnes delivered** out of 2.47 million contracted[^cdr-fyi].
+
+#### Major DAC Projects (2025)
+
+| Project | Company | Location | Capacity | Status | Source |
+|---------|---------|----------|----------|--------|--------|
+| **STRATOS** | Occidental / 1PointFive | Ector County, Texas | 500,000 t/year | Launching end of 2025 | [Carbon Herald][stratos], [1PointFive][1pointfive] |
+| **Mammoth** | Climeworks | Iceland | 36,000 t/year (nameplate) | Operational (ramp-up issues) | [Climeworks][mammoth], [Latitude Media][mammoth-issues] |
+| **Project Bison** | CarbonCapture Inc. | Wyoming | 5 Mt/year (original target) | **Paused** — relocated due to data center competition | [Carbon Herald][bison] |
+| **Heirloom Louisiana** | Heirloom Carbon | NW Louisiana | 17,000 t/year (Phase 1, 2026); 320,000 t/year (full) | $475M investment announced | [Heirloom][heirloom], [Louisiana ED][heirloom-la] |
+| **Deep Sky Alpha** | Deep Sky | Alberta, Canada | First cross-technology CDR center | Operational Aug 2025 | [Deep Sky][deepsky] |
+
+[stratos]: https://carbonherald.com/occidentals-stratos-dac-hub-to-launch-operations-by-the-end-of-2025/
+[1pointfive]: https://www.1pointfive.com/projects/ector-county-tx
+[mammoth]: https://climeworks.com/plant-mammoth
+[mammoth-issues]: https://www.latitudemedia.com/news/on-the-ground-at-climeworks-biggest-dac-project/
+[bison]: https://carbonherald.com/carboncapture-inc-pauses-development-of-project-bison-in-wyoming/
+[heirloom]: https://www.heirloomcarbon.com/news/two-direct-air-capture-facilities-in-northwest-louisiana
+[heirloom-la]: https://www.opportunitylouisiana.gov/news/heirloom-carbon-technologies-announces-475-million-investment-to-establish-north-americas-second-direct-air-capture-facility-in-louisiana
+[deepsky]: https://www.deepskyclimate.com/blog/deep-sky-completes-north-americas-first-co2-storage-via-direct-air-capture-with-quebec-based-skyrenu
+
+#### Corporate CDR Purchases (2025)
+
+Microsoft leads with ~$8 billion in carbon removal commitments:
+
+| Supplier | Amount | Method | Date | Source |
+|----------|--------|--------|------|--------|
+| Chestnut Carbon | 7 Mt | Reforestation | Jan 2025 | [TechCrunch][ms-chestnut] |
+| CO280 | 3.7 Mt | Pulp mill capture | Apr 2025 | [TechCrunch][ms-co280] |
+| Vaulted Deep | 4.9 Mt | Biomass geological storage | Jul 2025 | [TechCrunch][ms-vaulted] |
+| C2X | 3.6 Mt | BECCS/biofuels | Dec 2025 | [TechCrunch][ms-c2x] |
+
+[ms-chestnut]: https://techcrunch.com/2025/01/30/microsoft-signs-massive-carbon-credit-deal-with-reforestation-startup-chestnut-carbon/
+[ms-co280]: https://techcrunch.com/2025/04/11/microsoft-inks-massive-carbon-removal-deal-thats-powered-by-a-paper-mill/
+[ms-vaulted]: https://techcrunch.com/2025/07/17/microsoft-is-buying-tons-of-carbon-removal-from-xprize-startup-vaulted-deep/
+[ms-c2x]: https://techcrunch.com/2025/12/12/microsoft-buys-3-6m-metric-tons-of-carbon-removal-from-bioenergy-plant/
+
+#### Costs
+
+| Method | Current Cost | Target | Source |
+|--------|-------------|--------|--------|
+| DAC | $500–$1,900/tonne | $100–$300/tonne | [IEA][iea-cdr] |
+| BECCS (biorefineries) | $40–$50/tonne | — | [IEA][iea-cdr] |
+| BECCS (power/pulp) | $95–$120/tonne | — | [IEA][iea-cdr] |
+
+[iea-cdr]: https://www.iea.org/commentaries/driving-down-the-cost-of-carbon-removal-why-innovation-matters
+
+**Bottom line:** CDR is growing fast but remains ~250× short of what's needed for net-zero pathways. Without a dramatic scale-up, "The Balance" stays out of reach.
 
 ---
 

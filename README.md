@@ -118,7 +118,6 @@ This endeavor is unlike the other four, as it is about fixing the past rather th
 **Milestone Countdown:**
 *   **"The Bend":** Year of peak global greenhouse gas emissions is definitively behind us.
 *   **"The Balance":** Global net anthropogenic greenhouse gas emissions reach approximately zero.
-*   **"The Siphon":** Verified durable carbon removal exceeds 10 GtCO₂/year (≈1960 global emissions) with century-scale storage.
 *   **"The Ceiling":** Peak warming held below +2°C.
 
 **Major Open Challenges:**
