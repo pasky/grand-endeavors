@@ -10,6 +10,15 @@ Tracking humanity's progress in five grand endeavors --- our biggest ongoing R&D
 
 The initial purpose of this project is using AI to automatically compose a regular trustworthy report to "the Board of Humanity" about major progress in these areas.
 
+**Status:** Experimental draft.
+* [x] We have a draft version of the endeavors definition and reporting structure. *(We expect to still iterate on it significantly based on early experience and feedback.)*
+* [ ] *(work in progress)* We are piloting the reporting structure on a summary 2025 report.
+* [ ] *(work in progress)* We are building an automatic report drafting harness.
+* [ ] We have the weekly report cadence running.
+* [ ] We have a reference list of sources to follow for each endeavor.
+* [ ] We have a publishing infrastructure set up (most likely Substack and automated Twitter account).
+* [ ] We have a drafting / feedback infrastructure for early expert reviews and errata.
+
 
 ### Manifesto
 
