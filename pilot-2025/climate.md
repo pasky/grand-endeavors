@@ -96,18 +96,65 @@ xychart-beta
 
 ### 🔴 "The Balance" — Net Zero
 
-**Status: Distant**
+**Status: Distant — 53 GtCO₂e/year to eliminate**
 
-Current policies point to **2.6°C** warming by 2100; full NDC implementation would yield **2.2°C**[^cat-2025]. The gap between commitments and action remains wide.
+Global greenhouse gas emissions hit **53.2 GtCO₂e** in 2024[^edgar], with fossil CO₂ alone reaching a record 38.1 Gt in 2025[^gcb-2025]. To reach "The Balance," these must fall to net zero — currently we remove only a fraction through forests and nascent CDR technology.
 
-| Scenario | Projected Warming | Source |
-|----------|-------------------|--------|
-| Current policies | 2.6°C | [Climate Action Tracker][cat-emissions] |
-| Pledges & NDCs | 2.2°C | [Climate Action Tracker][cat-emissions] |
-| Paris goal | ≤2.0°C (ideally 1.5°C) | [UNFCCC][paris] |
+#### Net-Zero Commitments
 
-[cat-emissions]: https://climateactiontracker.org/global/emissions-pathways/
-[paris]: https://unfccc.int/process-and-meetings/the-paris-agreement
+| Metric | Value | Source |
+|--------|-------|--------|
+| Countries with net-zero targets | **137 of 198** | [Net Zero Tracker][nzt] |
+| Legally binding national targets | **35 countries** | [Net Zero Tracker][nzt] |
+| Global GDP covered | **77%** (83% incl. US states) | [Net Zero Stocktake 2025][nzt-stocktake] |
+| Companies with SBTi targets | **~11,000** (2,325 with net-zero) | [SBTi Dashboard][sbti] |
+
+[nzt]: https://zerotracker.net/
+[nzt-stocktake]: https://zerotracker.net/analysis/net-zero-stocktake-2025
+[sbti]: https://sciencebasedtargets.org/target-dashboard
+
+#### Major 2025 Developments
+
+| Date | Event | Source |
+|------|-------|--------|
+| **Jan 2025** | 🔴 **US withdraws from Paris Agreement**, abandons federal net-zero target | [Climate Action Tracker][cat-nz] |
+| **Nov 2025** | 🟢 **UK submits ambitious NDC**: 81% emissions cut by 2035 | [WRI][wri-ndc] |
+| **Dec 2025** | 🔴 **Major banks exit Net-Zero Banking Alliance** (JP Morgan, HSBC, Barclays) | [The Guardian][guardian-retreat] |
+| **Dec 2025** | 🔴 **Morrisons** delays net-zero target from 2035 to 2050 (first major UK retailer) | [The Guardian][guardian-retreat] |
+| **Dec 2025** | 🔴 **Ford** announces $19.5B write-down, scraps EV models after US policy changes | [The Guardian][guardian-retreat] |
+| **End 2025** | 🔴 **India, Saudi Arabia, Argentina** fail to submit updated NDCs | [Climate Home][climate-home] |
+
+[cat-nz]: https://climateactiontracker.org/global/cat-net-zero-target-evaluations/
+[wri-ndc]: https://www.wri.org/insights/assessing-2025-ndcs
+[guardian-retreat]: https://www.theguardian.com/environment/2025/dec/20/was-2025-the-year-that-business-retreated-from-net-zero
+[climate-home]: https://www.climatechangenews.com/2026/01/02/india-saudi-arabia-and-argentina-fail-to-submit-climate-plans-in-2025/
+
+#### IEA Net Zero Pathway: Where We Stand
+
+| Milestone | Required | Status | Source |
+|-----------|----------|--------|--------|
+| Emissions cut by 2030 (vs 2019) | −35% (2°C) / −55% (1.5°C) | ❌ Still rising | [IEA NZE Roadmap][iea-nze] |
+| Triple renewables by 2030 | 11,000 GW | ✅ On track | [IEA][iea-nze] |
+| Double energy efficiency | 4%/year improvement | ❌ Behind (~2%) | [IEA][iea-nze] |
+| Phase down coal | Peak before 2025 | ❌ Still growing in Asia | [IEA][iea-nze] |
+| Methane reduction | −75% by 2030 | ❌ Far behind | [IEA][iea-nze] |
+
+[iea-nze]: https://www.iea.org/reports/net-zero-roadmap-a-global-pathway-to-keep-the-15-c-goal-in-reach
+
+#### Sector Progress
+
+| Sector | Status |
+|--------|--------|
+| **Electricity** | 🟢 Renewables produced more power than coal for first time (H1 2025); EU at 50% renewables |
+| **Transport** | 🟡 EVs on track (1 in 4 cars); aviation/shipping far behind |
+| **Industry** | 🔴 Heavy industry (steel, cement, chemicals) remains far from net-zero |
+| **Buildings** | 🔴 Efficiency improvements lagging; heat pump adoption slow outside EU |
+
+[^edgar]: [EDGAR 2025 Report](https://edgar.jrc.ec.europa.eu/report_2025)
+
+**2025 was a year of retreat:** US federal withdrawal, major banks exiting climate alliances, and corporations delaying targets. Corporate net-zero commitments grew (+227% in SBTi targets[^sbti-trend]), but implementation gaps widened.
+
+[^sbti-trend]: [SBTi Trend Tracker 2025](https://sciencebasedtargets.org/reports/sbti-trend-tracker-2025)
 
 ---
 
