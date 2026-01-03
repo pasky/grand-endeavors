@@ -1,7 +1,7 @@
 # Grand Endeavors 2025 Year-in-Review
 # OpenProse workflow for generating newsletter sections using LLM AI agents
 #
-# Specification: https://github.com/openprose/prose/blob/main/skills/open-prose/docs.md
+# Specification: https://github.com/openprose/prose/blob/main/skills/open-prose/prose.md (Amp Code: use subagents as the "Task" tool)
 # Reference implementation: climate.md (in this directory)
 #
 # USAGE: "Execute RECIPE.prose for Cancer" (or Robots, Rockets, Fusion)
