@@ -113,9 +113,18 @@ Some people long for immortality, others would just prefer not to die (or live l
 
 This endeavor is unlike the other four, as it is about fixing the past rather than improving the future. 100 years ago, we would have been talking about terraforming Sahara and Antarctica, but humanity messed up the Earth. Many historic civilizations died of climate change, and we now have to clean up our mess if we are to survive into a better future.
 
-**KPI:** CO2 concentration ppm, methane concentration ppm; and y2y gradient
+**KPI:** Atmospheric CO₂ concentration (ppm) and 10-year trend (ppm/year)
 
-**Milestone Countdown:** (years to CO2 change breakeven, and years to biggest projected shifts in gradient + why)
+**Milestone Countdown:**
+*   **"The Bend":** Year of peak global greenhouse gas emissions is definitively behind us.
+*   **"The Balance":** Global net anthropogenic greenhouse gas emissions reach approximately zero.
+*   **"The Siphon":** Verified durable carbon removal exceeds 10 GtCO₂/year (≈1960 global emissions) with century-scale storage.
+*   **"The Ceiling":** Peak warming held below +2°C.
+
+**Major Open Challenges:**
+*   **Decarbonization:** Eliminating emissions across energy, industry, agriculture, and transport within remaining carbon budget.
+*   **Permanent Removal:** Capturing and storing billions of tons of CO₂ per year durably at viable cost.
+*   **Sunlight Management:** Developing and safely governing solar radiation management complementing the other two challenges.
 
 ## Supplemental
 
