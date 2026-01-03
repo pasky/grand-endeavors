@@ -1,16 +1,14 @@
 # Fusion and Energy — 2025 Year in Review
 
-> *Energy is the key limiting factor of the material world. It does not have to be. If all electricity bills go to zero, how does that change our lives? There are many short-term fixes, but the long-term approach is unlikely to be anything but nuclear fusion.*
+> *Energy is the key limiting factor of the material world. It does not have to be. If all electricity bills go to zero, how does that change our lives, from heating to food, to travel, to compute? The long-term approach is unlikely to be anything but nuclear fusion—and superconductors make everything easier.*
 
 ## Executive Summary
 
-**The good news:** 2025 was fusion's breakout year. Private investment surpassed **$10 billion** globally[^iaea-2025]. NIF achieved a record **8.6 MJ yield** (gain 4.1×)[^nif-apr]. CFS is 60% complete on SPARC[^cfs-sparc]. Helion broke ground on the world's first commercial fusion plant site[^helion-orion]. France's WEST tokamak set a plasma duration world record of **22+ minutes**[^west-record]. And the first fusion power purchase agreements were signed—Microsoft with Helion[^helion-microsoft], Google with CFS[^google-cfs].
+**The good news:** 2025 was fusion's breakout year. NIF achieved Q=4.13 (8.6 MJ yield)[^nif-apr], private investment surpassed $10 billion cumulative[^fia-2025], and Helion began construction of the world's first commercial fusion power plant[^helion-malaga]. Renewables overtook coal in global electricity generation for the first time (34.3% vs 33.1%)[^ember-h1]. Deep geothermal crossed from demonstration to commercial scale—Fervo's Cape Station is scaling to 500 MW[^fervo-e].
 
-**The bad news:** No fusion plant has delivered a single watt to a public grid. ITER's first plasma is delayed to **2033–2034**[^iter-delay]. Helion missed its 2024 net-electricity target[^helion-miss]. Fusion LCOE remains theoretical—early plants will likely exceed **$150/MWh**[^lcoe-study]. And the gap between scientific gain (achieved) and engineering gain (wall-plug to grid) remains orders of magnitude[^doe-roadmap].
+**The bad news:** No fusion plant has yet delivered electricity to a grid—"The First Watt" remains unreached. ITER's first plasma slipped to 2034, D-T operations to 2039[^iter-baseline]. Fusion LCOE estimates start above $150/MWh for first-of-a-kind plants[^lindley-2023]. The industry needs ~$77 billion more to commercialize[^fia-2025]. Meanwhile, wholesale electricity prices rebounded in 2025: EU +30%, US +40% YoY in H1[^iea-midyear].
 
-**The energy context:** Wholesale electricity prices rose 30–40% in H1 2025 across EU/US markets[^iea-prices]. Meanwhile, renewables hit a record **666 GW added** in 2024[^iea-ren] and surpassed coal as the world's largest electricity source in H1 2025[^ember-2025]. Deep geothermal made real commercial progress—Fervo raised $462M[^fervo-e], Eavor achieved world-first closed-loop power production[^eavor-first].
-
-**Bottom line: "The First Watt" is approaching. Grid parity remains distant. The mid-term may belong to geothermal.**
+**Bottom line: "The First Watt" is approaching—expected 2028–2032 if private timelines hold. "Grid Parity" remains distant, contingent on engineering breakthroughs that haven't happened yet.**
 
 ---
 
@@ -18,323 +16,254 @@
 
 **KPI:** Worldwide average electricity cost ($/MWh)
 
-| Region | H1 2025 Wholesale Price (USD/MWh) | YoY Change | Source |
-|--------|-----------------------------------|------------|--------|
-| **EU Average** | ~$90 | +30% | [IEA Electricity Mid-Year 2025][iea-prices] |
-| **Germany** | ~$100 | +37% | [IEA][iea-prices] |
-| **UK** | ~$115 | +40% | [IEA][iea-prices] |
-| **United States** | $48 | +40% | [IEA][iea-prices] |
-| **Nordics** | ~$40 | −20% | [IEA][iea-prices] |
-| **Japan** | $76 | +15% | [IEA][iea-prices] |
-| **China (industrial)** | ~$80 | — | [IEA][iea-prices] |
-| **India** | $51 | −15% | [IEA][iea-prices] |
+| Metric | Value | Source |
+|--------|-------|--------|
+| **EU wholesale (H1 2025)** | ~$90/MWh (+30% YoY) | [IEA Mid-Year 2025][iea-midyear] |
+| **US wholesale (H1 2025)** | ~$48/MWh (+40% YoY) | [IEA Mid-Year 2025][iea-midyear] |
+| **New solar LCOE (2024)** | $43/MWh | [IRENA 2024][irena-lcoe] |
+| **New onshore wind LCOE (2024)** | $34/MWh | [IRENA 2024][irena-lcoe] |
+| **Gas CCGT LCOE (2024)** | $41–108/MWh | [Lazard LCOE+ 2025][lazard] |
+| **New nuclear fission LCOE** | $142–222/MWh | [Lazard LCOE+ 2025][lazard] |
+| **Fusion LCOE (projected, FOAK)** | >$150/MWh | [Lindley et al. 2023][lindley] |
+| **Fusion LCOE (projected, NOAK)** | $50–100/MWh | [CFS/TIME 2025][time-cfs] |
 
-[iea-prices]: https://www.iea.org/reports/electricity-mid-year-update-2025/prices-trends-in-wholesale-markets-differ-across-regions
+[iea-midyear]: https://iea.blob.core.windows.net/assets/cc64f0aa-30e4-4497-9cca-1ffae2c55fe5/ElectricityMid-YearUpdate2025.pdf
+[irena-lcoe]: https://www.irena.org/Publications/2025/Jun/Renewable-Power-Generation-Costs-in-2024
+[lazard]: https://www.lazard.com/media/5tlbhyla/lazards-lcoeplus-june-2025-_vf.pdf
+[lindley]: https://www.sciencedirect.com/science/article/abs/pii/S0301421523000964
+[time-cfs]: https://time.com/7302543/nuclear-energy-commonwealth-fusion/
 
-### US Retail Electricity Price (All Sectors)
+### Renewable LCOE Trend ($/MWh)
 
 ```mermaid
 xychart-beta
-    title "US Average Retail Electricity Price ($/MWh)"
-    x-axis [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
-    y-axis "$/MWh" 100 --> 135
-    line [104, 103, 105, 105, 105, 106, 111, 124, 127, 129]
+    title "Levelized Cost of Electricity ($/MWh)"
+    x-axis [2010, 2015, 2018, 2020, 2022, 2024]
+    y-axis "$/MWh" 0 --> 450
+    line "Solar PV" [417, 127, 85, 55, 51, 43]
+    line "Onshore Wind" [113, 64, 48, 39, 33, 34]
+    line "Offshore Wind" [208, 155, 127, 89, 81, 79]
 ```
-*Data: [EIA Electric Power Monthly][eia-prices]*
+*Data: [IRENA Renewable Power Generation Costs 2024][irena-lcoe]*
 
-[eia-prices]: https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=table_5_03
+### Wholesale Electricity Prices ($/MWh)
 
-**Assessment: ⚠️ Prices volatile, trending up.** The 2022–2025 period saw significant price increases due to energy crisis aftershocks, gas price volatility, and grid strain. US retail prices rose 24% over the decade (calculated from [EIA][eia-prices]). The promise of fusion—and deep geothermal—is breaking this trend permanently.
+```mermaid
+xychart-beta
+    title "Wholesale Electricity Prices ($/MWh)"
+    x-axis [2019, 2020, 2021, 2022, 2023, 2024, 2025]
+    y-axis "$/MWh" 20 --> 260
+    line "EU" [50, 40, 90, 230, 100, 70, 90]
+    line "US" [35, 30, 40, 65, 40, 35, 48]
+```
+*Data: [IEA Electricity Mid-Year Update 2025][iea-midyear]*
+
+**Assessment: ⚠️ Mixed.** Generation costs for renewables have collapsed (solar −90% since 2010). However, wholesale prices remain volatile due to gas prices, weather, and grid constraints. Fusion remains unproven commercially, with first plants expected to exceed current nuclear costs.
 
 ---
 
 ## Milestone Status
 
-### 🟡 "The First Watt" — First Commercial Fusion Plant Delivers Sustained Electricity to Grid
+### 🟡 "The First Watt" — First Commercial Fusion Plant Delivers Electricity to Grid
 
-**Status: Approaching, not yet achieved**
+**Status: Approaching (2028–2032 expected)**
 
-No fusion plant has delivered sustained commercial electricity to a public grid as of January 2026. However, multiple projects have accelerated dramatically.
-
-#### 2025 Key Events
+No fusion plant has yet delivered sustained electricity to a public grid. However, 2025 saw record-breaking progress:
 
 | Date | Event | Source |
 |------|-------|--------|
-| **Jan 20, 2025** | China's EAST achieves **1,066-second steady-state H-mode plasma** at 100M°C | [Chinese Academy of Sciences][east-record] |
-| **Feb 12, 2025** | France's WEST sets **1,337-second plasma duration world record** (22+ min) | [CEA France][west-record] |
-| **Apr 7, 2025** | NIF achieves **8.6 MJ yield** from 2.08 MJ input — **gain 4.13×** (record) | [LLNL/NIF][nif-apr] |
-| **May 2025** | Wendelstein 7-X sets **triple product world record** for stellarators | [PPPL][w7x-record] |
-| **Jul 30, 2025** | **Helion breaks ground** on Orion fusion power plant (WA state) | [Helion][helion-orion] |
-| **Sep 4, 2025** | CFS raises **$863M Series B2** to complete SPARC | [CFS][cfs-funding] |
-| **Oct 28, 2025** | SPARC vacuum vessel (48 tons) delivered; **~60% complete** | [CFS][cfs-sparc] |
-| **Jul 2024** | ITER delays first plasma to **2033–2034**; D-T ops to 2039; €5B cost overrun | [Science\|Business][iter-delay] |
+| **Apr 7, 2025** | NIF achieves **Q=4.13** (8.6 MJ yield, 2.08 MJ input)—highest fusion gain ever | [LLNL][nif-ignition] |
+| **Feb 12, 2025** | WEST tokamak sets plasma duration record: **22 minutes 17 seconds** | [CEA][west-record] |
+| **Jul 30, 2025** | **Helion begins construction** of Orion plant in Malaga, WA—first commercial fusion site | [Helion][helion-malaga] |
+| **Aug 28, 2025** | CFS raises **$863M** Series B2 (total ~$3B)—largest deep-tech raise of 2025 | [CFS][cfs-funding] |
+| **Oct 15, 2025** | Helion secures reactor building permit from Chelan County | [Helion][helion-permit] |
+| **Nov 17, 2025** | TAE skips 6th-gen device (Copernicus), accelerates to commercial plant | [TAE][tae-roadmap] |
+| **Dec 2025** | Tokamak Energy sets 3 records: 1 MA plasma current, highest triple product (~8×10¹⁸ m⁻³·keV·s) | [Tokamak Energy][te-records] |
 
-[east-record]: https://english.cas.cn/newsroom/cas_media/202501/t20250121_899052.shtml
+[nif-ignition]: https://lasers.llnl.gov/science/achieving-fusion-ignition
 [west-record]: https://www.cea.fr/english/Pages/News/nuclear-fusion-west-beats-the-world-record-for-plasma-duration.aspx
-[nif-apr]: https://lasers.llnl.gov/science/achieving-fusion-ignition
-[w7x-record]: https://www.pppl.gov/news/2025/wendelstein-7-x-sets-new-performance-records-fusion-research
-[helion-orion]: https://www.helionenergy.com/articles/helion-secures-land-and-begins-building-site-of-worlds-first-fusion-power-plant/
-[cfs-funding]: https://blog.cfs.energy/how-863m-in-new-funding-fast-tracks-commercial-fusion-power/
-[cfs-sparc]: https://blog.cfs.energy/half-of-sparcs-heart-a-48-ton-steel-vessel-arrives-at-cfs/
-[iter-delay]: https://sciencebusiness.net/news/iter-fusion-project-confirms-more-delays-and-eu5b-cost-overrun
+[helion-malaga]: https://www.helionenergy.com/articles/starting-to-build-the-worlds-first-fusion-power-plant-in-malaga-wa/
+[cfs-funding]: https://cfs.energy/news-and-media/commonwealth-fusion-systems-raises-863-million-series-b2-round-to-accelerate-the-commercialization-of-fusion-energy/
+[helion-permit]: https://www.geekwire.com/2025/helion-lands-permit-for-reactor-building-construction-at-washington-site-that-aims-to-be-first-fusion-plant/
+[tae-roadmap]: https://tae.com/tae-shortens-device-roadmap-prepares-for-commercial-era/
+[te-records]: https://tokamakenergy.com/2025/12/19/knockout-results-from-tokamak-energys-record-breaking-st40-ends-2025-on-a-high/
 
-#### Projected Timelines
+#### Companies Closest to Grid Connection
 
-| Project | Organization | Approach | Projected Grid Connection |
-|---------|--------------|----------|---------------------------|
-| **Polaris→Orion** | Helion Energy | FRC, D-He³ | **2028** (Microsoft PPA) |
-| **SPARC→ARC** | Commonwealth Fusion Systems | HTS tokamak | **Early 2030s** (Google PPA) |
-| **ITER** | 33 nations | Tokamak | **2039** (D-T operations) |
-| **UK STEP** | UKAEA | Spherical tokamak | Mid-2030s |
+| Company | Approach | Announced Timeline | Key 2025 Progress |
+|---------|----------|-------------------|-------------------|
+| **Helion Energy** | FRC (D-He3) | **2028** (Microsoft PPA) | Construction begun; permits secured; Polaris operational |
+| **Commonwealth Fusion** | HTS Tokamak | **Early 2030s** | $863M raised; SPARC assembly underway; Google buying 200 MW |
+| **TAE Technologies** | FRC (p-B11) | **Early 2030s** | NBI-only breakthrough; skipped device generation |
+| **Tokamak Energy** | Spherical Tokamak | **2030s** | 3 performance records; Demo4 magnet validated |
 
-**Key progress metrics:**
+#### Quantitative Progress
 
-| Record | Value | Where/When | Source |
-|--------|-------|------------|--------|
-| Plasma duration (H-mode) | 1,337 seconds | WEST, Feb 2025 | [CEA][west-record] |
-| Target gain (Qsci) | 4.13× | NIF, Apr 2025 | [LLNL][nif-apr] |
-| Private investment | >$10 billion | Cumulative, 2025 | [IAEA][iaea-2025] |
+| Metric | Best Achieved | When | Project |
+|--------|---------------|------|---------|
+| **Fusion Gain (Q)** | **4.13** | Apr 2025 | NIF |
+| **Plasma Duration** | **22 min 17 sec** | Feb 2025 | WEST |
+| **Plasma Temperature** | 100+ million °C | Achieved | Multiple |
+| **HTS Magnet Field** | 20 T | Sep 2021 | CFS |
+| **Private Fusion Investment** | **$10B+ cumulative** | 2025 | Industry-wide |
 
-[iaea-2025]: https://www.iaea.org/newscenter/news/fusion-energy-in-2025-six-global-trends-to-watch
-
-**Why it matters:** Scientific breakeven (Qsci >1) has been repeatedly demonstrated at NIF since December 2022. But engineering breakeven (Qeng >1)—wall-plug energy in vs. grid electricity out—has not. The first PPAs signal commercial confidence, but the milestone remains unachieved.
+**Why not achieved yet:** Scientific breakeven (Q>1) is proven. Engineering breakeven (net electricity from total plant input) is not. No fusion device has sustained power output to a grid.
 
 ---
 
-### 🔴 "Grid Parity" — Fusion LCOE < $100/MWh
+### 🔴 "Grid Parity" — Fusion LCOE Below $100/MWh
 
-**Status: Distant — no operational fusion plants exist**
+**Status: Distant**
 
-All fusion LCOE figures are projections. No fusion plant has generated commercial electricity.
+| Source | LCOE ($/MWh) | Status |
+|--------|--------------|--------|
+| Onshore Wind | $27–73 (avg $50) | Deployed |
+| Solar PV | $29–92 (avg $58) | Deployed |
+| Gas CCGT | $41–108 (avg $78) | Deployed |
+| Nuclear Fission (new) | $142–222 | Deployed |
+| **Fusion (FOAK)** | **>$150** | Projected |
+| **Fusion (NOAK)** | **$50–100** | Projected |
 
-#### Cost Comparison
+*Data: [Lazard LCOE+ 2025][lazard], [Lindley et al. 2023][lindley]*
 
-| Technology | LCOE ($/MWh) | Status | Source |
-|------------|--------------|--------|--------|
-| **Natural Gas (CCGT)** | $48–$109 | Operating | [Lazard LCOE+ 2025][lazard] |
-| **Utility Solar PV** | $38–$212 | Operating | [Lazard][lazard] |
-| **Nuclear Fission** | $141–$220 | Operating | [Lazard][lazard] |
-| **Fusion (CFS target)** | $50–$100 | **Projected** | [TIME, Mar 2025][cfs-time] |
-| **Fusion (Helion goal)** | $10/MWh | **Projected** (aspirational) | [Helion FAQ][helion-faq] |
-| **Fusion (First Light, inertial)** | $25–$80 | **Projected** (mature tech) | [Royal Society][firstlight-rs] |
-| **Fusion (early tokamak)** | >$150 | **Projected** (FOAK) | [Lindley et al. 2023][lcoe-study] |
+#### Technical Requirements for Grid Parity
 
-[lazard]: https://www.lazard.com/research-insights/levelized-cost-of-energyplus-lcoeplus/
-[cfs-time]: https://time.com/7302543/nuclear-energy-commonwealth-fusion/
-[helion-faq]: https://www.helionenergy.com/faq/
-[firstlight-rs]: https://royalsocietypublishing.org/doi/10.1098/rsta.2020.0053
-[lcoe-study]: https://www.sciencedirect.com/science/article/abs/pii/S0301421523000964
+| Milestone | Status |
+|-----------|--------|
+| Scientific breakeven (Q>1) | ✅ Achieved (NIF) |
+| Engineering breakeven (Q>10) | ❌ Not achieved |
+| Net electricity generation | ❌ Not achieved |
+| Plant availability >75% | ❌ Unproven |
+| Capital cost <$5,000/kW | ❌ Unknown |
 
-#### Key Cost Drivers
-
-1. **Capital costs** — Superconducting magnets, vacuum vessels, specialized materials (~$6,000/kWe)[^kleinman]
-2. **Capacity factor** — Pulsed tokamak operation reduces availability; need >80% uptime
-3. **Component lifetime** — Plasma-facing materials degrade rapidly
-4. **Tritium breeding** — Closing the fuel cycle remains unsolved
-5. **Fleet learning** — FOAK plants expensive; costs drop with nth-of-a-kind builds
-
-**Bottom line:** Fusion must reach $80–$100/MWh by 2040 to compete with incumbent baseload sources[^lcoe-study]. This is plausible at scale but unproven. The milestone will shift from "Distant" to "Approaching" when SPARC (2027) or Orion (2028) demonstrate net electricity and provide real cost data.
+**Bottom line:** Fusion reaching <$100/MWh is plausible for mature plants in the **2040s–2050s**. No fusion plant currently operates; all LCOE figures are projections.
 
 ---
 
 ## Tech Tree Progress
 
-### 🟡 D-T Fusion — Proven ignition, engineering challenges remain
+### 🟡 D-T Fusion — Strong Scientific Progress
 
-*D-T fusion (deuterium-tritium) is the "easiest" fusion fuel—lowest ignition temperature—but produces 14 MeV neutrons requiring tritium breeding and neutron-resistant materials.*
+D-T (deuterium-tritium) is the easiest fusion reaction to achieve, but produces 14 MeV neutrons requiring tritium breeding and radiation-resistant materials.
 
 #### Magnetic Confinement
 
-```mermaid
-xychart-beta
-    title "Plasma Duration Records (seconds)"
-    x-axis [2020, 2021, 2022, 2023, 2024, 2025]
-    y-axis "seconds" 0 --> 1500
-    bar [101, 120, 403, 403, 1066, 1337]
-```
-*Data: [EAST][east-record], [WEST][west-record]*
+| Project | 2025 Progress | Timeline | Source |
+|---------|---------------|----------|--------|
+| **ITER** | Sector Module #7 installed (3 weeks early); baseline reset: First Plasma 2034, D-T 2039 | +9 years delayed | [ITER][iter] |
+| **CFS (SPARC)** | DOE validated magnets ($8M milestone); vacuum vessel delivered; Google 200 MW deal | SPARC: 2026; ARC: early 2030s | [CFS][cfs-funding] |
+| **Zap Energy** | FuZE-3 achieves **1.6 GPa plasma pressure** (10,000× atmospheric) | Scaling to FuZE-A | [Zap][zap-pressure] |
+| **Tokamak Energy** | 1 MA current, highest private triple product; Demo4 magnet validated at 11.8 T | 2030s commercial | [Tokamak Energy][te-records] |
 
-| Project | 2025 Status | Source |
-|---------|-------------|--------|
-| **CFS SPARC** | ~60% complete; vacuum vessel delivered; first plasma ~2027 | [CFS][cfs-sparc] |
-| **ITER** | Sector Module #7 installed 3 weeks ahead of schedule; first plasma 2033–2034 | [ITER][iter-2025] |
-| **Zap Energy** | Achieved **gigapascal plasma pressures** on FuZE-3 (Nov 2025) | [Zap Energy][zap-2025] |
-| **JT-60SA** | World's largest superconducting tokamak begins operation Dec 2025 | [PPPL][jt60sa] |
-
-[iter-2025]: https://www.iter.org/project/road-iter
-[zap-2025]: https://www.zapenergy.com/news/zap-energy-exceeds-gigapascal-fusion-plasma-pressures-on-new-fusion-device-fuze-3
-[jt60sa]: https://www.pppl.gov/news/2025/world's-largest-superconducting-fusion-system-will-use-american-technology-measure-plasma
+[iter]: https://www.iter.org/project/road-iter
+[zap-pressure]: https://www.zapenergy.com/news/zap-energy-exceeds-gigapascal-fusion-plasma-pressures-on-new-fusion-device-fuze-3
 
 #### Inertial Confinement
 
-| Date | Event | Source |
-|------|-------|--------|
-| **Apr 2025** | NIF achieves 8.6 MJ yield (gain 4.13×) | [LLNL][nif-apr] |
-| **Sep 2025** | First Light publishes **FLARE** concept—pathway to gain ~1000 | [First Light][flare] |
-| **Aug 2025** | Annie Kritcher (NIF principal designer) co-founds **Inertia Enterprises** | [Fortune][inertia] |
+| Project | 2025 Progress | Source |
+|---------|---------------|--------|
+| **NIF** | Q=4.13 (Apr); THOR platform ignition (Jun); Enhanced Yield Capability approved | [LLNL][nif-ignition] |
+| **First Light Fusion** | FLARE concept: path to gain ~1,000 at $100–200M (vs $5.3B NIF); pivoted to licensing | [First Light][flf-flare] |
 
-[flare]: https://firstlightfusion.com/media/first-light-fusion-publishes-first-plausible-path-to-high-gain-unlocking-cheap-fusion-energy/
-[inertia]: https://fortune.com/2025/10/02/nuclear-fusion-online-commercial-ai-power/
-[doe-roadmap]: https://www.energy.gov/sites/default/files/2025-10/fusion-s%26t-roadmap-101625.pdf
+[flf-flare]: https://firstlightfusion.com/media/first-light-fusion-publishes-first-plausible-path-to-high-gain-unlocking-cheap-fusion-energy/
 
-**ICF commercialization challenges:**
-
-| Challenge | Current | Target | Source |
-|-----------|---------|--------|--------|
-| Repetition rate | ~1 shot/day | 10 Hz | [DOE Roadmap][doe-roadmap] |
-| Target cost | ~$50,000 | <$0.10 | [First Light][flare] |
-| Driver efficiency | ~0.7% | >10% | [DOE Roadmap][doe-roadmap] |
-
-#### D-T General Challenges
-
-| Challenge | Status | Source |
-|-----------|--------|--------|
-| **Tritium breeding (TBR>1)** | MIT BABY experiment: first direct TBR measurement in molten FLiBe (Jan 2025) | [Nuclear Fusion][mit-baby] |
-| **Neutron-resistant materials** | U. Michigan: RAFM steel TiC precipitates dissolve at >15 dpa, causing 2% swelling | [Michigan Engineering][rafm] |
-| **No Fusion Prototypical Neutron Source** | DOE Roadmap calls for FPNS in 5–10 years | [DOE Roadmap][doe-roadmap] |
-
-[mit-baby]: https://iopscience.iop.org/article/10.1088/1741-4326/ada2ab
-[rafm]: https://news.engin.umich.edu/2025/08/a-dual-ion-beam-tests-new-steel-under-fusion-energy-producing-conditions/
-[doe-roadmap]: https://www.energy.gov/sites/default/files/2025-10/fusion-s%26t-roadmap-101625.pdf
+**Key Gaps:**
+- Tritium breeding ratio >1.0 not demonstrated at scale
+- IFE rep-rate: ~1 shot/day needed → 10 Hz (864,000× gap)
+- Target cost: ~$50,000 → $0.10 needed
 
 ---
 
-### 🟡 Aneutronic Fusion — Bold promises, significant gaps
+### 🟡 Aneutronic Fusion — Accelerated Timelines
 
-*Aneutronic fusion (D-He³, p-B¹¹) produces no neutrons and no tritium—but requires temperatures 10× higher than D-T (600M–3B°C vs. 150M°C).*
+Aneutronic fuels (D-He3, p-B11) avoid neutron damage and tritium, but require 10× higher temperatures.
 
-#### Helion Energy (D-He³)
+| Company | Approach | 2025 Milestone | Funding | Timeline |
+|---------|----------|----------------|---------|----------|
+| **Helion** | D-He3 FRC | Construction begun; Polaris operational; 500+ employees | $1B+ ($425M Series F in Jan 2025) | **2028** |
+| **TAE** | p-B11 FRC | NBI-only FRC formation (world first); skipped Copernicus | $1.8B+ ($150M in Jun 2025; $6B merger) | Early 2030s |
+| **HB11** | Laser p-B11 | High reaction rates at Phelix/LFEX | $23M | Research stage |
 
-| Metric | Status | Source |
-|--------|--------|--------|
-| **Funding** | >$1B raised; $425M Series F (Jan 2025) | [Helion][helion-funding] |
-| **Polaris** | Operational; largest FRC plasmas created; 3,800+ diagnostics | [Helion][helion-polaris] |
-| **Orion** | Construction begun Jul 2025; Conditional Use Permit Oct 2025 | [Helion][helion-orion] |
-| **Microsoft PPA** | ≥50 MW by 2028; Constellation as power marketer | [Helion][helion-microsoft] |
-| **Temperature achieved** | 100M°C (Trenta, 2021) — target: 600M°C | [Helion][helion-100m] |
+*Sources: [Helion][helion-malaga], [TAE][tae-roadmap], [HB11](https://hb11.energy/)*
 
-[helion-funding]: https://www.helionenergy.com/articles/helion-announces-425m-series-f-investment-to-scale-commercialized-fusion-power/
-[helion-polaris]: https://www.helionenergy.com/polaris/
-[helion-microsoft]: https://www.helionenergy.com/articles/helion-announces-worlds-first-fusion-ppa-with-microsoft/
-[helion-100m]: https://www.helionenergy.com/articles/helion-energy-achieves-100-million-degrees-celsius-fusion-fuel-temperature-and-confirms-16-month-continuous-operation-of-its-fusion-generator-prototype/
-
-⚠️ **Concern:** Helion missed its 2024 net-electricity target[^helion-miss]. As of Dec 2025, Polaris has not publicly demonstrated net electricity production.
-
-#### TAE Technologies (p-B¹¹)
-
-| Metric | Status | Source |
-|--------|--------|--------|
-| **Funding** | >$1.3B raised; $150M round Jun 2025; $6B TMTG merger announced Dec 2025 | [TAE][tae-funding], [CNBC][tae-tmtg] |
-| **"Norm" breakthrough** | First NBI-only FRC plasma formation (Apr 2025)—reduces reactor complexity ~50% | [TAE][tae-norm] |
-| **Copernicus skipped** | Norm success allows direct jump to Da Vinci (commercial prototype) | [TAE][tae-roadmap] |
-| **Temperature achieved** | 70M+ °C (Norm) — target: 3B°C | [TAE][tae-norm] |
-
-[tae-funding]: https://tae.com/tae-technologies-raises-150-million-in-latest-funding-round/
-[tae-tmtg]: https://www.cnbc.com/2025/12/18/trump-media-djt-tae-fusion-merger.html
-[tae-norm]: https://tae.com/tae-technologies-delivers-fusion-breakthrough-that-dramatically-reduces-cost-of-a-future-power-plant/
-[tae-roadmap]: https://tae.com/tae-shortens-device-roadmap-prepares-for-commercial-era/
-
-#### The Aneutronic Challenge
-
-| Fuel | Optimal Temperature | Current Best | Gap | Source |
-|------|---------------------|--------------|-----|--------|
-| D-T | ~150M°C | Net gain achieved (NIF) | — | [LLNL][nif-apr] |
-| D-He³ | ~600M°C | 100M°C (Helion) | 6× | [Helion][helion-100m] |
-| p-B¹¹ | ~3B°C | 70M°C (TAE) | 40× | [TAE][tae-norm] |
-
-**Bottom line:** Both companies made genuine technical progress in 2025, but neither has demonstrated net energy gain. Temperature gaps remain substantial. First commercial aneutronic fusion: realistically 2032–2040.
+**Critical challenge:** Neither Helion nor TAE has demonstrated net energy gain. Helion missed its 2024 net-electricity target[^helion-miss] and now targets 2028 delivery to Microsoft; TAE targets early 2030s. Both timelines are aggressive.
 
 ---
 
-### 🟢 Deep Geothermal — The credible mid-term alternative
+### 🟢 Deep Geothermal — Commercial Scale Achieved
 
-*Deep geothermal accesses superhot rock (>400°C) via advanced drilling. Unlike fusion, next-gen geothermal companies are already producing commercial power.*
+Deep geothermal (Enhanced Geothermal Systems) is the most viable mid-term clean baseload alternative.
 
-```mermaid
-xychart-beta
-    title "Fervo Cape Station Capacity (MW)"
-    x-axis ["2024 (online)", "Oct 2026 (target)", "2028 (contracted)"]
-    y-axis "MW" 0 --> 550
-    bar [3.5, 100, 500]
-```
-*Data: [Fervo][fervo-shell], [Fervo][fervo-jun], [Fervo][fervo-e]*
+| Company | Technology | 2025 Milestone | Source |
+|---------|-----------|----------------|--------|
+| **Fervo Energy** | EGS (horizontal drilling) | 15,765 ft at 520°F; 79% faster drilling; $462M Series E; 500 MW Cape Station by 2028 | [Fervo][fervo] |
+| **Quaise Energy** | Millimeter-wave drilling | **100m granite drill** (world first for MMW); targeting 10–20 km | [Quaise][quaise] |
+| **Eavor** | Closed-loop | First electricity to German grid (Dec 2025) | [Eavor][eavor] |
+| **GA Drilling** | Plasma drilling | $83M raised; Petrobras partnership | [GA Drilling][ga] |
+| **Sage Geosystems** | Pressure storage | 3 MW facility; 150 MW Meta deal | [Sage][sage] |
 
-#### 2025 Milestones
+[fervo]: https://fervoenergy.com/fervo-energy-raises-462-million-series-e-to-accelerate-geothermal-development-and-meet-surging-energy-demand-with-clean-firm-power/
+[quaise]: https://www.quaise.energy/news/quaise-energy-achieves-drilling-milestone-with-millimeter-wave-technology
+[eavor]: https://eavor.com/press-releases/eavor-technologies-achieves-first-electricity-production-at-geretsried-site/
+[ga]: https://tracxn.com/d/companies/ga-drilling/__kpZWRFzTXYpocz62jd7fiVz-MAlsMUsEK2bCKMUDNAg
+[sage]: https://www.sagegeosystems.com/projects
 
-| Date | Event | Company | Source |
-|------|-------|---------|--------|
-| **Jul 2025** | **First millimeter-wave drilling to 100m** (world record) | Quaise | [Quaise][quaise-100m] |
-| **Dec 2025** | **World's first commercial closed-loop power production** | Eavor | [Eavor][eavor-first] |
-| **Dec 2025** | **$462M Series E** (total ~$1.5B raised) | Fervo | [Fervo][fervo-e] |
-| **Jun 2025** | $206M financing; 15,000-ft/500°F well drilled | Fervo | [Fervo][fervo-jun] |
-| **Apr 2025** | Cape Station reaches 500 MW total PPAs | Fervo | [Fervo][fervo-shell] |
+#### Cost Trajectory
 
-[quaise-100m]: https://www.quaise.energy/news/quaise-energy-achieves-drilling-milestone-with-millimeter-wave-technology
-[eavor-first]: https://eavor.com/press-releases/eavor-technologies-achieves-first-electricity-production-at-geretsried-site/
-[fervo-e]: https://fervoenergy.com/fervo-energy-raises-462-million-series-e-to-accelerate-geothermal-development-and-meet-surging-energy-demand-with-clean-firm-power/
-[fervo-jun]: https://fervoenergy.com/fervo-secures-new-financing-to-accelerate-development/
-[fervo-shell]: https://fervoenergy.com/fervo-energy-announces-31-mw-power-purchase-agreement-with-shell-energy/
+| Timeframe | EGS LCOE | Source |
+|-----------|----------|--------|
+| Current | $66–109/MWh | [Lazard][lazard] |
+| 2030s target | $45–65/MWh | [McKinsey][mckinsey-geo] |
+| 2035 projection | $50/MWh (−80%) | [IEA via Eavor][eavor-iea] |
 
-#### Company Status
-
-| Company | Technology | Status | Key Metric | Source |
-|---------|------------|--------|------------|--------|
-| **Fervo** | Horizontal EGS (fracking-derived) | **Commercial** | 65% drilling cost reduction over 14 wells | [Fervo][fervo-e] |
-| **Eavor** | Closed-loop radiator | **Commercial** (Dec 2025) | 8,145m lateral drilled; no induced seismicity | [Eavor][eavor-first] |
-| **Quaise** | Millimeter-wave drilling | **Proof-of-concept** | 100m depth (need 10–20 km) | [Quaise][quaise-100m] |
-| **GA Drilling** | Plasma drilling | **R&D** | NREL partnership for downhole power | [ThinkGeoEnergy][ga-nrel] |
-
-[ga-nrel]: https://www.thinkgeoenergy.com/ga-drilling-nrel-collaborate-on-downhole-generator-tech-for-geothermal-drilling/
+[mckinsey-geo]: https://www.mckinsey.com/industries/electric-power-and-natural-gas/our-insights/is-geothermal-energy-ready-to-make-its-mark-in-the-us-power-mix
+[eavor-iea]: https://eavor.com/blog/geothermal-energy-costs-could-drop-80-by-2035/
 
 #### Drilling Technology Maturity
 
 | Technology | TRL (est.) | Challenge |
 |------------|------------|-----------|
 | Conventional rotary | 9 | Cost escalates exponentially at depth |
-| Millimeter-wave (Quaise) | 4–5 | Scaling from 100m to 10+ km |
-| Closed-loop (Eavor) | 7–8 | Lower energy density than open systems |
 | Horizontal EGS (Fervo) | 8 | Requires suitable geology |
+| Closed-loop (Eavor) | 7–8 | Lower energy density than open systems |
+| Millimeter-wave (Quaise) | 4–5 | Scaling from 100m to 10+ km |
+| Plasma drilling (GA) | 3–4 | Early R&D stage |
 
 *TRL estimates are author assessments based on public demonstrations and commercial status.*
 
-**Assessment:** Deep geothermal is the **most credible mid-term fusion alternative**. Fervo's execution (65% cost reduction, Google backing) and Eavor's first commercial closed-loop milestone prove the technology works. The question is whether breakthrough drilling (Quaise, GA) can enable superhot rock access "anywhere"—which would match fusion's promise of unlimited clean baseload.
+**Bottom line:** Deep geothermal is the **most credible mid-term fusion alternative**. Fervo's execution (65% cost reduction, Google backing) and Eavor's first commercial closed-loop milestone prove the technology works. The question is whether breakthrough drilling (Quaise, GA) can enable superhot rock access "anywhere"—which would match fusion's promise of unlimited clean baseload.
 
 ---
 
-## Beyond the Framework
+## Beyond the Framework: 2025 Highlights
 
-### Fusion Industry Highlights
+### Superconductor Progress
+- **Tokamak Energy Demo4** validated 11.8 T HTS magnet system at −243°C (Nov 2025)[^te-magnet]
+- **Max Planck Institute** measured superconducting gap in H₃S hydride for first time (Dec 2025)[^hydride]
+- **NYU/Queensland** created superconducting germanium at 3.5 K (Oct 2025)[^germanium]
 
-| Event | Details | Source |
-|-------|---------|--------|
-| **Pacific Fusion emerges** | $900M Series A (largest fusion startup funding ever); electromagnetic pulse approach | [TechCrunch][pacific] |
-| **Google signs CFS PPA** | First major tech company fusion PPA for half of ARC plant output | [TechCrunch][google-cfs] |
-| **DOE Fusion S&T Roadmap** | "Build-Innovate-Grow" strategy targeting commercial fusion mid-2030s | [DOE][doe-roadmap] |
-| **General Fusion layoffs** | 25% staff cut after cash shortfall; building LM26 device | [TechCrunch][gf-layoffs] |
-| **Tokamak Energy Demo4** | First replication of fusion power plant magnetic fields in complete HTS magnet | [Tokamak Energy][te-demo4] |
-| **GA completes Central Solenoid** | World's largest pulsed superconducting magnet (1,000+ tons) for ITER | [GA][ga-cs] |
+### Nuclear Fission / SMRs
+- **NuScale/ENTRA1/TVA** signed 6 GW SMR deal—largest U.S. SMR program ever (Sep 2025)[^nuscale]
+- **TerraPower Natrium** secured $650M from NVIDIA/HD Hyundai; NRC draft safety evaluation complete[^terrapower]
+- **127 SMR designs** now tracked globally by OECD-NEA[^nea-smr]
 
-[pacific]: https://techcrunch.com/2025/04/15/heres-how-pacific-fusion-plans-to-build-a-fusion-power-plant/
-[google-cfs]: https://techcrunch.com/2025/06/30/google-inks-its-first-fusion-power-deal-with-commonwealth-fusion-systems/
-[gf-layoffs]: https://techcrunch.com/2025/05/05/layoffs-hit-general-fusion-as-the-fusion-power-startup-runs-short-on-cash/
-[te-demo4]: https://tokamakenergy.com/2025/11/19/tokamak-energy-announces-fusion-power-plant-magnet-technology-breakthrough/
-[ga-cs]: https://www.ga.com/ga-marks-completion-of-the-world-s-largest-and-most-powerful-pulsed-superconducting-magnet-for-fusion-energy
+### Energy Storage
+- **U.S. grid storage hit 40 GW** in Q3 2025—surpassing 2017's 35 GW target[^canary]
+- **China released first national solid-state battery standard** (Jan 2026)[^china-ss]
 
-### Energy Context
+### Renewable Energy
+- **Renewables overtook coal** for first time: 34.3% vs 33.1% of global electricity (H1 2025)[^ember-h1]
+- **Solar alone met 83%** of global electricity demand growth[^ember-h1]
+- ***Science* named renewable energy growth 2025 Breakthrough of the Year**[^science-boty]
 
-| Development | Source |
-|-------------|--------|
-| **Renewables surpass coal** (H1 2025) as world's largest electricity source | [Ember][ember-2025] |
-| **Record 666 GW renewables added** in 2024 | [IEA Renewables 2024][iea-ren] |
-| **Science names renewable surge "Breakthrough of the Year"** | [Science][science-breakthrough] |
-| **Trump signs 4 nuclear executive orders** — 400 GW target by 2050 | [DOE][doe-nuclear] |
-| **California: 3 years without Flex Alerts** — battery storage eliminated blackout risk | [LA Times][ca-batteries] |
+### AI in Fusion
+- **Princeton Diag2Diag** AI generates synthetic sensor data for real-time plasma control[^princeton-ai]
+- **Google DeepMind** partnered with CFS on AI plasma optimization[^cfs-ai]
 
-[ember-2025]: https://ember-energy.org/latest-insights/global-electricity-mid-year-insights-2025/
-[iea-ren]: https://www.iea.org/reports/renewables-2024
-[science-breakthrough]: https://www.science.org/content/article/breakthrough-2025
-[doe-nuclear]: https://www.energy.gov/ne/articles/9-key-takeaways-president-trumps-executive-orders-nuclear-energy
-[ca-batteries]: https://www.latimes.com/environment/story/2025-10-17/california-made-it-through-another-summer-without-a-flex-alert
+### Policy & Funding
+- **DOE established Office of Fusion** (first standalone since 1990s)[^doe-fusion]
+- **UK committed £2.5 billion** to fusion over 5 years[^uk-fusion]
+- **Germany signed MOU** for laser fusion plant at Biblis site by 2035[^germany-fusion]
 
 ---
 
@@ -342,38 +271,46 @@ xychart-beta
 
 ### External Visualizations
 
-| Resource | URL |
-|----------|-----|
-| IAEA Fusion Portal | https://www.iaea.org/resources/databases/fusion-portal |
-| Fusion Industry Association Reports | https://www.fusionindustryassociation.org/fusion-industry-reports/ |
-| Ember Electricity Data Explorer | https://ember-energy.org/data/electricity-data-explorer |
-| IEA Global Energy Review 2025 | https://www.iea.org/reports/global-energy-review-2025 |
-| DOE Fusion S&T Roadmap (PDF) | https://www.energy.gov/sites/default/files/2025-10/fusion-s%26t-roadmap-101625.pdf |
-| EUROfusion Roadmap | https://euro-fusion.org/eurofusion/roadmap/ |
-| IEA Real-Time Electricity Tracker | https://www.iea.org/data-and-statistics/data-tools/real-time-electricity-tracker |
+| Chart | Source |
+|-------|--------|
+| IEA Real-Time Electricity Tracker | [iea.org/data-tools/real-time-electricity-tracker](https://www.iea.org/data-and-statistics/data-tools/real-time-electricity-tracker) |
+| IRENA LCOE Dashboard | [irena.org/Data/View-data-by-topic/Costs/Global-LCOE-and-Auction-values](https://www.irena.org/Data/View-data-by-topic/Costs/Global-LCOE-and-Auction-values) |
+| Ember Global Electricity Data | [ember-energy.org](https://ember-energy.org/) |
+| IAEA Fusion Portal | [iaea.org/resources/databases/fusion-portal](https://www.iaea.org/resources/databases/fusion-portal) |
+| FIA Global Fusion Report 2025 | [fusionindustryassociation.org](https://www.fusionindustryassociation.org/wp-content/uploads/2025/07/2025-Global-Fusion-Industry-Report.pdf) |
+| NEA SMR Dashboard | [oecd-nea.org/smr-dashboard](https://www.oecd-nea.org/jcms/pl_107879/nea-small-modular-reactor-digital-dashboard) |
 
 ---
 
-*Data sources: [IAEA][iaea-2025], [IEA][iea-prices], [LLNL/NIF][nif-apr], [CFS][cfs-sparc], [Helion][helion-orion], [TAE][tae-norm], [Fervo][fervo-e], [Eavor][eavor-first], [Quaise][quaise-100m], [DOE][doe-roadmap], [Ember][ember-2025], [Lazard][lazard]*
+*Data sources: [IEA][iea-midyear], [IRENA][irena-lcoe], [Lazard][lazard], [LLNL][nif-ignition], [FIA][fia-2025], [Ember][ember-h1], [ITER][iter], company announcements*
 
 ---
 
 ## Footnotes
 
-[^iaea-2025]: [IAEA: Fusion Energy in 2025 — Six Global Trends to Watch](https://www.iaea.org/newscenter/news/fusion-energy-in-2025-six-global-trends-to-watch)
 [^nif-apr]: [LLNL: NIF Achieving Fusion Ignition](https://lasers.llnl.gov/science/achieving-fusion-ignition)
-[^cfs-sparc]: [CFS: Half of SPARC's Heart Arrives](https://blog.cfs.energy/half-of-sparcs-heart-a-48-ton-steel-vessel-arrives-at-cfs/)
-[^helion-orion]: [Helion: Worlds First Fusion Power Plant](https://www.helionenergy.com/articles/helion-secures-land-and-begins-building-site-of-worlds-first-fusion-power-plant/)
-[^west-record]: [CEA: WEST Beats World Record for Plasma Duration](https://www.cea.fr/english/Pages/News/nuclear-fusion-west-beats-the-world-record-for-plasma-duration.aspx)
-[^helion-microsoft]: [Helion: World's First Fusion PPA with Microsoft](https://www.helionenergy.com/articles/helion-announces-worlds-first-fusion-ppa-with-microsoft/)
-[^google-cfs]: [TechCrunch: Google Inks First Fusion Power Deal with CFS](https://techcrunch.com/2025/06/30/google-inks-its-first-fusion-power-deal-with-commonwealth-fusion-systems/)
-[^iter-delay]: [Science|Business: ITER Fusion Project Confirms More Delays](https://sciencebusiness.net/news/iter-fusion-project-confirms-more-delays-and-eu5b-cost-overrun)
-[^lcoe-study]: [Lindley et al. 2023: Fusion LCOE Analysis](https://www.sciencedirect.com/science/article/abs/pii/S0301421523000964)
-[^iea-prices]: [IEA Electricity Mid-Year Update 2025](https://www.iea.org/reports/electricity-mid-year-update-2025/prices-trends-in-wholesale-markets-differ-across-regions)
-[^iea-ren]: [IEA Renewables 2024](https://www.iea.org/reports/renewables-2024)
-[^ember-2025]: [Ember: Global Electricity Mid-Year Insights 2025](https://ember-energy.org/latest-insights/global-electricity-mid-year-insights-2025/)
+[^fia-2025]: [Fusion Industry Association 2025 Report](https://www.fusionindustryassociation.org/wp-content/uploads/2025/07/2025-Global-Fusion-Industry-Report.pdf)
+[^helion-malaga]: [Helion: Starting to Build the World's First Fusion Power Plant](https://www.helionenergy.com/articles/starting-to-build-the-worlds-first-fusion-power-plant-in-malaga-wa/)
+[^ember-h1]: [Ember: Global Electricity Mid-Year Insights 2025](https://ember-energy.org/latest-insights/global-electricity-mid-year-insights-2025/)
 [^fervo-e]: [Fervo: $462M Series E](https://fervoenergy.com/fervo-energy-raises-462-million-series-e-to-accelerate-geothermal-development-and-meet-surging-energy-demand-with-clean-firm-power/)
-[^eavor-first]: [Eavor: First Electricity Production at Geretsried](https://eavor.com/press-releases/eavor-technologies-achieves-first-electricity-production-at-geretsried-site/)
+[^iter-baseline]: [ITER: New Baseline 2024](https://www.iter.org/few-lines)
+[^lindley-2023]: [Lindley et al. 2023, Energy Policy](https://www.sciencedirect.com/science/article/abs/pii/S0301421523000964)
+[^iea-midyear]: [IEA Electricity Mid-Year Update 2025](https://iea.blob.core.windows.net/assets/cc64f0aa-30e4-4497-9cca-1ffae2c55fe5/ElectricityMid-YearUpdate2025.pdf)
+[^te-magnet]: [Tokamak Energy: Demo4 Magnet Breakthrough](https://tokamakenergy.com/2025/11/19/tokamak-energy-announces-fusion-power-plant-magnet-technology-breakthrough/)
+[^hydride]: [ScienceDaily: H₃S Superconducting Gap](https://www.sciencedaily.com/releases/2025/12/251219093328.htm)
+[^germanium]: [NYU: Superconducting Germanium](https://www.nyu.edu/about/news-publications/news/2025/october/scientists-create-new-type-of-semiconductor-that-holds-supercond.html)
+[^nuscale]: [NuScale: 6 GW TVA Deal](https://www.nuscalepower.com/press-releases/2025/nuscale-power-reports-third-quarter-2025-results)
+[^terrapower]: [ANS: TerraPower Natrium Progress](https://www.ans.org/news/2025-04-29/article-6962/industry-updatemay-2025/)
+[^nea-smr]: [OECD-NEA SMR Dashboard](https://www.oecd-nea.org/jcms/pl_73678/nea-small-modular-reactor-smr-dashboard)
+[^canary]: [Canary Media: Grid Storage Hits 40 GW](https://www.canarymedia.com/articles/energy-storage/grid-storage-industry-crushes-2025-goal)
+[^china-ss]: [Electrek: China Solid-State Battery Standard](https://electrek.co/2026/01/02/solid-state-ev-batteries-big-step-forward-china/)
+[^science-boty]: [Science: 2025 Breakthrough of the Year](https://www.science.org/content/article/breakthrough-2025)
+[^princeton-ai]: [Innovation News Network: Princeton Diag2Diag AI](https://www.innovationnewsnetwork.com/princeton-ai-breakthrough-transforms-fusion-systems-into-reliable-power-sources/62239/)
+[^cfs-ai]: [CFS: Google DeepMind Partnership](https://blog.cfs.energy/with-ai-alliance-google-deepmind-and-cfs-take-fusion-to-the-next-level/)
+[^doe-fusion]: [CATF: DOE Office of Fusion](https://www.catf.us/2025/12/doe-launched-office-fusion-heres-how-help-industry-scale/)
+[^uk-fusion]: [Kleinman Center: Fusion Challenges](https://kleinmanenergy.upenn.edu/research/publications/bringing-fusion-energy-to-the-grid-challenges-and-pathways/)
+[^germany-fusion]: [ANS: Germany Laser Fusion Plant MOU](https://www.ans.org/news/2025-04-29/article-6962/industry-updatemay-2025/)
 [^helion-miss]: [Wikipedia: Helion Energy — missed 2024 net-electricity target](https://en.wikipedia.org/wiki/Helion_Energy)
-[^doe-roadmap]: [DOE Fusion Science & Technology Roadmap 2025](https://www.energy.gov/sites/default/files/2025-10/fusion-s%26t-roadmap-101625.pdf)
-[^kleinman]: [Kleinman Center: Bringing Fusion Energy to the Grid](https://kleinmanenergy.upenn.edu/research/publications/bringing-fusion-energy-to-the-grid-challenges-and-pathways/)
+
+[fia-2025]: https://www.fusionindustryassociation.org/wp-content/uploads/2025/07/2025-Global-Fusion-Industry-Report.pdf
+[ember-h1]: https://ember-energy.org/latest-insights/global-electricity-mid-year-insights-2025/
