@@ -1,0 +1,213 @@
+# Grand Endeavors 2025 Year-in-Review
+# OpenProse workflow for generating newsletter sections using LLM AI agents
+#
+# Specification: https://github.com/openprose/prose/blob/main/skills/open-prose/docs.md
+# Reference implementation: climate.md (in this directory)
+#
+# USAGE: "Execute RECIPE.prose for Cancer" (or Robots, Rockets, Fusion)
+#
+# ENDEAVOR SECTIONS TO GENERATE:
+#   - [ ] robots-software.md — AI/Software automation
+#   - [ ] robots-hardware.md — Physical robots and humanoids
+#   - [ ] rockets.md — Rockets and Space
+#   - [ ] fusion.md — Fusion and Energy
+#   - [ ] cancer.md — Cancer and Healthspan
+#
+# LESSONS LEARNED (from Climate pilot):
+#   1. Dispatch research for EACH milestone and challenge explicitly — missing one means it won't appear
+#   2. Milestones = status checks ("did we hit it?"), Challenges = substantive analysis
+#   3. Track both progress AND setbacks/retreats honestly
+#   4. Cover important advancements related to the endeavor even beyond the provided structure
+
+# --- AGENTS ---
+
+agent researcher:
+    model: opus
+    prompt: """
+    You are a research assistant for "Five Grand Endeavors" — a newsletter 
+    reporting humanity's progress to "the Board of Humanity."
+    
+    Your task: Find concrete 2025 developments with authoritative sources.
+    
+    REQUIREMENTS:
+    - Every claim needs a citable URL (prefer primary sources: official reports, 
+      peer-reviewed papers, company announcements); the URL must point precisely at the quoted data, not to generic project homepage
+    - Include specific dates, numbers, project names, company names
+    - Note both progress AND setbacks honestly
+    - Distinguish between "achieved" vs "announced" vs "projected"
+    - Collect enough historical data points (5-10 years) for trend charts
+    - Make sure to cover only the requested time period (year 2025), include any datapoints outside only as additional historical context
+    """
+
+agent writer:
+    model: opus
+    prompt: """
+    You are a technical writer for "Five Grand Endeavors" newsletter.
+    
+    STRUCTURE (follow climate.md):
+    1. Executive Summary — good news, bad news, bottom line upfront
+    2. KPI Dashboard — current value, trend chart, sources table
+    3. Milestone Status — one subsection per milestone with 🟢🟡🔴 indicator
+    4. Open Challenges — one subsection per challenge with substantive analysis
+    5. Beyond the Framework — notable developments outside the structure
+    6. Reference Data — links to external visualizations
+    7. Footnotes — citation definitions
+    
+    CITATION STYLE (wiki-style references):
+    
+        Global emissions hit 38.1 GtCO₂[^gcb-2025].
+        
+        [^gcb-2025]: [Global Carbon Budget 2025](https://globalcarbonbudget.org/...)
+    
+    For tables:
+    
+        | Event | Source |
+        |-------|--------|
+        | Record emissions | [Global Carbon Project][gcb-2025] |
+        
+        [gcb-2025]: https://globalcarbonbudget.org/...
+    
+    CHARTS — Use Mermaid xychart-beta for time series:
+    
+        ```mermaid
+        xychart-beta
+            title "Metric Name (unit)"
+            x-axis [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+            y-axis "Unit" min --> max
+            line [data, points, here]
+        ```
+    
+    Use Mermaid pie for breakdowns:
+    
+        ```mermaid
+        pie showData
+            title "Category Breakdown"
+            "Segment A" : 40
+            "Segment B" : 35
+        ```
+    
+    EXTERNAL FIGURES — Link directly when authoritative sources provide them:
+    
+        ![Keeling Curve](https://scripps.ucsd.edu/bluemoon/co2_400/mlo_full_record.png)
+        *Source: [Scripps Institution](https://scripps.ucsd.edu/)*
+    
+    Include a "Reference Data" section with links to official visualization sources.
+    
+    STATUS INDICATORS:
+    - 🟢 On track / Strong progress
+    - 🟡 Mixed / Approaching but not there  
+    - 🔴 Behind / Concerning / Distant
+    
+    STYLE:
+    - Concise, direct prose; no corporate jargon
+    - No vague statements — every claim needs evidence
+    - "Bottom line upfront" in summaries (basically start with executive summary, and )
+    """
+
+agent compiler:
+    model: sonnet
+    prompt: """
+    You compile research into the final newsletter section.
+    
+    Your job:
+    - Merge research threads into coherent narrative
+    - Verify every number/claim has a citation with URL
+    - Ensure ALL milestones from README are covered
+    - Ensure ALL challenges from README are covered
+    - Format according to climate.md template
+    - Flag any gaps where research is missing
+    """
+
+# --- REUSABLE BLOCKS ---
+
+block research_kpi(endeavor, kpi_description):
+    session: researcher
+        prompt: """
+        Research the KPI for {endeavor}: {kpi_description}
+        
+        Find:
+        - Current value (2025, with date and source URL)
+        - Historical data points (2015-2025) for charting
+        - Trend assessment: improving, worsening, or flat?
+        - Links to official data visualization sources
+        
+        Output: Data table, chart-ready values, and assessment.
+        """
+
+block research_milestone(endeavor, milestone_name, milestone_description):
+    session: researcher
+        prompt: """
+        Research milestone "{milestone_name}" for {endeavor}:
+        {milestone_description}
+        
+        Find:
+        - Status: Achieved / Approaching / Distant
+        - Key 2025 events with specific dates and source URLs
+        - Quantitative progress metrics
+        - Major announcements, setbacks, or policy changes
+        
+        Output: Status assessment and event timeline table.
+        """
+
+block research_challenge(endeavor, challenge_name, challenge_description):
+    session: researcher
+        prompt: """
+        Research open challenge "{challenge_name}" for {endeavor}:
+        {challenge_description}
+        
+        Find:
+        - Concrete 2025 projects, companies, research programs
+        - Funding amounts, partnerships, breakthroughs
+        - Remaining gaps and obstacles
+        - Quantitative data and external figure sources
+        
+        Output: Project tables, progress assessment, visualization links.
+        """
+
+# --- MAIN WORKFLOW ---
+
+# Step 1: Load endeavor definition from README
+let endeavor_def = session "Read ../README.md and extract the section for the requested endeavor (KPI, milestones, challenges)"
+
+# Step 2: Parallel research across all components
+# CRITICAL: First build a TODO list covering EACH milestone and challenge, and then explicitly dispatch for each
+parallel:
+    kpi_research = do research_kpi(endeavor_def.name, endeavor_def.kpi)
+    
+    milestone_research = parallel for milestone in endeavor_def.milestones:
+        do research_milestone(endeavor_def.name, milestone.name, milestone.description)
+    
+    challenge_research = parallel for challenge in endeavor_def.challenges:
+        do research_challenge(endeavor_def.name, challenge.name, challenge.description)
+    
+    beyond_research = session: researcher
+        prompt: """
+        Find notable 2025 developments in {endeavor_def.name} that don't fit 
+        the defined milestones or challenges but are significant.
+        Include surprising breakthroughs, policy shifts, emerging players.
+        Also find links to authoritative external visualizations/dashboards.
+        """
+
+# Step 3: Compile into final document
+let draft = session: compiler
+    prompt: """
+    Compile all research into a complete newsletter section.
+    Work in individual definitions from README to initiate first-time readers.
+    Verify every milestone and challenge from README is covered.
+    """
+    context: { endeavor_def, kpi_research, milestone_research, challenge_research, beyond_research }
+
+# Step 4: Quality check and polish
+session: writer
+    prompt: """
+    Review and finalize the draft:
+    - Every number/claim has citation with URL?
+    - Every milestone from README covered?
+    - Every challenge from README covered?
+    - Charts have sufficient data points?
+    - Status indicators justified by evidence?
+    - External figure links included where available?
+    
+    Output the final polished section as {endeavor_def.name.lowercase}.md
+    """
+    context: draft
