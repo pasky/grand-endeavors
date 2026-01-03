@@ -121,7 +121,7 @@ This endeavor is unlike the other four, as it is about fixing the past rather th
 *   **"The Ceiling":** Peak warming held below +2°C.
 
 **Major Open Challenges:**
-*   **Decarbonization:** Eliminating emissions across energy, industry, agriculture, and transport within remaining carbon budget.
+*   **Net-Zero Transition:** Balancing carbon flows across energy, industry, agriculture, and transport — through both emissions reduction and enhanced biological/geological uptake.
 *   **Permanent Removal:** Capturing and storing billions of tons of CO₂ per year durably at viable cost.
 *   **Sunlight Management:** Developing and safely governing solar radiation management complementing the other two challenges.
 

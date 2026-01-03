@@ -192,7 +192,7 @@ xychart-beta
 
 ## Open Challenges
 
-### 🟢 Decarbonization — Strong progress
+### 🟢 Net-Zero Transition — Strong progress (emissions side)
 
 #### Renewable Deployment
 
@@ -264,6 +264,55 @@ pie showData
 
 [cop29]: https://unfccc.int/news/cop29-un-climate-conference-agrees-to-triple-finance-to-developing-countries-protecting-lives-and
 [cop29-art6]: https://cop29.az/en/media-hub/news/cop29-achieves-full-operationalisation-of-article-6-of-paris-agreement-unlocks-international-carbon-markets
+
+#### Biological Carbon Uptake (Land Sink)
+
+The "Net-Zero Transition" challenge covers both reducing emissions *and* enhancing biological/geological uptake. While the sections above focus on emissions reduction, the land carbon sink — forests, soils, and agricultural lands — is the other side of the ledger.
+
+| Metric | 2024 Value | Source |
+|--------|------------|--------|
+| Global land sink | **2.3 ± 1.0 GtC/year** (8.4 GtCO₂) | [Global Carbon Budget 2024][gcb-land] |
+| Land-use change emissions | ~4.1 GtCO₂/year (2025 projected) | [Global Carbon Budget 2025][gcb-2025] |
+| Net land contribution | **~4.3 GtCO₂/year sink** | Calculated |
+
+[gcb-land]: https://essd.copernicus.org/articles/17/965/2025/
+
+The land sink absorbed ~26% of human emissions in 2024, but this capacity is under pressure. A [Nature study][nature-sink-decline] published alongside the 2025 Global Carbon Budget found land and ocean sinks are **15% weaker** than they would have been without climate impacts — contributing ~8% to the rise in atmospheric CO₂ since 1960.
+
+[nature-sink-decline]: https://www.nature.com/articles/s41586-025-09802-5
+
+**Regenerative Agriculture**
+
+Corporate and government programs are scaling soil carbon sequestration:
+
+| Program | Scale (2024) | Carbon Impact | Source |
+|---------|--------------|---------------|--------|
+| ADM re:generations™ | 5 million acres, 28,000 farmers | 363,000 tCO₂e sequestered; 1 MtCO₂e reduced vs benchmark | [ADM 2025 Report][adm-regen] |
+| USDA Carbon Dioxide Removal | Multiple pathways (soil, BiCRS, enhanced mineralization) | Research/demonstration phase | [DOE CDR Program][doe-cdr] |
+
+[adm-regen]: https://www.adm.com/globalassets/sustainability/2023-landing/2023-policies-and-reports/adm_regen-ag-report-2025_final.pdf
+[doe-cdr]: https://netl.doe.gov/carbon-management/carbon-dioxide-removal
+
+**Reforestation Potential**
+
+A [2025 Nature Communications study][nature-reforest] revised global reforestation estimates significantly downward after applying sustainability safeguards:
+
+| Scenario | Available Area | Sequestration Potential |
+|----------|----------------|------------------------|
+| Previous estimates | 1,000+ Mha | — |
+| **Revised (with safeguards)** | **6–195 Mha** | 53–2,225 TgCO₂e/year |
+
+[nature-reforest]: https://www.nature.com/articles/s41467-025-59799-8
+
+The study notes "few locations simultaneously achieve multiple objectives" — reforestation competes with food production, biodiversity, and existing land uses.
+
+**2025 Land Sink Recovery**
+
+After two weak years during El Niño (2023–2024), the land sink is projected to recover to **3.2 GtC** in 2025 — aided by reduced global fire emissions and the transition to neutral ENSO conditions[^gcb-2025-land].
+
+[^gcb-2025-land]: [Carbon Brief: Fossil-fuel CO2 emissions to set new record in 2025, as land sink 'recovers'](https://www.carbonbrief.org/analysis-fossil-fuel-co2-emissions-to-set-new-record-in-2025-as-land-sink-recovers/)
+
+**Gap:** While biological uptake is critical (currently ~10 GtCO₂/year from land + ocean combined), scaling it further faces fundamental limits — land competition, climate feedback weakening sinks, and measurement challenges. Industrial CDR (next section) is needed to close the gap.
 
 ---
 
