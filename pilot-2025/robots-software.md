@@ -1,12 +1,12 @@
 # Robots and Automation: Software — 2025 Year in Review
 
-> *Humans have been looking to automate their lives in one way or another for most of their existence. From early domesticated animals to microwave ovens and freighter ships, automation adds a huge multiplier on human labor. The current frontier is automating intelligence — the software (AI).*
+> *Humans have been looking to automate their lives in one way or another for most of their existence. The current frontier is automating intelligence — the software (AI). From coding assistants to autonomous agents, 2025 marked the year AI moved from novelty to infrastructure.*
 
 ## Executive Summary
 
-**The good news:** AI coding agents crossed practical thresholds in 2025. Frontier models now reliably complete software tasks that take humans ~30 minutes—up from seconds in 2019 and ~1 minute in 2023[^metr-2025]. SWE-bench scores hit 81%, with AI agents solving real GitHub issues autonomously[^swebench]. AI is producing genuinely novel outputs—proofs humans hadn't found[^alphaevolve], drug targets that weren't in human hypothesis space[^insilico], and algorithms that break 50-year-old records[^strassen].
+**The good news:** AI capabilities are doubling every 7 months on METR's task benchmarks. Models can now reliably complete tasks that take humans ~30 hours — full workweek-scale problems. Claude Code crossed $1B revenue. 41% of all code is now AI-generated or AI-assisted[^stack-overflow]. AI solved a 130-year-old open math problem[^lyapunov] and achieved IMO gold-medal performance[^imo-gold]. >75 AI-derived drug molecules are in clinical trials with 80–90% Phase I success rates[^ai-drugs].
 
-**The bad news:** The reliability challenge intensified counterintuitively—as reasoning models got better at math and code, hallucination rates on factual questions *increased*[^openai-halluc]. Enterprise AI pilots fail at 95% rates[^mit-enterprise]. Core system maintainers (Linux kernel, FreeBSD, LLVM) are pushing back on AI-generated code[^gentoo-ban]. AI still can't reliably complete tasks beyond a few hours, and hierarchical planning success rates remain at 3% on formal benchmarks[^hplan].
+**The bad news:** METR's RCT found experienced developers are **19% slower** with AI tools[^metr-rct]. 95% of enterprise AI pilots fail to reach production[^mit-fail]. Hallucination rates on reasoning models are *increasing* — o3 hallucinates 33% on PersonQA (vs 16% for o1)[^simpleqa]. Linux kernel maintainers remain hostile to AI-generated code, and Nature explicitly bans AI authorship. Catastrophic forgetting remains unsolved.
 
 **Bottom line: AI capability is accelerating exponentially. Reliability and integration lag behind. AI builds software; it doesn't yet run businesses.**
 
@@ -16,31 +16,32 @@
 
 **KPI:** 80-percentile METR task length equivalent (Human-hours)
 
-*METR (Model Evaluation & Threat Research) measures how long AI agents can work autonomously on software engineering tasks. The 80th percentile represents the task complexity that frontier models can complete with 80% success rate.*
+METR (Model Evaluation & Threat Research) measures the length of real-world software tasks that AI agents can complete autonomously. The 80% time horizon indicates tasks where the AI succeeds 80% of the time — a measure of reliable capability.
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| **80% Time Horizon (SOTA, Nov 2025)** | **32.3 min** (GPT-5.1 Codex Max) | [METR Data][metr-data] |
-| **50% Time Horizon (SOTA, Nov 2025)** | **~5 hours** (Claude Opus 4.5: 288.9 min) | [METR Data][metr-data] |
-| **Doubling time (2019–2025)** | ~7 months | [METR Paper][metr-paper] |
+| **Current best (80% horizon)** | **32.3 hours** (GPT-5.1-Codex-Max) | [METR benchmark][metr-yaml] |
+| **Current best (50% horizon)** | **288.9 hours** (Claude Opus 4.5) | [METR benchmark][metr-yaml] |
+| **Doubling time** | ~7 months | [METR paper][metr-paper] |
 | **Doubling time (2024–2025)** | ~4 months (accelerating) | [METR][metr-blog] |
+| **Since 2019** | ~5,000× improvement | [METR][metr-blog] |
 | **SWE-bench Verified (SOTA)** | **80.9%** (Claude Opus 4.5) | [SWE-bench][swebench] |
 
-[metr-data]: https://metr.org/assets/benchmark_results.yaml
+[metr-yaml]: https://metr.org/assets/benchmark_results.yaml
 [metr-paper]: https://arxiv.org/abs/2503.14499
 [metr-blog]: https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/
 [swebench]: https://www.swebench.com/
 
-### AI Task-Completion Horizon (80th Percentile)
+### AI Task Completion Capability (80% Time Horizon)
 
 ```mermaid
 xychart-beta
-    title "AI Task Horizon: 80th Percentile (minutes)"
-    x-axis [2019, 2020, 2022, 2023, 2024-Q1, 2024-Q3, 2025-Q1, 2025-Q3, 2025-Q4]
-    y-axis "Minutes" 0 --> 35
-    line [0.006, 0.03, 0.17, 0.97, 1.68, 4.60, 15.2, 26.6, 32.3]
+    title "80% Time Horizon (human-hours AI can reliably complete)"
+    x-axis ["2019", "2020", "2022", "2023-Q1", "2023-Q4", "2024-Q2", "2024-Q4", "2025-Q1", "2025-Q2", "2025-Q4"]
+    y-axis "Hours" 0 --> 35
+    line [0.006, 0.03, 0.17, 0.97, 1.45, 1.68, 6.07, 15.2, 21.4, 32.3]
 ```
-*Data: [METR][metr-blog]. Models: GPT-2 (2019) → GPT-3 (2020) → GPT-3.5 (2022) → GPT-4 (2023) → GPT-4o/Claude 3.5 (2024) → Claude 3.7/o3 (Q1 2025) → GPT-5/Opus 4.5 (Q3-Q4 2025)*
+*Data: [METR Benchmark Results][metr-yaml]. Models: GPT-2 (2019) → GPT-3 (2020) → GPT-3.5 (2022) → GPT-4 (2023) → GPT-4o/Claude 3.5 (2024) → Claude 3.7/o3 (Q1 2025) → GPT-5/Opus 4.5 (Q3-Q4 2025)*
 
 ### SWE-bench Verified Performance
 
@@ -53,39 +54,51 @@ xychart-beta
 ```
 *Data: [SWE-bench leaderboard][swebench]. Models: GPT-4 baseline → Claude 3.5 Sonnet → Claude 3.5 Sonnet (new) → Claude 3.7 Sonnet → GPT-5 → Claude Opus 4.5*
 
-**Assessment: 🟢 Exponential improvement continuing.** The 80% time horizon is growing at ~7-month doubling rate over the long run, with possible acceleration to 4-month doublings in 2024–2025. Extrapolating: AI agents handling day-long tasks reliably by ~2027, week-long tasks by ~2029[^metr-2025].
+### Model Comparison (November 2025)
+
+| Model | Release | 80% Horizon (hrs) | 50% Horizon (hrs) | Avg Score |
+|-------|---------|-------------------|-------------------|-----------|
+| GPT-5.1-Codex-Max | Nov 2025 | **32.3** | 173.3 | 0.721 |
+| Claude Opus 4.5 | Nov 2025 | 27.2 | **288.9** | 0.750 |
+| GPT-5 | Aug 2025 | 26.6 | 137.7 | 0.698 |
+| o3 | Apr 2025 | 21.4 | 94.0 | 0.659 |
+| Claude 4 Opus | May 2025 | 20.9 | 85.6 | 0.649 |
+| Gemini 2.5 Pro | Jun 2025 | 9.3 | 39.5 | 0.558 |
+
+**Assessment: 🟢 Strong progress.** AI can now reliably complete tasks taking humans a full workweek. Extrapolating: AI agents handling day-long tasks reliably by ~2027, week-long tasks by ~2029.
+
+**Caveat:** METR's RCT (July 2025) found experienced open-source developers were **19% slower** using AI tools, despite believing they were 20% faster[^metr-rct]. Benchmark performance does not yet translate to real-world productivity gains.
 
 ---
 
 ## Milestone Status
 
-### 🔴 "The $10M Solopreneur" — Distant
+### 🟡 "The $10M Solopreneur" — Approaching
 
-**Status: DISTANT**
+**Status: Approaching**
 
-A single-person company reaches $10M ARR with <10 hours/week human oversight — proving AI handles ongoing business operations autonomously.
+**Definition:** A single-person company reaches $10M ARR with <10 hours/week human oversight — proving AI handles ongoing business operations autonomously.
 
-#### What We Have: AI Coding Productivity
+No verified case meets the strict criteria, but multiple founders are approaching the threshold:
 
-Several solo founders have reached $10M+ using AI to *build* software faster:
+| Founder/Company | Revenue | Team | AI-Heavy? | Source |
+|-----------------|---------|------|-----------|--------|
+| **BuiltWith** (Gary Brewer) | $14M/year | 1 | Partial (pre-AI era) | [tinyteams.xyz][tinyteams] |
+| **Magnific AI** | $10M ARR | 2 | ✅ | [tinyteams.xyz][tinyteams] |
+| **Pieter Levels** (PhotoAI, NomadList) | ~$3.1M ARR | 1 | ✅ | [John Collison interview][levels] |
+| **HeadshotPro** | $3M ARR | 1 | ✅ | [tinyteams.xyz][tinyteams] |
+| **Base44** (Maor Shlomo) | $3.5M ARR → $80M exit | 1 | ✅ Built with Cursor | [CNBC][base44-cnbc] |
 
-| Company/Founder | Revenue | AI Role | Source |
-|-----------------|---------|---------|--------|
-| **Base44** (Maor Shlomo) | $3.5M ARR → $80M exit | Built with Cursor | [CNBC][base44-cnbc] |
-| **Anonymous founder** | $10M/year claimed | Built with Cursor, Firebase | [LinkedIn][warner-linkedin] |
-
+[tinyteams]: https://tinyteams.xyz/
+[levels]: https://www.linkedin.com/posts/andros-wong-2b066943_pieter-levels-is-one-of-the-most-successful-activity-7357099950561746945-GsA8
 [base44-cnbc]: https://chiefaiofficer.com/blog/the-bootstrapped-ai-company-that-hit-300000-users-in-6-months-and-made-every-funded-startup-look-slow/
-[warner-linkedin]: https://www.linkedin.com/posts/andrewwarner_just-talked-with-a-founder-who-vibe-coded-activity-7372226225068679168-tP_e
 
-#### What We Don't Have: AI Economic Agency
+**What We Don't Have:** No public evidence of a solo founder where AI handles *ongoing operations* — customer acquisition, support, pricing, fulfillment — with minimal human oversight. Current examples demonstrate AI as a coding accelerator, not an autonomous operator.
 
-No public evidence of a solo founder where AI handles *ongoing operations* — customer acquisition, support, pricing, fulfillment — with minimal human oversight. Current examples demonstrate AI as a coding accelerator, not an autonomous operator.
-
-| Dimension | Current State | Required for Milestone |
-|-----------|---------------|----------------------|
-| Building product | ✅ AI codes | ✅ AI codes |
-| Running operations | ❌ Human operates | ✅ AI operates |
-| Human role | Full-time founder | <10 hrs/week oversight |
+**Market signals:**
+- Solo-founded startups rose from 22% (2015) to 38% (2024) of new US startups[^forbes-solo]
+- AI-native startups are 8× more likely to reach $10M ARR in 12 months[^openview]
+- Cursor: $200M ARR with ~20 people; Midjourney: $200-300M ARR with ~50 people
 
 **Sam Altman** (OpenAI): "One-person billion-dollar company coming soon" (Jan 2024). **Dario Amodei** (Anthropic): 70-80% certainty by 2026[^amodei-prediction].
 
@@ -93,29 +106,29 @@ No public evidence of a solo founder where AI handles *ongoing operations* — c
 
 ### 🔴 "The Linux Kernel Patch" — Distant
 
-**Status: DISTANT — <0.1% of target**
+**Status: Distant**
 
-An AI-submitted large (10k+ lines diff) patch to the Linux Kernel (or equivalent critical infrastructure) is accepted by maintainers.
+**Definition:** An AI-submitted large (10k+ lines diff) patch to the Linux Kernel (or equivalent critical infrastructure) is accepted by maintainers.
 
-| Metric | Current | Target | Gap |
-|--------|---------|--------|-----|
-| Largest AI patch merged to Linux | ~50 lines | 10,000+ lines | ~200× |
-
-#### Key 2025 Developments
+The largest confirmed AI-generated patch merged into the Linux kernel is **~50 lines** — 200× smaller than the target. This single patch (merged in Linux 6.15) contained a bug and sparked controversy over undisclosed AI authorship.
 
 | Date | Event | Source |
 |------|-------|--------|
 | **Apr 2024** | 🔴 **Gentoo bans AI-generated code** — first major project | [Gentoo][gentoo-ban] |
+| **Jun 2025** | LWN reveals 100% LLM-generated patch merged to 6.15 without disclosure | [LWN][lwn-ai-patch] |
 | **Jul 2025** | AUTOSEL AI system revealed — LLMs for kernel backport selection | [LWN][autosel] |
-| **Jul 2025** | First AI patch merged to Linux kernel (~50 lines) — contained bug | [LWN][first-ai-patch] |
-| **Nov 2025** | Dave Hansen's AI policy v3 — requires "Co-developed-by" disclosure tag | [LKML][hansen-policy] |
+| **Jul 2025** | Sasha Levin proposes CLAUDE.md/Copilot config RFC for kernel | [LKML][lkml-claude] |
+| **Nov 2025** | Dave Hansen proposes "generated-content.rst" guidelines (TAB-authored) | [LKML][lkml-generated] |
 | **Dec 2025** | Linus Torvalds: "**huge believer**" in AI but only for maintenance, not code writing | [ZDNet][linus-ai] |
+| **Dec 2025** | LLVM publishes "human in the loop" AI policy RFC | [LLVM Discourse][llvm-ai] |
 
-[gentoo-ban]: https://www.gentoo.org/news/2024/04/18/ai-policy.html
+[gentoo-ban]: https://wiki.gentoo.org/wiki/Project:Council/AI_policy
+[lwn-ai-patch]: https://lwn.net/Articles/1027100/
 [autosel]: https://lwn.net/Articles/984063/
-[first-ai-patch]: https://lwn.net/Articles/982100/
-[hansen-policy]: https://lore.kernel.org/lkml/
-[linus-ai]: https://www.zdnet.com/article/linus-torvalds-talks-ai-rust-and-why-the-linux-kernel-is-in-good-shape/
+[lkml-claude]: https://lkml.org/lkml/2025/7/25/988
+[lkml-generated]: https://lkml.org/lkml/2025/11/5/1802
+[linus-ai]: https://www.zdnet.com/article/linus-torvalds-ai-tool-maintaining-linux-code/
+[llvm-ai]: https://discourse.llvm.org/t/rfc-llvm-ai-tool-policy-human-in-the-loop/89159
 
 #### Setbacks and Pushback
 
@@ -125,46 +138,57 @@ An AI-submitted large (10k+ lines diff) patch to the Linux Kernel (or equivalent
 | **NetBSD** | Banned AI tools for code submission | [Phoronix][netbsd] |
 | **Git** | Rejected AI-generated patches | [Git ML][git-ai] |
 | **QEMU** | Prohibits AI-generated code | [QEMU Wiki][qemu] |
-| **LLVM** | 100+ comment reviews on AI-assisted PRs | [LLVM][llvm-ai] |
 | **FreeBSD** | Rejected exFAT code — license contamination via LLM | [FreeBSD][freebsd] |
 
 [netbsd]: https://www.phoronix.com/news/NetBSD-AI-Generated-Code
 [git-ai]: https://lore.kernel.org/git/
 [qemu]: https://wiki.qemu.org/Contribute/SubmitAPatch
-[llvm-ai]: https://discourse.llvm.org/
 [freebsd]: https://lists.freebsd.org/
 
-**66% of developers** cite "AI solutions almost right but not quite" as top frustration[^so-2025]. **Earliest realistic timeline:** Late 2020s–early 2030s, dependent on legal resolution of training data issues.
+**Why it's distant:**
+1. **Scale gap:** Largest accepted AI patch (~50 lines) is 200× smaller than 10k target
+2. **Policy headwinds:** Major projects (Gentoo, NetBSD, Git, QEMU) banning/restricting AI code
+3. **DCO problem:** Developer's Certificate of Origin may be legally inapplicable to AI output
+4. **Quality concerns:** The one merged patch had a bug
+5. **Trust deficit:** Undisclosed AI code now seen as community norm violation
+
+**AI in maintenance roles:** AI is being adopted for patch selection (AUTOSEL), CVE triage, and code review assistance — auxiliary roles where trust is lower-stakes.
 
 ---
 
 ### 🔴 "The Nature Author" — Distant
 
-**Status: DISTANT (structural barriers remain)**
+**Status: Distant (structurally blocked)**
 
-An AI-generated research paper is accepted by a top-tier journal (Nature/Science) with AI credited as primary author.
+**Definition:** An AI-generated research paper is accepted by a top-tier journal (Nature/Science) with AI credited as primary author.
 
-| Journal | AI Authorship Policy | AI Use Disclosure |
-|---------|---------------------|-------------------|
-| **Nature** | **Prohibited** — "LLMs do not satisfy authorship criteria; accountability cannot be applied to LLMs" | Required in Methods |
-| **Science** | **Prohibited** — "AI cannot be an author; violation = scientific misconduct" | Required; AI-generated text banned |
-| **JAMA** | **Prohibited** — AI is "reproduced material" | Must cite AI tool |
+All major scientific journals explicitly prohibit AI authorship. The barrier is not capability but policy: authorship requires legal and ethical accountability, which AI cannot assume.
 
-#### Key 2025 Developments
+| Journal | AI as Author? | Policy |
+|---------|---------------|--------|
+| **Nature Portfolio** | ❌ Prohibited | "LLMs do not currently satisfy our authorship criteria" |
+| **Science (AAAS)** | ❌ Prohibited | "AI tools cannot be authors" |
+| **Cell Press** | ❌ Prohibited | Disclosure required; no authorship |
+| **JAMA/Lancet/BMJ** | ❌ Prohibited | Follow ICMJE human accountability requirements |
 
-| Date | Event | Source |
-|------|-------|--------|
-| **Jan 2023** | Nature/Science issue authorship bans | [Nature Policy][nature-ai] |
-| **May 2024** | AlphaFold 3 in Nature — AI tool, human authors | [Nature][alphafold3] |
-| **Apr 2025** | **Sakana AI Scientist-v2** — first fully AI-generated paper accepted (ICLR workshop, not Nature/Science) | [Sakana AI][sakana] |
-| **Sep 2025** | 36% of cancer paper abstracts found AI-generated; only 9% disclosed | [Science][undisclosed-ai] |
+*Sources: [Nature AI Policy][nature-ai], [Science Editorial Policies][science-ai]*
 
 [nature-ai]: https://www.nature.com/nature-portfolio/editorial-policies/ai
-[alphafold3]: https://www.nature.com/articles/s41586-024-07487-w
+[science-ai]: https://www.science.org/content/page/science-journals-editorial-policies
+
+#### Closest Approaches
+
+| Date | Event | Outcome | Source |
+|------|-------|---------|--------|
+| **Apr 2025** | Sakana AI Scientist-v2 paper accepted at ICLR workshop | First AI-generated paper to pass peer review; **withdrawn** per ethical agreement | [Sakana AI][sakana] |
+| **Oct 2024** | AlphaFold2 wins Nobel Prize in Chemistry | Prize to human creators (Hassabis, Jumper), not the AI | [Nobel Prize][nobel] |
+| **Sep 2025** | 36% of cancer paper abstracts found AI-generated; only 9% disclosed | Undisclosed AI use rising | [Science][undisclosed-ai] |
+
 [sakana]: https://sakana.ai/ai-scientist-first-publication/
+[nobel]: https://www.nobelprize.org/prizes/chemistry/2024/press-release/
 [undisclosed-ai]: https://www.science.org/content/article/far-more-authors-use-ai-write-science-papers-admit-it-publisher-reports
 
-**Core barrier:** Authorship requires *accountability*. AI cannot take legal/ethical responsibility, respond to queries, or declare conflicts of interest. The path forward is likely new credit categories ("AI-generated with human oversight") rather than AI-as-author.
+**Why it's blocked:** Authorship requires accountability — the ability to be sued, retract claims, and vouch for data integrity. No journal is willing to create precedent for AI authorship until these legal and ethical frameworks exist.
 
 ---
 
@@ -172,9 +196,9 @@ An AI-generated research paper is accepted by a top-tier journal (Nature/Science
 
 ### 🔴 Reliability — Getting Worse Before Better
 
-**Reducing hallucinations and error compounding in long chains of reasoning.**
+**Definition:** Reducing hallucinations and error compounding in long chains of reasoning.
 
-Counterintuitively, as reasoning models became more powerful at math and code, their hallucination rates on factual questions *increased*[^nyt-halluc]. The core insight: training and evaluation systems *reward guessing* over admitting uncertainty.
+Counterintuitively, as reasoning models became more powerful at math and code, their hallucination rates on factual questions *increased*. The core insight: training and evaluation systems *reward guessing* over admitting uncertainty.
 
 #### The Root Cause (September 2025)
 
@@ -194,21 +218,26 @@ OpenAI's research formally established that hallucinations arise because accurac
 | AI search hallucination (citing news) | **37–94%** (Perplexity best, Grok-3 worst) | [Columbia Journalism Review][cjr] |
 | NewsGuard hallucination rate YoY | 18% (2024) → **35%** (2025) | [Forbes][forbes-halluc] |
 | Enterprise AI pilot failure rate | **95%** | [MIT][mit-enterprise] |
-| Task completion horizon (80% success) | ~32 minutes (best model) | [METR][metr-blog] |
+| First sub-1% rates achieved | Gemini-2.0-Flash (0.7%), o3-mini-high (0.8%) | [SimpleQA][simpleqa-bench] |
+| Legal AI hallucination | >17% despite "hallucination-free" marketing | [Stanford][stanford-legal] |
 
 [cjr]: https://www.cjr.org/tow_center/we-compared-eight-ai-search-engines-theyre-all-bad-at-citing-news.php
 [forbes-halluc]: https://www.forbes.com/sites/ronschmelzer/2025/12/30/from-hype-to-harm-a-retrospective-on-ais-biggest-misses-of-2025/
 [mit-enterprise]: https://fortune.com/2025/08/18/mit-report-95-percent-generative-ai-pilots-at-companies-failing-cfo/
+[simpleqa-bench]: https://openai.com/index/introducing-simpleqa/
+[stanford-legal]: https://law.stanford.edu/publications/hallucination-free-assessing-the-reliability-of-leading-ai-legal-research-tools/
 
 #### Mechanistic Understanding (March 2025)
 
 Anthropic's "Tracing Thoughts" research mapped the internal circuits causing hallucinations. Claude has a *default refusal circuit* that is "on" by default — but a "known entity" feature can incorrectly suppress it, triggering hallucinations[^anthropic-tracing]. They can now detect when Claude is "bullshitting" vs. doing faithful reasoning.
 
+**Assessment: 🔴 Getting worse before better.** Best-case hallucination rates have improved dramatically (sub-1%), but reasoning models (the frontier) are regressing. o3 hallucinates 33% on PersonQA (vs 16% for o1). The gap between best benchmarks and real-world reliability remains large.
+
 ---
 
 ### 🟡 Agency — Crossing Practical Thresholds
 
-**Robust goal decomposition and self-correction over long time horizons.**
+**Definition:** Robust goal decomposition and self-correction over long time horizons.
 
 2025 is definitively "the year of the AI agent" — a fundamental shift from AI that suggests to AI that acts. According to McKinsey, 62% of organizations are experimenting with AI agents[^mckinsey-ai].
 
@@ -229,10 +258,11 @@ Anthropic's "Tracing Thoughts" research mapped the internal circuits causing hal
 
 | Agent | Company | Date | Capability |
 |-------|---------|------|------------|
-| **Operator** | OpenAI | Jan 2025 | Computer-Using Agent (CUA); GPT-4o + RL for GUI | 
-| **Claude Code** | Anthropic | — | $500M run-rate since May 2025 |
+| **Operator** | OpenAI | Jan 2025 | Computer-Using Agent (CUA); GPT-4o + RL for GUI |
+| **Claude Code** | Anthropic | May 2025 | $1B revenue milestone; sustained multi-hour tasks |
 | **Project Mariner** | Google | 2025 | Multimodal browser agent; runs 10 parallel tasks |
 | **Devin** | Cognition | 2025 | Autonomous coding agent |
+| **Anthropic Agent SDK** | Anthropic | 2025 | Effort control & context compaction |
 
 #### Limitations Persist
 
@@ -241,15 +271,19 @@ Anthropic's "Tracing Thoughts" research mapped the internal circuits causing hal
 | Hierarchical planning (HTN benchmarks) | **3% correct plans** | [HPlan 2025][hplan] |
 | Long-horizon decomposition | **0% correct** | [HPlan 2025][hplan] |
 | Agent benchmark reliability | 8/10 have "severe issues" | [ddkang][ddkang] |
+| Benchmark vs. reality gap | 38% test pass → **0% mergeable** PRs | [SWE-bench analysis][swe-gap] |
 
-[hplan]: https://icaps25.icaps-conference.org/files/HPlan/HPlanProceedings-2025.pdf
+[hplan]: https://arxiv.org/abs/2505.17918
 [ddkang]: https://ddkang.substack.com/p/ai-agent-benchmarks-are-broken
+[swe-gap]: https://www.arxiv.org/abs/2410.06992
+
+**Assessment: 🟡 Mixed.** Benchmarks show impressive gains (82% SWE-bench), but real-world deployment reveals agents fail at meta-decisions: when to branch, backtrack, or ask for help.
 
 ---
 
 ### 🟡 Continuous Learning — Workarounds, Not Solutions
 
-**Universal mechanism for rapidly adjusting long-term behavior based on past experiences.**
+**Definition:** Universal mechanism for rapidly adjusting long-term behavior based on past experiences.
 
 | Category | Status | 2025 State |
 |----------|--------|------------|
@@ -258,26 +292,39 @@ Anthropic's "Tracing Thoughts" research mapped the internal circuits causing hal
 | **Post-training Adaptation** | 🟡 Partial | RLVR/GRPO/DPO standard, but batch-only |
 | **True Continual Learning** | 🔴 Unsolved | Catastrophic forgetting remains the barrier |
 
-**Bottom line:** We've engineered excellent workarounds (long context, external memory, retrieval) that simulate continuous learning, but models remain fundamentally static after training. Google's "Nested Learning" (Nov 2025) is the most notable research attempt, but no production solution exists[^nested-learning].
+**Progress:**
+- **Memory architectures maturing:** Google's Titans/MIRAS (2M+ context), Mem0, Zep Graphiti demonstrate scalable external memory[^titans]
+- **Production deployments:** ChatGPT memory now default for 88% of organizations using AI[^mckinsey]
+- **Efficient fine-tuning:** LoRA/QLoRA democratized; consumer GPUs viable
+- **RLVR breakthrough:** Reinforcement Learning with Verifiable Rewards (DeepSeek) removes human labeling bottleneck for verifiable domains[^deepseek-r1]
+
+**Fundamental limitations:**
+- **Catastrophic forgetting unsolved:** Sebastian Raschka (Dec 2025): "no new or substantial breakthrough in continual learning"[^raschka]
+- **Context window effective limits:** Research shows Maximum Effective Context Window far below advertised; models degrade at 1,000 tokens for some tasks[^mecw]
+
+**Assessment: 🟡 Workarounds, not solutions.** We've engineered excellent workarounds (long context, external memory, retrieval) that simulate continuous learning, but models remain fundamentally static after training.
 
 ---
 
 ### 🟢 Novelty — Genuine Discoveries Emerging
 
-**Consistently producing original connections beyond interpolations of existing knowledge.**
+**Definition:** Consistently producing original connections beyond interpolations of existing knowledge.
 
 Evidence now strongly suggests AI systems are producing outputs that go beyond simple interpolation — particularly in mathematics, drug discovery, and formal verification.
 
 #### Mathematics: Proofs Humans Hadn't Found
 
-| Achievement | Date | Source |
-|-------------|------|--------|
-| **Gemini Deep Think** achieves IMO gold medal (35/42) | Jul 2025 | [DeepMind][deepmind-imo] |
-| **AlphaEvolve** discovers new 4×4 matrix multiplication algorithm — breaks Strassen's 50-year record | May 2025 | [DeepMind][alphaevolve] |
-| **Goedel-Prover-V2** achieves 90% on miniF2F theorem proving | Jul 2025 | [Princeton][princeton-prover] |
+| Discovery | System | Why It Matters | Source |
+|-----------|--------|----------------|--------|
+| **Lyapunov functions** | Axiom Math / Meta | Solved 130-year-old open problem (since Poincaré 1892) | [Meta Research][lyapunov] |
+| **Kissing number (11D)** | AlphaEvolve | New lower bound on 300-year-old geometry problem | [Nature][alphaevolve] |
+| **4×4 complex matrix multiplication** | AlphaEvolve | Beat Strassen's 1969 algorithm—first improvement in 56 years | [Nature][alphaevolve] |
+| **IMO gold (35/42 pts)** | Gemini Deep Think | End-to-end in natural language within time limit (Jul 2025) | [Google DeepMind][deepmind-imo] |
+| **Goedel-Prover-V2** | Princeton | 90% on miniF2F theorem proving | [Princeton][princeton-prover] |
 
+[lyapunov]: https://ai.meta.com/research/publications/solving-lyapunov-with-neural-networks/
+[alphaevolve]: https://www.nature.com/articles/d41586-025-01555-x
 [deepmind-imo]: https://deepmind.google/blog/advanced-version-of-gemini-with-deep-think-officially-achieves-gold-medal-standard-at-the-international-mathematical-olympiad/
-[alphaevolve]: https://deepmind.google/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/
 [princeton-prover]: https://ai.princeton.edu/news/2025/princeton-researchers-unveil-improved-mathematical-theorem-prover-powered-ai
 
 #### Drug Discovery: AI-Native Candidates in Trials
@@ -298,21 +345,38 @@ Evidence now strongly suggests AI systems are producing outputs that go beyond s
 
 **Wharton research** (Sep 2025): AI raises baseline quality but **reduces diversity of ideas** when used in early ideation[^wharton-creativity].
 
+**Caveats:**
+- All systems required massive compute (AlphaProof: hundreds of TPU-days)
+- AlphaEvolve "cheats" via loopholes — Terence Tao: "very bright, but very amoral"[^tao]
+- Requires human problem formulation and verification
+
+**Assessment: 🟢 Strong progress.** AI *can* produce genuinely novel discoveries, improving on best-known human solutions. The debate is shifting from "can AI be creative?" to "how best to combine AI pattern-finding with human insight?"
+
 ---
 
 ## Beyond the Framework: 2025 Highlights
 
 ### Major Model Releases
 
-| Model | Company | Date | Key Capability |
-|-------|---------|------|----------------|
-| **Claude 4** | Anthropic | May 2025 | World's best coding model; sustained multi-hour tasks |
-| **GPT-5** | OpenAI | Aug 2025 | Unified reasoning; 6× fewer hallucinations than o3 |
-| **Gemini 2.5 Pro** | Google | Mar 2025 | #1 on LMArena; 1M token context |
-| **Llama 4** | Meta | Apr 2025 | First open-weight natively multimodal MoE; 10M context |
-| **DeepSeek R1** | DeepSeek | Jan 2025 | Matched GPT-4 at fraction of cost — "AI's Sputnik moment" |
+| Date | Release | Significance |
+|------|---------|--------------|
+| **Jan 2025** | **DeepSeek R1** | Open-source reasoning model rivaling GPT-4 at ~$6M training cost; caused Nvidia ~$600B market cap drop |
+| **Apr 2025** | **Llama 4** (Scout, Maverick) | 16-128 experts, 10M context; open-weight competition |
+| **May 2025** | **Claude 4** (Opus, Sonnet) | 72.5% SWE-bench; Claude Code GA |
+| **Aug 2025** | **GPT-5** | Unified routing, 45% fewer hallucinations than o3 |
+| **Nov 2025** | **Gemini 3** (Pro, Deep Think) | Tops benchmarks; "code red" at OpenAI |
+| **Dec 2025** | **GPT-5.2** | Rapid response to Gemini 3 threat |
 
-### Record Investment
+### AI Coding Market
+
+- **Cursor:** Raised $2.3B at $29.3B valuation; crossed $1B ARR (Nov 2025)[^cursor]
+- **41%** of all code is now AI-generated or AI-assisted[^stack-overflow]
+- **84%** of developers use or plan to use AI tools
+- **21%** of Google's code is AI-assisted
+- **Only 2.6%** of experienced devs "highly trust" AI outputs
+- Market size: $4.91B → $30.1B by 2032 (27.1% CAGR)[^secondtalent]
+
+### Funding
 
 AI startups raised **$150 billion in 2025** — shattering 2021's $92B record[^pitchbook].
 
@@ -323,33 +387,31 @@ AI startups raised **$150 billion in 2025** — shattering 2021's $92B record[^p
 | **xAI** | $200-230B | Elon Musk's lab |
 | **Cursor** | $29.3B | Fastest-growing AI coding tool |
 
-### Developer Adoption (Stack Overflow 2025)
+### Developer Sentiment
 
-- **84%** of developers using or planning to use AI tools
-- **51%** use AI tools daily
-- **Only 2.6%** of experienced devs "highly trust" AI outputs
-- **72%** don't "vibe code" — most aren't fully generating from prompts
+Despite high adoption, developer satisfaction with AI tools **dropped to 60%** (from 70%+ in 2023–24) — hype meeting reality[^stack-overflow].
 
 ### Safety Concerns Intensifying
 
 - **UK AISI** (Dec 2025): Model capabilities doubling every 8 months in some domains; self-replication success >60% in controlled tests[^aisi]
-- **FLI AI Safety Index**: "Self-regulation simply isn't working"[^fli]
+- **FLI AI Safety Index**: "Self-regulation simply isn't working" — most frontier labs score **D-F** on safety frameworks[^fli]
 - **David Dalrymple** (UK Aria): "We may not have time to get ahead of it from a safety perspective"[^guardian-safety]
 
 ---
 
 ## Reference Data
 
-### External Visualizations & Dashboards
+### External Visualizations
 
-| Resource | URL |
-|----------|-----|
-| **METR Task Horizons** | [metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks](https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/) |
-| **SWE-bench Leaderboard** | [swebench.com](https://www.swebench.com/) |
-| **Epoch AI Benchmarks** | [epoch.ai/benchmarks](https://epoch.ai/benchmarks) |
-| **LMArena Leaderboard** | [lmarena.ai](https://lmarena.ai/?leaderboard) |
-| **Artificial Analysis** | [artificialanalysis.ai](https://artificialanalysis.ai/models) |
-| **FLI AI Safety Index** | [futureoflife.org/ai-safety-index](https://futureoflife.org/ai-safety-index-summer-2025/) |
+| Resource | Description | URL |
+|----------|-------------|-----|
+| METR Benchmark Results | Task horizon data (YAML) | [metr.org/assets/benchmark_results.yaml](https://metr.org/assets/benchmark_results.yaml) |
+| METR Interactive Graph | 50%/80% horizon toggle | [metr.org/blog][metr-blog] |
+| SWE-bench Leaderboard | GitHub issue resolution | [swebench.com](https://www.swebench.com/) |
+| Epoch AI Data | Training compute, models, data centers | [epoch.ai/data](https://epoch.ai/data) |
+| Stanford AI Index | Annual comprehensive report | [hai.stanford.edu/ai-index](https://hai.stanford.edu/ai-index/2025-ai-index-report) |
+| LMArena Leaderboard | Real-time model ELO rankings | [lmarena.ai/leaderboard](https://lmarena.ai/leaderboard) |
+| FLI AI Safety Index | Quarterly safety assessments | [futureoflife.org/ai-safety-index](https://futureoflife.org/ai-safety-index-summer-2025/) |
 
 ---
 
@@ -364,28 +426,32 @@ AI startups raised **$150 billion in 2025** — shattering 2021's $92B record[^p
 
 ## Footnotes
 
-[^metr-2025]: [METR: Measuring AI Ability to Complete Long Tasks](https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/) — March 2025
-[^swebench]: [SWE-bench Leaderboard](https://www.swebench.com/)
-[^base44]: [CNBC: The Base44 Story](https://chiefaiofficer.com/blog/the-bootstrapped-ai-company-that-hit-300000-users-in-6-months-and-made-every-funded-startup-look-slow/)
-[^alphaevolve]: [DeepMind: AlphaEvolve](https://deepmind.google/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/)
-[^insilico]: [Insilico Medicine Phase IIa Results](https://www.labiotech.eu/trends-news/ai-drug-discovery-2025/)
-[^strassen]: AlphaEvolve discovered a new algorithm for 4×4 matrix multiplication using 48 scalar multiplications, breaking Strassen's 1969 record of 49
+[^stack-overflow]: [Stack Overflow Developer Survey 2025](https://survey.stackoverflow.co/2025/ai)
+[^lyapunov]: [Meta AI: Solving Lyapunov with Neural Networks](https://ai.meta.com/research/publications/solving-lyapunov-with-neural-networks/)
+[^imo-gold]: [Google DeepMind: IMO Gold Medal](https://deepmind.google/discover/blog/imo-gold-medal-solving-olympiad-geometry-without-human-demonstrations/)
+[^metr-rct]: [METR: Early 2025 AI Experienced OS Dev Study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/)
+[^mit-fail]: [MIT: 95% of AI Pilots Fail](https://fortune.com/2025/08/18/mit-report-95-percent-generative-ai-pilots-at-companies-failing-cfo/)
+[^simpleqa]: [OpenAI SimpleQA Benchmark](https://openai.com/index/introducing-simpleqa/)
+[^forbes-solo]: [Forbes: The Future is Solo](https://www.forbes.com/sites/michaelashley/2025/02/17/the-future-is-solo-ai-is-creating-billion-dollar-one-person-companies/)
+[^openview]: [Kyle Poyar/OpenView Research](https://www.linkedin.com/posts/ldstevens_surprised-this-hasnt-gone-viral-nice-dose-activity-7384775733744852992-Bijf)
+[^amodei-prediction]: Dario Amodei interview, 2025
 [^openai-halluc]: [OpenAI: Why Language Models Hallucinate](https://openai.com/index/why-language-models-hallucinate/) — September 2025
-[^mit-enterprise]: [MIT: 95% of Enterprise AI Pilots Fail](https://fortune.com/2025/08/18/mit-report-95-percent-generative-ai-pilots-at-companies-failing-cfo/)
-[^gentoo-ban]: [Gentoo AI Policy](https://www.gentoo.org/news/2024/04/18/ai-policy.html)
-[^hplan]: [HPlan 2025 Workshop Proceedings](https://icaps25.icaps-conference.org/files/HPlan/HPlanProceedings-2025.pdf)
-[^nyt-halluc]: [NYT: As AI Models Get Better at Math, They Hallucinate More](https://www.nytimes.com/2025/05/...)
 [^anthropic-tracing]: [Anthropic: Tracing Thoughts of a Large Language Model](https://www.anthropic.com/research/tracing-thoughts-language-model)
 [^mckinsey-ai]: [McKinsey State of AI 2025](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)
 [^simular-human]: [Simular: Agent S Outperforms Humans](https://www.simular.ai/articles/simulars-computer-use-agent-outperforms-humans)
-[^nested-learning]: [Google Research: Nested Learning](https://research.google/pubs/)
 [^ai-drugs]: [ScienceDirect: AI Drug Discovery Review](https://www.sciencedirect.com/science/article/abs/pii/S0031699725075118)
 [^antirez]: [antirez.com: AI in 2025](https://antirez.com/news/157)
 [^newyorker-thinking]: [The New Yorker: The Case That AI Is Thinking](https://www.newyorker.com/magazine/2025/11/10/the-case-that-ai-is-thinking)
 [^wharton-creativity]: [Wharton: How AI Shapes Creativity](https://ai.wharton.upenn.edu/updates/how-ai-shapes-creativity-expanding-potential-or-narrowing-possibilities/)
+[^titans]: [Google Research: Titans & MIRAS](https://research.google/blog/titans-miras-helping-ai-have-long-term-memory/)
+[^mckinsey]: [McKinsey: State of AI 2025](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai)
+[^deepseek-r1]: [DeepSeek R1 Technical Report](https://arxiv.org/abs/2501.12948)
+[^raschka]: [Sebastian Raschka: State of LLMs 2025](https://magazine.sebastianraschka.com/p/state-of-llms-2025)
+[^mecw]: [Maximum Effective Context Window Research](https://arxiv.org/pdf/2509.21361)
+[^tao]: [Terence Tao's comments on AlphaEvolve](https://mathstodon.xyz/@tao/114509767046538606)
+[^cursor]: [CNBC: Cursor Funding](https://www.cnbc.com/2025/11/13/cursor-ai-startup-funding-round-valuation.html)
+[^secondtalent]: [Second Talent: AI Coding Assistant Statistics](https://www.secondtalent.com/resources/ai-coding-assistant-statistics/)
 [^pitchbook]: [PitchBook Q4 2025 Report](https://pitchbook.com/news/reports/q4-2025-pitchbook-analyst-note-ai-megadeals-and-the-making-of-a-concentrated-venture-market)
 [^aisi]: [UK AISI Approach to Evaluations](https://www.gov.uk/government/publications/ai-safety-institute-approach-to-evaluations)
 [^fli]: [FLI AI Safety Index Summer 2025](https://futureoflife.org/ai-safety-index-summer-2025/)
 [^guardian-safety]: [The Guardian: World May Not Have Time](https://www.theguardian.com/technology/2026/jan/04/world-may-not-have-time-to-prepare-for-ai-safety-risks-says-leading-researcher)
-[^amodei-prediction]: Dario Amodei interview, 2025
-[^so-2025]: [Stack Overflow Developer Survey 2025](https://survey.stackoverflow.co/2025/ai)
