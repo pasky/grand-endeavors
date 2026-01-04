@@ -84,7 +84,7 @@ We are in a golden age of spaceflight. SpaceX completed 167 orbital launches —
 
 ---
 
-## Cancer and Healthspan
+## Health and Lifespan
 
 *Some people long for immortality, others would just prefer not to die yet. The biggest symbol for fixing this is our journey to cure cancer, but the fight against other diseases and perfected early diagnostics are just as important.*
 
@@ -101,7 +101,7 @@ We are in a golden age of spaceflight. SpaceX completed 167 orbital launches —
 | **Unbroken Mind** (dementia <5% after 80) | 🔴 Distant — Current prevalence 17–24% (4–5× target); anti-amyloid therapies slow but don't stop decline |
 | **The Long Middle Age** (≥10 years biological age reversal) | 🟡 Approaching — Best results 2–4 years; OpenAI/Retro >50× reprogramming approach promising |
 
-📄 **[Full Report: Cancer and Healthspan](cancer.md)**
+📄 **[Full Report: Health and Lifespan](health.md)**
 
 ---
 
@@ -133,7 +133,7 @@ The clean energy transition is accelerating faster than predicted. Renewable dep
 | Robots (Hardware) | Largest fleet output | 100K+ totes | 🟡 |
 | Rockets and Space | Cost to LEO | $1,500/kg | 🟢 |
 | Fusion and Energy | Fusion gain | Q=4.13 | 🟡 |
-| Cancer and Healthspan | Global HALE | 61.9 years | 🔴 |
+| Health and Lifespan | Global HALE | 61.9 years | 🔴 |
 | Climate and Environment | Atmospheric CO₂ | 426.5 ppm (+3.5/yr) | 🟡 |
 
 ---

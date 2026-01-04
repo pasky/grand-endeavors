@@ -1,4 +1,4 @@
-# Cancer and Healthspan — 2025 Year in Review
+# Health and Lifespan — 2025 Year in Review
 
 > *Some people long for immortality, others would just prefer not to die (or live a low-quality life) yet. The biggest symbol for fixing this is our journey to cure cancer, but the fight against other diseases such as Alzheimer's, as well as perfected early diagnostics, are just as important. And to achieve not just plain longevity, but long healthy lifespan, eventually we need to move further — to evolve our biology, not just fight off diseases.*
 

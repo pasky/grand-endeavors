@@ -4,14 +4,14 @@
 # Specification: https://github.com/openprose/prose/blob/main/skills/open-prose/prose.md (Amp Code: use subagents as the "Task" tool)
 # Reference implementation: climate.md (in this directory)
 #
-# USAGE: "Execute RECIPE.prose for Cancer" (or Robots, Rockets, Fusion)
+# USAGE: "Execute RECIPE.prose for Health" (or Robots, Rockets, Fusion)
 #
 # ENDEAVOR SECTIONS TO GENERATE:
 #   - [ ] robots-software.md — AI/Software automation
 #   - [ ] robots-hardware.md — Physical robots and humanoids
 #   - [ ] rockets.md — Rockets and Space
 #   - [ ] fusion.md — Fusion and Energy
-#   - [ ] cancer.md — Cancer and Healthspan
+#   - [ ] health.md — Health and Lifespan
 #
 # LESSONS LEARNED (from Climate pilot):
 #   1. Dispatch research for EACH milestone and challenge explicitly — missing one means it won't appear

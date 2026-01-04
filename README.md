@@ -5,7 +5,7 @@ Tracking humanity's progress in five grand endeavors --- our biggest ongoing R&D
 * Robots (and Automation overall)
 * Rockets (and Space overall)
 * Fusion (and Energy overall)
-* Cancer (and Healthspan overall)
+* Health (and Lifespan overall)
 * Climate (and Environment overall)
 
 The initial purpose of this project is using AI to automatically compose a regular trustworthy report to "the Board of Humanity" about major progress in these areas.
@@ -99,7 +99,7 @@ Energy is the key limiting factor of the material world. It does not have to be.
 *   **Deep Geothermal** (most viable mid-term fusion alternative)
     *   Quaise, GA Drilling — millimeter-wave/plasma drilling to 10-20 km
 
-## Cancer and Healthspan
+## Health and Lifespan
 
 Some people long for immortality, others would just prefer not to die (or live a low-quality life) *yet*. The biggest symbol for fixing this is our journey to cure cancer, but the fight against other diseases such as Alzheimer's (or potential pandemics), as well as perfected early diagnostics, are just as important. And to achieve not just plain longevity, but long healthy lifespan, eventually we need to move further — to evolve our biology, not just fight off diseases.
 
