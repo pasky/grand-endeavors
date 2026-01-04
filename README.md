@@ -39,7 +39,7 @@ Humans have been looking to automate their lives in one way or another for most 
 **Milestone Countdown:**
 *   **The Linux Kernel Patch:** An AI-submitted large (10k+ lines diff) patch to the Linux Kernel (or equivalent critical infra) is accepted by maintainers.
 *   **The Nature Author:** An AI-generated research paper is accepted by a top-tier journal (Nature/Science) with AI credited as primary author.
-*   **The $10M Solopreneur:** A single-person company reaches $10M ARR, proving AI capacity for complex economic agency.
+*   **The $10M Solopreneur:** A single-person company reaches $10M ARR with <10 hours/week human oversight.
 
 **Major Open Challenges** (assuming "LLMs are enough" hypothesis)
 *   **Reliability:** Reducing hallucinations and error compounding in long chains of reasoning.
