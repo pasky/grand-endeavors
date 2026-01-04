@@ -1,14 +1,14 @@
 # Cancer and Healthspan — 2025 Year in Review
 
-> *Some people long for immortality, others would just prefer not to die (or live a low-quality life) yet. The biggest symbol for fixing this is our journey to cure cancer, but the fight against other diseases such as Alzheimer's (or potential pandemics), as well as perfected early diagnostics, are just as important. And to achieve not just plain longevity, but long healthy lifespan, eventually we need to move further — to evolve our biology, not just fight off diseases.*
+> *Some people long for immortality, others would just prefer not to die (or live a low-quality life) yet. The biggest symbol for fixing this is our journey to cure cancer, but the fight against other diseases such as Alzheimer's, as well as perfected early diagnostics, are just as important. And to achieve not just plain longevity, but long healthy lifespan, eventually we need to move further — to evolve our biology, not just fight off diseases.*
 
 ## Executive Summary
 
-**The good news:** Multi-cancer early detection is arriving. GRAIL's PATHFINDER 2 trial demonstrated 7× more cancers detected versus standard screening[^grail-pathfinder]. The first FDA-cleared Alzheimer's blood test (Lumipulse G pTau217) brings neurodegeneration diagnostics to routine care[^fda-ptau217]. OpenAI and Retro Biosciences achieved >50× improvement in stem cell reprogramming efficiency[^retro-openai], potentially unlocking cellular rejuvenation at scale. CAR-T therapies are breaking out of oncology into autoimmune diseases, offering potential cures for conditions like lupus.
+**The good news:** 2025 marked a watershed year for early detection and biological age research. The FDA cleared the first blood-based Alzheimer's diagnostic[^fda-alz], GRAIL's PATHFINDER 2 trial showed 7× cancer detection increase when multi-cancer screening is added to standard tests[^grail-pathfinder2], and partial epigenetic reprogramming entered human trials[^retro-trial]. OpenAI and Retro Biosciences achieved **>50× improvement in stem cell reprogramming efficiency**[^retro-openai], potentially unlocking cellular rejuvenation at scale. Anti-amyloid Alzheimer's therapies showed growing benefit over three years[^kisunla-3yr], and mRNA cancer vaccines entered Phase 3 trials with 44% reduction in melanoma recurrence[^mrna-melanoma].
 
-**The bad news:** The fundamentals remain daunting. Metastatic cancer 5-year survival sits at 15.1%[^seer-survival]. Dementia prevalence after age 80 remains ~24%[^dementia-prevalence], far from the 5% target. Unity Biotechnology — a flagship senolytic company — liquidated after insufficient clinical results[^unity-dissolution]. NIH funding was cut 31% in Q1 2025[^nih-cuts], and FDA staff departures exceeded 18%, threatening the approval pipeline. No validated intervention has achieved ≥10-year biological age reversal.
+**The bad news:** We're nowhere close to the big targets. Current 10-year survival for metastatic solid tumors remains 8–35%[^seer-survival] — far from the 80% milestone. Dementia prevalence after age 80 sits at ~17–24%[^dementia-prevalence], not the target 5%. Demonstrated biological age reversal in humans clusters around 2–4 years[^age-reversal], not the 10-year threshold. And global Healthy Life Expectancy (HALE) actually *fell* 1.6 years during the pandemic, erasing a decade of gains[^who-hale].
 
-**Bottom line: Diagnostics are transforming. Therapeutics are struggling. The science of aging is funded like never before, but the path from lab to clinic remains long.**
+**Bottom line: The tools are emerging, but the milestones remain distant.**
 
 ---
 
@@ -16,28 +16,28 @@
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| **Healthy Life Expectancy (HALE)** | **61.9 years** (WHO 2021) | [WHO World Health Statistics 2024][who-hale] |
-| **IHME GBD estimate (2023)** | ~63.2 years | [IHME GBD 2023][ihme-gbd] |
-| **Pre-pandemic HALE (2019)** | 63.5 years | [WHO][who-hale] |
-| **10-year trend** | +0.2 years (net, after COVID recovery) | Calculated |
+| **Global HALE at birth (2021)** | **61.9 years** | [WHO GHO][who-hale] |
+| **Pre-pandemic peak (2019)** | 63.5 years | [WHO][who-hale] |
+| **Pandemic decline** | −1.6 years (rolled back to 2012 levels) | [WHO World Health Statistics 2025][who-whs-2025] |
+| **2000–2019 trend** | +5.4 years (+0.28/year) | [WHO][who-hale] |
 
-[who-hale]: https://www.who.int/data/gho/publications/world-health-statistics
-[ihme-gbd]: https://www.healthdata.org/research-analysis/gbd
+[who-hale]: https://www.who.int/data/gho/data/themes/mortality-and-global-health-estimates/ghe-life-expectancy-and-healthy-life-expectancy
+[who-whs-2025]: https://www.who.int/publications/i/item/9789240110496
 
-**Note:** The [WHO World Health Statistics 2024 report](https://www.who.int/news/item/24-05-2024-covid-19-eliminated-a-decade-of-progress-in-global-level-of-life-expectancy) confirms that COVID-19 wiped out nearly a decade of HALE gains, dropping from 63.5 years (2019) to 61.9 years (2021) — a loss of 1.5 years globally. Life expectancy dropped by 1.8 years over the same period.
+**Note:** WHO publishes population-weighted global HALE, not median country HALE. No official data exists beyond 2021; next update expected 2025/2026.
 
-### Global Healthy Life Expectancy at Birth
+### Global Healthy Life Expectancy
 
 ```mermaid
 xychart-beta
-    title "Global HALE at Birth (years)"
-    x-axis [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
-    y-axis "Years" 61 --> 64
-    line [63.0, 62.8, 63.1, 63.3, 63.5, 62.8, 61.9, 62.9, 63.2]
+    title "Global Healthy Life Expectancy (years)"
+    x-axis [2015, 2016, 2017, 2018, 2019, 2020, 2021]
+    y-axis "HALE (years)" 61 --> 64
+    line [62.3, 62.5, 62.9, 63.2, 63.5, 62.8, 61.9]
 ```
-*Data: [WHO World Health Statistics 2024][who-hale], [IHME Global Burden of Disease][ihme-gbd]*
+*Data: [WHO Global Health Observatory][who-hale]; 2015–2018 interpolated from WHO trend statements*
 
-**Assessment: ⚠️ Recovering from COVID setback.** The pandemic erased nearly a decade of HALE gains in just two years (2020–2021), dropping from 63.5 to 61.9 years. Life expectancy has largely returned to pre-pandemic levels by 2023, but the 2022–2023 values remain estimates pending official WHO confirmation.
+**Assessment: 📉 Worsening (pandemic reversal).** The 2019→2021 drop of 1.6 years erased roughly 10 years of progress. Recovery trajectory unknown pending 2022+ data.
 
 ### Life Expectancy Recovery Indicators (2024–2025)
 
@@ -59,361 +59,374 @@ Since HALE data lags, we track life expectancy (LE) from national statistics off
 
 ## Milestone Status
 
-### 🔴 Milestone 1: Taming Cancer
+### 🔴 Taming Cancer — 80% 10-Year Solid Tumor Survival
 
-**Target:** 80% of all solid tumor cases reach 10-year survival  
 **Status: Distant**
 
-| Metric | Current Value | Target | Gap |
-|--------|---------------|--------|-----|
-| 5-year all-cancer survival | 69% | — | — |
-| 10-year all-cancer survival | ~60% | 80% | **20 percentage points** |
-| Metastatic (distant) 5-year survival | 15.1% | — | — |
+| Metric | Rate | Source |
+|--------|------|--------|
+| **5-year overall (all cancers, US)** | 69% | [ACS Facts & Figures 2025][acs-2025] |
+| **10-year overall (invasive breast)** | 86% | [ACS 2025][acs-2025] |
+| **Stage IV breast (5-year)** | 31% | [SEER][seer] |
+| **Stage IV lung (5-year)** | 8.2% | [SEER][seer] |
+| **Stage IV colorectal (5-year)** | 15.6% | [SEER][seer] |
+| **Pancreatic (5-year)** | 8% | [ACS 2025][acs-2025] |
 
-*Data: [SEER Cancer Statistics Review][seer-survival]*
+[acs-2025]: https://www.cancer.org/content/dam/cancer-org/research/cancer-facts-and-statistics/annual-cancer-facts-and-figures/2025/2025-cancer-facts-and-figures-acs.pdf
+[seer]: https://seer.cancer.gov/statfacts/
 
-[seer-survival]: https://seer.cancer.gov/statfacts/html/all.html
-
-#### Key 2025 Breakthroughs
-
-| Date | Event | Source |
-|------|-------|--------|
-| **Apr 2025** | 🟢 **MSK breakthrough:** 80% of MMRd tumors eliminated with immunotherapy alone (no surgery) | [NEJM][msk-mmrd] |
-| **2024–2025** | 🟢 **50+ FDA oncology approvals in 2024; 46+ in 2025** — record pace | [FDA][fda-2024], [FDA][fda-2025-list] |
-
-[msk-mmrd]: https://www.nejm.org/doi/full/10.1056/NEJMoa2503392
-[fda-2024]: https://www.fda.gov/drugs/novel-drug-approvals-2024
-[fda-2025-list]: https://www.fda.gov/drugs/novel-drug-approvals-2025
-
-**Why the MSK result matters:** This suggests immunotherapy-first approaches may eventually replace surgery for genetically-defined tumor subsets — though MMRd represents only ~15% of colorectal cancers.
-
-#### 2025 FDA Oncology Approvals
-
-The FDA approved 46 novel drugs in 2025[^fda-2025], with particular momentum in antibody-drug conjugates (ADCs) and bispecific antibodies. Key oncology approvals:
-
-| Date | Drug | Indication | Type | Source |
-|------|------|------------|------|--------|
-| **Jan 17, 2025** | Datopotamab deruxtecan (Datroway) | HR+/HER2-low breast cancer | ADC | [FDA][fda-datroway] |
-| **Feb 14, 2025** | Vimseltinib (Romvimza) | Tenosynovial giant cell tumor | CSF1R kinase inhibitor | [FDA][fda-vimseltinib] |
-| **May 8, 2025** | Avutometinib + defactinib (Avmapki Fakzynja) | KRAS-mutated low-grade serous ovarian | First novel/novel oral combination | [FDA][fda-avutometinib] |
-| **Jun 23, 2025** | Datopotamab deruxtecan (expanded) | EGFR-mutated NSCLC | ADC | [FDA][fda-datroway-nsclc] |
-| **Sep 25, 2025** | Imlunestrant (Inluriyo) | ER+/HER2-/ESR1-mutated breast cancer | SERD | [FDA][fda-imlunestrant] |
-| **2025** | Sotorasib + panitumumab | KRAS G12C colorectal cancer | Targeted combo | [FDA][fda-2025-list] |
-| **2025** | Tarlatamab | Small cell lung cancer | DLL3 BiTE | [FDA][fda-2025-list] |
-
-[fda-datroway]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-approves-datopotamab-deruxtecan-dlnk-unresectable-or-metastatic-hr-positive-her2-negative-breast
-[fda-vimseltinib]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-approves-vimseltinib-symptomatic-tenosynovial-giant-cell-tumor
-[fda-avutometinib]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-grants-accelerated-approval-combination-avutometinib-and-defactinib-kras-mutated-recurrent-low
-[fda-imlunestrant]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-approves-imlunestrant-er-positive-her2-negative-esr1-mutated-advanced-or-metastatic-breast
-[fda-datroway-nsclc]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-grants-accelerated-approval-datopotamab-deruxtecan-dlnk-egfr-mutated-non-small-cell-lung-cancer
-
-[^fda-2025]: [Nature Reviews Drug Discovery: 2025 FDA Approvals](https://www.nature.com/articles/d41573-026-00001-z)
-
-#### Setbacks
-
-| Date | Event | Source |
-|------|-------|--------|
-| **2025** | 🔴 **TIGIT program failures** — multiple trials discontinued | Industry reports |
-| **Jan–Mar 2025** | 🔴 **NIH funding cut 31%** — threatens cancer research pipeline | [Science][nih-cuts] |
-| **2025** | 🔴 **Mobocertinib withdrawn** from market | [FDA][fda-oncology] |
-| **2025** | 🔴 **>18% FDA staff departures** — approval pipeline pressured | [Nature Reviews Drug Discovery][fda-2025] |
-
-[nih-cuts]: https://www.science.org/content/article/nih-budget-cuts
-[fda-oncology]: https://www.fda.gov/drugs/resources-information-approved-drugs/oncology-cancer-hematologic-malignancies-approval-notifications
-
-**Why it matters:** Metastatic cancer remains the killer — accounting for ~90% of cancer deaths. The gap between early-stage survival (often >90%) and metastatic survival (15%) represents the central challenge. New ADCs and bispecifics are incrementally improving outcomes, but transformative cures remain elusive.
-
----
-
-### 🟡 Milestone 2: Precise Screening
-
-**Target:** >50% of major NCDs caught pre-symptomatic  
-**Status: Approaching**
-
-```mermaid
-xychart-beta
-    title "FDA-Authorized AI Radiology Devices"
-    x-axis [2020, 2021, 2022, 2023, 2024, 2025]
-    y-axis "Cumulative Devices" 0 --> 900
-    bar [200, 350, 520, 690, 800, 873]
-```
-*Data: FDA AI/ML Medical Device Database*
+**Gap:** Current 10-year solid tumor survival is roughly 50–60% overall; metastatic cases cluster at 8–35% five-year survival. The 80% target requires transformational advances in late-stage treatment.
 
 #### Key 2025 Developments
 
-| Date | Event | Significance | Source |
-|------|-------|--------------|--------|
-| **May 2025** | 🟢 **FDA clears first Alzheimer's blood test** (Lumipulse G pTau217) | 91.7% sensitivity, 97.3% specificity; routine clinical use | [FDA][fda-ptau217] |
-| **Oct 2025** | 🟢 **GRAIL PATHFINDER 2 results**: 7× cancer detection vs standard screening | 40.4% sensitivity, 99.6% specificity | [GRAIL][grail-pathfinder] |
-| **Sep 2025** | 🟢 **Exact Sciences launches Cancerguard MCED** | 64% sensitivity, 97.4% specificity | [Exact Sciences][exact-sciences] |
-| **Mid-2025** | 🟢 **873 AI-enabled radiology devices** FDA-authorized | Cumulative since 2018 | [FDA AI/ML][fda-ai] |
+| Date | Event | Source |
+|------|-------|--------|
+| Jan 16 | Sotorasib + panitumumab approved for KRAS G12C-mutated metastatic CRC | [FDA][fda-oncology] |
+| Jan 17 | Datopotamab deruxtecan (Datroway) approved for HR+/HER2– metastatic breast cancer | [FDA][fda-novel-2025] |
+| Mar 28 | Pluvicto (Lu-177) expanded for earlier mCRPC treatment | [FDA][fda-pluvicto] |
+| Apr 27 | **MSK breakthrough:** MMRd immunotherapy-only trial: ~80% response in various solid tumors, avoiding surgery/chemo | [NEJM][nejm-mmrd] |
+| May 8 | Avutometinib + defactinib — first-ever for KRAS-mutated low-grade serous ovarian cancer | [FDA][fda-avutometinib] |
+| Oct 3 | Discovery of TexPSR pathway explains T-cell exhaustion in cancer immunotherapy | [Nature][nature-texpsr] |
+| Nov 19 | Tarlatamab granted full approval for extensive-stage SCLC | [FDA][fda-oncology] |
 
-[fda-ptau217]: https://www.fda.gov/news-events/press-announcements/alzheimers-blood-test
-[grail-pathfinder]: https://grail.com/clinical-studies/pathfinder/
-[exact-sciences]: https://www.exactsciences.com/
-[fda-ai]: https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-aiml-enabled-medical-devices
+[fda-oncology]: https://www.fda.gov/drugs/resources-information-approved-drugs/oncology-cancerhematologic-malignancies-approval-notifications
+[fda-novel-2025]: https://www.fda.gov/drugs/novel-drug-approvals-fda/novel-drug-approvals-2025
+[fda-pluvicto]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-expands-pluvictos-metastatic-castration-resistant-prostate-cancer-indication
+[nejm-mmrd]: https://www.nejm.org/doi/full/10.1056/NEJMoa2404512
+[fda-avutometinib]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-grants-accelerated-approval-combination-avutometinib-and-defactinib-kras-mutated-recurrent-low
+[nature-texpsr]: https://www.nature.com/articles/s41586-025-09539-1
 
-#### Multi-Cancer Early Detection (MCED) Landscape
+#### 2025 FDA Oncology Approvals
 
-| Test | Sensitivity | Specificity | FDA Status | Source |
-|------|-------------|-------------|------------|--------|
-| GRAIL Galleri | 40.4% (PATHFINDER 2) | 99.6% | Not yet approved | [GRAIL][grail-pathfinder] |
-| Exact Sciences Cancerguard | 64% | 97.4% | Not yet approved | [Exact Sciences][exact-sciences] |
-| Freenome | In development | — | Clinical trials | [Freenome][freenome] |
+The FDA approved **46 novel drugs** in 2025, with ADCs (antibody-drug conjugates) and bispecific antibodies dominating the oncology pipeline:
 
-[freenome]: https://www.freenome.com/
+| Date | Drug | Indication | Type | Source |
+|------|------|------------|------|--------|
+| Jan 17 | Datopotamab deruxtecan (Datroway) | HR+/HER2-low breast cancer | ADC | [FDA][fda-datroway] |
+| Feb 14 | Vimseltinib (Romvimza) | Tenosynovial giant cell tumor | CSF1R kinase inhibitor | [FDA][fda-vimseltinib] |
+| May 8 | Avutometinib + defactinib | KRAS-mutated low-grade serous ovarian | First novel/novel oral combination | [FDA][fda-avutometinib] |
+| Jun 23 | Datopotamab deruxtecan (expanded) | EGFR-mutated NSCLC | ADC | [FDA][fda-datroway-nsclc] |
+| Sep 25 | Imlunestrant (Inluriyo) | ER+/HER2-/ESR1-mutated breast cancer | SERD | [FDA][fda-imlunestrant] |
 
-**Gap:** No MCED test has received FDA approval yet — expected H1 2026. Medicare coverage remains unavailable, limiting access. False positive management and population-level cost-effectiveness are unresolved questions.
+[fda-datroway]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-approves-datopotamab-deruxtecan-dlnk-unresectable-or-metastatic-hr-positive-her2-negative-breast
+[fda-vimseltinib]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-approves-vimseltinib-symptomatic-tenosynovial-giant-cell-tumor
+[fda-datroway-nsclc]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-grants-accelerated-approval-datopotamab-deruxtecan-dlnk-egfr-mutated-non-small-cell-lung-cancer
+[fda-imlunestrant]: https://www.fda.gov/drugs/resources-information-approved-drugs/fda-approves-imlunestrant-er-positive-her2-negative-esr1-mutated-advanced-or-metastatic-breast
+
+#### Setbacks
+
+| Issue | Details | Source |
+|-------|---------|--------|
+| NIH Funding Cuts | 31% decrease in cancer research funding Jan–Mar 2025; FY2026 request 37% below FY2025 | [OncLive][onclive-funding] |
+| Racial disparities | Black patients have 5-year survival rates 4–7% lower than White patients at every stage | [Cancer Network][cancer-network] |
+| TIGIT program failures | Multiple trials discontinued | Industry reports |
+| FDA staff departures | >18% attrition creating approval bottlenecks | [Nature Reviews Drug Discovery][nrdd-fda] |
+
+[onclive-funding]: https://www.onclive.com/view/federal-funding-cuts-hit-cancer-research-despite-public-support
+[cancer-network]: https://www.cancernetwork.com/view/five-year-cancer-survival-rates-lower-among-rural-cancer-populations
+[nrdd-fda]: https://www.nature.com/articles/d41573-026-00001-z
+
+**Why it matters:** Metastatic cancer remains the killer — accounting for ~90% of cancer deaths. The gap between early-stage survival (often >90%) and metastatic survival (15%) represents the central challenge.
 
 ---
 
-### 🔴 Milestone 3: Unbroken Mind
+### 🟡 Precise Screening — >50% NCDs Caught Pre-Symptomatic
 
-**Target:** Dementia prevalence (CDR ≥1) after age 80 falls below 5%  
+**Status: Approaching**
+
+Currently only ~14% of cancers in the US and ~6% in the UK are detected through screening[^screening-rates]. We have effective screening for only 4–5 cancer types. However, 2025 saw breakthrough momentum.
+
+#### Key 2025 Developments
+
+| Date | Event | Source |
+|------|-------|--------|
+| May 2025 | **FDA clears first Alzheimer's blood test** — Lumipulse pTau217/Aβ1-42 (91.7% sensitivity, 97.3% specificity) | [FDA][fda-alz-blood] |
+| Jun 2, 2025 | Clairity Breast FDA De Novo — first AI-powered mammogram-based 5-year breast cancer risk prediction | [BCRF][bcrf-clairity] |
+| Jun 18, 2025 | PATHFINDER 2 top-line results — substantially higher PPV than original; 99.5% specificity | [GRAIL][grail-pathfinder2] |
+| Jul 29, 2025 | Alzheimer's Assoc. BBM Clinical Practice Guideline — first evidence-based guideline for blood biomarker tests | [AAIC][aaic-guideline] |
+| Sept 2025 | Exact Sciences Cancerguard commercial launch — 97.4% specificity; detects 80%+ of cancer diagnoses | [Exact Sciences][exact-cancerguard] |
+| Oct 13, 2025 | Roche Elecsys pTau181 FDA clearance — first blood test for primary care to *rule out* Alzheimer's | [Alz.org][alz-roche] |
+| Oct 17, 2025 | PATHFINDER 2 full results at ESMO — 7× cancer detection increase; 53.5% early-stage; 73.7% sensitivity for 12 deadliest cancers | [GRAIL][grail-esmo] |
+
+[fda-alz-blood]: https://www.fda.gov/news-events/press-announcements/fda-clears-first-blood-test-used-diagnosing-alzheimers-disease
+[bcrf-clairity]: https://www.bcrf.org/blog/clairity-breast-ai-artificial-intelligence-mammogram-approved/
+[grail-pathfinder2]: https://grail.com/press-releases/grail-announces-positive-top-line-results-from-the-galleri%e2%93%a1-pathfinder-2-registrational-study/
+[aaic-guideline]: https://aaic.alz.org/releases-2025/clinical-practice-guideline-blood-based-biomarkers.asp
+[exact-cancerguard]: https://www.exactsciences.com/cancer-testing/cancerguard-mced-providers
+[alz-roche]: https://www.alz.org/news/2025/fda-clearance-blood-test-primary-care-rule-out-alzheimers-related-amyloid-pathology
+[grail-esmo]: https://grail.com/press-releases/grail-pathfinder-2-results-show-galleri-multi-cancer-early-detection-blood-test-increased-cancer-detection-more-than-seven-fold-when-added-to-uspstf-a-and-b-recommended-screenings/
+
+| Metric | Value | Source |
+|--------|-------|--------|
+| FDA-cleared AI radiology devices | 873 (115 added in 2025) | [FDA][fda-ai-devices] |
+| NHS-Galleri trial enrollment | 140,000; results expected mid-2026 | [NHS NDRS][nhs-galleri] |
+| European radiologists using AI (2024) | 48% (up from 20% in 2018) | Insights Imaging |
+
+[fda-ai-devices]: https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-enabled-medical-devices
+[nhs-galleri]: https://digital.nhs.uk/ndrs/our-work/ncras-partnerships/grail
+
+**Gap:** MCED tests approaching FDA PMA (expected H1 2026). Cardiovascular and metabolic pre-symptomatic detection still lag behind cancer and Alzheimer's.
+
+---
+
+### 🔴 Unbroken Mind — Dementia Prevalence <5% After Age 80
+
 **Status: Distant**
 
-| Metric | Current Value | Target | Gap |
-|--------|---------------|--------|-----|
-| Dementia prevalence (ages 80–89) | ~24% | <5% | **~5× reduction needed** |
-| Americans with Alzheimer's (age 65+) | 7.2 million (2025) | — | +17% projected by 2030 |
-| Age-specific prevalence trend | ↓67% over 40 years | — | Slow progress |
+| Age Group | Dementia Prevalence | Source |
+|-----------|---------------------|--------|
+| 80–89 years (US) | ~24% | [ADAMS Study][adams] |
+| ≥90 years (US) | ~37% | [ADAMS Study][adams] |
+| 80+ (UK) | ~17% (1 in 6) | [NHS UK][nhs-dementia] |
+| 65+ (Europe) | 4.5–22.7% (varies by country) | [SHARE 2022 Study][share-2022] |
 
-*Data: [Alzheimer's Association 2025 Facts and Figures][alz-facts]*
+[adams]: https://pmc.ncbi.nlm.nih.gov/articles/PMC2705925/
+[nhs-dementia]: https://www.nhs.uk/conditions/alzheimers-disease/
+[share-2022]: https://pmc.ncbi.nlm.nih.gov/articles/PMC12019132/
 
-[alz-facts]: https://www.alz.org/alzheimers-dementia/facts-figures
+Current prevalence is **4–5× the target**. Age-standardized dementia incidence has declined ~20% in high-income countries over 2–3 decades (due to better cardiovascular health and education), but rising population aging means absolute numbers are growing[^lancet-dementia].
 
-**Key statistics from 2025 Alzheimer's Association report:**
-- 7.2 million Americans age 65+ live with Alzheimer's dementia (first time exceeding 7 million)
-- Almost two-thirds of Americans with Alzheimer's are women
-- Healthcare costs projected at $384 billion in 2025
-- Nearly 12 million unpaid caregivers provided 19 billion hours of care in 2024
+#### Key 2025 Developments
 
-#### FDA-Approved Disease-Modifying Therapies
+| Date | Event | Source |
+|------|-------|--------|
+| Jan 26 | FDA approves IV maintenance dosing (every 4 weeks) for Leqembi (lecanemab) | [Alz.org][alz-leqembi] |
+| Jul 30 | Kisunla (donanemab) 3-year TRAILBLAZER data: 27% reduced progression risk; CDR-SB benefit of −1.2 at 36 months | [Lilly][lilly-kisunla] |
+| Aug 28 | FDA requires additional earlier MRI monitoring for Leqembi due to 6 fatal ARIA-E cases | [FDA Safety][fda-aria] |
+| Nov 24 | 🔴 Oral semaglutide FAILS Phase 3 evoke/evoke+ trials — no slowing of AD progression | [Alz.org][alz-sema] |
+| Nov 25 | 🔴 J&J posdinemab (anti-tau antibody) FAILS pivotal trial — no efficacy at 2 years | [Science.org][science-tau] |
+| Dec 2025 | CTAD: Lecanemab may delay MCI→moderate AD by 3.5–8.3 years with continued treatment | [Eisai][eisai-ctad] |
 
-| Drug | Approval | Mechanism | Efficacy | Safety | Source |
-|------|----------|-----------|----------|--------|--------|
-| **Lecanemab (Leqembi)** | Jan 2023 (full); Aug 2025 (subQ) | Anti-Aβ | 27% slowing | ARIA 21% | [FDA][leqembi] |
-| **Donanemab (Kisunla)** | Jul 2024 | Anti-Aβ | 22–35% slowing | ARIA 24–30% | [NEJM][donanemab-nejm] |
+[alz-leqembi]: https://www.alz.org/alzheimers-dementia/treatments/lecanemab-leqembi
+[lilly-kisunla]: https://investor.lilly.com/news-releases/news-release-details/lillys-kisunla-donanemab-azbt-showed-growing-benefit-over-three
+[fda-aria]: https://www.fda.gov/drugs/drug-safety-and-availability/fda-recommend-additional-earlier-mri-monitoring-patients-alzheimers-disease-taking-leqembi-lecanemab
+[alz-sema]: https://www.alz.org/news/2025/alzheimers-association-statement-oral-semaglutide-phase-3-topline-data-release
+[science-tau]: https://www.science.org/content/blog-post/alzheimer-s-clinical-trial-results-sadly-running-true-form
+[eisai-ctad]: https://www.eisai.com/news/2025/news202585.html
 
-[leqembi]: https://www.fda.gov/drugs/news-events-human-drugs/fda-approves-subcutaneous-formulation-alzheimers-disease-drug
-[donanemab-nejm]: https://www.nejm.org/doi/full/10.1056/NEJMoa2305274
+#### Prevention Highlight
 
-#### 2025 Developments
+Intensive blood pressure control reduced dementia risk by **15%** (RR 0.85) in 33,995 Chinese adults over 4 years[^bp-dementia].
 
-| Date | Event | Outcome | Source |
-|------|-------|---------|--------|
-| **Aug 2025** | 🟢 **Subcutaneous Leqembi** approved | Enables home administration | [FDA][leqembi] |
-| **Jul 2025** | 🟢 **U.S. POINTER results** | Lifestyle interventions improve cognition | [Alzheimer's Association][pointer] |
-| **2024** | 🟢 **Lancet Commission** | 45% of dementia from 14 modifiable risk factors | [Lancet][lancet-dementia] |
-| **Nov 2025** | 🔴 **Semaglutide fails two Phase 3 AD trials** | No benefit on cognitive endpoints | [Novo Nordisk][semaglutide-ad] |
-| **2025** | 🔴 **J&J posdinemab fails Phase 2** | Anti-tau antibody misses endpoints | [J&J][posdinemab] |
-
-[fda-donanemab]: https://www.fda.gov/drugs/news-events-human-drugs/fda-approves-treatment-adults-alzheimers-disease
-[pointer]: https://www.alz.org/us-pointer
-[lancet-dementia]: https://www.thelancet.com/commissions/dementia-2024
-[semaglutide-ad]: https://www.novonordisk.com/news-and-media/news-and-ir-materials/news-details.html?id=166233
-[posdinemab]: https://www.jnj.com/media-center/press-releases/johnson-johnson-announces-phase-2-results-for-posdinemab
-
-**Why it matters:** We now have two FDA-approved disease-modifying Alzheimer's therapies (lecanemab, donanemab), but both only modestly slow decline (22–35%) in early-stage patients. The failure of semaglutide — despite promising epidemiological signals — underscores how far we are from breakthrough treatments. ARIA (amyloid-related imaging abnormalities) affects 21–30% of patients, requiring careful monitoring.
+**Setbacks:** 6 deaths from brain swelling (ARIA-E) early in Leqembi treatment prompted FDA safety warning. Tau therapy and GLP-1 failures continue to limit treatment options.
 
 ---
 
-### 🟡 Milestone 4: The Long Middle Age
+### 🟡 The Long Middle Age — Reverse ≥10 Years Biological Age
 
-**Target:** Validated interventions reverse ≥10 years of biological age  
-**Status: Approaching (lab only)**
+**Status: Approaching (but not achieved)**
 
-| Metric | Best Demonstrated | Target | Gap |
-|--------|-------------------|--------|-----|
-| Biological age reversal (human trials) | 1.5–3.2 years | ≥10 years | **3–7× improvement needed** |
-| Reprogramming efficiency (lab) | >50× improvement | Clinical translation | Pre-clinical |
+| Intervention | Biological Age Reversal | Evidence Level | Source |
+|--------------|------------------------|----------------|--------|
+| TRIIM (rhGH + metformin + DHEA) | 2.5 years (4 clocks) | 9 participants, 2019 | [Aging Cell][triim] |
+| TPE + IVIG (Buck Institute) | 2.6 years | RCT, healthy adults 40–75, 2025 | [Aging Cell][tpe-ivig] |
+| Diet/lifestyle (Fitzgerald) | 3.23 years (Horvath clock) | RCT, 8-week protocol, 2021 | [Aging 2021][fitzgerald] |
+| Rapamycin + Trametinib (mice) | 34.9% lifespan extension (females) | Preclinical, 2025 | [Nature Aging][rapa-tramet] |
 
-#### Validated Human Age Reversal Interventions
+[triim]: https://doi.org/10.18632/aging.102355
+[tpe-ivig]: https://onlinelibrary.wiley.com/doi/full/10.1111/acel.14572
+[fitzgerald]: https://doi.org/10.18632/aging.202913
+[rapa-tramet]: https://www.nature.com/articles/s43587-024-00671-5
 
-| Intervention | Age Reversal | Duration | Source |
-|--------------|-------------|----------|--------|
-| **TRIIM trial** (Fahy et al.) | 2.5 years (epigenetic) | 12 months | [Aging Cell][triim] |
-| **Fitzgerald diet/lifestyle** | 3.23 years (epigenetic) | 8 weeks | [Aging][fitzgerald] |
-| **Semaglutide** (GLP-1) | Clock decreases observed | Ongoing | [Clinical studies][semaglutide-aging] |
+**Best demonstrated human reversals cluster around 2–4 years — far short of the 10-year threshold.**
 
-[triim]: https://onlinelibrary.wiley.com/doi/full/10.1111/acel.13028
-[fitzgerald]: https://www.aging-us.com/article/103643/text
-[semaglutide-aging]: https://www.nature.com/articles/s41591-024-02875-x
+#### Key 2025 Developments
 
-#### 2025 Developments
+| Date | Event | Source |
+|------|-------|--------|
+| May 2025 | Buck Institute TPE+IVIG trial: 2.6 years biological age reversal via plasma exchange | [Aging Cell][tpe-ivig] |
+| Aug 2025 | Life Biosciences announces ER-100 (partial reprogramming) human trial Q1 2026 | [Life Biosciences][life-bio] |
+| Sept 2025 | UNITY Biotechnology liquidation approved — Phase 2b senolytics trial narrowly missed primary endpoint | [Fight Aging][unity] |
+| Nov 2025 | Semaglutide Phase IIb: 11 organ-system epigenetic clocks showed concordant decreases | [DDW-Online][sema-clocks] |
+| Aug 22, 2025 | **OpenAI/Retro Biosciences achieve >50× reprogramming efficiency** — AI-designed Yamanaka factor variants outperform wild-type | [OpenAI][retro-openai] |
+| Dec 2025 | Retro Biosciences doses first patient in RTR242 (autophagy-enhancing) trial — first longevity biotech to reach clinical stage | [Longevity Technology][retro] |
 
-| Date | Event | Significance | Source |
-|------|-------|--------------|--------|
-| **Aug 22, 2025** | 🟢 **OpenAI/Retro Bio achieve >50× reprogramming efficiency** | AI-designed Yamanaka factor variants (RetroSOX, RetroKLF) outperform wild-type; validated across donors/cell types | [OpenAI][retro-openai] |
-| **Sep 2025** | 🔴 **Unity Biotechnology dissolves** | Flagship senolytic company fails after insufficient clinical results | [Unity][unity-dissolution] |
-| **2025** | 🟡 **Life Biosciences approaches Phase 1 trials** | Partial epigenetic reprogramming for eye diseases; trials expected early 2026 | [Life Biosciences][life-bio] |
-| **2025** | 🟡 **NewLimit advances toward human trials** | Epigenetic reprogramming therapies | [NewLimit][newlimit] |
-
+[life-bio]: https://www.lifebiosciences.com/life-biosciences-presents-new-data-at-ardd-2025-on-the-companys-partial-epigenetic-reprogramming-platform-in-liver-and-ocular-diseases/
+[unity]: https://www.fightaging.org/archives/2025/12/a-look-back-at-2025-progress-towards-the-treatment-of-aging-as-a-medical-condition/
+[sema-clocks]: https://www.ddw-online.com/turning-back-the-epigenetic-clock-can-we-reverse-ageing-38601-202511/
+[retro]: https://longevity.technology/news/retro-bio-commences-first-in-human-trial/
 [retro-openai]: https://openai.com/index/accelerating-life-sciences-research-with-retro-biosciences/
-[unity-dissolution]: https://www.unitybiotechnology.com/
-[life-bio]: https://www.lifebiosciences.com/
-[newlimit]: https://www.newlimit.com/
 
-**The OpenAI/Retro breakthrough explained:** Using GPT-4b micro, a protein engineering model trained on biological data, researchers redesigned SOX2 and KLF4 (two of the four Yamanaka factors). The AI-generated variants achieved:
-- >50× higher expression of pluripotency markers vs. wild-type
+#### The OpenAI/Retro Breakthrough
+
+Using GPT-4b micro (a protein engineering model trained on biological data), researchers redesigned SOX2 and KLF4 (two of the four Yamanaka factors). The AI-generated variants achieved:
+- **>50× higher expression** of pluripotency markers vs. wild-type
 - ~50% hit rate for novel designs (vs. typical <1% with random mutagenesis)
 - Enhanced DNA damage repair, suggesting improved rejuvenation potential
 - Validation across multiple donors, cell types, and delivery methods
 
-**Gap:** Small human trials have demonstrated 1.5–2.5 year biological age reversals using lifestyle and supplement interventions. No therapy has achieved the ≥10-year reversal threshold with validated biomarkers and functional outcomes. The OpenAI/Retro breakthrough may accelerate reprogramming-based approaches, but clinical translation remains years away.
+**2026 Watchpoints:** Life Biosciences ER-100 trial, Retro RTR242 Phase 1 data, large-scale D+Q or fisetin efficacy RCTs.
 
 ---
 
 ## Open Challenges
 
-### 🟡 Challenge 1: Causal Model of Aging
+### 🟡 Causal Model of Aging — Advancing but incomplete
 
-**Status: Rapidly evolving, not yet unified**
+**Status: Strong observational evidence, lacking causal interventional proof**
 
-The 12 Hallmarks of Aging framework (updated 2023) provides the dominant conceptual model, but does not yet predict intervention effects on disease outcomes.
+#### Landmark 2025 Publication
 
-#### 2025 Developments
+"**From Geroscience to Precision Geromedicine**" — Kroemer, Maier, Cuervo, Ferrucci et al. (*Cell*, March 2025) introduced **gerogenes** (genes promoting aging) and **gerosuppressors** (genes preventing aging), analogous to oncogenes/tumor suppressors. Proposes tailoring gerotherapeutics based on genetic profile, omics biomarkers, and exposures[^cell-geromedicine].
 
-| Date | Finding | Source |
-|------|---------|--------|
-| **Aug 2024** | 🟢 **Stanford study**: Aging occurs in nonlinear waves at ~44 and ~60 years | [Nature Medicine][stanford-waves] |
-| **2025** | 🟢 **DamAge/AdaptAge clocks** separate damaging vs adaptive aging changes | [Cell][damage-clocks] |
-| **Ongoing** | 🟢 **Unprecedented funding**: Hevolution $1B/year, Altos $3B cumulative, NIA ~$4.2B/year | Multiple |
+[^cell-geromedicine]: [Cell 2025](https://www.cell.com/cell/fulltext/S0092-8674(25)00284-3)
 
-[stanford-waves]: https://www.nature.com/articles/s41591-024-03169-0
-[damage-clocks]: https://www.cell.com/cell/fulltext/S0092-8674(23)01354-3
+#### NIA Interventions Testing Program (20-Year Review)
 
-**Gap:** We can measure biological age with increasing precision (epigenetic clocks, proteomics, metabolomics) and identify hallmarks of aging, but cannot yet predict which interventions will reduce disease incidence in which patients. A unified causal model connecting molecular changes → organ dysfunction → disease → mortality remains the holy grail.
+| Intervention | Lifespan Extension | Notes |
+|--------------|-------------------|-------|
+| Rapamycin | 15–20% | Most reliable across sexes |
+| Rapamycin + Acarbose | 36.6% median | Combination superior |
+| SGLT2 inhibitors | 13.6% (males) | Metabolic aging pathway |
 
----
+*Source: [J Gerontol 2025](https://doi.org/10.1093/gerona/glaf138)*
 
-### 🟡 Challenge 2: Predictive Biomarkers
+#### Remaining Gaps
 
-**Status: Breakthrough year**
-
-| Biomarker | Application | Performance | FDA Status | Source |
-|-----------|-------------|-------------|------------|--------|
-| **pTau217 blood test** | Alzheimer's | 91.7% sens, 97.3% spec | ✅ Cleared (May 2025) | [FDA][fda-ptau217] |
-| **MCED panels** | Multi-cancer | 40–64% sens, 97–99% spec | Expected H1 2026 | [GRAIL][grail-pathfinder] |
-| **hs-Troponin** | Cardiovascular | High sensitivity for MI | ✅ Cleared | Standard of care |
-| **Lp(a)** | ASCVD risk | Genetic risk factor | Validated | ACC guidelines |
-| **FIB-4** | Liver fibrosis | Non-invasive scoring | Clinical use | Standard of care |
-
-**Progress:** The FDA received 500+ AI-related medical device submissions in 2025, reflecting acceleration in biomarker discovery and validation.
-
-**Gaps:** False positive management for MCED (anxiety, unnecessary procedures), population-specific calibration, and cost/access remain barriers. Most biomarkers validated in European ancestry populations need diverse validation.
+- **Causal vs. Correlational:** Most aging biomarkers correlate with age but don't establish causation
+- **Driver vs. Passenger:** Unclear which hallmarks are root causes vs. downstream effects
+- **Tradeoff Understanding:** Interventions may extend lifespan but create unknown tradeoffs
 
 ---
 
-### 🟡 Challenge 3: Safe In-Vivo Rejuvenation
+### 🟢 Predictive Biomarkers — Major 2025 progress
 
-**Status: Scientific breakthrough, safety unresolved**
+**Status: Breakthrough year for cancer and Alzheimer's; cardiovascular/metabolic lag**
 
-The core tension: cellular reprogramming to a younger state risks loss of cell identity or cancer. 2025 saw major advances on both sides.
+| Domain | 2025 Status | Key Milestone |
+|--------|-------------|---------------|
+| MCED Cancer Detection | ★★★★☆ | PATHFINDER 2 validation; NHS-Galleri approaching readout |
+| Alzheimer's Blood Tests | ★★★★★ | FDA clearance + clinical practice guidelines |
+| Biological Age Clocks | ★★★☆☆ | Semaglutide modulation proven; PC clocks validated |
+| Proteomics | ★★★☆☆ | SomaScan 7K detects signals >10 years before diagnosis |
 
-| Date | Development | Significance | Source |
-|------|-------------|--------------|--------|
-| **Aug 2025** | 🟢 **Retro/OpenAI >50× reprogramming efficiency** | AI-designed proteins; manufacturing breakthrough | [OpenAI][retro-openai] |
-| **2025** | 🟢 **Shift Bioscience discovers SB000** | Rejuvenation without pluripotency — potential safety advance | [Shift Bio][shift-bio] |
-| **2025** | 🟢 **Life Biosciences partial reprogramming** | Using only 3 of 4 Yamanaka factors avoids full reset | [Life Biosciences][life-bio] |
-| **Sep 2025** | 🔴 **Unity Biotechnology liquidates** | After multiple clinical failures | [Unity][unity-dissolution] |
+#### The Sensitivity-Specificity Tradeoff
 
-[shift-bio]: https://www.shiftbioscience.com/
+| Test Type | Sensitivity | Specificity | Limitation |
+|-----------|-------------|-------------|------------|
+| MCED (all cancers) | 40–55% | 99%+ | Misses majority of early cancers |
+| MCED (12 deadliest) | 68–74% | 99%+ | Still misses ~25–30% |
+| p-tau217 blood test | 91.7% | 97.3% | ~3% false positives at scale |
 
-**Core challenge:** Cancer risk and identity loss from epigenetic reprogramming remain unsolved. Partial reprogramming (avoiding full pluripotency) is the leading approach, but therapeutic windows are narrow. Unity's failure despite promising preclinical data illustrates the translation challenge.
-
----
-
-### 🟢 Challenge 4: Programmable Immunity
-
-**Status: Strong progress**
-
-| Metric | Current State | Source |
-|--------|---------------|--------|
-| FDA-approved CAR-T products | 7 (Aucatzyl newest, Nov 2024) | [FDA][fda-cart] |
-| CAR-T for autoimmune diseases | Breakthrough trials (Kyverna, Cabaletta) | [Clinical trials][cart-autoimmune] |
-| mRNA cancer vaccines | V940 shows 44% reduced melanoma recurrence | [Moderna][moderna-v940] |
-
-[fda-cart]: https://www.fda.gov/vaccines-blood-biologics/cellular-gene-therapy-products
-[cart-autoimmune]: https://clinicaltrials.gov/
-[moderna-v940]: https://www.modernatx.com/
-
-#### Key 2025 Developments
-
-| Date | Event | Significance | Source |
-|------|-------|--------------|--------|
-| **Dec 2025** | 🟢 **mRNA thymus rejuvenation in mice** | Could restore immune function with aging | [Nature][nature-thymus] |
-| **Apr 2024** | ⚠️ **FDA adds boxed warning for CAR-T secondary malignancies** | T-cell lymphomas in ~2% of patients | [FDA][fda-cart-warning] |
-| **2025** | 🟢 **CAR-T for lupus, myasthenia gravis** show remission | Potential cures for autoimmunity | [Clinical trials][cart-autoimmune] |
-
-[nature-thymus]: https://www.nature.com/articles/s41586-024-08395-7
-[fda-cart-warning]: https://www.fda.gov/vaccines-blood-biologics/safety-availability-biologics/fda-investigating-serious-risk-t-cell-malignancy
-
-**Gap:** CAR-T manufacturing remains expensive ($400K+ per treatment) and complex. The secondary malignancy signal requires long-term monitoring. Scaling to common diseases (beyond rare cancers and autoimmune conditions) is the next frontier.
+Population-scale screening requires ultra-high specificity to avoid overwhelming healthcare with false positives, mathematically constraining sensitivity.
 
 ---
 
-### 🟡 Challenge 5: Brain Preservation
+### 🟡 Safe In-Vivo Rejuvenation — Transitioning to human trials
 
-**Status: Incremental advances, no breakthrough**
+**Status: First human trials of autophagy/reprogramming-adjacent therapies in 2025**
 
-| Approach | Status | Source |
-|----------|--------|--------|
-| Anti-amyloid antibodies | 2 FDA-approved (lecanemab, donanemab) | [FDA][fda-donanemab] |
-| Anti-tau therapies | First proof-of-concept signals | Clinical trials |
-| Neural interfaces | Neuralink: 5 patients, 670+ cumulative days | [Neuralink][neuralink] |
-| Neurogenesis | Karolinska confirms neural progenitors in adult human brain (Jul 2025) | [Karolinska][karolinska] |
-| Glymphatic enhancement | Meditation shown to stimulate glymphatic system (Dec 2025) | [Nature][glymphatic] |
+| Approach | 2025 Status | Key Development |
+|----------|-------------|-----------------|
+| Partial Reprogramming | Preclinical (mostly) | Life Biosciences ER-100 entering trials H1 2026 |
+| Senolytics | Phase 2 data | UBX1325: +5.5 letter vision gains in DME; D+Q safe in MCI |
+| Autophagy Enhancement | Phase 1 | Retro RTR242 dosed first patient Dec 2025 |
 
-[neuralink]: https://neuralink.com/
-[karolinska]: https://ki.se/en/news/adult-human-brain-neural-progenitor-cells
-[glymphatic]: https://www.nature.com/articles/s41598-024-79741-4
+#### Safety Concerns
 
-**The challenge:** The brain's unique vulnerability to aging — no cell replacement, blood-brain barrier limiting drug access, interconnected circuits where any damage matters — makes preservation harder than other organs. Current anti-amyloid drugs slow decline modestly but don't stop it. Whether amyloid is cause or consequence remains debated.
+| Risk | Mitigation |
+|------|------------|
+| Teratoma formation from OSKM | Cyclic dosing (2 days on/5 off) or OSK without c-MYC |
+| Oncogenic risk (c-MYC) | c-MYC exclusion; mRNA-based transient expression |
+| Novel safer factor | SB000 shows 7.42-year reversal without pluripotency markers[^sb000] |
+
+[^sb000]: [bioRxiv Jun 2025](https://www.biorxiv.org/content/10.1101/2025.06.05.657370v1.full)
+
+---
+
+### 🟢 Programmable Immunity — Transformative year
+
+**Status: CAR-T expanding to autoimmune diseases; mRNA vaccines entering Phase 3**
+
+#### CAR-T Expansion
+
+7 FDA-approved CAR-T therapies now treat blood cancers. In December 2025, Breyanzi achieved **95.5% response rate** in marginal zone lymphoma (first CAR-T for MZL)[^breyanzi-mzl].
+
+**Autoimmune breakthrough:** CD19 CAR-T achieved **100% DORIS remission** in 8 SLE patients, drug-free for up to 29 months[^car-t-sle].
+
+[^breyanzi-mzl]: [FDA Dec 2025](https://www.fda.gov/news-events/press-announcements/fda-approves-first-car-t-cell-therapy-marginal-zone-lymphoma-us)
+[^car-t-sle]: [NEJM 2024](https://www.nejm.org/doi/full/10.1056/NEJMoa2308917)
+
+#### mRNA Cancer Vaccines
+
+| Program | Phase | Key Result |
+|---------|-------|------------|
+| mRNA-4157/V940 + pembrolizumab (melanoma) | Phase 3 | 44% reduction in recurrence, 65% reduction in distant metastasis |
+| Autogene cevumeran (pancreatic) | Phase 1→2 | Immune responses persisting ~4 years |
+
+*Source: [Cromos Pharma](https://cromospharma.com/cancer-vaccines-2025-part-i-the-mrna-revolution/)*
+
+#### Immune Rejuvenation Breakthrough
+
+**MIT/DKFZ (Dec 2025):** mRNA encoding DLL1, FLT3-L, IL-7 delivered to liver via LNP **doubled cytotoxic T-cell response to vaccination** in aged mice — comparable to "several months" rejuvenation[^mit-immune].
+
+[^mit-immune]: [Nature Dec 2025](https://www.nature.com/articles/d41586-025-04082-5)
+
+---
+
+### 🟡 Brain Preservation — Tools emerging, therapies distant
+
+**Status: First human confirmation of glymphatic system; no approved brain repair therapies**
+
+#### Key 2025 Advances
+
+| Area | Development | Source |
+|------|-------------|--------|
+| Glymphatic system | First confirmation exists and functions in living humans (Oct 2024) | [PNAS][pnas-glymphatic] |
+| BBB drug delivery | BCC10 platform enables IV delivery of large therapeutic molecules across BBB | [Nature Biotech][natbiotech-bbb] |
+| Brain-computer interfaces | 100 Mbps wireless link; 65,000+ electrodes; rests on brain "like wet tissue paper" | [Nature Electronics][nature-bci] |
+| Tau therapeutics | Etalanetug reduced plasma eMTBR-tau243 by >90% at 9 months; FDA Fast Track | [Eisai][eisai-tau] |
+
+[pnas-glymphatic]: https://www.nih.gov/news-events/nih-research-matters/brain-waste-clearance-system-shown-people-first-time
+[natbiotech-bbb]: https://www.mountsinai.org/about/newsroom/2024/study-reveals-new-way-to-unlock-blood-brain-barrier-potentially-opening-doors-to-treat-brain-and-nerve-diseases
+[nature-bci]: https://www.sciencedaily.com/releases/2025/12/251209234139.htm
+[eisai-tau]: https://www.eisai.com/news/2025/news202583.html
+
+**Gap:** 170 tau therapeutics in development, but **no approved drugs directly targeting tau**. All neurogenesis interventions remain preclinical.
 
 ---
 
 ## Beyond the Framework: 2025 Highlights
 
-### GLP-1 Revolution
+### GLP-1 Revolution Expands to Healthspan
 
-| Date | Development | Source |
-|------|-------------|--------|
-| **Dec 2025** | 🟢 **WHO issues first GLP-1 guideline for obesity** | Global health recognition | [WHO][who-glp1] |
-| **2025** | 🟢 **GLP-1s called "first longevity drugs"** | Cardiovascular, renal benefits beyond weight | [Nature Biotechnology][nat-bio-glp1] |
+GLP-1 agonists (semaglutide, tirzepatide) are revolutionizing metabolic health beyond diabetes and obesity. A 2025 projection suggests **6.4% reduction in all-cause mortality by 2045** from widespread GLP-1 use[^glp1-mortality]. Phase IIb data showed 11 organ-system epigenetic clocks concordantly decreased with semaglutide[^sema-clocks]. However, oral semaglutide failed Phase 3 trials for Alzheimer's disease[^alz-sema].
 
-[who-glp1]: https://www.who.int/news/item/13-12-2024-who-releases-first-guideline-on-clinical-management-of-obesity
-[nat-bio-glp1]: https://www.nature.com/articles/s41587-024-02383-8
+[^glp1-mortality]: [Nature Biotechnology 2025](https://doi.org/10.1038/s41587-025-02932-1)
 
-### Global Health Milestones
+### Longevity Biotech Funding
 
-| Date | Development | Source |
-|------|-------------|--------|
-| **Nov 2025** | 🟢 **World Cervical Cancer Elimination Day established** | HPV vaccination success | [WHO][who-cervical] |
-| **2025** | 🟢 **First non-profit FDA drug approval (Waskyra)** | Gene therapy for Wiskott-Aldrich syndrome by Fondazione Telethon | [FDA][fda-waskyra] |
-
-[who-cervical]: https://www.who.int/campaigns/cervical-cancer-elimination-day-of-action
-[fda-waskyra]: https://www.fda.gov/vaccines-blood-biologics/waskyra
-
-### Longevity Investment
-
-| Company | Amount | Focus | Source |
-|---------|--------|-------|--------|
+| Company | 2025 Funding | Focus | Source |
+|---------|--------------|-------|--------|
 | Retro Biosciences | ~$1B (raising) | AI-driven reprogramming | [TechCrunch][retro-raise] |
-| NewLimit | $130M | Epigenetic reprogramming | [TechCrunch][newlimit-raise] |
-| Insilico Medicine | $110M | AI drug discovery | [Forbes][insilico-raise] |
-| Juvenescence | $76M | Longevity therapeutics | [Longevity.Technology][juvenescence] |
+| NewLimit | $130M Series B | Epigenetic reprogramming | [TechCrunch][newlimit-raise] |
+| Insilico Medicine | $110M | AI drug discovery for aging | [Forbes][insilico-raise] |
+| Juvenescence | $76M Series B-1 | AI-enabled aging therapeutics | [Longevity.Technology][juvenescence] |
+| Generation Lab | $11M seed | SystemAge 19-organ biological age test | [Crunchbase][crunchbase-longevity] |
 
 [retro-raise]: https://techcrunch.com/2025/01/24/retro-biosciences-backed-by-sam-altman-is-raising-1-billion-to-extend-human-lifespan/
 [newlimit-raise]: https://techcrunch.com/2024/04/16/newlimit-epigenetic-reprogramming-aging/
 [insilico-raise]: https://www.forbes.com/sites/alexzhavoronkov/2024/06/15/insilico-medicine-raises-110-million/
 [juvenescence]: https://longevity.technology/news/juvenescence-raises-76m-series-d/
+[crunchbase-longevity]: https://news.crunchbase.com/venture/longevity-startup-funding-2025-newlimit-data/
 
-### Setbacks
+**Setbacks:** Unity Biotechnology liquidated after Phase 2b failure. BioAge Labs shares trading at <50% of IPO price.
 
-- **NIH funding cuts** — 31% reduction in Q1 2025 threatens research pipeline[^nih-cuts]
-- **FDA staff departures** — >18% attrition creating approval bottlenecks
-- **Unity Biotechnology dissolution** — flagship senolytic company fails after multiple clinical disappointments
+### Policy Shifts
+
+- **US:** NIH cancer research funding cut 31% in Q1 2025; FY2026 request 37% below FY2025[^nih-cuts]
+- **FDA:** First blood-based Alzheimer's diagnostic cleared; clinical practice guidelines established
+
+[^nih-cuts]: [OncLive](https://www.onclive.com/view/federal-funding-cuts-hit-cancer-research-despite-public-support)
+
+### Cancer Research Breakthroughs (Discovery Stage)
+
+- High-fat diet influence on cancer metastasis via blood clotting molecules (CNIO, Spain)
+- DMG childhood brain cancer genetic weak spot identified (Trinity College Dublin)
+- Antidepressant mechanism repurposed for cancer drug development targeting NEDD4 (Italy)
+- Melanoma immunotherapy resistance mechanism discovered with potential solutions (Manchester)
+
+*Source: [Worldwide Cancer Research](https://www.worldwidecancerresearch.org/our-latest-news/news-and-press/our-top-cancer-research-breakthroughs-of-2025/)*
 
 ---
 
@@ -423,24 +436,33 @@ The core tension: cellular reprogramming to a younger state risks loss of cell i
 
 | Chart | Source |
 |-------|--------|
-| Global HALE trends | [WHO GHO](https://www.who.int/data/gho/data/indicators/indicator-details/GHO/healthy-life-expectancy-(hale)-at-birth-(years)) |
-| Cancer survival trends | [SEER Explorer](https://seer.cancer.gov/explorer/) |
-| Epigenetic clock comparison | [Aging.ai](https://aging.ai/) |
-| GBD data visualizations | [IHME GBD Compare](https://vizhub.healthdata.org/gbd-compare/) |
-| Alzheimer's state data | [Alzheimer's Association Facts & Figures](https://www.alz.org/alzheimers-dementia/facts-figures) |
+| WHO HALE Dashboard | [WHO Data](https://data.who.int/dashboards/global-progress/hale) |
+| HALE Interactive Explorer | [Our World in Data](https://ourworldindata.org/grapher/healthy-life-expectancy-at-birth) |
+| GBD Compare Visualization | [IHME GBD Compare](https://vizhub.healthdata.org/gbd-compare/) |
+| Cancer Statistics Dashboard | [SEER Explorer](https://seer.cancer.gov/statistics-network/explorer/) |
+| Dementia Statistics | [Alzheimer's Disease International](https://www.alzint.org/about/dementia-facts-figures/dementia-statistics/) |
+| Epigenetic Clock Comparison | [Aging.ai](https://aging.ai/) |
+| AI Medical Devices | [FDA List](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-enabled-medical-devices) |
+| Alzheimer's State Data | [Alzheimer's Association Facts & Figures](https://www.alz.org/alzheimers-dementia/facts-figures) |
 
 ---
 
-*Data sources: [WHO World Health Statistics 2024][who-hale], [IHME GBD][ihme-gbd], [SEER][seer-survival], [FDA][fda-oncology], [GRAIL][grail-pathfinder], [Alzheimer's Association][alz-facts], [OpenAI/Retro Biosciences][retro-openai]*
+*Data sources: [WHO][who-hale], [ACS][acs-2025], [SEER][seer], [FDA][fda-novel-2025], [GRAIL][grail-esmo], [Alzheimer's Association][alz-leqembi], [Nature Medicine](https://www.nature.com/nm), [Cell](https://www.cell.com)*
 
 ---
 
 ## Footnotes
 
-[^grail-pathfinder]: [GRAIL PATHFINDER 2 Trial Results](https://grail.com/clinical-studies/pathfinder/)
-[^fda-ptau217]: [FDA Clears First Alzheimer's Blood Test](https://www.fda.gov/news-events/press-announcements/alzheimers-blood-test)
+[^fda-alz]: [FDA clears first blood test for Alzheimer's](https://www.fda.gov/news-events/press-announcements/fda-clears-first-blood-test-used-diagnosing-alzheimers-disease)
+[^grail-pathfinder2]: [GRAIL PATHFINDER 2 results](https://grail.com/press-releases/grail-pathfinder-2-results-show-galleri-multi-cancer-early-detection-blood-test-increased-cancer-detection-more-than-seven-fold-when-added-to-uspstf-a-and-b-recommended-screenings/)
+[^retro-trial]: [Retro Biosciences first-in-human trial](https://longevity.technology/news/retro-bio-commences-first-in-human-trial/)
+[^kisunla-3yr]: [Lilly Kisunla 3-year data](https://investor.lilly.com/news-releases/news-release-details/lillys-kisunla-donanemab-azbt-showed-growing-benefit-over-three)
+[^mrna-melanoma]: [mRNA cancer vaccine Phase 3](https://cromospharma.com/cancer-vaccines-2025-part-i-the-mrna-revolution/)
+[^seer-survival]: [SEER Cancer Statistics](https://seer.cancer.gov/statfacts/)
+[^dementia-prevalence]: [ADAMS Study](https://pmc.ncbi.nlm.nih.gov/articles/PMC2705925/)
+[^age-reversal]: [Aging Cell TPE+IVIG study](https://onlinelibrary.wiley.com/doi/full/10.1111/acel.14572)
+[^who-hale]: [WHO Global Health Estimates](https://www.who.int/data/gho/data/themes/mortality-and-global-health-estimates/ghe-life-expectancy-and-healthy-life-expectancy)
+[^screening-rates]: NORC/NDRS data on cancer detection through screening
+[^lancet-dementia]: [Lancet Commission on Dementia 2024](https://www.thelancet.com/commissions-do/dementia-prevention-intervention-and-care)
+[^bp-dementia]: [Nature Medicine 2025](https://www.nature.com/articles/s41591-025-03616-8)
 [^retro-openai]: [OpenAI/Retro Biosciences: Accelerating Life Sciences Research](https://openai.com/index/accelerating-life-sciences-research-with-retro-biosciences/) — August 22, 2025 publication describing >50× reprogramming efficiency with AI-designed Yamanaka factor variants
-[^seer-survival]: [SEER Cancer Statistics Review](https://seer.cancer.gov/statfacts/html/all.html)
-[^dementia-prevalence]: [Alzheimer's Association 2025 Facts and Figures](https://www.alz.org/alzheimers-dementia/facts-figures) — 7.2 million Americans age 65+ with Alzheimer's; ~24% prevalence ages 80-89
-[^unity-dissolution]: [Unity Biotechnology Dissolution Announcement](https://www.unitybiotechnology.com/)
-[^nih-cuts]: [NIH Budget Cuts Impact Analysis](https://www.science.org/)
