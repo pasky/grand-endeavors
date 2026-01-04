@@ -69,7 +69,7 @@ What child hasn't looked at the starry sky in wonder? The universe promises many
 **KPI:** Cost to LEO ($/kg)
 
 **Milestone Countdown:**
-*   **"The Deluge":** 15,000 tons delivered to orbit in a single year.
+*   **"The Deluge":** 100,000 tonnes delivered to orbit in a single year — the threshold to enable Mars colonization.
 *   **"The Homestead":** Permanent crewed base operates 1+ year using local resources (Moon or Mars).
 *   **"The Export":** Product manufactured in space is sold commercially on Earth (beyond novelty items).
 
