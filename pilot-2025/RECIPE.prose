@@ -126,7 +126,7 @@ block research_kpi(endeavor, kpi_description):
         Research the KPI for {endeavor}: {kpi_description}
         
         Find:
-        - Current value (2025, with date and source URL)
+        - Current value (must be 2025, with date and source URL)
         - Historical data points (2015-2025) for charting
         - Trend assessment: improving, worsening, or flat?
         - Links to official data visualization sources
