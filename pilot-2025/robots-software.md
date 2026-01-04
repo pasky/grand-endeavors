@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-**The good news:** AI capabilities are doubling every 7 months on METR's task benchmarks. Models can now reliably complete tasks that take humans ~30 hours — full workweek-scale problems. Claude Code crossed $1B revenue. 41% of all code is now AI-generated or AI-assisted[^stack-overflow]. AI solved a 130-year-old open math problem[^lyapunov] and achieved IMO gold-medal performance[^imo-gold]. >75 AI-derived drug molecules are in clinical trials with 80–90% Phase I success rates[^ai-drugs].
+**The good news:** AI capabilities are doubling every 7 months on METR's task benchmarks. Models can now reliably complete tasks that take humans ~30 minutes with 80% success (or ~5 hours at 50% success). Claude Code crossed $1B revenue. ~25% of Google's new code is AI-assisted[^google-code]. AI solved a 130-year-old open math problem[^lyapunov] and achieved IMO gold-medal performance[^imo-gold]. >75 AI-derived drug molecules are in clinical trials with 80–90% Phase I success rates[^ai-drugs].
 
 **The bad news:** METR's RCT found experienced developers are **19% slower** with AI tools[^metr-rct]. 95% of enterprise AI pilots fail to reach production[^mit-fail]. Hallucination rates on reasoning models are *increasing* — o3 hallucinates 33% on PersonQA (vs 16% for o1)[^simpleqa]. Linux kernel maintainers remain hostile to AI-generated code, and Nature explicitly bans AI authorship. Catastrophic forgetting remains unsolved.
 
@@ -20,8 +20,8 @@ METR (Model Evaluation & Threat Research) measures the length of real-world soft
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| **Current best (80% horizon)** | **32.3 hours** (GPT-5.1-Codex-Max) | [METR benchmark][metr-yaml] |
-| **Current best (50% horizon)** | **288.9 hours** (Claude Opus 4.5) | [METR benchmark][metr-yaml] |
+| **Current best (80% horizon)** | **32.3 min** (GPT-5.1-Codex-Max) | [METR benchmark][metr-yaml] |
+| **Current best (50% horizon)** | **288.9 min / ~5 hours** (Claude Opus 4.5) | [METR benchmark][metr-yaml] |
 | **Doubling time** | ~7 months | [METR paper][metr-paper] |
 | **Doubling time (2024–2025)** | ~4 months (accelerating) | [METR][metr-blog] |
 | **Since 2019** | ~5,000× improvement | [METR][metr-blog] |
@@ -36,10 +36,10 @@ METR (Model Evaluation & Threat Research) measures the length of real-world soft
 
 ```mermaid
 xychart-beta
-    title "80% Time Horizon (human-hours AI can reliably complete)"
-    x-axis ["2019", "2020", "2022", "2023-Q1", "2023-Q4", "2024-Q2", "2024-Q4", "2025-Q1", "2025-Q2", "2025-Q4"]
-    y-axis "Hours" 0 --> 35
-    line [0.006, 0.03, 0.17, 0.97, 1.45, 1.68, 6.07, 15.2, 21.4, 32.3]
+    title "AI Task Horizon: 80th Percentile (minutes)"
+    x-axis [2019, 2020, 2022, 2023, 2024-Q1, 2024-Q3, 2025-Q1, 2025-Q3, 2025-Q4]
+    y-axis "Minutes" 0 --> 35
+    line [0.006, 0.03, 0.17, 0.97, 1.68, 4.60, 15.2, 26.6, 32.3]
 ```
 *Data: [METR Benchmark Results][metr-yaml]. Models: GPT-2 (2019) → GPT-3 (2020) → GPT-3.5 (2022) → GPT-4 (2023) → GPT-4o/Claude 3.5 (2024) → Claude 3.7/o3 (Q1 2025) → GPT-5/Opus 4.5 (Q3-Q4 2025)*
 
@@ -56,7 +56,7 @@ xychart-beta
 
 ### Model Comparison (November 2025)
 
-| Model | Release | 80% Horizon (hrs) | 50% Horizon (hrs) | Avg Score |
+| Model | Release | 80% Horizon (min) | 50% Horizon (min) | Avg Score |
 |-------|---------|-------------------|-------------------|-----------|
 | GPT-5.1-Codex-Max | Nov 2025 | **32.3** | 173.3 | 0.721 |
 | Claude Opus 4.5 | Nov 2025 | 27.2 | **288.9** | 0.750 |
@@ -65,7 +65,7 @@ xychart-beta
 | Claude 4 Opus | May 2025 | 20.9 | 85.6 | 0.649 |
 | Gemini 2.5 Pro | Jun 2025 | 9.3 | 39.5 | 0.558 |
 
-**Assessment: 🟢 Strong progress.** AI can now reliably complete tasks taking humans a full workweek. Extrapolating: AI agents handling day-long tasks reliably by ~2027, week-long tasks by ~2029.
+**Assessment: 🟢 Exponential improvement continuing.** The 80% time horizon is growing at ~7-month doubling rate over the long run, with possible acceleration to 4-month doublings in 2024–2025. Extrapolating: AI agents handling day-long tasks reliably by ~2027, week-long tasks by ~2029.
 
 **Caveat:** METR's RCT (July 2025) found experienced open-source developers were **19% slower** using AI tools, despite believing they were 20% faster[^metr-rct]. Benchmark performance does not yet translate to real-world productivity gains.
 
@@ -370,9 +370,8 @@ Evidence now strongly suggests AI systems are producing outputs that go beyond s
 ### AI Coding Market
 
 - **Cursor:** Raised $2.3B at $29.3B valuation; crossed $1B ARR (Nov 2025)[^cursor]
-- **41%** of all code is now AI-generated or AI-assisted[^stack-overflow]
-- **84%** of developers use or plan to use AI tools
-- **21%** of Google's code is AI-assisted
+- **~25%** of Google's new code is AI-assisted[^google-code]
+- **84%** of developers use or plan to use AI tools[^stack-overflow]
 - **Only 2.6%** of experienced devs "highly trust" AI outputs
 - Market size: $4.91B → $30.1B by 2032 (27.1% CAGR)[^secondtalent]
 
@@ -427,6 +426,7 @@ Despite high adoption, developer satisfaction with AI tools **dropped to 60%** (
 ## Footnotes
 
 [^stack-overflow]: [Stack Overflow Developer Survey 2025](https://survey.stackoverflow.co/2025/ai)
+[^google-code]: Sundar Pichai (Nov 2025): "over 25% of all new code at Google is now written by AI" — [Baytech analysis](https://www.baytechconsulting.com/blog/enterprise-coding-ai-milestone-2025), [Ars Technica](https://arstechnica.com/ai/2024/10/google-ceo-says-over-25-of-new-google-code-is-generated-by-ai/)
 [^lyapunov]: [Meta AI: Solving Lyapunov with Neural Networks](https://ai.meta.com/research/publications/solving-lyapunov-with-neural-networks/)
 [^imo-gold]: [Google DeepMind: IMO Gold Medal](https://deepmind.google/discover/blog/imo-gold-medal-solving-olympiad-geometry-without-human-demonstrations/)
 [^metr-rct]: [METR: Early 2025 AI Experienced OS Dev Study](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/)
