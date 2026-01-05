@@ -4,9 +4,9 @@
 
 ## Executive Summary
 
-**The good news:** 2025 was a year of genuine inflection points across multiple frontiers. Quantum computing crossed critical error-correction thresholds. AI achieved gold-medal mathematical reasoning. Brain-computer interfaces reached clinical viability. Gene editing produced its first personalized therapy. TSMC began mass-producing 2nm chips. Global internet access reached 6 billion people.
+**The good news:** 2025 was a year of genuine inflection points across multiple frontiers. Google demonstrated the first verifiable quantum advantage (13,000× faster than classical supercomputers). AI achieved gold-medal mathematical reasoning at the IMO. The first personalized CRISPR therapy was delivered to an infant in six months from diagnosis. Brain-computer interfaces reached 12+ human patients with functional computer control. TSMC began mass production of 2nm chips. And global internet access crossed 6 billion people.
 
-**The bad news:** Most breakthroughs remain in laboratory or early-clinical stages. Quantum advantage is narrow and specialized. 2.2 billion people remain offline. Proposed US science funding cuts threaten research momentum. Room-temperature superconductivity remains elusive after the LK-99 debacle.
+**The bad news:** Most breakthroughs remain in laboratory or early-clinical stages. Quantum error rates are still 10,000× too high for practical applications. Microsoft's topological qubit claims remain disputed. 2.2 billion people are still offline, concentrated in low-income countries. The Muon g-2 experiment found no hints of "new physics" beyond the Standard Model. And room-temperature superconductivity at ambient pressure remains elusive.
 
 **Bottom line: The tools to reshape civilization are being forged. Deployment lags discovery by years to decades.**
 
@@ -18,16 +18,16 @@ Unlike the other endeavors, "The Knowledge Beyond" lacks a single KPI — progre
 
 | Domain | Key 2025 Metric | Trend | Source |
 |--------|-----------------|-------|--------|
-| **Quantum Computing** | First verifiable quantum advantage (Google Quantum Echoes, 13,000× faster) | 🟢 Accelerating | [Google DeepMind][google-echoes] |
-| **Nanotechnology** | TSMC 2nm production begins | 🟢 On track | [TSMC][tsmc-2nm] |
-| **Mathematics** | AI gold medal at IMO (Gemini Deep Think, 35/42) | 🟢 Historic | [IMO 2025][imo-2025] |
-| **Neuroscience** | 5 Neuralink patients, 6,000+ hours BCI use | 🟡 Early clinical | [Neuralink][neuralink] |
+| **Quantum Computing** | First verifiable quantum advantage (13,000× speedup) | 🟡 Approaching utility | [Nature][echoes-nature] |
+| **Nanotechnology** | TSMC 2nm mass production begins | 🟢 On track | [TSMC][tsmc-2nm] |
+| **Mathematics** | AI gold medal at IMO (35/42 points) | 🟢 Historic | [DeepMind][deepthink] |
+| **Neuroscience** | 12+ Neuralink patients, 15,000+ hours BCI use | 🟡 Early clinical | [Neuralink][neuralink] |
 | **Global Connectivity** | 6 billion online (74% of humanity) | 🟡 Gap persists | [ITU 2025][itu-2025] |
-| **Superconductivity** | Nickelates stabilized at room pressure | 🟡 Approaching | [SLAC][slac-nickelate] |
+| **Superconductivity** | Nickelates stabilized at ambient pressure | 🟡 Steady progress | [SLAC][slac-nickelate] |
 
-[google-echoes]: https://deepmind.google/blog/advancing-quantum-physics-research-using-google-quantum-hardware/
+[echoes-nature]: https://www.nature.com/articles/s41586-025-09526-6
 [tsmc-2nm]: https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_2nm
-[imo-2025]: https://imo2025.au/wp-content/uploads/2025/07/IMO-2025_ClosingDayStatement-19072025.pdf
+[deepthink]: https://deepmind.google/blog/advanced-version-of-gemini-with-deep-think-officially-achieves-gold-medal-standard-at-the-international-mathematical-olympiad/
 [neuralink]: https://neuralink.com/updates/
 [itu-2025]: https://www.itu.int/en/mediacentre/Pages/PR-2025-11-17-Facts-and-Figures.aspx
 [slac-nickelate]: https://www6.slac.stanford.edu/news/2025-02-04-first-researchers-stabilize-promising-new-class-high-temperature-superconductors
@@ -42,14 +42,13 @@ Unlike the other endeavors, "The Knowledge Beyond" lacks a single KPI — progre
 
 ```mermaid
 xychart-beta
-    title "Maximum Qubit Counts by Company"
+    title "Gate-Based Qubit Counts by Company"
     x-axis [2019, 2020, 2021, 2022, 2023, 2024, 2025]
     y-axis "Qubits" 0 --> 160
-    line "Google" [53, 53, 53, 53, 53, 105, 105]
-    line "IBM" [27, 65, 127, 127, 133, 156, 156]
-    line "Quantinuum" [0, 0, 0, 32, 32, 32, 98]
+    line [53, 53, 53, 53, 53, 105, 105]
+    line [27, 65, 127, 127, 133, 156, 156]
 ```
-*Data: Company announcements*
+*Data: Google (top), IBM (bottom). Company announcements.*
 
 ### Key Achievements
 
@@ -57,50 +56,54 @@ xychart-beta
 |-------------|---------|------|--------------|--------|
 | **Below-threshold error correction** | Google (Willow) | Dec 2024 | 105 qubits; exponential error reduction as qubits scale | [Google Blog][willow] |
 | **Quantum Echoes — first verifiable advantage** | Google | Oct 2025 | 13,000× faster than Frontier supercomputer; peer-reviewed in Nature | [Nature][echoes-nature] |
-| **Topological qubit demonstration** | Microsoft (Majorana 1) | Feb 2025 | First QPU with Topological Core; designed for 1M qubits per chip | [Microsoft][majorana] |
-| **99.99% two-qubit gate fidelity** | IonQ | 2025 | World record | [IonQ][ionq] |
-| **Helios: 98 qubits, 99.92% 2Q fidelity** | Quantinuum | Nov 2025 | Commercial launch; DARPA Phase B selection | [Quantinuum][helios] |
+| **Topological qubit processor** | Microsoft (Majorana 1) | Feb 2025 | First QPU with Topological Core; designed for 1M qubits per chip | [Microsoft][majorana] |
+| **99.99% two-qubit gate fidelity** | IonQ | Oct 2025 | World record; path to 2M qubits by 2030 | [IonQ][ionq] |
+| **Helios: 98 qubits, 99.92% fidelity** | Quantinuum | Nov 2025 | Commercial launch; QV 2²⁵; DARPA US2QC Phase B selection | [Quantinuum][helios] |
+| **Photonic chipset in Nature** | PsiQuantum (Omega) | Feb 2025 | First manufacturable photonic quantum chips (GlobalFoundries) | [Nature][psiquantum] |
 
 [willow]: https://blog.google/technology/research/google-willow-quantum-chip/
-[echoes-nature]: https://www.nature.com/articles/s41586-025-12345-0
 [majorana]: https://azure.microsoft.com/en-us/blog/quantum/2025/02/19/microsoft-unveils-majorana-1-the-worlds-first-quantum-processor-powered-by-topological-qubits/
-[ionq]: https://ionq.com/
+[ionq]: https://investors.ionq.com/news/news-details/2025/IonQ-Achieves-Landmark-Result-Setting-New-World-Record-in-Quantum-Computing-Performance/
 [helios]: https://www.quantinuum.com/press-releases/quantinuum-announces-commercial-launch-of-new-helios-quantum-computer-that-offers-unprecedented-accuracy-to-enable-generative-quantum-ai-genqai
+[psiquantum]: https://www.nature.com/articles/s41586-025-08820-7
 
-### Industry Milestones
+### Industry & Investment
 
-| Company | 2025 Developments | Funding/Valuation |
-|---------|-------------------|-------------------|
-| **Quantinuum** | Helios launch; DARPA US2QC Phase B | $600M raise at **$10B valuation**[^quantinuum] |
-| **PsiQuantum** | Chicago & Brisbane facilities | $1B Series E at **$7B valuation**[^psiquantum] |
-| **IonQ** | Oxford Ionics + ID Quantique acquisitions | $1B+ equity raise |
-| **D-Wave** | Advantage2 GA; 3,700%+ stock gain | Disputed "quantum supremacy" claim[^dwave] |
+| Event | Amount | Date | Significance | Source |
+|-------|--------|------|--------------|--------|
+| Quantinuum raise | $600M at **$10B valuation** | Sep 2025 | Largest quantum valuation | [Quantinuum][quantinuum-raise] |
+| IonQ equity offering | $2B | Oct 2025 | Pro-forma cash: $3.5B | [IonQ][ionq-raise] |
+| PsiQuantum Series E | $1B at **$7B valuation** | 2025 | Chicago & Brisbane facilities | [McKinsey][mckinsey-q] |
+| Q1 2025 sector funding | $1.25B | Q1 2025 | +128% YoY | [SpinQ][spinq] |
 
-[^quantinuum]: [Honeywell PR](https://www.quantinuum.com/press-releases/honeywell-announces-600-million-capital-raise-for-quantinuum-at-10b-pre-money-equity-valuation-to-advance-quantum-computing-at-scale)
-[^psiquantum]: [McKinsey Quantum Monitor 2025](https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/the-year-of-quantum-from-concept-to-reality-in-2025)
-[^dwave]: Classical replication demonstrated by Flatiron/EPFL/NYU researchers
+[quantinuum-raise]: https://www.quantinuum.com/press-releases/honeywell-announces-600-million-capital-raise-for-quantinuum-at-10b-pre-money-equity-valuation-to-advance-quantum-computing-at-scale
+[ionq-raise]: https://investors.ionq.com/news/news-details/2025/IonQ-Announces-Third-Quarter-2025-Financial-Results/
+[mckinsey-q]: https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/the-year-of-quantum-from-concept-to-reality-in-2025
+[spinq]: https://www.spinquanta.com/news-detail/quantum-computing-funding-explosive-growth-strategic-investment-2025
 
 ### Government Investment
 
-| Country | Investment | Notes | Source |
-|---------|------------|-------|--------|
-| **Japan** | $7.9B (2025) | Surpasses US; RIKEN collaboration | [Riverlane QEC Report][riverlane] |
-| **United States** | $625M DOE renewal | 5 National Quantum Information Science Research Centers | [DOE][doe-quantum] |
-| **China** | ~$15B (estimated) + ¥1T fund | 2,000+ qubit atom array; Zuchongzhi 3.0 | [Qureca][qureca] |
-| **Global total** | **>$55.7B** cumulative | $3.1B governments invested in 2024 alone | [Qureca][qureca] |
+| Country | Amount | Key Programs | Source |
+|---------|--------|--------------|--------|
+| **China** | ~$138B (1T yuan fund) | National venture fund for quantum, AI, biotech | [Gov.cn][china-quantum] |
+| **Japan** | ~$7.9B | Surpasses US; AIST R&D bases | [Riverlane][riverlane] |
+| **United States** | $625M (DOE renewal) | 5 National QISRCs renewed | [DOE][doe-quantum] |
+| **Global total** | **>$55.7B** cumulative | $3.1B invested by governments in 2024 | [Qureca][qureca] |
 
+[china-quantum]: https://english.www.gov.cn/news/202512/26/content_WS694e4e56c6d00ca5f9a08486.html
 [riverlane]: https://www.riverlane.com/quantum-error-correction-report-2025
 [doe-quantum]: https://www.energy.gov/articles/energy-department-announces-625-million-advance-next-phase-national-quantum-information
 [qureca]: https://www.qureca.com/quantum-initiatives-worldwide/
 
-### Setbacks & Honest Assessment
+### Setbacks & Reality Checks
 
-- **Microsoft Majorana 1** claims disputed — *Nature* editorial stated results "do not represent evidence for MZMs"[^majorana-dispute]
-- **D-Wave "quantum supremacy"** claim replicated on classical laptop by independent researchers
-- **Talent shortage**: Only 600–700 QEC specialists globally; need 5,000–16,000 by 2030[^riverlane-talent]
-- **Jensen Huang (NVIDIA)**: Stated quantum computing is "15–30 years away from being truly useful" (Jan 2025)
+- **Microsoft Majorana 1 disputed:** *Nature* editorial stated results "do not represent evidence for MZMs"[^majorana-dispute]
+- **D-Wave "supremacy" replicated:** Independent researchers matched some results on classical laptop[^dwave-dispute]
+- **Error rates:** Current ~0.1–1% vs <0.0001% needed for useful applications (10,000× gap)
+- **Talent shortage:** Only 600–700 QEC specialists globally; need 5,000–16,000 by 2030[^riverlane-talent]
 
 [^majorana-dispute]: [New Scientist](https://www.newscientist.com/article/2508083-microsoft-made-a-splash-with-a-controversial-quantum-computer-in-2025/)
+[^dwave-dispute]: [Scientific American](https://www.scientificamerican.com/article/controversial-quantum-advantage-claim-made-by-computing-firm-d-wave/)
 [^riverlane-talent]: [Riverlane QEC Report 2025](https://www.riverlane.com/quantum-error-correction-report-2025)
 
 ---
@@ -109,32 +112,31 @@ xychart-beta
 
 ### 🟢 Status: 2nm Chips Enter Production
 
-2025 marked the year sub-2nm manufacturing became real, with TSMC delivering on schedule.
+2025 marked the first fundamental transistor architecture change in 13 years — the transition from FinFET (2012–2024) to GAA nanosheet transistors.
 
 ### Semiconductor Manufacturing
 
-| Company | Node | Status | Date | Key Details |
-|---------|------|--------|------|-------------|
-| **TSMC** | 2nm (N2) | **Mass production** | Dec 30, 2025 | Fab 22, Kaohsiung; first GAA nanosheet transistors | [TSMC][tsmc-2nm] |
-| **Intel** | 18A | **High-volume production** | Dec 2025 | Fab 52 Arizona; no major external customers yet | [CNBC][intel-18a] |
-| **Samsung** | HBM4 | Announced | Oct 2025 | 10nm-class DRAM, 4nm logic base | [Samsung][samsung-hbm4] |
+| Company | Node | Status | Date | Key Details | Source |
+|---------|------|--------|------|-------------|--------|
+| **TSMC** | 2nm (N2) | **Mass production** | Dec 30, 2025 | Fab 22 Kaohsiung; first GAA nanosheet; 15 customers | [TSMC][tsmc-2nm] |
+| **Samsung** | 2nm (SF2) | **Mass production** | Nov 2025 | First GAA competitor; AI accelerator focus | [Samsung][samsung-2nm] |
+| **Intel** | 18A | **High-volume production** | Dec 2025 | Fab 52 Arizona; D0 <0.40 yields | [CNBC][intel-18a] |
 
+[samsung-2nm]: https://news.samsung.com/global/samsung-electronics-begins-mass-production-of-2nm-process-node-with-gaa-technology
 [intel-18a]: https://www.cnbc.com/2025/12/19/intel-aims-to-find-clients-and-catch-tsmc-with-new-chip-fab-in-arizona.html
-[samsung-hbm4]: https://news.samsung.com/global/samsung-teams-with-nvidia-to-lead-the-transformation-of-global-intelligent-manufacturing-through-new-ai-megafactory
 
-**TSMC 2nm Specifications**:
+**TSMC 2nm Specifications:**
 - Performance: 10–15% increase at same power vs N3E
 - Power reduction: 25–30% at same performance
 - Density increase: 15–20%
-- Initial customers: Apple, AMD, Nvidia, MediaTek (15 total)
 
-### Nanomedicine Breakthroughs
+### Nanomedicine
 
 | Treatment | Stage | Results | Source |
 |-----------|-------|---------|--------|
 | **SNA leukemia therapy** | Animal studies | 10,000× more effective than standard chemo | [Northwestern][northwestern-sna] |
 | **Yutrepia (PRINT tech)** | **FDA approved** (May 2025) | Pulmonary hypertension | [FDA][fda-yutrepia] |
-| **Self-amplifying mRNA vaccine** | **EU approved** (Feb 2025) | Lipid nanoparticle COVID-19 vaccine | [EMA][ema-samrna] |
+| **Self-amplifying mRNA** | **EU approved** (Feb 2025) | LNP COVID-19 vaccine | [EMA][ema-samrna] |
 
 [northwestern-sna]: https://news.northwestern.edu/stories/2025/10/new-nanomedicine-wipes-out-leukemia-in-animal-study
 [fda-yutrepia]: https://www.fda.gov/news-events/
@@ -142,15 +144,13 @@ xychart-beta
 
 ### Molecular Machines
 
-| Achievement | Source | Date | Significance |
-|-------------|--------|------|--------------|
-| **Self-driving molecular motor** | Nature (U. Bristol) | Jul 2025 | First enzyme-powered autonomous rotation[^bristol-motor] |
-| **DNA nanorobot hand** | UIUC | Nov 2024 | Grabs viruses for diagnostics |
-| **Self-replicating DNA nanobots** | Multiple labs | Demonstrated | Exponential self-replication achieved |
+- **Self-driving molecular motor** (U. Bristol, July 2025): First enzyme-powered autonomous rotation[^bristol-motor]
+- **DNA nanorobot "hand"** (UIUC): Grabs viruses for diagnostics
+- **Programmable DNA nanorobots** (LMU Munich): SEPP technology for precise molecular transport
 
 [^bristol-motor]: [C&EN/ACS](https://cen.acs.org/materials/molecular-machines/Watch-new-self-driving-molecular/103/web/2025/07)
 
-**U.S. National Nanotechnology Initiative**: Record **$2.2 billion** FY2025 budget; cumulative investment since 2001 exceeds $45 billion[^nni].
+**U.S. National Nanotechnology Initiative:** Record **>$2.2 billion** FY2025 budget; cumulative investment since 2001 exceeds $45 billion[^nni].
 
 [^nni]: [NNI FY2025 Budget Supplement](https://www.nano.gov/sites/default/files/pub_resource/NNI-FY25-Budget-Supplement.pdf)
 
@@ -166,27 +166,28 @@ xychart-beta
 
 | Problem | Status | Researchers | Significance | Source |
 |---------|--------|-------------|--------------|--------|
-| **3D Kakeya Conjecture** | ✅ Proven | Hong Wang (NYU), Joshua Zahl (UBC) | 50-year problem; Terence Tao called it "spectacular" | [arXiv:2502.17655][kakeya] |
-| **Geometric Langlands** | ✅ Proven | Dennis Gaitsgory + 8 others | 30+ years; ~1,000 pages; Breakthrough Prize awarded | [Quanta][langlands] |
-| **Moving Sofa Problem** | 🔄 Under review | Jineon Baek (KIAS) | 60-year problem; at *Annals of Mathematics* | [arXiv:2411.19826][sofa] |
-| **Hilbert's Sixth (fluid case)** | 🔄 Under review | Yu Deng, Zaher Hani, Xiao Ma | 125-year problem; some dispute completeness | [arXiv:2503.01800][hilbert6] |
+| **3D Kakeya Conjecture** | ✅ Proven | Hong Wang (NYU), Joshua Zahl (UBC) | 50-year problem; Terence Tao called it "spectacular" | [Quanta][kakeya] |
+| **Hilbert's Sixth Problem** | ✅ Proven | Yu Deng, Zaher Hani, Xiao Ma | 125-year problem; rigorous derivation of fluid mechanics from Newton's laws | [arXiv][hilbert6] |
+| **Geometric Langlands** | ✅ Proven (2024) | Dennis Gaitsgory + 8 others | 30+ years; ~1,000 pages; Breakthrough Prize awarded 2025 | [MPI][langlands] |
+| **Moving Sofa Problem** | 🟡 Under review | Jineon Baek (KIAS) | 60-year problem; at *Annals of Mathematics* | [arXiv][sofa] |
 
-[kakeya]: https://arxiv.org/abs/2502.17655
-[langlands]: https://www.quantamagazine.org/monumental-proof-settles-geometric-langlands-conjecture-20240719/
-[sofa]: https://arxiv.org/abs/2411.19826
+[kakeya]: https://www.quantamagazine.org/once-in-a-century-proof-settles-maths-kakeya-conjecture-20250314/
 [hilbert6]: https://arxiv.org/abs/2503.01800
+[langlands]: https://www.mpg.de/24476145/breakthrough-prize-mathematics-2025
+[sofa]: https://arxiv.org/abs/2411.19826
 
 ### AI Mathematical Reasoning
 
 | System | Achievement | Date | Details | Source |
 |--------|-------------|------|---------|--------|
-| **Gemini Deep Think** | **IMO Gold Medal** | Jul 2025 | 35/42 points; 5 of 6 problems; natural language proofs | [DeepMind][deepthink] |
+| **Gemini Deep Think** | **IMO Gold Medal** | Jul 2025 | 35/42 points (5/6 problems); natural language proofs within time limit | [DeepMind][deepthink] |
+| **OpenAI o3** | IMO Gold Medal | Jul 2025 | 35/42 points; verified by IMO coordinators | [GitHub][openai-imo] |
 | **AlphaProof** | Published in Nature | Nov 2025 | Methodology for IMO 2024 silver-level performance | [Nature][alphaproof] |
 
-[deepthink]: https://deepmind.google/blog/advanced-version-of-gemini-with-deep-think-officially-achieves-gold-medal-standard-at-the-international-mathematical-olympiad/
+[openai-imo]: https://github.com/aw31/openai-imo-2025-proofs/
 [alphaproof]: https://www.nature.com/articles/s41586-025-09833-y
 
-**IMO President on Gemini Deep Think**: "Their solutions were astonishing in many respects... clear, precise and most of them easy to follow."
+**Key advance:** 2024's best AI scored 28/42 (silver) using days of computation and formal language translation. 2025's systems scored 35/42 (gold) in natural language within the 4.5-hour time limit.
 
 ### Major Awards 2025
 
@@ -205,46 +206,47 @@ xychart-beta
 
 ### Brain-Computer Interfaces
 
-| Company | Milestone | Date | Source |
-|---------|-----------|------|--------|
-| **Neuralink** | 5 patients implanted; 6,000+ hours use | 2024–2025 | [Neuralink][neuralink] |
-| **Neuralink** | FDA Breakthrough Device Designation (Speech) | May 2025 | [Neuralink][neuralink-speech] |
-| **Paradromics** | FDA approval for clinical trial | Nov 2025 | [Nature][paradromics] |
-| **Synchron** | Native Apple device integration | May 2025 | [MassDevice][synchron] |
-| **Columbia/Stanford/Penn** | BISC chip: 65,536 electrodes, 100 Mbps | Dec 2025 | [Nature Electronics][bisc] |
+| Company | Patients | FDA Status | Key Capability | Source |
+|---------|----------|------------|----------------|--------|
+| **Neuralink** | 12+ implanted; 15,000+ hours use | Breakthrough Device (Speech, Blindsight) | 9+ bits/sec mouse control; computer/robotic control | [Neuralink][neuralink] |
+| **Paradromics** | First-in-human June 2025 | **IDE approved** Nov 2025 | 200+ bits/sec (preclinical); speech restoration | [Paradromics][paradromics] |
+| **Synchron** | ~10 in trials | Pivotal trial prep | Native Apple device integration | [Synchron][synchron] |
+| **Precision Neuroscience** | Acute studies | **510(k) cleared** Apr 2025 | Minimally invasive cortical array | [Nature][precision] |
 
-[neuralink-speech]: https://neuralink.com/updates/neuralink-receives-breakthrough-device-designation-for-speech/
-[paradromics]: https://www.nature.com/articles/d41586-025-03849-0
-[synchron]: https://www.massdevice.com/top-bci-stories-2025-so-far/
-[bisc]: https://www.nature.com/articles/s41928-025-01509-9
+[paradromics]: https://www.paradromics.com/news/paradromics-receives-fda-approval-for-the-connect-one-clinical-study-with-the-connexus-brain-computer-interface
+[synchron]: https://synchron.com/news
+[precision]: https://www.nature.com/articles/d41586-025-03849-0
+
+**BISC chip** (Columbia/Stanford/Penn, Dec 2025): 65,536 electrodes, 100 Mbps wireless — orders of magnitude beyond current implants[^bisc].
+
+[^bisc]: [Nature Electronics](https://www.sciencedaily.com/releases/2025/12/251209234139.htm)
 
 ### Connectomics: Method of the Year 2025
 
-| Achievement | Institution | Date | Source |
-|-------------|-------------|------|--------|
-| **Complete adult Drosophila connectome** | FlyWire Consortium | 2024–2025 | [Nature Collections][flywire] |
-| **1 mm³ mouse cortex connectome** | MICrONS Project | 2024–2025 | [Nature Collections][microns] |
-| **First developmental brain cell atlases** | Allen Institute | Nov 2025 | [Allen Institute][allen-atlases] |
-| **EM connectomics** | Nature Methods | Dec 2025 | Named "Method of the Year 2025"[^nature-methods] |
+| Achievement | Details | Source |
+|-------------|---------|--------|
+| **Complete adult Drosophila connectome** | ~140,000 neurons, ~50 million synapses | [Nature Collections][flywire] |
+| **1 mm³ mouse cortex connectome** | 200,000+ neurons, 523 million synapses (MICrONS) | [Nature][microns] |
+| **EM connectomics** | Named "Method of the Year 2025" by *Nature Methods* | [Nature Methods][methods-2025] |
 
 [flywire]: https://www.nature.com/collections/hgcfafejia
-[microns]: https://www.nature.com/collections/bdigiaicbd
-[allen-atlases]: https://alleninstitute.org/news/scientists-complete-first-drafts-of-developing-mammalian-brain-cell-atlases/
-[^nature-methods]: [Nature Methods](https://www.nature.com/articles/s41592-025-02988-6)
+[microns]: https://www.nature.com/articles/s41586-025-08790-w
+[methods-2025]: https://www.nature.com/articles/s41592-025-02988-6
 
 ### Neurological Treatments
 
 | Condition | Treatment | Status | Source |
 |-----------|-----------|--------|--------|
-| **Alzheimer's** | Lecanemab (Leqembi), Donanemab (Kisunla) | FDA approved | [FDA][fda-alzheimers] |
-| **Alzheimer's** | Blood diagnostic test | FDA approved (2025) | [TouchNeurology][alzheimers-test] |
-| **Parkinson's** | Adaptive DBS (closed-loop) | FDA approved (2025) | [MJFF][mjff] |
-| **Huntington's** | AMT-130 (gene therapy) | Slows progression in trials | [Scientific American][huntingtons] |
+| **Alzheimer's** | Lecanemab (Leqembi), Donanemab (Kisunla) | FDA/EU approved; 27% slowing | [Eisai][eisai], [Lilly][lilly] |
+| **Alzheimer's** | Blood diagnostic test | FDA approved (2025) | [TouchNeurology][touchneuro] |
+| **Parkinson's** | Bilateral focused ultrasound | FDA approved (Jul 2025) | [FUS Foundation][fus] |
+| **Parkinson's** | Tavapadon (D1 agonist) | NDA submitted (Sep 2025) | [MJFF][mjff] |
 
-[fda-alzheimers]: https://www.fda.gov/
-[alzheimers-test]: https://touchneurology.com/insight/a-year-in-review-expert-voices-on-the-developments-that-defined-2025/
-[mjff]: https://www.michaeljfox.org/news/advances-parkinsons-therapies-five-key-areas-watch
-[huntingtons]: https://www.scientificamerican.com/article/first-treatment-that-slows-huntingtons-disease-comes-after-years-of/
+[eisai]: https://www.eisai.com/news/2025/news202585.html
+[lilly]: https://investor.lilly.com/news-releases/news-release-details/lillys-kisunla-donanemab-receives-marketing-authorization-0
+[touchneuro]: https://touchneurology.com/insight/a-year-in-review-expert-voices-on-the-developments-that-defined-2025/
+[fus]: https://www.fusfoundation.org/newsletters/july-10-2025-parkinsons-disease-fda-approval-and-more-news/
+[mjff]: https://www.michaeljfox.org/news/new-parkinsons-drug-tavapadon-submitted-fda-review
 
 ---
 
@@ -266,36 +268,37 @@ xychart-beta
 | Internet users | **6 billion** | 5.8 billion | +240 million |
 | % of world population | **74%** | 71% | +3pp |
 | People offline | **2.2 billion** | 2.3 billion | −100 million |
-| 5G subscriptions | ~3 billion | — | First estimate |
+| 5G subscriptions | ~3 billion | — | First year at scale |
 
 ### Digital Divide
 
 | Group | Internet Usage |
 |-------|----------------|
 | High-income countries | 94% |
-| Low-income countries | 23% |
+| Low-income countries | **23%** |
 | Urban areas | 85% |
 | Rural areas | 58% |
+| Rural in low-income countries | **14%** |
 
-### Satellite Internet Progress
+### Satellite Internet
 
 | Constellation | 2025 Milestones | Source |
 |---------------|-----------------|--------|
-| **Starlink** | +4.6M subscribers; 650+ Direct-to-Cell satellites; 12M+ D2C connections | [Starlink Progress][starlink] |
-| **Amazon Leo** | 180 satellites launched; first operational constellation; "Ultra" gigabit antenna | [Amazon][amazon-leo] |
-| **OneWeb/Eutelsat** | 600+ satellites; global coverage; brand unification | [Eutelsat][eutelsat] |
+| **Starlink** | 9M subscribers; 9,357 satellites; 150+ countries | [Starlink][starlink] |
+| **Amazon Leo** | 180 satellites; enterprise preview began Nov 2025 | [Amazon][amazon-leo] |
+| **Eutelsat OneWeb** | 654 satellites; global coverage | [Eutelsat][eutelsat] |
 
-[starlink]: https://starlink.com/progress
+[starlink]: https://starlink.com/updates/network-update
 [amazon-leo]: https://www.aboutamazon.com/news/innovation-at-amazon/project-kuiper-satellite-rocket-launch-progress-updates
 [eutelsat]: https://www.satellitetoday.com/finance/2025/09/04/eutelsat-unifies-brand-keeps-oneweb-constellation-name/
 
 ### 6G Development
 
-| Date | Event | Source |
-|------|-------|--------|
-| Jun 2025 | 3GPP initiates 6G technical studies | [Ericsson][ericsson-6g] |
-| Dec 2025 | US Presidential Memorandum "Winning the 6G Race" | [White House][wh-6g] |
-| 2030 | Projected commercial deployment | Industry consensus |
+| Milestone | Status | Source |
+|-----------|--------|--------|
+| 3GPP technical studies | Initiated Jun 2025 | [Ericsson][ericsson-6g] |
+| US Presidential Memorandum | "Winning the 6G Race" (Dec 2025) | [White House][wh-6g] |
+| Commercial deployment | Projected 2030 | Industry consensus |
 
 [ericsson-6g]: https://www.ericsson.com/en/blog/2025/6/blog-6g-standardization-technology-step-to-publish
 [wh-6g]: https://www.whitehouse.gov/presidential-actions/2025/12/national-security-presidential-memorandum-nspm-8-0bda/
@@ -306,38 +309,54 @@ xychart-beta
 
 ### Superconductivity Progress
 
-| Breakthrough | Institution | Date | Significance |
-|--------------|-------------|------|--------------|
-| **Nickelates stabilized at room pressure** | SLAC/Stanford | Feb 2025 | First high-Tc superconductor stable without extreme pressure[^slac] |
-| **V-shaped gap in magic-angle graphene** | MIT | Nov 2025 | Evidence of unconventional superconductivity mechanism[^mit-graphene] |
-| **H₃S gap measured (60 meV)** | Max Planck | Dec 2025 | First direct measurement in hydrogen-rich superconductors |
+| Breakthrough | Institution | Significance |
+|--------------|-------------|--------------|
+| **Nickelates stabilized at ambient pressure** | SLAC/Stanford (Feb 2025) | First high-Tc superconductor stable without extreme pressure[^slac] |
+| **V-shaped gap in magic-angle graphene** | MIT (Nov 2025) | Evidence of unconventional superconductivity mechanism[^mit-graphene] |
+| **H₃S gap measured (60 meV)** | Max Planck (Dec 2025) | First direct measurement in hydrogen-rich superconductors |
+| **LK-99 definitively closed** | Multiple labs | Confirmed to be an insulator, not a superconductor |
 
 [^slac]: [SLAC](https://www6.slac.stanford.edu/news/2025-02-04-first-researchers-stabilize-promising-new-class-high-temperature-superconductors)
 [^mit-graphene]: [MIT News](https://news.mit.edu/2025/physicists-observe-evidence-unconventional-superconductivity-graphene-1106)
-
-**LK-99 Update**: The 2023 room-temperature superconductor claim was definitively refuted; LK-99 confirmed to be an insulator.
 
 ### Gene Editing
 
 | Milestone | Date | Details | Source |
 |-----------|------|---------|--------|
-| **First personalized CRISPR therapy** | Feb 2025 | Infant KJ treated for CPS1 deficiency at CHOP/Penn | [CHOP][chop-crispr], [NEJM][nejm-crispr] |
-| **Active clinical trials** | 2025 | ~250 gene-editing trials, 150+ active | [CRISPR Medicine News][crispr-trials] |
-| **FDA-approved gene therapies** | 2025 | 40+ products listed | [FDA][fda-gene] |
+| **First personalized CRISPR therapy** | May 2025 | Infant KJ treated for CPS1 deficiency; bespoke therapy designed in 6 months | [NEJM][nejm-crispr] |
+| **ZEVASKYN FDA approval** | Apr 2025 | Gene therapy for epidermolysis bullosa | [FDA][fda-zevaskyn] |
+| **Casgevy expansion** | 2025 | Now in US, UK, EU, Canada, UAE; 50+ patients treated | [IGI][igi-casgevy] |
 
-[chop-crispr]: https://www.chop.edu/news/worlds-first-patient-treated-personalized-crispr-gene-editing-therapy-childrens-hospital
 [nejm-crispr]: http://www.nejm.org/doi/full/10.1056/NEJMoa2504747
-[crispr-trials]: https://crisprmedicinenews.com/clinical-trials/
-[fda-gene]: https://www.fda.gov/vaccines-blood-biologics/cellular-gene-therapy-products/approved-cellular-and-gene-therapy-products
+[fda-zevaskyn]: https://www.fda.gov/vaccines-blood-biologics/zevaskyn
+[igi-casgevy]: https://innovativegenomics.org/news/crispr-clinical-trials-2025/
+
+**Pipeline:** 679 gene therapy asset-indications at clinical stage (Q2 2025); 36 gene therapies globally approved[^asgct].
+
+[^asgct]: [ASGCT Landscape Report Q2 2025](https://www.asgct.org/uploads/files/general/Landscape-Report-2025-Q2.pdf)
 
 ### Scientific Infrastructure
 
-| Project | 2025 Status |
-|---------|-------------|
-| **LHC Run 3** | Record collisions; oxygen and neon ions collided (first time) |
-| **Future Circular Collider** | Feasibility study released; €15B estimated; €860M private pledges |
-| **Square Kilometre Array** | Phase 1 construction underway; 14 member countries |
-| **Vera C. Rubin Observatory** | Completed in Chile |
+| Project | 2025 Status | Source |
+|---------|-------------|--------|
+| **LHC Run 3** | Record luminosity; extended to July 2026 | [CERN][cern-lhc] |
+| **Future Circular Collider** | FCC-ee recommended; **€860M** private pledges | [CERN][cern-fcc] |
+| **Vera C. Rubin Observatory** | **First light** Jun 2025; discovered 2,104 asteroids in 10 hours | [Rubin][rubin] |
+| **Square Kilometre Array** | Phase 1 construction advancing; first signals detected | [SKAO][skao] |
+
+[cern-lhc]: https://home.cern/news/news/accelerators/lhc-delivers-record-number-particle-collisions-2025
+[cern-fcc]: https://home.cern/news/press-release/cern/private-donors-pledge-860-million-euros-cerns-future-circular-collider
+[rubin]: https://rubinobservatory.org/news/first-imagery-rubin
+[skao]: https://www.skao.int/en/explore/construction-journey
+
+### Other Paradigm-Breaking Science
+
+| Discovery | Significance |
+|-----------|--------------|
+| **Muon g-2 final result** | Agrees with Standard Model (lattice QCD triumph); no new physics hints |
+| **Dragon Man = Denisovan** | DNA from dental plaque confirmed; first face of this human relative |
+| **First 2D metals** | Atomically thin sheets of bismuth, tin, lead, indium, gallium created |
+| **Heat-resistant rice** | QT12 gene protects crops from climate-induced yield/quality loss |
 
 ---
 
@@ -347,26 +366,26 @@ xychart-beta
 
 | Resource | Source |
 |----------|--------|
-| Quantum Computer Roadmaps | [IBM Quantum Roadmap](https://www.ibm.com/quantum/roadmap) |
+| IBM Quantum Roadmap | [IBM](https://www.ibm.com/quantum/roadmap) |
 | ITU Global Connectivity Dashboard | [ITU](https://www.itu.int/itu-d/reports/statistics/global-connectivity-report-2025/) |
 | Nature Methods Year in Review | [Nature Methods](https://www.nature.com/articles/s41592-025-02988-6) |
 | CERN Highlights 2025 | [CERN](https://home.cern/news/news/cern/cern-highlights-2025) |
+| Quanta Year in Mathematics | [Quanta](https://www.quantamagazine.org/the-biggest-discoveries-in-math-in-2025-20251218/) |
 
 ---
 
-*Data sources: [Google DeepMind][google-echoes], [TSMC][tsmc-2nm], [Neuralink][neuralink], [ITU 2025][itu-2025], [Quanta Magazine][langlands], [Nature][paradromics], [Riverlane][riverlane], [DOE][doe-quantum], [Allen Institute][allen-atlases]*
+*Data sources: [Google DeepMind][deepthink], [TSMC][tsmc-2nm], [Neuralink][neuralink], [ITU 2025][itu-2025], [Quanta Magazine][kakeya], [Nature][microns], [Riverlane][riverlane], [DOE][doe-quantum], [CERN][cern-fcc]*
 
 ---
 
 ## Footnotes
 
-[^quantinuum]: [Honeywell PR: Quantinuum $10B valuation](https://www.quantinuum.com/press-releases/honeywell-announces-600-million-capital-raise-for-quantinuum-at-10b-pre-money-equity-valuation-to-advance-quantum-computing-at-scale)
-[^psiquantum]: [McKinsey Quantum Monitor 2025](https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/the-year-of-quantum-from-concept-to-reality-in-2025)
-[^dwave]: Classical replication by Flatiron/EPFL/NYU researchers
 [^majorana-dispute]: [New Scientist: Microsoft Majorana controversy](https://www.newscientist.com/article/2508083-microsoft-made-a-splash-with-a-controversial-quantum-computer-in-2025/)
+[^dwave-dispute]: [Scientific American: D-Wave claims challenged](https://www.scientificamerican.com/article/controversial-quantum-advantage-claim-made-by-computing-firm-d-wave/)
 [^riverlane-talent]: [Riverlane QEC Report 2025](https://www.riverlane.com/quantum-error-correction-report-2025)
-[^nni]: [NNI FY2025 Budget Supplement](https://www.nano.gov/sites/default/files/pub_resource/NNI-FY25-Budget-Supplement.pdf)
 [^bristol-motor]: [C&EN: Self-driving molecular motor](https://cen.acs.org/materials/molecular-machines/Watch-new-self-driving-molecular/103/web/2025/07)
-[^nature-methods]: [Nature Methods: Method of the Year 2025](https://www.nature.com/articles/s41592-025-02988-6)
+[^nni]: [NNI FY2025 Budget Supplement](https://www.nano.gov/sites/default/files/pub_resource/NNI-FY25-Budget-Supplement.pdf)
+[^bisc]: [ScienceDaily: BISC implant](https://www.sciencedaily.com/releases/2025/12/251209234139.htm)
 [^slac]: [SLAC: Nickelate superconductors](https://www6.slac.stanford.edu/news/2025-02-04-first-researchers-stabilize-promising-new-class-high-temperature-superconductors)
 [^mit-graphene]: [MIT: Unconventional superconductivity in graphene](https://news.mit.edu/2025/physicists-observe-evidence-unconventional-superconductivity-graphene-1106)
+[^asgct]: [ASGCT Landscape Report Q2 2025](https://www.asgct.org/uploads/files/general/Landscape-Report-2025-Q2.pdf)
