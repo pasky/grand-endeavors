@@ -4,9 +4,9 @@
 
 ## Executive Summary
 
-**The good news:** Social technologies are evolving. Alternative social platforms like Bluesky reached 40M+ users[^bluesky]. Deliberative democracy is institutionalizing — the Council of Europe, OECD, and new accelerators are mainstreaming citizen assemblies[^coe-deliberative]. Australia became the first country to implement a national under-16 social media ban[^aus-ban]. Community Notes expanded to Meta's 3B+ users[^meta-notes]. Youth-led protests toppled governments in Nepal and Mongolia, demonstrating Gen Z's capacity for collective action[^carnegie-genz].
+**The good news:** Social technologies are evolving. Alternative platforms like Bluesky reached 40M+ users[^bluesky]. Deliberative democracy is institutionalizing — the Council of Europe and OECD are mainstreaming citizen assemblies[^coe-deliberative]. Australia became the first country to implement a national under-16 social media ban[^aus-ban]. Community Notes expanded to Meta's 3B+ users[^meta-notes]. Youth-led protests toppled governments in Nepal, Bangladesh, and Mongolia, demonstrating Gen Z's capacity for collective action[^carnegie-genz]. South Korea's martial law attempt was reversed within 6 hours by citizens and parliament — democracy's immune response functioning[^sk-crisis].
 
-**The bad news:** The great filters loom closer than ever. The Doomsday Clock stands at 89 seconds to midnight — the closest in history[^doomsday]. Democratic backsliding accelerated: 72% of the world's population now lives in autocracies[^vdem]. Loneliness kills ~871,000 people annually[^who-loneliness]. Trust is fracturing: 61% globally hold grievances against institutions[^edelman]. AI safety incidents surged 56%[^ai-incidents]. Seven families are suing AI companies over chatbot-related deaths[^ai-deaths].
+**The bad news:** The great filters loom closer than ever. The Doomsday Clock stands at 89 seconds to midnight — the closest in history[^doomsday]. For the first time in 20+ years, autocracies (91) outnumber democracies (88); 72% of the world's population now lives under autocratic rule[^vdem]. Loneliness kills about 871,000 people annually[^who-loneliness]. Trust stagnates while grievance grows: 61% globally hold institutional grievances[^edelman]. Documented AI safety incidents surged 56%[^ai-incidents], and multiple families are suing AI companies over chatbot-related deaths[^cnn-lawsuits][^guardian-openai]. The last major nuclear arms control treaty (New START) expires in weeks with no replacement[^newstart].
 
 **Bottom line: Society's immune system is being tested. The antibodies are forming, but the infection is spreading faster.**
 
@@ -19,6 +19,7 @@
 | **Interpersonal Trust (Global)** | **~30–35%** (WVS median) | Flat | [Our World in Data][owid-trust] |
 | **Institutional Trust (28-country avg)** | **56%** | Flat | [Edelman 2025][edelman-2025] |
 | **Trust in Government (OECD)** | **39%** high trust | Flat | [OECD Trust Survey][oecd-trust] |
+| **US Trust in Government** | **17%** | ↓ Near historic low | [Pew Dec 2025][pew-trust] |
 | **World in Autocracies** | **72%** of population | ↑ Worsening | [V-Dem 2025][vdem-2025] |
 | **Doomsday Clock** | **89 seconds** to midnight | ↑ Closest ever | [Bulletin of Atomic Scientists][doomsday-clock] |
 | **Loneliness Prevalence** | **1 in 6** globally (~16%) | ↑ Worsening | [WHO 2025][who-loneliness] |
@@ -26,11 +27,12 @@
 [owid-trust]: https://ourworldindata.org/trust
 [edelman-2025]: https://www.edelman.com/trust/2025/trust-barometer
 [oecd-trust]: https://www.oecd.org/en/publications/oecd-survey-on-drivers-of-trust-in-public-institutions-2024-results_9a20554b-en.html
+[pew-trust]: https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/
 [vdem-2025]: https://www.v-dem.net/documents/60/V-dem-dr__2025_lowres.pdf
 [doomsday-clock]: https://thebulletin.org/doomsday-clock/2025-statement/
 [who-loneliness]: https://www.who.int/news/item/30-06-2025-social-connection-linked-to-improved-heath-and-reduced-risk-of-early-death
 
-### Interpersonal Trust by Region
+### Interpersonal Trust by Country
 
 ```mermaid
 xychart-beta
@@ -43,7 +45,18 @@ xychart-beta
 
 [wvs]: https://www.worldvaluessurvey.org/WVSOnline.jsp
 
-**Assessment: ⚠️ Stable but fragile.** Interpersonal trust has held steady globally since 2015, but institutional trust stagnates at neutral levels while political polarization reaches historic highs. The underlying social fabric is under strain.
+### US Trust in Federal Government (1958–2025)
+
+```mermaid
+xychart-beta
+    title "US Trust in Federal Government (%)"
+    x-axis [2015, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+    y-axis "% Trust Always/Most" 10 --> 30
+    line [19, 18, 17, 27, 24, 20, 16, 22, 17]
+```
+*Data: [Pew Research][pew-trust]*
+
+**Assessment: ⚠️ Stable but fragile.** Global institutional trust stagnates at 56% while interpersonal trust shows modest post-COVID recovery in some democracies. The dominant 2025 theme is **"grievance"** — 6 in 10 people globally feel institutions work against them, and unprecedented numbers now view hostile activism as legitimate (40% approve[^edelman]).
 
 ---
 
@@ -53,35 +66,35 @@ xychart-beta
 
 **Status: Critical — 89 seconds to midnight**
 
-The Doomsday Clock, set by the Bulletin of the Atomic Scientists, reached its closest point to catastrophe on January 28, 2025[^doomsday]. Multiple escalation pathways remain active.
+The Doomsday Clock, set by the Bulletin of the Atomic Scientists, reached its closest point to catastrophe on January 28, 2025[^doomsday]. Multiple escalation pathways remain active. The era of post-Cold War nuclear reductions is ending — all nine nuclear states are modernizing or expanding arsenals.
 
 | Threat Vector | 2025 Status | Source |
 |---------------|-------------|--------|
-| Nuclear arsenals | ~12,500 warheads globally; all major powers modernizing | [FAS][fas-nuclear] |
-| Russia-Ukraine nuclear risk | Tactical nukes deployed to Belarus; doctrine lowered threshold | [Wikipedia][wiki-nuclear-ukraine] |
-| Iran nuclear program | JCPOA collapsed; Khamenei authorized warhead miniaturization (Dec 2025) | [EU Council][eu-iran] |
-| AI weapons governance | UNGA resolution passed (156-6), but US, Russia, China opposed | [Stop Killer Robots][stopkillerrobots] |
-| Biosecurity | First H5N5 human fatality (Nov 2025); H5N1 spreading in dairy cattle | [WHO][who-h5n5] |
+| Nuclear arsenals | ~12,241 warheads globally; all major powers modernizing | [SIPRI Yearbook 2025][sipri] |
+| New START | Expires Feb 5, 2026; Russia suspended inspections 2023; no replacement | [State Dept][state-start] |
+| Iran nuclear | IAEA declared non-compliance (first in 20 years); Israeli/US strikes destroyed centrifuge program | [IAEA][iaea-iran] |
+| Autonomous weapons | UNGA resolution passed (156-5), but no binding treaty | [Stop Killer Robots][stopkillerrobots] |
+| Biosecurity | First H5N5 human fatality (Nov 2025); H5N1 in US (71 cases, 2 deaths) | [WHO][who-h5n5], [CDC][cdc-h5n1] |
 
-[fas-nuclear]: https://fas.org/initiative/status-world-nuclear-forces/
-[wiki-nuclear-ukraine]: https://en.wikipedia.org/wiki/Nuclear_risk_during_the_Russo-Ukrainian_war
-[eu-iran]: https://www.consilium.europa.eu/en/policies/jcpoa-iran-restrictive-measures/
+[sipri]: https://www.sipri.org/yearbook/2025
+[state-start]: https://www.state.gov/new-start-treaty
+[iaea-iran]: https://www.iaea.org/newscenter/focus/iran/iaea-and-iran-iaea-board-reports
 [stopkillerrobots]: https://www.stopkillerrobots.org/news/156-states-support-unga-resolution/
-[who-h5n5]: https://www.who.int/emergencies/disease-outbreak-news/item/2025-DON590
+[cdc-h5n1]: https://www.cdc.gov/bird-flu/situation-summary/index.html
 
 #### Key 2025 Events
 
 | Date | Event | Source |
 |------|-------|--------|
-| Jan 28, 2025 | Doomsday Clock moved to 89 seconds — closest ever | [Bulletin][doomsday-clock] |
-| Jun 13, 2025 | Israel strikes Iran nuclear facilities; US strikes 3 Iranian sites | [Reuters][reuters-israel-iran] |
-| Aug 28, 2025 | E3 triggers JCPOA "snapback" — UN reimposed all Iran sanctions | [EU Council][eu-iran] |
-| Nov 6, 2025 | UNGA adopts autonomous weapons resolution: 156 for, 6 against | [Stop Killer Robots][stopkillerrobots] |
-| Dec 24, 2025 | Khamenei authorizes development of miniaturized nuclear warheads | [Wikipedia][wiki-iran-nuclear] |
-| Dec 29-30, 2025 | China's largest-ever military exercise encircling Taiwan | [Reuters][reuters-taiwan] |
+| Jan 28, 2025 | **Doomsday Clock moved to 89 seconds** — closest ever to midnight | [Bulletin][doomsday-clock] |
+| Jun 12, 2025 | IAEA formally declares Iran in breach of non-proliferation obligations | [IAEA][iaea-iran] |
+| Jun 13–24, 2025 | Israeli/US strikes destroy ~22,000 Iranian centrifuges | [ISIS Reports][isis-iran] |
+| Nov 6, 2025 | **UNGA adopts autonomous weapons resolution**: 156 for, 5 against | [Stop Killer Robots][stopkillerrobots] |
+| Nov 15, 2025 | First H5N5 human fatality (US) — novel influenza subtype | [WHO][who-h5n5] |
+| Dec 29–30, 2025 | China's largest-ever military exercise encircling Taiwan | [Reuters][reuters-taiwan] |
 
-[reuters-israel-iran]: https://www.reuters.com/world/middle-east/israel-says-it-strikes-iran-amid-nuclear-tensions-2025-06-13/
-[wiki-iran-nuclear]: https://en.wikipedia.org/wiki/Nuclear_program_of_Iran
+[isis-iran]: https://isis-online.org/isis-reports/analysis-of-iaea-iran-verification-and-monitoring-and-npt-safeguards-reports-september-2025
+[who-h5n5]: https://www.who.int/emergencies/disease-outbreak-news/item/2025-DON590
 [reuters-taiwan]: https://www.reuters.com/world/china/chinas-military-conduct-live-fire-exercises-around-taiwan-tuesday-2025-12-28/
 
 ---
@@ -90,6 +103,8 @@ The Doomsday Clock, set by the Bulletin of the Atomic Scientists, reached its cl
 
 **Status: Mixed — governance accelerating, but capability growth outpacing safety**
 
+The alignment problem remains fundamentally unsolved. The FLI Safety Index found **no major AI company scores above D in existential safety**[^fli-safety]. Real-world harms — teen suicides linked to chatbots[^guardian-characterai][^guardian-openai], state-sponsored AI-enabled cyber operations[^guardian-cyberattack], and accelerating job displacement[^adp-displacement] — demonstrate we are coexisting with AI systems before we have aligned them.
+
 ```mermaid
 xychart-beta
     title "AI Safety Incidents (Documented)"
@@ -97,37 +112,39 @@ xychart-beta
     y-axis "Incidents" 0 --> 250
     bar [48, 68, 92, 149, 200, 233]
 ```
-*Data: [Stanford AI Index 2025][stanford-ai]*
+*Data: [Stanford AI Index / Responsible AI Labs][stanford-ai]*
 
 [stanford-ai]: https://responsibleailabs.ai/knowledge-hub/articles/ai-safety-incidents-2024
 
 | Metric | Status | Source |
 |--------|--------|--------|
-| AI safety incidents | **+56.4%** YoY (233 in 2025) | [Stanford AI Index][stanford-ai] |
-| Major labs existential safety grade | **D average** (FLI assessment) | [Future of Life Institute][fli-safety] |
+| AI safety incidents | **+56%** YoY (233 in 2025) | [Stanford AI Index][stanford-ai] |
+| Major labs existential safety grade | **D average** (FLI) | [Future of Life Institute][fli-safety] |
 | EU AI Act | In force; prohibitions effective Feb 2025 | [EU Digital Strategy][eu-ai-act] |
-| US federal framework | None; Trump EO preempts state AI regulations | [White House][whitehouse-ai] |
+| US federal framework | None; Trump EO preempts state regulations | [White House][whitehouse-ai] |
 | Job displacement (early-career tech) | **−20%** in AI-exposed roles since late 2022 | [ADP/Stanford][adp-ai-jobs] |
+| Expert extinction estimates | 10–20% (Hinton); median 5–10% (2022 survey) | [The Guardian][guardian-hinton] |
 
-[fli-safety]: https://futureoflife.org/wp-content/uploads/2025/12/AI-Safety-Index-Report_011225_TwoPager_Digital.pdf
+[fli-safety]: https://futureoflife.org/ai-safety-index-winter-2025/
 [eu-ai-act]: https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai
 [whitehouse-ai]: https://www.whitehouse.gov/presidential-actions/2025/12/eliminating-state-law-obstruction-of-national-artificial-intelligence-policy/
 [adp-ai-jobs]: https://www.adpresearch.com/yes-ai-is-affecting-employment-heres-the-data/
+[guardian-hinton]: https://www.theguardian.com/technology/2024/dec/27/godfather-of-ai-raises-odds-of-the-technology-wiping-out-humanity-over-next-30-years
 
 #### Key 2025 Events
 
 | Date | Event | Source |
 |------|-------|--------|
-| Feb 2, 2025 | EU AI Act prohibited practices take effect | [EU][eu-ai-act] |
-| May 22, 2025 | Anthropic activates ASL-3 CBRN protections for Claude Opus 4 | [Anthropic][anthropic-asl3] |
-| Aug 13, 2025 | Geoffrey Hinton: 10–20% chance of AI extinction | [CNN][cnn-hinton] |
-| Nov 26, 2025 | MIT: 11.7% of US workforce ($1.2T wages) replaceable by current AI | [CNBC/MIT][mit-iceberg] |
-| Dec 2025 | All 8 major AI labs receive D grade on existential safety | [FLI][fli-safety] |
-| Dec 2025 | Trump EO creates AI Litigation Task Force to challenge state AI laws | [White House][whitehouse-ai] |
+| Feb 2, 2025 | **EU AI Act prohibited practices take effect** | [EU][eu-ai-act] |
+| May 22, 2025 | Anthropic activates ASL-3 CBRN protections for Claude Opus 4 — industry first | [Anthropic][anthropic-asl3] |
+| Aug 13, 2025 | Geoffrey Hinton: 10–20% chance of AI extinction in 30 years | [CNN][cnn-hinton] |
+| Oct 29, 2025 | **Character.AI bans all users under 18** after suicide lawsuits | [The Guardian][guardian-characterai] |
+| Dec 2025 | **All 8 major AI labs receive D grade** on existential safety (FLI) | [FLI][fli-safety] |
+| Dec 11, 2025 | Trump EO preempts state AI regulations, focuses on "dominance" over safety | [White House][whitehouse-ai] |
 
 [anthropic-asl3]: https://www.anthropic.com/news/activating-asl3-protections
 [cnn-hinton]: https://www.cnn.com/2025/08/13/tech/ai-geoffrey-hinton
-[mit-iceberg]: https://www.cnbc.com/2025/11/26/mit-study-finds-ai-can-already-replace-11point7percent-of-us-workforce.html
+[guardian-characterai]: https://www.theguardian.com/technology/2025/oct/29/character-ai-suicide-children-ban
 
 ---
 
@@ -135,14 +152,14 @@ xychart-beta
 
 **Status: Critical — 871,000 deaths annually from loneliness**
 
-The WHO's first-ever global report on social connection quantified the crisis: loneliness kills 100 people every hour[^who-loneliness].
+The WHO's first-ever global report on social connection quantified the crisis: loneliness kills 100 people every hour[^who-loneliness]. The health impact equals smoking 15 cigarettes/day[^surgeon-general].
 
 ```mermaid
 xychart-beta
     title "US Adult Loneliness (45+)"
-    x-axis [2018, 2020, 2023, 2025]
+    x-axis [2010, 2018, 2020, 2023, 2025]
     y-axis "% Lonely" 30 --> 45
-    line [35, 37, 38, 40]
+    line [35, 35, 37, 38, 40]
 ```
 *Data: [AARP Loneliness Studies][aarp]*
 
@@ -150,27 +167,30 @@ xychart-beta
 
 | Metric | 2025 Value | Source |
 |--------|------------|--------|
-| Global loneliness | **1 in 6** people | [WHO][who-loneliness] |
-| Deaths from loneliness | **~871,000/year** | [WHO][who-loneliness] |
+| Global loneliness | **1 in 6** people (~16%) | [WHO][who-loneliness] |
+| Deaths from loneliness | **~871,000/year** (model-based estimate) | [WHO][who-loneliness] |
 | US adults 45+ lonely | **40%** (up from 35% in 2018) | [AARP][aarp] |
-| Gen Z mental health challenges | **94%** report regular issues | [Blue Shield][blueshield] |
+| US adults feeling isolated | **54%** | [APA Nov 2025][apa-stress] |
+| Gen Z mental health challenges | **40%** of high schoolers persistently sad/hopeless | [CDC YRBSS][cdc-yrbss] |
 | Global daily screen time | **6h 40min** | [DataReportal][datareportal] |
 
-[blueshield]: https://news.blueshieldca.com/2025/09/30/new-poll-94-of-gen-z-youth-report-experiencing-regular-mental-health-challenges
+[surgeon-general]: https://www.hhs.gov/sites/default/files/surgeon-general-social-connection-advisory.pdf
+[apa-stress]: https://www.apa.org/news/press/releases/2025/11/nation-suffering-division-loneliness
+[cdc-yrbss]: https://www.cdc.gov/children-mental-health/data-research/index.html
 [datareportal]: https://explodingtopics.com/blog/screen-time-stats
 
 #### Policy Response (2025)
 
 | Jurisdiction | Action | Date | Source |
 |--------------|--------|------|--------|
-| **Australia** | Under-16 social media ban takes effect | Dec 10, 2025 | [BBC][bbc-aus] |
+| **WHO** | First WHA Resolution treating loneliness as public health priority | May 2025 | [WHO][who-loneliness] |
+| **Australia** | Under-16 social media ban takes effect — world first | Dec 10, 2025 | [Reuters][reuters-aus] |
+| **California** | Newsom executive order addressing boys/young men loneliness | Aug 4, 2025 | [EdSource][edsource-newsom] |
 | **Denmark** | Announces under-15 social media ban | Oct 7, 2025 | [The Guardian][guardian-denmark] |
-| **Malaysia** | Under-16 ban announced (effective Jan 2026) | Nov 2025 | [Wikipedia][wiki-sm-bans] |
-| **WHO** | First-ever resolution treating loneliness as public health priority | May 2025 | [WHO][who-loneliness] |
 
-[bbc-aus]: https://www.bbc.com/news/articles/cwyp9d3ddqyo
+[reuters-aus]: https://www.reuters.com/legal/litigation/australia-social-media-ban-takes-effect-world-first-2025-12-09/
+[edsource-newsom]: https://edsource.org/2025/newsom-addresses-loneliness-crisis-mental-health-care/737866
 [guardian-denmark]: https://www.theguardian.com/world/2025/oct/07/danish-pm-plans-to-ban-social-medimmfor-under-15s-warning-it-is-stealing-childhood
-[wiki-sm-bans]: https://en.wikipedia.org/wiki/Social_media_age_verification_laws_by_country
 
 ---
 
@@ -178,13 +198,15 @@ xychart-beta
 
 ### 🔴 Trust Erosion and Polarization
 
-**Status: Critical — record grievances, platform fact-checking retreats**
+**Status: Critical — record grievances, fact-checking retreating**
+
+The verification infrastructure is fragmenting as synthetic content explodes. Meta retreated from fact-checking[^meta-cn] while ~8 million deepfakes now circulate online — up 900% since 2023[^deepstrike]. Europe enforces; America retreats.
 
 ```mermaid
 xychart-beta
     title "US Partisan Anger Gap (% Angry at Federal Govt)"
     x-axis [2015, 2017, 2019, 2021, 2023, 2025]
-    y-axis "Gap (Dem-Rep %)" 0 --> 40
+    y-axis "Gap (points)" 0 --> 40
     line [5, 8, 12, 18, 25, 35]
 ```
 *Data: [Pew Research][pew-anger]*
@@ -196,23 +218,26 @@ xychart-beta
 | Global grievance holders | **61%** | [Edelman 2025][edelman-2025] |
 | US partisan anger gap | **35 points** (record) | [Pew][pew-anger] |
 | Agree parties can't agree on facts | **80%** | [Pew][pew-facts] |
-| AI content in fact-checks | **10%** (Aug 2025) | [BBC R&D][bbc-misinfo] |
+| Deepfakes online | **~8 million** (+900% since 2023, vendor estimate) | [DeepStrike][deepstrike] |
+| Community Notes effectiveness | 46% reduction in reposts when shown | [PNAS][pnas-cn] |
 
 [pew-facts]: https://www.pewresearch.org/politics/2024/09/09/partisan-antipathy-more-intense-extensive/
-[bbc-misinfo]: https://www.bbc.co.uk/rd/articles/2025-09-misinformation-disinformation
+[deepstrike]: https://deepstrike.io/blog/deepfake-statistics-2025
+[pnas-cn]: https://www.pnas.org/doi/10.1073/pnas.2503413122
 
 #### Key 2025 Events
 
 | Date | Event | Source |
 |------|-------|--------|
 | Jan 7, 2025 | **Meta ends US fact-checking**, shifts to Community Notes model | [Meta][meta-cn] |
-| Jan 22, 2025 | Edelman: 40% globally approve hostile activism | [Edelman][edelman-2025] |
 | Feb 13, 2025 | EU integrates Disinformation Code into Digital Services Act | [EC][ec-dsa] |
 | Nov 2025 | 200,000+ US Community Notes contributors on Meta | [Meta Transparency][meta-transparency] |
+| Dec 5, 2025 | **EU fines X €120M** — first DSA enforcement for deceptive blue checkmarks | [EC][ec-x-fine] |
 
 [meta-cn]: https://about.fb.com/news/2025/01/meta-more-speech-fewer-mistakes/
 [ec-dsa]: https://ec.europa.eu/commission/presscorner/detail/en/ip_25_505
 [meta-transparency]: https://transparency.meta.com/features/community-notes/
+[ec-x-fine]: https://ec.europa.eu/commission/presscorner/detail/en/ip_24_4639
 
 ---
 
@@ -220,62 +245,69 @@ xychart-beta
 
 **Status: Critical — first AI chatbot-related deaths, lawsuits mounting**
 
-The line between virtual and real is blurring, with fatal consequences. Multiple families have filed wrongful death lawsuits against AI companies.
+The line between virtual and real is blurring with fatal consequences. Multiple families have filed wrongful death lawsuits against AI companies. 72% of US teens have tried AI companions; 48% use them for mental health support[^electroiq].
 
 | Metric | 2025 Value | Source |
 |--------|------------|--------|
-| Wrongful death lawsuits against OpenAI | **8+** | [The Guardian][guardian-openai] |
-| ChatGPT users showing suicidal intent | **1M+/week** | [OpenAI disclosure][guardian-openai] |
+| Teen AI companion usage | **72%** have tried; **52%** regular users | [TechCrunch][tc-ai-teens] |
+| ChatGPT users showing suicidal intent | **1M+/week** | [The Guardian][guardian-openai] |
+| Wrongful death lawsuits against AI companies | **8+** | [CNN][cnn-lawsuits] |
+| AI companion market | **$37B** (2025); projected **$552B** by 2035 | [Precedence Research][precedence] |
 | Italy fine against Replika | **€5M** (GDPR violations) | [EDPB][edpb-replika] |
-| States banning AI therapy | **1** (Illinois, first) | [IDFPR][illinois-ai-therapy] |
 
+[electroiq]: https://electroiq.com/stats/ai-companions-statistics/
+[tc-ai-teens]: https://www.americanactionforum.org/insight/ai-companions-opportunities-risks-and-policy-implications/
 [guardian-openai]: https://www.theguardian.com/technology/2025/oct/27/chatgpt-suicide-self-harm-openai
+[cnn-lawsuits]: https://www.cnn.com/2025/11/06/us/openai-chatgpt-suicide-lawsuit-invs-vis
+[precedence]: https://www.precedenceresearch.com/ai-companion-market
 [edpb-replika]: https://www.edpb.europa.eu/news/national-news/2025/ai-italian-supervisory-authority-fines-company-behind-chatbot-replika_en
-[illinois-ai-therapy]: https://idfpr.illinois.gov/news/2025/gov-pritzker-signs-state-leg-prohibiting-ai-therapy-in-il.html
 
 #### Key 2025 Events
 
 | Date | Event | Source |
 |------|-------|--------|
-| May 2025 | **TAKE IT DOWN Act** — first federal law on AI intimate imagery | [HALOCK][halock-deepfakes] |
-| Aug 2025 | GPT-5 release sparks backlash from users mourning AI "boyfriends" | [Al Jazeera][aljazeera-ai-bf] |
-| Sep 2025 | FTC launches investigation into 7 AI companion companies | [CNN][cnn-ftc] |
-| Oct 2025 | **Character.AI bans all users under 18** after lawsuits | [The Guardian][guardian-characterai] |
-| Oct 2025 | OpenAI discloses 1M+ weekly users show suicidal intent | [The Guardian][guardian-openai] |
+| May 19, 2025 | **TAKE IT DOWN Act** signed — first federal law on AI intimate imagery | [Congress.gov][congress-takedown] |
+| Sept 11, 2025 | **FTC launches investigation** into 7 AI companion companies | [FTC][ftc-inquiry] |
+| Oct 13, 2025 | **California SB 243** — first state to regulate AI companion chatbots | [TechCrunch][tc-ca-sb243] |
+| Oct 29, 2025 | **Character.AI bans all users under 18** after lawsuits | [Character.AI][characterai-ban] |
+| Dec 12, 2025 | OpenAI/Microsoft sued over ChatGPT's alleged role in murder-suicide | [Le Monde][lemonde-murder] |
 
-[halock-deepfakes]: https://www.halock.com/what-legislation-protects-against-deepfakes-and-synthetic-media/
-[aljazeera-ai-bf]: https://www.aljazeera.com/economy/2025/8/14/women-with-ai-boyfriends-mourn-lost-love-after-cold-chatgpt-upgrade
-[cnn-ftc]: https://www.cnn.com/2025/09/11/tech/ftc-investigating-ai-companion-chatbots-kids-safety
-[guardian-characterai]: https://www.theguardian.com/technology/2025/oct/29/character-ai-suicide-children-ban
+[congress-takedown]: https://www.congress.gov/bill/119th-congress/senate-bill/146
+[ftc-inquiry]: https://www.ftc.gov/news-events/news/press-releases/2025/09/ftc-launches-inquiry-ai-chatbots-acting-companions
+[tc-ca-sb243]: https://techcrunch.com/2025/10/13/california-becomes-first-state-to-regulate-ai-companion-chatbots/
+[characterai-ban]: https://blog.character.ai/u18-chat-announcement/
+[lemonde-murder]: https://www.lemonde.fr/en/pixels/article/2025/12/12/open-ai-microsoft-face-lawsuit-over-chatgpt-s-alleged-role-in-a-murder-suicide_6748404_13.html
 
 ---
 
 ### 🟡 Social Technologies — Building New Infrastructure
 
-**Status: Mixed — alternative platforms growing, but DAO participation collapsing**
+**Status: Mixed — exit working, voice failing**
 
-The "exit" strategy is gaining traction: users migrating to decentralized alternatives. The "voice" strategy struggles: participation in existing governance mechanisms is declining.
+Users are migrating to decentralized alternatives ("exit" strategy gaining traction). But participation in existing governance mechanisms is declining ("voice" strategy struggling). 
 
 | Technology | Status | Key Metric | Source |
 |------------|--------|-----------|--------|
-| **Bluesky** | 🟢 Thriving | 40M+ users (Nov 2025) | [Backlinko][backlinko-bluesky] |
-| **Community Notes** | 🟡 Scaling | 200K+ contributors on Meta | [Meta][meta-transparency] |
-| **Deliberative Democracy** | 🟢 Institutionalizing | EU accelerator, OECD tracking | [People Powered][peoplepowered] |
-| **DAOs** | 🔴 Declining | −60–90% proposals YoY | [DL News][dlnews-dao] |
-| **Open Source Funding** | 🟡 Fragile | $8.8T value, still underfunded | [Linux Foundation][lf-oss] |
+| **Bluesky** | 🟢 Thriving | 40M+ users (Nov 2025), tripled YoY | [Backlinko][backlinko-bluesky] |
+| **Community Notes** | 🟡 Scaling | 200K+ contributors on Meta; 14-day publish lag on X | [Meta][meta-transparency] |
+| **Deliberative Democracy** | 🟢 Institutionalizing | OECD tracking 700+ assemblies; EU accelerator | [People Powered][peoplepowered] |
+| **DAOs** | 🔴 Declining | −60–90% proposals YoY; power concentrating | [DL News][dlnews-dao] |
+| **Open Source** | 🟡 Fragile | $8.8T value, but 10 foundations warn of funding crisis | [Linux Foundation][lf-oss] |
+| **Prediction Markets** | 🟢 Booming | Kalshi $1B+/week, +1000% YoY | [Kalshi][kalshi] |
 
 [backlinko-bluesky]: https://backlinko.com/bluesky-statistics
 [peoplepowered]: https://www.peoplepowered.org/news-content/2025-rewind-top-5-participatory-democracy-wins
 [dlnews-dao]: https://www.dlnews.com/articles/defi/daos-grew-quieter-in-2025-per-state-of-defi-report/
 [lf-oss]: https://www.linuxfoundation.org/blog/the-state-of-open-source-software-in-2025
+[kalshi]: https://kalshi.com
 
 #### Key 2025 Events
 
 | Date | Event | Source |
 |------|-------|--------|
-| Jan 2025 | Mastodon announces European non-profit restructuring | [Mastodon Blog][mastodon] |
-| Mar 18, 2025 | Meta Community Notes testing begins | [Meta][meta-cn] |
-| Sep 23, 2025 | 10 OSS foundations publish joint statement on funding fragility | [OpenSSF][openssf] |
+| Jan 2025 | Mastodon announces restructuring as European non-profit | [Mastodon Blog][mastodon] |
+| Apr 2025 | Meta Community Notes goes live in US | [Meta][meta-cn] |
+| Sept 23, 2025 | **10 OSS foundations** publish joint statement on funding fragility | [OpenSSF][openssf] |
 | Nov 28, 2025 | Council of Europe advances deliberative democracy in New Democratic Pact | [CoE][coe-deliberative] |
 
 [mastodon]: https://blog.joinmastodon.org/2025/01/the-people-should-own-the-town-square/
@@ -288,27 +320,39 @@ The "exit" strategy is gaining traction: users migrating to decentralized altern
 
 ### Democratic Backsliding
 
-- **V-Dem 2025:** 72% of world population now lives in autocracies (vs 49% in 2004); democracy levels back to 1985[^vdem].
-- **Romania:** Presidential election annulled and re-run due to foreign interference concerns[^carnegie-backsliding].
-- **South Korea:** President Yoon's martial law overturned in 6 hours by citizen protest; impeached 11 days later[^hrw].
+- **V-Dem 2025:** For the first time in 20+ years, autocracies (91) outnumber democracies (88)[^vdem]. 72% of world population lives under autocratic rule (vs 49% in 2004). Liberal democracies at lowest level since 1990.
+- **Freedom House:** 19th consecutive year of global freedom decline[^fh]. 60 countries deteriorated; only 34 improved.
+- **Romania:** Presidential election annulled due to Russian-linked TikTok bot campaign — first European election cancelled for cyber warfare[^romania].
+- **Georgia:** EU accession suspended; ongoing mass protests after disputed elections[^georgia].
+- **US:** V-Dem flagged "fastest evolving episode of autocratization in modern history"[^vdem-us].
 
-### Gen Z Protests Wave
+### Democratic Resilience
 
-Youth-led anti-corruption protests swept 70+ countries in 2025, using the One Piece pirate flag as a unifying symbol[^carnegie-genz]:
-- **Nepal:** PM Oli resigned after youth movement[^carnegie-nepal]
-- **Mongolia:** PM Oyun-Erdene resigned after protests sparked by son's lavish spending
-- **Serbia:** Student-led protests continue 13+ months after Nov 2024 train station collapse
-- **Georgia:** Daily protests against EU accession suspension continue unabated
+- **South Korea:** Martial law attempt reversed in 6 hours by National Assembly vote (190-0); President Yoon impeached within 11 days, removed by Constitutional Court (8-0) in April 2025[^sk-crisis].
+- **Bangladesh:** Student-led protests ousted autocratic PM Hasina after 15 years[^bangladesh].
+
+### Gen Z Global Protest Wave
+
+Youth-led anti-corruption protests swept 70+ countries in 2025, using the *One Piece* Jolly Roger flag as unifying symbol[^carnegie-genz]:
+
+| Country | Outcome |
+|---------|---------|
+| **Nepal** | PM Oli resigned after youth movement |
+| **Bangladesh** | PM Hasina resigned after 15 years |
+| **Mongolia** | PM Oyun-Erdene resigned after protests |
+| **Serbia** | Student protests continue 13+ months |
+| **Georgia** | Daily protests against EU accession suspension |
 
 ### Inequality
 
-- **Oxfam:** Top 0.1% gained 1000× more wealth than bottom 20% since 1989; 5 trillionaires expected within a decade[^oxfam]
-- **World Inequality Report preview:** 0.001% (60,000 people) hold 3× wealth of bottom 50% of humanity[^wir]
+- **Oxfam:** Top 0.1% gained 1000× more wealth than bottom 20% since 1989. Billionaire wealth grew $2.8T in 2024 (~$7.9B/day). 5+ trillionaires expected within a decade[^oxfam].
+- 60% of billionaire wealth from inheritance, cronyism, or monopoly — not entrepreneurship[^oxfam].
 
 ### World Happiness
 
-- **Finland:** #1 for 8th consecutive year (7.736 score)[^whr]
-- **Youth crisis:** 19% of young adults worldwide report no social support (up 39% from 2006)[^whr]
+- **Finland:** #1 for 8th consecutive year (7.74 score)[^whr].
+- **US:** Dropped to #24, new low; 25% of Americans ate all meals alone in 2023[^whr].
+- Youth crisis: People are kinder than expected (wallet return experiments), but young Americans report feeling less supported and less optimistic[^whr].
 
 ---
 
@@ -324,10 +368,14 @@ Youth-led anti-corruption protests swept 70+ countries in 2025, using the One Pi
 | Our World in Data — Democracy | [ourworldindata.org/democracy](https://ourworldindata.org/democracy) |
 | Carnegie Global Protest Tracker | [carnegieendowment.org/features/global-protest-tracker](https://carnegieendowment.org/features/global-protest-tracker) |
 | Edelman Trust Barometer Archive | [edelman.com/trust/archive](https://www.edelman.com/trust/archive) |
+| Doomsday Clock History | [thebulletin.org/doomsday-clock/past-announcements/](https://thebulletin.org/doomsday-clock/past-announcements/) |
 
 ---
 
-*Data sources: [Edelman Trust Barometer][edelman-2025], [V-Dem Democracy Report][vdem-2025], [WHO Social Connection Report][who-loneliness], [Bulletin of Atomic Scientists][doomsday-clock], [Our World in Data][owid-trust], [World Happiness Report][whr], [AARP][aarp], [Pew Research][pew-anger], [Stanford AI Index][stanford-ai], [Future of Life Institute][fli-safety]*
+*Data sources: [Edelman Trust Barometer][edelman-2025], [V-Dem Democracy Report][vdem-2025], [WHO Social Connection Report][who-loneliness], [Bulletin of Atomic Scientists][doomsday-clock], [Our World in Data][owid-trust], [World Happiness Report][whr], [AARP][aarp], [Pew Research][pew-anger], [Stanford AI Index][stanford-ai], [Future of Life Institute][fli-safety], [Freedom House][fh-2025], [SIPRI][sipri]*
+
+[whr]: https://www.worldhappiness.report/
+[fh-2025]: https://freedomhouse.org/sites/default/files/2025-02/FITW_World_2025_Feb.2025.pdf
 
 ---
 
@@ -335,20 +383,28 @@ Youth-led anti-corruption protests swept 70+ countries in 2025, using the One Pi
 
 [^bluesky]: [Backlinko: Bluesky Statistics 2025](https://backlinko.com/bluesky-statistics)
 [^coe-deliberative]: [Council of Europe: Congress contributes to New Democratic Pact](https://www.coe.int/en/web/congress/-/moving-forward-on-deliberative-democracy-congress-contributes-to-new-democratic-pact)
-[^aus-ban]: [BBC: Australia's under-16 social media ban takes effect](https://www.bbc.com/news/articles/cwyp9d3ddqyo)
+[^aus-ban]: [Reuters: Australia's under-16 social media ban takes effect](https://www.reuters.com/legal/litigation/australia-social-media-ban-takes-effect-world-first-2025-12-09/)
 [^meta-notes]: [Meta Transparency Center: Community Notes](https://transparency.meta.com/features/community-notes/)
 [^carnegie-genz]: [Carnegie: Global Protests 2025 — Gen Z, Corruption, Economy](https://carnegieendowment.org/emissary/2025/12/global-protests-2025-genz-corruption-economy)
+[^sk-crisis]: [Wikipedia: Impeachment of Yoon Suk Yeol](https://en.wikipedia.org/wiki/Impeachment_of_Yoon_Suk_Yeol)
 [^doomsday]: [Bulletin of Atomic Scientists: 2025 Doomsday Clock Statement](https://thebulletin.org/doomsday-clock/2025-statement/)
 [^vdem]: [V-Dem Democracy Report 2025](https://www.v-dem.net/documents/60/V-dem-dr__2025_lowres.pdf)
 [^who-loneliness]: [WHO: Social connection linked to improved health](https://www.who.int/news/item/30-06-2025-social-connection-linked-to-improved-heath-and-reduced-risk-of-early-death)
 [^edelman]: [Edelman Trust Barometer 2025](https://www.edelman.com/trust/2025/trust-barometer)
-[^ai-incidents]: [Stanford AI Index 2025 / Responsible AI Labs](https://responsibleailabs.ai/knowledge-hub/articles/ai-safety-incidents-2024)
-[^ai-deaths]: [The Guardian: OpenAI faces 8 wrongful death lawsuits](https://www.theguardian.com/technology/2025/oct/27/chatgpt-suicide-self-harm-openai)
-[^carnegie-backsliding]: [Carnegie: US Democratic Backsliding in Comparative Perspective](https://carnegieendowment.org/research/2025/08/us-democratic-backsliding-in-comparative-perspective)
-[^hrw]: [Human Rights Watch: World Report 2025](https://www.hrw.org/world-report/2025)
-[^carnegie-nepal]: [Carnegie: Nepal Gen Z topple government](https://carnegieendowment.org/research/2025/09/nepal-gen-z-topple-government)
-[^oxfam]: [Oxfam: Takers, Not Makers](https://www.oxfamamerica.org/explore/research-publications/takers-not-makers/)
-[^wir]: [The Guardian: World Inequality Report preview](https://www.theguardian.com/inequality/2025/dec/10/just-0001-hold-three-times-the-wealth-of-poorest-half-of-humanity-report-finds)
+[^ai-incidents]: [Stanford AI Index / Responsible AI Labs](https://responsibleailabs.ai/knowledge-hub/articles/ai-safety-incidents-2024)
+[^fli-safety]: [Future of Life Institute: AI Safety Index Winter 2025](https://futureoflife.org/ai-safety-index-winter-2025/)
+[^fh]: [Freedom House: Freedom in the World 2025](https://freedomhouse.org/sites/default/files/2025-02/FITW_World_2025_Feb.2025.pdf)
+[^romania]: [Atlantic Council: Romania election annulment](https://www.atlanticcouncil.org/blogs/new-atlanticist/romania-annulled-its-presidential-election-results-amid-alleged-russian-interference-what-happens-next/)
+[^georgia]: [Wikipedia: 2024-2026 Georgian protests](https://en.wikipedia.org/wiki/2024%E2%80%932026_Georgian_protests)
+[^vdem-us]: [US News: Democracy expert raises alarm about US trends](https://www.usnews.com/news/best-countries/articles/2025-03-25/democracy-expert-raises-alarm-about-u-s-trends-under-trump)
+[^bangladesh]: [Britannica: Generation Z protests](https://www.britannica.com/event/Generation-Z-protests)
+[^oxfam]: [Oxfam: Takers, Not Makers](https://www.oxfam.org/en/research/takers-not-makers-unjust-poverty-and-unearned-wealth-colonialism)
 [^whr]: [World Happiness Report 2025](https://www.worldhappiness.report/)
-
-[whr]: https://www.worldhappiness.report/
+[^surgeon-general]: [US Surgeon General Advisory on Loneliness](https://www.hhs.gov/sites/default/files/surgeon-general-social-connection-advisory.pdf)
+[^meta-cn]: [Meta: More Speech, Fewer Mistakes](https://about.fb.com/news/2025/01/meta-more-speech-fewer-mistakes/)
+[^deepstrike]: [DeepStrike: Deepfake Statistics 2025](https://deepstrike.io/blog/deepfake-statistics-2025)
+[^newstart]: [US State Department: New START Treaty](https://www.state.gov/new-start-treaty)
+[^cnn-lawsuits]: [CNN: OpenAI ChatGPT Suicide Lawsuit](https://www.cnn.com/2025/11/06/us/openai-chatgpt-suicide-lawsuit-invs-vis)
+[^guardian-characterai]: [The Guardian: Character.AI bans users under 18 after suicide lawsuits](https://www.theguardian.com/technology/2025/oct/29/character-ai-suicide-children-ban)
+[^guardian-cyberattack]: [The Guardian: First AI-orchestrated cyber-espionage campaign detected](https://www.theguardian.com/technology/ng-interactive/2025/dec/30/the-office-block-where-ai-doomers-gather-to-predict-the-apocalypse)
+[^adp-displacement]: [ADP Research: Yes, AI is affecting employment](https://www.adpresearch.com/yes-ai-is-affecting-employment-heres-the-data/)
