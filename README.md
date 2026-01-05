@@ -138,7 +138,7 @@ This endeavor is unlike the other four, as it is about fixing the past rather th
 
 ### The Knowledge Beyond
 
-A great enabler for the future is deep understanding of our universe and the ability to manipulate it on a fine scale. Paradigm-breaking technologies like quantum computing and nanomachines, as well as new theoretical research, may not impact any of the great endeavors directly, but they will reframe everything in the long run.
+A great enabler for the future is deep understanding of our universe and the ability to manipulate it on a fine scale. Paradigm-breaking technologies like quantum computing and nanomachines, as well as new research ranging from mathematics to neuroscience (or, say, global broadband availability), may not impact any of the great endeavors directly, but they will reframe everything in the long run.
 
 ### Society and Cohesion
 
