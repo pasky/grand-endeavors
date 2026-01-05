@@ -125,6 +125,48 @@ The clean energy transition is accelerating faster than predicted. Renewable dep
 
 ---
 
+## Supplemental
+
+### The Knowledge Beyond
+
+*A great enabler for the future is deep understanding of our universe and the ability to manipulate it on a fine scale. Paradigm-breaking technologies may not impact any of the great endeavors directly, but they will reframe everything in the long run.*
+
+**The good news:** 2025 was a year of genuine inflection points. Google demonstrated the first verifiable quantum advantage (13,000× faster than classical supercomputers). AI achieved gold-medal mathematical reasoning at the IMO. The first personalized CRISPR therapy was delivered to an infant in six months from diagnosis. Brain-computer interfaces reached 12+ human patients. TSMC began mass production of 2nm chips. Global internet access crossed 6 billion people.
+
+**The bad news:** Most breakthroughs remain in laboratory or early-clinical stages. Quantum error rates are still 10,000× too high for practical applications. 2.2 billion people are still offline. The Muon g-2 experiment found no hints of "new physics." Room-temperature superconductivity at ambient pressure remains elusive.
+
+| Domain | Key 2025 Metric | Status |
+|--------|-----------------|--------|
+| Quantum Computing | First verifiable advantage (13,000× speedup) | 🟡 |
+| Nanotechnology | TSMC 2nm mass production begins | 🟢 |
+| Mathematics | AI gold medal at IMO (35/42 points) | 🟢 |
+| Neuroscience | 12+ Neuralink patients, 15,000+ hours BCI use | 🟡 |
+| Global Connectivity | 6 billion online (74% of humanity) | 🟡 |
+
+📄 **[Full Report: The Knowledge Beyond](knowledge-beyond.md)**
+
+---
+
+### Society and Cohesion
+
+*As humanity progresses in its great endeavors, many challenges await our society. To survive into the future, we must pass the great filters — avoid wiping ourselves out, align our robots, and keep humans in meaningful relationships with one another.*
+
+**The good news:** Social technologies are evolving. Bluesky reached 40M+ users. Deliberative democracy is institutionalizing. Australia became the first country to implement a national under-16 social media ban. South Korea's martial law attempt was reversed within 6 hours by citizens and parliament — democracy's immune response functioning.
+
+**The bad news:** The great filters loom closer than ever. The Doomsday Clock stands at 89 seconds to midnight — the closest in history. For the first time in 20+ years, autocracies (91) outnumber democracies (88). Loneliness kills ~871,000 people annually. Multiple families are suing AI companies over chatbot-related deaths. The last major nuclear arms control treaty expires in weeks with no replacement.
+
+| Metric | 2025 Value | Status |
+|--------|------------|--------|
+| Doomsday Clock | 89 seconds to midnight | 🔴 |
+| World in Autocracies | 72% of population | 🔴 |
+| Loneliness Prevalence | 1 in 6 globally | 🔴 |
+| AI Safety Incidents | +56% YoY | 🔴 |
+| Institutional Trust | 56% (flat) | 🟡 |
+
+📄 **[Full Report: Society and Cohesion](society-cohesion.md)**
+
+---
+
 ## Quick Reference
 
 | Endeavor | KPI | Key 2025 Number | Status |
