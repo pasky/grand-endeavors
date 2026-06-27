@@ -104,7 +104,7 @@ write_manifest() {
 			|| echo "agent_dirty:  YES (config not pinned — capture settings/extensions to reproduce)"
 		echo "settings_sha: $(sha256sum "$AGENT_DIR/settings.json" 2>/dev/null | cut -c1-16)"
 		echo "gencfg_sha:   $(sha256sum "$GEN_AGENT/settings.json" 2>/dev/null | cut -c1-16) (live config minus session-summary)"
-		echo "spec_commit:  $(git rev-parse HEAD)"
+		echo "spec_commit:  $(git rev-parse HEAD)  (HEAD at run START = input spec/harness version; the run's own output is committed AFTER this)"
 	} > "$OUT_DIR/MANIFEST.txt"
 }
 
