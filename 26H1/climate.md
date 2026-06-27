@@ -6,7 +6,7 @@
 
 **Bottom line: CO₂ keeps setting records, with no bend in the concentration curve.** The May 2026 seasonal peak hit **432.34 ppm** at Mauna Loa — the highest in the 68-year record[^noaa-trends][^scripps]. The 2025 annual growth of **+2.23 ppm** eased off the El Niño-boosted 2024 record (+3.33 ppm), but remains squarely within the long-run ~2.5–2.6 ppm/year trend[^gr-mlo]. The rise is, if anything, still accelerating versus the ~2.0 ppm/year of the 2000s — not slowing.
 
-As Scripps CO₂ Program head Ralph Keeling put it: *"Atmospheric CO₂ has continued its relentless rise over the past year, reaching yet another record high… I wish we had better news."*[^scripps]
+As Ralph Keeling, director of the Scripps CO₂ Program, put it: *"Atmospheric CO₂ has continued its relentless rise over the past year, reaching yet another record high… I wish we had better news."*[^scripps]
 
 ---
 
@@ -18,11 +18,11 @@ As Scripps CO₂ Program head Ralph Keeling put it: *"Atmospheric CO₂ has cont
 |--------|-------|--------|
 | **May 2026 seasonal peak (Mauna Loa)** | **432.34 ppm** — highest in the record | [NOAA GML][noaa-trends] |
 | May 2026 peak (Scripps instruments) | 432.00 ppm (+1.8 ppm vs May 2025) | [Scripps/UCSD][scripps] |
-| Latest weekly value (week of Jun 14, 2026) | 431.17 ppm (seasonal decline begun) | [NOAA weekly][noaa-weekly] |
+| Latest weekly value (week of Jun 14, 2026) | 431.17 ppm (seasonal decline has begun) | [NOAA weekly][noaa-weekly] |
 | 2025 annual mean (Mauna Loa) | 427.35 ppm | [NOAA annual][noaa-ann-mlo] |
 | 2025 annual mean (NOAA global marine) | 425.65 ppm | [NOAA global][noaa-ann-gl] |
 | 2025 annual growth (Mauna Loa) | **+2.23 ppm** (down from +3.33 in 2024) | [NOAA growth][gr-mlo] |
-| 10-year mean growth (2016–2025) | **~2.57 ppm/yr** (MLO) / ~2.54 (global) | [NOAA growth][gr-mlo] |
+| 10-year mean growth (2016–2025) | **~2.57 ppm/yr** (MLO) / ~2.54 (global) | [MLO][gr-mlo] / [global][gr-gl] |
 
 [noaa-trends]: https://gml.noaa.gov/ccgg/trends/
 [scripps]: https://today.ucsd.edu/story/annual-carbon-dioxide-peak-reaches-432-parts-per-million
@@ -30,6 +30,7 @@ As Scripps CO₂ Program head Ralph Keeling put it: *"Atmospheric CO₂ has cont
 [noaa-ann-mlo]: https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt
 [noaa-ann-gl]: https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt
 [gr-mlo]: https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt
+[gr-gl]: https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt
 
 ### Atmospheric CO₂ Concentration (Mauna Loa, annual mean)
 
@@ -53,7 +54,7 @@ xychart-beta
 ```
 *Data: [NOAA Growth Rates][gr-mlo].*
 
-**Assessment: 🔴 Worsening.** Concentration set a new all-time record in May 2026, and CO₂ rises every year. The 2025 growth rate eased only because the 2023–2024 El Niño boost faded; at +2.23 ppm it remains within (and the 10-year mean above) the long-run trend. There is no bending of the concentration curve.
+**Assessment: 🔴 Worsening.** Concentration set a new all-time record in May 2026, and CO₂ rises every year. The 2025 growth rate eased after the 2023–2024 El Niño boost faded, but at +2.23 ppm it remains within recent variability, and the 10-year mean (~2.57 ppm/yr) stays above the ~2.0 ppm/yr pace of the 2000s. There is no bending of the concentration curve.
 
 ---
 
@@ -77,6 +78,7 @@ A research note for The Bend was planned for 26H1 but was not produced this cycl
 | Mauna Loa annual means | [NOAA][noaa-ann-mlo] |
 | Global marine annual means | [NOAA][noaa-ann-gl] |
 | Annual growth rates (Mauna Loa) | [NOAA][gr-mlo] |
+| Annual growth rates (global) | [NOAA][gr-gl] |
 | Weekly Mauna Loa values | [NOAA][noaa-weekly] |
 | 2026 seasonal peak announcement | [Scripps/UCSD][scripps] |
 
