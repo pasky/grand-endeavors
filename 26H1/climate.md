@@ -4,9 +4,9 @@
 
 ## Executive Summary
 
-**Bottom line: The needle is still moving the wrong way, but the engine driving it is finally easing.** Atmospheric CO₂ set a fresh record in 26H1 — May 2026 hit **432.34 ppm**, the highest monthly value ever measured[^noaa-trends]. Yet the 2025 growth rate eased to **+2.23 ppm/yr**, a clear step down from the back-to-back record spikes of 2023–2024 (~3.3 ppm/yr each)[^noaa-gr].
+**Bottom line: CO₂ is still climbing to record highs, but the emissions growth driving it is finally slowing — albeit with a 2026 wobble.** Atmospheric CO₂ set a fresh record in 26H1 — May 2026 hit **432.34 ppm**, the highest in the modern instrumental record[^noaa-trends]. Yet the 2025 growth rate eased to **+2.23 ppm/yr**, a clear step down from the back-to-back record spikes of 2023–2024 (~3.3 ppm/yr each)[^noaa-gr].
 
-On emissions, **"The Bend" has not been crossed.** Global energy-related CO₂ rose ~0.4% in 2025 to a new record of more than 38 Gt[^iea-ger]. But growth has decelerated to its slowest non-crisis rate in decades, China (the top emitter) has plateaued for ~21 months[^cb-china-21], and coal-fired generation fell globally for the first time since 2019[^iea-ger]. A wobble in early 2026 — China's CO₂ ticked up ~2% in Q1 — shows the peak is balanced on a knife-edge[^cb-china-q1].
+On emissions, **"The Bend" has not been crossed.** Global energy-related CO₂ rose ~0.4% in 2025 to a new record of more than 38 Gt[^iea-ger]. But growth has decelerated to its slowest rate since 2021, China (the top emitter) has plateaued for ~21 months[^cb-china-21], and coal-fired generation fell globally for the first time since 2019 (ex-Covid)[^iea-ger]. A wobble in early 2026 — China's CO₂ ticked up ~2% in Q1 — shows the peak is balanced on a knife-edge[^cb-china-q1].
 
 **The bend is plausibly imminent, but unconfirmed. We have not yet crossed it.**
 
@@ -31,9 +31,9 @@ On emissions, **"The Bend" has not been crossed.** Global energy-related CO₂ r
 
 ```mermaid
 xychart-beta
-    title "Atmospheric CO2 Concentration (ppm)"
+    title "Atmospheric CO₂ Concentration (ppm)"
     x-axis [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
-    y-axis "CO2 (ppm)" 400 --> 435
+    y-axis "CO₂ (ppm)" 400 --> 435
     line [404.41, 406.76, 408.72, 411.65, 414.21, 416.41, 418.53, 421.08, 424.61, 427.35]
 ```
 *Data: [NOAA Global Monitoring Laboratory][noaa-ann]*
@@ -42,7 +42,7 @@ xychart-beta
 
 ```mermaid
 xychart-beta
-    title "Annual CO2 Increase (ppm/year)"
+    title "Annual CO₂ Increase (ppm/year)"
     x-axis [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
     y-axis "ppm/year" 1.5 --> 3.5
     bar [3.03, 1.90, 2.85, 2.49, 2.30, 2.35, 1.85, 3.32, 3.33, 2.23]
@@ -67,7 +67,7 @@ The year of peak global GHG emissions is **not yet definitively behind us.** 202
 
 | Date | Event | Source |
 |------|-------|--------|
-| **Apr 20, 2026** | IEA Global Energy Review 2026: energy-related CO₂ rose ~0.4% in 2025 to a record **>38 Gt** — still rising, but the slowest non-crisis growth in decades | [IEA][iea-ger] |
+| **Apr 20, 2026** | IEA Global Energy Review 2026: energy-related CO₂ rose ~0.4% in 2025 to a record **>38 Gt** — still rising, but the slowest growth since 2021 | [IEA][iea-ger] |
 | **Jun 4, 2026** | Carbon Brief/CREA: China's CO₂ **grew ~2% in Q1 2026** (driven by curtailed/wasted wind & solar) — but still below the March-2024 peak | [Carbon Brief][cb-china-q1] |
 | **Feb 12, 2026** | Carbon Brief/CREA: China's CO₂ fell ~1% in Q4 2025, likely −0.3% for full-year 2025; emissions "flat or falling" for **21 months** | [Carbon Brief][cb-china-21] |
 | **Nov 13, 2025** | Global Carbon Budget 2025: fossil CO₂ +1.1% to record **38.1 Gt**; 1.5°C carbon budget "virtually exhausted" | [Global Carbon Project][gcb-2025] |
@@ -87,7 +87,7 @@ The year of peak global GHG emissions is **not yet definitively behind us.** 202
 
 The plateau wobbled in early 2026: China's CO₂ grew ~2% year-on-year in Q1 2026, driven by a surge in curtailed ("wasted") wind and solar — power-sector CO₂ "would have been flat without the rise in wasted wind and solar." Crucially, Q1 2026 emissions remained **below** the March-2024 peak, so the structural-peak case is intact but unconfirmed[^cb-china-q1]. Meanwhile global totals are still inching to fresh records[^iea-ger][^gcb-2025].
 
-**Verdict for 26H1:** Peak is plausibly imminent but unconfirmed — global emissions are still setting new highs.
+**Verdict for 26H1:** Not crossed — global emissions are still setting fresh records, even as a structural peak moves within sight.
 
 ---
 
@@ -106,7 +106,7 @@ The plateau wobbled in early 2026: China's CO₂ grew ~2% year-on-year in Q1 202
 
 [^noaa-trends]: [NOAA GML — Trends in Atmospheric Carbon Dioxide (Mauna Loa)](https://gml.noaa.gov/ccgg/trends/). May 2026 monthly mean 432.34 ppm; May 2025 430.51 ppm (page last updated Jun 05, 2026).
 [^noaa-gr]: [NOAA GML — Annual CO₂ growth rate (Mauna Loa)](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt). 2025: +2.23 ppm/yr (±0.11); 2024: +3.33; 2023: +3.32.
-[^iea-ger]: [IEA — Global Energy Review 2026](https://www.iea.org/reports/global-energy-review-2026) (published 20 Apr 2026). Energy-related CO₂ +0.4% in 2025 to >38 Gt; solar PV met >25% of energy-demand growth; 800 GW renewables added; coal generation fell for first time since 2019; China fell, India flat.
+[^iea-ger]: [IEA — Global Energy Review 2026](https://www.iea.org/reports/global-energy-review-2026) (published 20 Apr 2026). Energy-related CO₂ +0.4% in 2025 (slowest rate since 2021) to >38 Gt; solar PV met >25% of energy-demand growth; 800 GW renewables added; coal generation fell for first time since 2019 (ex-Covid); China fell, India flat.
 [^cb-china-21]: [Carbon Brief / CREA — China's CO₂ emissions have now been flat or falling for 21 months](https://www.carbonbrief.org/analysis-chinas-co2-emissions-have-now-been-flat-or-falling-for-21-months/) (12 Feb 2026).
 [^cb-china-q1]: [Carbon Brief / CREA — China's CO₂ climbs 2% in early 2026 due to wasted wind and solar](https://www.carbonbrief.org/analysis-chinas-co2-climbs-2-in-early-2026-due-to-wasted-wind-and-solar/) (4 Jun 2026).
 [^gcb-2025]: [Global Carbon Budget 2025](https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/) (13 Nov 2025). Fossil CO₂ +1.1% to record 38.1 Gt; remaining 1.5°C budget virtually exhausted.
