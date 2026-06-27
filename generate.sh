@@ -91,17 +91,22 @@ pi_run() {
 		"$prompt" </dev/null
 }
 
-# Commit ONLY this run's output dir. Silent on "nothing to commit"; loud on a
-# genuine commit failure (hooks, identity, lock, ...).
+# Commit ONLY this run's OWN artifacts (manifest, research dir, output file) —
+# never sibling sections in the same period dir, even under ALLOW_DIRTY=1.
+# Relies on these paths having no spaces (true for our naming convention).
 commit() {
-	git add "$OUT_DIR"
-	if git diff --cached --quiet -- "$OUT_DIR"; then
-		echo "    (nothing to commit for: $1)"
+	msg="$1"
+	paths=""
+	for p in "$OUT_DIR/MANIFEST.txt" "$RESEARCH_DIR" "$OUT_FILE"; do
+		[ -e "$p" ] && paths="$paths $p"
+	done
+	[ -n "$paths" ] || { echo "    (nothing to stage for: $msg)"; return 0; }
+	git add $paths
+	if git diff --cached --quiet -- $paths; then
+		echo "    (nothing to commit for: $msg)"
 		return 0
 	fi
-	# Pathspec commit: only paths under $OUT_DIR enter this commit, even if the
-	# index has unrelated staged changes (e.g. under ALLOW_DIRTY=1).
-	git commit -q -m "$1" -- "$OUT_DIR"
+	git commit -q -m "$msg" -- $paths
 }
 
 write_manifest() {
@@ -168,6 +173,7 @@ while IFS= read -r line; do
 		"" ) echo "ERROR: empty slug in plan line: $line" >&2; exit 1 ;;
 		-* | *[!a-z0-9-]* ) echo "ERROR: invalid slug '$slug' (need ^[a-z0-9][a-z0-9-]*\$)" >&2; exit 1 ;;
 	esac
+	[ -n "$desc" ] || { echo "ERROR: empty description for slug '$slug'" >&2; exit 1 ; }
 	case "$seen_slugs" in *" $slug "*)
 		echo "ERROR: duplicate slug '$slug' in plan" >&2; exit 1 ;;
 	esac
@@ -190,9 +196,9 @@ commit "$OUT_DIR $SECTION: prune stale research notes"
 # --- Stage 2: research (one web-capable main-agent pi PER item) --------------
 while IFS='|' read -r slug desc <&3; do
 	note="$RESEARCH_DIR/$slug.md"
-	# FRESH=1: delete any existing note first, so a 'fresh' run can't silently
-	# survive on stale content if pi exits 0 without rewriting it.
-	[ -n "${FRESH:-}" ] && rm -f "$note"
+	# FRESH=1 (exactly): delete any existing note first, so a 'fresh' run can't
+	# silently survive on stale content if pi exits 0 without rewriting it.
+	[ "${FRESH:-}" = 1 ] && rm -f "$note"
 	# Reuse an existing non-empty note (cheap retry); FRESH=1 forces re-research.
 	if [ -s "$note" ]; then
 		echo ">>> [$SECTION/$OUT_DIR] research-$slug: reusing existing note (FRESH=1 to redo)"

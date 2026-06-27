@@ -4,7 +4,11 @@ Reporting period: 26H1 (Jan–Jun 2026), as of end of June 2026.
 Measure note: this milestone is about EMISSIONS (flow, Gt CO2/yr), NOT atmospheric
 concentration (ppm) — keep distinct from the KPI file. Three authoritative datasets
 use DIFFERENT boundaries and must not be conflated:
-- IEA = energy-related CO2 (excludes cement process, land-use)
+- IEA = energy combustion + industrial-process CO2. IEA labels its headline "energy-related
+  CO2", but per the GER 2026 methodology it INCLUDES industrial process emissions (cement
+  clinker, iron/steel, chemicals); it excludes land-use change. (Verified in the GER 2026 PDF:
+  "emissions from industrial processes such as cement, iron and steel, and chemicals"; data
+  charts annotated "*Includes industrial process emissions".)
 - Global Carbon Budget (GCP) = fossil + cement CO2 (and separately land-use change)
 - Carbon Monitor = near-real-time fossil CO2, different method/coverage again
 

@@ -24,6 +24,11 @@ ERRORS: list[str] = []
 WARNS: list[str] = []
 
 
+def strip_code(text: str) -> str:
+    """Remove fenced code blocks so footnote/ref scanning ignores code/mermaid."""
+    return re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+
+
 def err(msg: str) -> None:
     ERRORS.append(msg)
 
@@ -94,13 +99,20 @@ def check_links(text: str) -> None:
         return
     for url in extract_urls(text):
         status = probe(url)
-        if status in ("404", "410", "dead"):
+        if status in ("404", "410"):
             err(f"citation URL appears dead ({status}): {url}")
         elif status != "ok":
+            # 403/5xx/redirect-loops/network errors are NOT hard failures: many
+            # valid sources block bots or HEAD, or time out transiently.
             warn(f"citation URL uncertain ({status}, not a hard 404): {url}")
 
 
 def probe(url: str) -> str:
+    # Try HEAD then GET. A definitive 404/410 is returned immediately; any other
+    # HEAD failure (403/405/5xx or socket error) falls through to GET, since many
+    # servers reject HEAD but serve GET. Network-level failures map to "neterr"
+    # (warn-level), never a hard "dead".
+    last = "neterr"
     for method in ("HEAD", "GET"):
         try:
             req = urllib.request.Request(
@@ -109,14 +121,14 @@ def probe(url: str) -> str:
             with urllib.request.urlopen(req, timeout=15) as r:
                 return "ok" if r.status < 400 else str(r.status)
         except urllib.error.HTTPError as e:
-            if e.code == 405 and method == "HEAD":
-                continue  # retry with GET
-            return str(e.code)
+            if e.code in (404, 410):
+                return str(e.code)
+            last = str(e.code)
+            continue  # HEAD blocked/unsupported or 5xx — retry with GET
         except Exception:
-            if method == "GET":
-                return "dead"
-            continue  # HEAD failed at socket level; try GET
-    return "dead"
+            last = "neterr"  # timeout / DNS / TLS / connection — transient, warn
+            continue
+    return last
 
 
 # --- coverage: every PLAN slug's note is cited in the output -----------------
@@ -151,8 +163,9 @@ def main() -> int:
     args = ap.parse_args()
 
     text = open(args.doc, encoding="utf-8").read()
-    check_footnotes(text)
-    check_reference_links(text)
+    prose = strip_code(text)  # footnote/ref checks ignore fenced code/mermaid
+    check_footnotes(prose)
+    check_reference_links(prose)
     check_mermaid(text)
     check_coverage(text, args.plan, args.research)
     check_links(text)  # network last (slowest)

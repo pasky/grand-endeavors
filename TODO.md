@@ -11,16 +11,21 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
       surgical anti-contamination prune (+ note reuse / `FRESH=1`), slug
       validation, empty-note abort, and hardened draft/review prompts (KPI
       completeness, no cross-metric causal bridges, precise deep-link citations).
-- [ ] **Validation gate** — a deterministic, no-LLM check script run after the
-      `review` stage (complements, doesn't replace, the LLM review):
-  - [ ] link resolution: every URL non-404 (Jina/archive fallback for
-        Cloudflare-blocked hosts); optionally snapshot each cited URL locally
-  - [ ] footnote/reference integrity: every `[^ref]`/`[label]` used has a
-        definition and vice versa; no orphans/dangling
-  - [ ] mermaid lint: each block parses; x-axis length == data-series length
-  - [ ] KPI consistency: headline value matches research note + round-up README
-  - [ ] coverage: every in-scope `PLAN.txt` slug present with a status icon;
-        every KPI sub-clause from README present (would catch reservation A)
+- [x] **Validation gate** (done — validate.py, commit dc25d34 + hardening): footnote/
+      reference-link integrity, mermaid xychart axis/series lengths, dead-URL
+      (404/410 hard-fail; 403/timeout/neterr warn), PLAN-slug coverage; wired as
+      review-stage self-check + Stage-5 backstop (STRICT=1 to fail run). Known
+      limitations to harden later:
+  - [ ] coverage is a soft heuristic (any-URL-overlap, warn-only) — won't catch
+        missing KPI sub-components, dropped slugs sharing a URL, or redirected
+        URLs; not a real coverage proof
+  - [ ] footnote/ref regexes ignore duplicate definitions, indented defs,
+        shortcut refs, and case-insensitive label equivalence
+  - [ ] mermaid check only length-checks unnamed line/bar arrays (no real parse,
+        named series, or missing-series detection)
+  - [ ] (future) snapshot each cited URL locally for permanence (link-rot proofing)
+  - [ ] (future) KPI consistency: headline value matches research note + round-up
+        README; every KPI sub-clause from README present in output
 - [ ] **Round-up generator** — final stage compiling section files into the
       period `README.md` (the pilot-2025 round-up had this; not yet ported).
 - [ ] **KPI time-series store** (`kpis.csv` or per-endeavor JSON) — makes charts

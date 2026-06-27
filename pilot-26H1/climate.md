@@ -66,13 +66,13 @@ xychart-beta
 
 **Status: Not achieved — approaching (improving trend).** The README milestone is the peak of global **greenhouse-gas** emissions; this run assesses it through global **CO₂** emissions — the dominant driver (~three-quarters of GHGs) — which have **not yet definitively peaked** (non-CO₂ gases such as methane and N₂O are not separately adjudicated here). Global CO₂ totals set fresh records in 2025, so the peak is not in the rear-view mirror — but growth is decelerating sharply and a structural peak is plausibly imminent.
 
-> *Measure note: this milestone concerns **emissions** (flow, Gt CO₂/yr), distinct from the atmospheric-concentration KPI above. "Peak emissions" is tracked here via **CO₂** only (non-CO₂ GHGs are not separately assessed). The three authoritative datasets below use **different boundaries** and must not be conflated: IEA = energy-related CO₂; Global Carbon Budget = fossil + cement CO₂; Carbon Monitor = near-real-time fossil CO₂ (different method/coverage).*
+> *Measure note: this milestone concerns **emissions** (flow, Gt CO₂/yr), distinct from the atmospheric-concentration KPI above. "Peak emissions" is tracked here via **CO₂** only (non-CO₂ GHGs are not separately assessed). The three authoritative datasets below use **different boundaries** and must not be conflated: IEA = energy combustion + industrial-process CO₂ (IEA labels it "energy-related" but its GER 2026 methodology *includes* cement/steel/chemicals process emissions; excludes land-use); Global Carbon Budget = fossil + cement CO₂; Carbon Monitor = near-real-time fossil CO₂ (different method/coverage).*
 
 #### 2025 — a new record, by every dataset (but slowing)
 
 | Dataset (scope) | 2025 emissions | Change vs 2024 | Label | Source |
 |-----------------|----------------|----------------|-------|--------|
-| **IEA** — energy-related CO₂ | **~38.4 Gt** | **+~0.4%** (+~145 Mt); slowest since 2021 | Estimated full-year, record high | [IEA GER 2026 (PDF)][iea-ger-pdf] |
+| **IEA** — energy combustion + industrial-process CO₂ | **~38.4 Gt** | **+~0.4%** (+~145 Mt); slowest since 2021 | Estimated full-year, record high | [IEA GER 2026 (PDF)][iea-ger-pdf] |
 | **Global Carbon Budget** — fossil + cement CO₂ | **38.1 Gt** | **+1.1%** | Projection (Nov 2025) | [GCP 2025][gcb-page] |
 | **Carbon Monitor** — near-real-time fossil CO₂ | **37.3 Gt**[^cm-news] | **+0.7%** | Year-in-Review (Apr 2026) | [Carbon Monitor][cm-news] |
 
@@ -103,7 +103,7 @@ No full global H1-2026 emissions tally had been published by end-June 2026, so C
 
 [iea-ger-pdf]: https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf
 [gcb-page]: https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/
-[cm-news]: https://doi.org/10.1038/s43017-026-00780-4
+[cm-news]: https://carbonmonitor.org/news
 
 ---
 
