@@ -1,77 +1,102 @@
-# Milestone: "The Bend" — Is the year of peak global GHG emissions definitively behind us?
+# Milestone: "The Bend" — is the year of peak global GHG (fossil CO2) emissions definitively behind us?
 
-Question: Has global greenhouse-gas / fossil-CO2 emissions definitively peaked?
-Bottom line: **NO — not definitively.** Global emissions hit a fresh record high
-in 2025, but growth has decelerated sharply and the largest emitter (China) is
-on a plateau. The "bend" is visibly approaching but has not yet occurred.
+Reporting period: 26H1 (Jan–Jun 2026), as of end of June 2026.
+Measure note: this milestone is about EMISSIONS (flow, Gt CO2/yr), NOT atmospheric
+concentration (ppm) — keep distinct from the KPI file. Three authoritative datasets
+use DIFFERENT boundaries and must not be conflated:
+- IEA = energy-related CO2 (excludes cement process, land-use)
+- Global Carbon Budget (GCP) = fossil + cement CO2 (and separately land-use change)
+- Carbon Monitor = near-real-time fossil CO2, different method/coverage again
 
-NOTE ON SCOPE: two authoritative datasets use different boundaries — keep them
-separate. IEA = energy-related CO2 (>38 Gt, +0.4% in 2025). Global Carbon
-Budget = fossil + cement CO2 (38.1 Gt, +1.1% in 2025). Both are record highs;
-the growth rates differ because of scope, not contradiction.
+## Headline claim
 
-## Headline claims (26H1 in-period sources)
+- **The bend has NOT been crossed as of 26H1.** Global emissions set a fresh record
+  in 2025 (the latest full year), even though growth has decelerated to its slowest
+  rate since 2021 and the largest emitter (China) is on a ~2-year plateau. A structural
+  peak is plausibly imminent but is unconfirmed; 2026 opened with an upward wobble.
 
-- IEA Global Energy Review 2026 (published 20 Apr 2026): global energy-related
-  CO2 emissions rose by ~0.4% in 2025 ("continuing the long-term trend of
-  slowing growth"), yet still hit a new record high of **more than 38 billion
-  tonnes (Gt)** — total CO2 from fuel combustion + industrial processes rose by
-  ~145 million tonnes. So emissions are STILL RISING, not peaking.
+## Claims + verified sources
+
+### IEA — energy-related CO2 (latest full-year measured/estimated, 2025)
+- Global energy-related CO2 rose by **~0.4% in 2025**, the **slowest rate since 2021**;
+  +~145 Mt, reaching a **new high of nearly 38.4 Gt** CO2, ~5% above 2019 levels.
+  (Published in IEA Global Energy Review 2026, ~Apr 2026.) Label: estimated full-year, record high.
   https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf
-  (report landing page, JS-protected: https://www.iea.org/reports/global-energy-review-2026)
-
-- IEA GER 2026: the 0.4% rise is a further slowdown from +0.8% in 2024 and
-  reflects record clean-energy deployment — solar PV met >25% of all energy
-  demand growth (first time a modern renewable led), renewable capacity
-  additions hit a record 800 GW, and global coal-fired generation fell for the
-  first time since 2019 (ex-Covid). Clean tech deployed since 2019 now avoids
-  ~3 Gt CO2/yr (~8% of global emissions).
+- The 0.4% rise "coincided with record atmospheric CO2 concentrations of about 427 ppm."
+  (same IEA PDF, p.41)
   https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf
-
-- IEA GER 2026: emissions from China FELL in 2025 (renewables boom + structural
-  decline in heavy industry + slower demand); India's energy CO2 was flat for
-  the first time since the 1970s; advanced-economy emissions grew faster (+0.5%)
-  than emerging/developing economies (+0.3%) for the first time since the 1990s
-  (cold winter + higher gas prices in the rich world).
+- Clean-energy structural drivers (IEA): solar PV met **>one-quarter of global primary
+  energy demand growth** (first time on record a modern renewable led); annual renewable
+  capacity additions hit a **record 800 GW**; clean tech deployed since 2019 now avoids
+  **~8% of global emissions** (incl. ~800 Mt of avoided coal demand). China's coal-fired
+  generation fell ~1.5%; India's energy-CO2 went flat **for the first time on record**.
   https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf
+- (Note: IEA HTML pages https://www.iea.org/reports/global-energy-review-2026 and
+  .../co2-emissions are JS-rendered and returned EMPTY on fetch — figures above were
+  extracted from the official IEA PDF, which is the citable deep link.)
 
-- Carbon Brief / CREA (Lauri Myllyvirta) analysis, 12 Feb 2026: China's CO2
-  fell ~1% in Q4 2025, "likely securing a decline of 0.3% for the full year".
-  China's emissions have now been "flat or falling" for **21 months** (since
-  March 2024) — the first such streak. Fossil CO2 +0.1% but offset by a 7% drop
-  in cement CO2; power -1.5%, transport -3%, building materials -7%, but
-  chemicals +12%. Emissions are plateauing slightly below the early-2024 peak.
-  https://www.carbonbrief.org/analysis-chinas-co2-emissions-have-now-been-flat-or-falling-for-21-months/
-
-- Carbon Brief / CREA analysis, 4 Jun 2026 (Q1 2026 data): China's CO2 emissions
-  GREW ~2% year-on-year in Q1 2026 — the plateau wobbled. Driver was a surge in
-  "wasted"/curtailed wind and solar (wind capacity +23% but capacity factor fell
-  from 27% to 22%; power-sector CO2 +4%, "would have been flat without the rise
-  in wasted wind and solar"). Crucially, Q1 2026 emissions still remain BELOW the
-  March-2024 peak — so the plateau/structural-peak case is intact but not
-  confirmed.
-  https://www.carbonbrief.org/analysis-chinas-co2-climbs-2-in-early-2026-due-to-wasted-wind-and-solar/
-
-## Supporting context (just outside 26H1 — released Nov 2025)
-
-- Global Carbon Budget 2025 (Global Carbon Project, 13 Nov 2025): fossil CO2
-  projected +1.1% in 2025 to a record **38.1 Gt**; land-use-change CO2 down to
-  4.1 Gt so total CO2 (~42 Gt) slightly below 2024. "No sign of the urgently
-  needed decline of global emissions." Remaining 1.5C carbon budget (~170 Gt CO2)
-  "virtually exhausted" — gone before 2030 at current rates. (Note: GCB scope =
-  fossil+cement, hence the +1.1% vs IEA's +0.4% energy-only figure. GCB also
-  projected China +0.4% for 2025, vs Carbon Brief's measured -0.3%.)
+### Global Carbon Budget 2025 (GCP) — fossil + cement CO2 (published 13 Nov 2025)
+- Fossil CO2 **projected** to rise **+1.1% in 2025 to a record 38.1 Gt CO2**. Label:
+  PROJECTION (published Nov 2025, pre-print in ESSD; not a finalized measured figure).
+  https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/
+- Land-use-change CO2 projected down to 4.1 Gt, so **total CO2 (fossil + land-use)
+  projected slightly LOWER than 2024**. By fuel: coal +0.8%, oil +1%, gas +1.3%.
+  By region (projected 2025): China +0.4%, India +1.4%, USA +1.9%, EU +0.4%, Japan −2.2%.
+  https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/
+- Total CO2 growth has slowed to **0.3%/yr over the past decade** vs **1.9%/yr the
+  previous decade** — the key "bend" signal, but still positive (no peak yet).
+  https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/
+- Remaining 1.5°C carbon budget "virtually exhausted": **170 Gt CO2 ≈ 4 years** at 2025
+  emission rate; "keeping global warming below 1.5°C is no longer plausible" (Friedlingstein).
   https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/
 
-## Assessment
+### China (CREA / Carbon Brief, Lauri Myllyvirta) — fossil + cement CO2
+- China's CO2 has been **"flat or falling" for 21 months, starting March 2024** —
+  the first such streak. Q4 2025 fell ~1%, **likely securing a full-year 2025 decline
+  of −0.3%** (fossil component +0.1%, more than offset by a 7% drop in cement CO2).
+  Carbon intensity fell 4.7% in 2025. (Published 12 Feb 2026.)
+  https://www.carbonbrief.org/analysis-chinas-co2-emissions-have-now-been-flat-or-falling-for-21-months/
+- DISCREPANCY worth flagging: GCB (Nov 2025) **projected China fossil CO2 +0.4%** for
+  2025, while CREA (Feb 2026, with fuller data) estimates total China CO2 **−0.3%**.
+  Largely reconciled by scope/timing: GCB = fossil only & a Nov projection; CREA = fossil
+  + cement (cement −7% drags the total down) & an updated post-year estimate.
+  https://www.carbonbrief.org/analysis-chinas-co2-emissions-have-now-been-flat-or-falling-for-21-months/
 
-**NOT ACHIEVED — APPROACHING (improving trend).** The year of peak global GHG
-emissions is NOT yet definitively behind us: 2025 set new record highs on both
-the IEA (>38 Gt, +0.4%) and GCB (38.1 Gt fossil+cement, +1.1%) measures. But the
-"bend" is clearly nearing — growth has decelerated to its slowest non-crisis rate
-in decades, coal generation fell globally for the first time since 2019, China
-(the top emitter) has plateaued for ~21 months and India went flat. The caution
-flag: China's CO2 ticked up ~2% in Q1 2026 on curtailed renewables, showing the
-peak is balanced on a knife-edge and could still be deferred. Verdict for 26H1:
-peak is plausibly imminent but unconfirmed — global emissions are still inching
-to fresh records.
+### 26H1 within-period development — the 2026 wobble (CREA / Carbon Brief)
+- **China's CO2 grew ~2% year-on-year in Q1 2026** (Jan–Mar), reversing nearly two
+  years of flat/falling — BUT emissions **remain below the March-2024 peak**. (Published
+  3–4 Jun 2026.) Label: within-26H1, the single most recent emissions datapoint.
+  https://www.carbonbrief.org/analysis-chinas-co2-climbs-2-in-early-2026-due-to-wasted-wind-and-solar/
+- Driver: a surge in **"wasted"/curtailed wind & solar** (inflexible coal contracts and
+  grid management); "power-sector CO2 would have been flat without the rise in wasted
+  wind and solar." Coal+gas power generation +4% in Q1 2026. Cement −7%, crude steel −5%
+  (real-estate investment −11%). So the rise is grid-integration friction, not a structural
+  reversal — the peak case is intact but unconfirmed.
+  https://www.carbonbrief.org/analysis-chinas-co2-climbs-2-in-early-2026-due-to-wasted-wind-and-solar/
+
+### Cross-check — Carbon Monitor (near-real-time fossil CO2)
+- Carbon Monitor ("Year in Review", published **14 Apr 2026**) reports **global CO2 in
+  2025 +0.7% vs 2024, reaching 37.3 Gt** — a THIRD distinct figure (vs IEA +0.4%/~38.4 Gt
+  and GCB +1.1%/38.1 Gt), reflecting different scope/method. All three agree: 2025 was a
+  new record and still rising. (Context series: 2024 +0.9%/36.3 Gt; 2023 +0.1%/35.8 Gt.)
+  No H1-2026 Carbon Monitor full update was published on the news page as of end-June 2026.
+  https://carbonmonitor.org/news
+
+## STATUS: NOT ACHIEVED — APPROACHING (improving trend)
+
+The year of peak global GHG/fossil-CO2 emissions is **not yet definitively behind us**.
+Global totals (IEA ~38.4 Gt, GCB 38.1 Gt fossil) set fresh records in 2025, so the peak
+is not in the rear-view mirror. BUT the trend is improving: growth is the slowest since
+2021, decade-over-decade total-CO2 growth has collapsed from 1.9%/yr to 0.3%/yr, China
+plateaued for ~21 months, India's energy-CO2 went flat, and coal generation fell in
+China. The early-2026 wobble (China +2% in Q1, still below its March-2024 peak) shows the
+peak is balanced on a knife-edge — plausibly imminent, but unconfirmed as of end-June 2026.
+
+## Verification log (sources I actually visited/extracted)
+- VERIFIED by visiting: Carbon Brief China Q1 2026 (+2%, below Mar-2024 peak, wasted RE).
+- VERIFIED by visiting: Carbon Brief China "21 months flat/falling" (Q4 2025 −1%, FY −0.3%).
+- VERIFIED by visiting: Global Carbon Budget 2025 page (+1.1%, 38.1 Gt, all sub-figures).
+- VERIFIED by extracting the IEA GER 2026 PDF (~0.4%, +145 Mt, ~38.4 Gt, slowest since 2021,
+  800 GW, solar >25% of demand growth, India flat, China coal gen −1.5%).
+- VERIFIED by visiting https://carbonmonitor.org/news (Apr 14 2026 post): 2025 +0.7% / 37.3 Gt
+  (also confirmed the "1.7% first-7-months" figure circulating in search is from 2022, NOT 2026).
