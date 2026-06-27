@@ -6,6 +6,11 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
 
 ## Harness / infrastructure
 
+- [x] **Harness guardrails** (done — commit a53e679, from deep code review):
+      OUT_DIR/period split, clean-worktree preflight, scoped+safe stage commits,
+      surgical anti-contamination prune (+ note reuse / `FRESH=1`), slug
+      validation, empty-note abort, and hardened draft/review prompts (KPI
+      completeness, no cross-metric causal bridges, precise deep-link citations).
 - [ ] **Validation gate** — a deterministic, no-LLM check script run after the
       `review` stage (complements, doesn't replace, the LLM review):
   - [ ] link resolution: every URL non-404 (Jina/archive fallback for
@@ -31,18 +36,25 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
   - [ ] thinner **formatting guidance** (we lean on the reference template;
         likely why the per-milestone emissions chart got dropped)
 
-## Output quality (from deep-mode review of pilot-26H1/climate.md)
+## Output quality (from deep reviews of pilot-26H1/climate.md)
 
-- [ ] **Reservation A (borderline blocker):** KPI is defined as CO₂ ppm *and
-      10-year trend (ppm/yr)*; output reports only single-year growth (+2.23) and
-      omits the decadal figure (~+2.57/yr from its own chart) — understates the
-      trend. Fix draft prompt to require all KPI sub-clauses.
-- [ ] **Reservation B (major-ish):** Exec summary conflates atmospheric
-      ppm-growth (El-Niño-sink driven) with the emissions trajectory as one
-      causal story. Tighten draft prompt to forbid causal bridges across distinct
-      metrics.
-- [ ] Cite verifiable IEA PDF artifact, not the JS landing page.
-- [ ] Avoid mixing IEA energy-CO₂ vs GCB fossil+cement growth bases across years.
+The harness prompts are now hardened against all of these (commit a53e679), but
+the EXISTING pilot-26H1 artifact still exhibits them — **regenerate pilot-26H1
+climate with the hardened harness** to both verify the guardrails work and
+replace the defective artifact (don't hand-patch the toy — that defeats the
+harness test). Defects to confirm are gone after regen:
+
+- [ ] **Reservation A:** KPI defined as CO₂ ppm *and 10-year trend (ppm/yr)*;
+      output reported only single-year growth (+2.23), omitting the decadal
+      figure (~+2.57/yr from its own chart) — understated the trend.
+- [ ] **Reservation B:** Exec summary conflated atmospheric ppm-growth
+      (El-Niño-sink driven) with the emissions trajectory as one causal story.
+- [ ] IEA cited at JS landing page, not the verified PDF deep link in the note.
+- [ ] Mixed IEA energy-CO₂ vs GCB fossil+cement growth bases across years.
+- [ ] "The Bend" is defined as global **GHG/CO₂e**; evidence was mostly CO₂
+      proxies — either source GHG/CO₂e or explicitly state the proxy.
+- [ ] Internal contradiction: note said total CO₂ (incl. land-use) was slightly
+      *below* 2024, report said "global totals still inching to fresh records."
 
 ## Validation at scale
 
