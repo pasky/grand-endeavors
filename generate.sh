@@ -26,15 +26,12 @@
 #     research note independently retryable and committed.
 #   - Subagents are used only in the REVIEW stage for offline critique /
 #     coverage / fact-checking-against-notes (no web needed there).
-#   - A generation-specific agent config (.gen-agent/) symlinks the live
-#     ~/.pi/agent but DROPS pi-session-summary, whose widget callback crashes
-#     headless runs on subagent session replacement (stale-ctx bug).
 #
 # REPRODUCIBILITY:
-#   <period>/MANIFEST.txt records pi version, the ~/.pi/agent commit (+dirty
-#   flag), settings hash, and the generation-config hash. To reproduce, check
-#   out that agent commit (restore settings.json) and re-run. Per-stage sessions
-#   are saved under <period>/.sessions/ (gitignored) for after-the-fact audit.
+#   <period>/MANIFEST.txt records pi version and the ~/.pi/agent commit (+dirty
+#   flag) + settings hash. To reproduce, check out that agent commit (restore
+#   settings.json) and re-run. Per-stage sessions are saved under
+#   <period>/.sessions/ (gitignored) for after-the-fact audit.
 #
 # DURABILITY:
 #   Research is persisted as committed Markdown notes under
@@ -60,32 +57,15 @@ REF_TEMPLATE="pilot-2025/climate.md"   # structural reference (format, not conte
 mkdir -p "$RESEARCH_DIR" "$SESS_DIR"
 
 AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
-GEN_AGENT="$ROOT/.gen-agent"           # gitignored; rebuilt each run
 
-# --- Build the generation agent config (live config minus session-summary) ---
-build_gen_agent() {
-	rm -rf "$GEN_AGENT"; mkdir -p "$GEN_AGENT"
-	for f in "$AGENT_DIR"/* "$AGENT_DIR"/.[!.]*; do
-		b="$(basename "$f")"
-		[ "$b" = "settings.json" ] && continue
-		[ -e "$f" ] && ln -s "$f" "$GEN_AGENT/$b"
-	done
-	python3 - "$AGENT_DIR/settings.json" "$GEN_AGENT/settings.json" <<-'PY'
-		import json, sys
-		s = json.load(open(sys.argv[1]))
-		s["packages"] = [p for p in s.get("packages", []) if "session-summary" not in p]
-		json.dump(s, open(sys.argv[2], "w"), indent=2)
-	PY
-}
-
-# Run one granular pi stage with the generation config; saved+named session.
+# Run one granular pi stage; saved+named session.
 # $1 = stage label, $2 = prompt
 pi_run() {
 	label="$1"; prompt="$2"
 	echo ">>> [$SECTION/$PERIOD] $label"
 	# </dev/null: keep pi from consuming the caller's stdin (e.g. the research
 	# loop reading PLAN.txt) — otherwise pi slurps it and the loop ends early.
-	PI_CODING_AGENT_DIR="$GEN_AGENT" pi -p --approve \
+	pi -p --approve \
 		--session-dir "$SESS_DIR" \
 		--name "${PERIOD}-${SECTION}-${label}" \
 		"$prompt" </dev/null
@@ -103,13 +83,11 @@ write_manifest() {
 			&& echo "agent_dirty:  no" \
 			|| echo "agent_dirty:  YES (config not pinned — capture settings/extensions to reproduce)"
 		echo "settings_sha: $(sha256sum "$AGENT_DIR/settings.json" 2>/dev/null | cut -c1-16)"
-		echo "gencfg_sha:   $(sha256sum "$GEN_AGENT/settings.json" 2>/dev/null | cut -c1-16) (live config minus session-summary)"
 		echo "spec_commit:  $(git rev-parse HEAD)  (HEAD at run START = input spec/harness version; the run's own output is committed AFTER this)"
 	} > "$OUT_DIR/MANIFEST.txt"
 }
 
 # === Pipeline ================================================================
-build_gen_agent
 write_manifest
 commit "$PERIOD $SECTION: manifest + run setup"
 
