@@ -14,7 +14,7 @@ This is the pilot edition — a summary 2025 report across all five Grand Endeav
 
 **KPI: 80-percentile METR task length equivalent** — **32.3 min** (GPT-5.1-Codex-Max)
 
-AI capabilities doubled every ~7 months on METR benchmarks. Models now reliably complete tasks taking humans a full workweek. Claude Code crossed $1B revenue. 41% of code is AI-generated or AI-assisted. AI solved a 130-year-old math problem (Lyapunov functions) and achieved IMO gold-medal performance. >75 AI-derived drug molecules are in clinical trials.
+AI capabilities doubled every ~7 months on METR benchmarks. Models now reliably complete tasks that take humans ~30 minutes at 80% success (or ~5 hours at 50%). Claude Code crossed $1B revenue. 41% of code is AI-generated or AI-assisted. AI solved a 130-year-old math problem (Lyapunov functions) and achieved IMO gold-medal performance. >75 AI-derived drug molecules are in clinical trials.
 
 **However:** METR's RCT found experienced developers are 19% *slower* with AI tools. 95% of enterprise AI pilots fail to reach production. Hallucination rates on reasoning models are *increasing*. Linux kernel maintainers remain hostile to AI-generated code.
 
