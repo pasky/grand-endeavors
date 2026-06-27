@@ -47,8 +47,15 @@ use DIFFERENT boundaries and must not be conflated:
   previous decade** — the key "bend" signal, but still positive (no peak yet).
   https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/
 - Remaining 1.5°C carbon budget "virtually exhausted": **170 Gt CO2 ≈ 4 years** at 2025
-  emission rate; "keeping global warming below 1.5°C is no longer plausible" (Friedlingstein).
+  emission rate; "keeping global warming below 1.5°C is no longer plausible" (Friedlingstein,
+  who led the study). NB: the "4 years" is at the TOTAL-CO2 rate (fossil + land-use ≈ 42.2 Gt/yr,
+  Carbon Brief), not the 38.1 Gt fossil-only figure.
   https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/
+- Carbon Brief deep-dive on GCB 2025 (used to ground the fossil+cement emissions time-series
+  chart in the report): fossil CO2 +1.1% to record 38.1 Gt; total CO2 (fossil+land-use) ≈ 42.2 Gt
+  (−0.04%, effectively tied with 2024); fossil CO2 grew ~0.2 Gt/yr over the past decade. So the
+  2024 fossil+cement figure is ~37.7 Gt (38.1/1.011), NOT 37.8 (the +1.1% headline implies ~37.7).
+  https://www.carbonbrief.org/analysis-fossil-fuel-co2-emissions-to-set-new-record-in-2025-as-land-sink-recovers/
 
 ### China (CREA / Carbon Brief, Lauri Myllyvirta) — fossil + cement CO2
 - China's CO2 has been **"flat or falling" for 21 months, starting March 2024** —
@@ -81,6 +88,11 @@ use DIFFERENT boundaries and must not be conflated:
   new record and still rising. (Context series: 2024 +0.9%/36.3 Gt; 2023 +0.1%/35.8 Gt.)
   No H1-2026 Carbon Monitor full update was published on the news page as of end-June 2026.
   https://carbonmonitor.org/news
+
+### Carbon Monitor deep link (peer-reviewed)
+- The Carbon Monitor "Year in Review 2025" (2025 +0.7% / 37.3 Gt) is written up in a peer-reviewed
+  Nature Reviews: Earth & Environment paper — use this DOI as the deep link rather than the
+  carbonmonitor.org/news listing page: https://doi.org/10.1038/s43017-026-00780-4
 
 ## STATUS: NOT ACHIEVED — APPROACHING (improving trend)
 
