@@ -1,0 +1,2 @@
+kpi-co2-ppm | Latest atmospheric CO2 concentration (ppm) as of Jun 2026 incl. 26H1 monthly/May peak values, plus recent ppm/year growth rate and trend.
+milestone-the-bend | Whether the year of peak global greenhouse-gas emissions is definitively behind us, using latest 2025/26H1 global fossil CO2 emissions data and trend (esp. China plateau).
