@@ -1,8 +1,0 @@
-# Generation manifest — 26H1
-generated_at: 2026-06-27T09:27:24Z
-pi_version:   0.80.2
-agent_commit: 4099683c41f44576249b69c63366d0315130ca74
-agent_dirty:  YES (config not pinned — see settings.json/extensions)
-settings_sha: e2ef467a976e79b3
-spec_commit:  468b38d315649611cd238edb599314dc0e12db9f
-models:       main=settings default; research subagents=deep mode
