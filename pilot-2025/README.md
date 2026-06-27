@@ -12,7 +12,7 @@ This is the pilot edition — a summary 2025 report across all five Grand Endeav
 
 ### Software
 
-**KPI: 80-percentile METR task length equivalent** — **32.3 hours** (GPT-5.1-Codex-Max)
+**KPI: 80-percentile METR task length equivalent** — **32.3 min** (GPT-5.1-Codex-Max)
 
 AI capabilities doubled every ~7 months on METR benchmarks. Models now reliably complete tasks taking humans a full workweek. Claude Code crossed $1B revenue. 41% of code is AI-generated or AI-assisted. AI solved a 130-year-old math problem (Lyapunov functions) and achieved IMO gold-medal performance. >75 AI-derived drug molecules are in clinical trials.
 
@@ -171,7 +171,7 @@ The clean energy transition is accelerating faster than predicted. Renewable dep
 
 | Endeavor | KPI | Key 2025 Number | Status |
 |----------|-----|-----------------|--------|
-| Robots (Software) | METR 80% horizon | 32.3 minutes | 🟡 |
+| Robots (Software) | METR 80% horizon | 32.3 min | 🟡 |
 | Robots (Hardware) | Largest fleet output | 100K+ totes | 🟡 |
 | Rockets and Space | Cost to LEO | $1,500/kg | 🟢 |
 | Fusion and Energy | Fusion gain | Q=4.13 | 🟡 |
