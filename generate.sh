@@ -99,7 +99,9 @@ commit() {
 		echo "    (nothing to commit for: $1)"
 		return 0
 	fi
-	git commit -q -m "$1"
+	# Pathspec commit: only paths under $OUT_DIR enter this commit, even if the
+	# index has unrelated staged changes (e.g. under ALLOW_DIRTY=1).
+	git commit -q -m "$1" -- "$OUT_DIR"
 }
 
 write_manifest() {
@@ -148,42 +150,51 @@ commit "$OUT_DIR $SECTION: research plan"
 
 [ -s "$PLAN_FILE" ] || { echo "ERROR: no plan produced at $PLAN_FILE" >&2; exit 1; }
 
-# Prune stale notes from a previous (broader/older) run: any note whose slug is
-# not a line in the freshly-written PLAN.txt. Slugs are [a-z0-9-] so they are
-# safe as literal grep patterns. The deletion is staged by the commit below.
-for f in "$RESEARCH_DIR"/*.md; do
-	[ -e "$f" ] || continue
-	s="$(basename "$f" .md)"
-	if ! grep -q "^[[:space:]]*$s[[:space:]]*|" "$PLAN_FILE"; then
-		echo "    pruning stale note: $f"
-		rm -f "$f"
-	fi
-done
-commit "$OUT_DIR $SECTION: prune stale research notes"
-
-# --- Stage 2: research (one web-capable main-agent pi PER item) --------------
+# Validate the ENTIRE plan BEFORE any destructive action, so a malformed plan
+# can never delete existing notes. Collect validated "slug|desc" lines.
+PLAN_VALID="$(mktemp)"
+trap 'rm -f "$PLAN_VALID"' EXIT
 seen_slugs=" "
-while IFS= read -r line <&3; do
+while IFS= read -r line; do
 	case "$line" in ""|\#*) continue ;; esac
-	# Require the "slug | description" shape.
 	case "$line" in *"|"*) : ;; *)
 		echo "ERROR: malformed plan line (no '|'): $line" >&2; exit 1 ;;
 	esac
-	slug="$(printf '%s' "$line" | cut -d'|' -f1 | tr -d '[:space:]')"
+	# Trim only leading/trailing whitespace; internal whitespace stays and is
+	# then rejected by the slug charset check below.
+	slug="$(printf '%s' "$line" | cut -d'|' -f1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 	desc="$(printf '%s' "$line" | cut -d'|' -f2- | sed 's/^[[:space:]]*//')"
-	# Validate slug: safe filename, no path tricks.
 	case "$slug" in
 		"" ) echo "ERROR: empty slug in plan line: $line" >&2; exit 1 ;;
-		*[!a-z0-9-]* | -* ) echo "ERROR: invalid slug '$slug' (need ^[a-z0-9][a-z0-9-]*\$)" >&2; exit 1 ;;
+		-* | *[!a-z0-9-]* ) echo "ERROR: invalid slug '$slug' (need ^[a-z0-9][a-z0-9-]*\$)" >&2; exit 1 ;;
 	esac
 	case "$seen_slugs" in *" $slug "*)
 		echo "ERROR: duplicate slug '$slug' in plan" >&2; exit 1 ;;
 	esac
 	seen_slugs="$seen_slugs$slug "
+	printf '%s|%s\n' "$slug" "$desc" >> "$PLAN_VALID"
+done < "$PLAN_FILE"
+[ -s "$PLAN_VALID" ] || { echo "ERROR: plan has no valid items" >&2; exit 1; }
 
+# Plan is valid -> now safe to prune notes whose slug isn't in the plan.
+for f in "$RESEARCH_DIR"/*.md; do
+	[ -e "$f" ] || continue
+	s="$(basename "$f" .md)"
+	case "$seen_slugs" in
+		*" $s "*) : ;;
+		*) echo "    pruning stale note: $f"; rm -f "$f" ;;
+	esac
+done
+commit "$OUT_DIR $SECTION: prune stale research notes"
+
+# --- Stage 2: research (one web-capable main-agent pi PER item) --------------
+while IFS='|' read -r slug desc <&3; do
 	note="$RESEARCH_DIR/$slug.md"
+	# FRESH=1: delete any existing note first, so a 'fresh' run can't silently
+	# survive on stale content if pi exits 0 without rewriting it.
+	[ -n "${FRESH:-}" ] && rm -f "$note"
 	# Reuse an existing non-empty note (cheap retry); FRESH=1 forces re-research.
-	if [ -z "${FRESH:-}" ] && [ -s "$note" ]; then
+	if [ -s "$note" ]; then
 		echo ">>> [$SECTION/$OUT_DIR] research-$slug: reusing existing note (FRESH=1 to redo)"
 	else
 	pi_run "research-$slug" "$(cat <<EOF
@@ -220,7 +231,7 @@ EOF
 	# A research stage that produced no note is a failure, not "nothing to commit".
 	[ -s "$note" ] || { echo "ERROR: research stage wrote no note at $note" >&2; exit 1; }
 	commit "$OUT_DIR $SECTION: research $slug"
-done 3< "$PLAN_FILE"
+done 3< "$PLAN_VALID"
 
 # --- Stage 3: draft ----------------------------------------------------------
 pi_run draft "$(cat <<EOF

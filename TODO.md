@@ -39,10 +39,12 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
 ## Output quality (from deep reviews of pilot-26H1/climate.md)
 
 The harness prompts are now hardened against all of these (commit a53e679), but
-the EXISTING pilot-26H1 artifact still exhibits them — **regenerate pilot-26H1
-climate with the hardened harness** to both verify the guardrails work and
-replace the defective artifact (don't hand-patch the toy — that defeats the
-harness test). Defects to confirm are gone after regen:
+the EXISTING pilot-26H1 artifact still exhibits them — **regenerate with
+`FRESH=1 ./generate.sh pilot-26H1 climate "…scope…"`** (FRESH=1 is required, else
+the old research notes are reused and the deep-link/metric-scope research fixes
+won't be retested) to both verify the guardrails work and replace the defective
+artifact (don't hand-patch the toy — that defeats the harness test). Defects to
+confirm are gone after regen:
 
 - [ ] **Reservation A:** KPI defined as CO₂ ppm *and 10-year trend (ppm/yr)*;
       output reported only single-year growth (+2.23), omitting the decadal
