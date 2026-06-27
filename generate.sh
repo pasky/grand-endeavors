@@ -285,9 +285,23 @@ Review and finalize $OUT_FILE (the "$SECTION" section for $PERIOD).
    that should be deep links, and any metric-scope conflation.
 4. Apply all fixes directly to $OUT_FILE: correct or remove unsupported claims,
    fix citations to precise deep links, separate conflated metrics, tighten
-   prose. Report the changes you made.
+   prose.
+5. Run the mechanical validator and fix EVERY error it reports (undefined
+   footnotes/refs, mermaid axis/series length mismatches, dead citation URLs):
+       uv run validate.py $OUT_FILE --plan $PLAN_FILE --research $RESEARCH_DIR
+   Re-run it until it reports 0 errors. Then report the changes you made.
 EOF
 )"
 commit "$OUT_DIR $SECTION: review"
+
+# --- Stage 5: validation gate (deterministic, no-LLM) ------------------------
+# Mechanical checks the LLM review can't be talked out of: footnote/reference
+# integrity, mermaid axis/series lengths, dead citation URLs, PLAN coverage.
+# Non-fatal by default (report + record); set STRICT=1 to fail the run on errors.
+echo ">>> [$SECTION/$OUT_DIR] validate"
+if ! uv run validate.py "$OUT_FILE" --plan "$PLAN_FILE" --research "$RESEARCH_DIR"; then
+	echo "!!! validation gate reported errors in $OUT_FILE"
+	if [ -n "${STRICT:-}" ]; then exit 1; fi
+fi
 
 echo ">>> done: $OUT_FILE  (research: $RESEARCH_DIR/, manifest: $OUT_DIR/MANIFEST.txt)"
