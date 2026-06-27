@@ -1,0 +1,8 @@
+# Generation manifest — 26H1
+generated_at: 2026-06-27T10:07:15Z
+pi_version:   0.80.2
+agent_commit: a58991a2addcb096e1ca8bba0a4ef3d347043269
+agent_dirty:  YES (config not pinned — capture settings/extensions to reproduce)
+settings_sha: e2ef467a976e79b3
+gencfg_sha:   6d58969e1a85fc56 (live config minus session-summary)
+spec_commit:  0141de4089b9966c740194dcc85279ceae24540e
