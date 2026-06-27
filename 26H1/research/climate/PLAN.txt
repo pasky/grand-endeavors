@@ -1,2 +1,0 @@
-kpi-co2-ppm | Latest 26H1 atmospheric CO2 concentration (ppm, Mauna Loa/NOAA global) including the May 2026 annual peak, plus the recent annual growth rate and ~10-year trend (ppm/year).
-milestone-the-bend | Whether the year of peak global greenhouse-gas emissions is definitively behind us — latest 2025/2026 fossil CO2 emissions data, China's trajectory, and expert assessment of whether the peak has been crossed.

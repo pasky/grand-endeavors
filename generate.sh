@@ -83,10 +83,12 @@ build_gen_agent() {
 pi_run() {
 	label="$1"; prompt="$2"
 	echo ">>> [$SECTION/$PERIOD] $label"
+	# </dev/null: keep pi from consuming the caller's stdin (e.g. the research
+	# loop reading PLAN.txt) — otherwise pi slurps it and the loop ends early.
 	PI_CODING_AGENT_DIR="$GEN_AGENT" pi -p --approve \
 		--session-dir "$SESS_DIR" \
 		--name "${PERIOD}-${SECTION}-${label}" \
-		"$prompt"
+		"$prompt" </dev/null
 }
 
 commit() { git add -A; git commit -q -m "$1" || echo "    (nothing to commit)"; }
@@ -135,7 +137,7 @@ commit "$PERIOD $SECTION: research plan"
 [ -s "$PLAN_FILE" ] || { echo "ERROR: no plan produced at $PLAN_FILE"; exit 1; }
 
 # --- Stage 2: research (one web-capable main-agent pi PER item) --------------
-while IFS= read -r line; do
+while IFS= read -r line <&3; do
 	case "$line" in ""|\#*) continue ;; esac
 	slug="$(printf '%s' "$line" | cut -d'|' -f1 | tr -d ' ')"
 	desc="$(printf '%s' "$line" | cut -d'|' -f2-)"
@@ -167,7 +169,7 @@ file, then report which claims you actually verified by visiting the source.
 EOF
 )"
 	commit "$PERIOD $SECTION: research $slug"
-done < "$PLAN_FILE"
+done 3< "$PLAN_FILE"
 
 # --- Stage 3: draft ----------------------------------------------------------
 pi_run draft "$(cat <<EOF
