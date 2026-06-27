@@ -1,8 +1,9 @@
-# Generation manifest — 26H1
-generated_at: 2026-06-27T10:07:15Z
-pi_version:   0.80.2
-agent_commit: a58991a2addcb096e1ca8bba0a4ef3d347043269
-agent_dirty:  YES (config not pinned — capture settings/extensions to reproduce)
-settings_sha: e2ef467a976e79b3
-gencfg_sha:   6d58969e1a85fc56 (live config minus session-summary)
-spec_commit:  0141de4089b9966c740194dcc85279ceae24540e
+# Generation manifest — pilot-26H1
+report_period: 26H1
+section:       climate
+generated_at:  2026-06-27T21:10:21Z
+pi_version:    0.80.2
+agent_commit:  3f44e1ce1f19b51eb4b38e7fc0cd180dc9d69af6
+agent_dirty:   YES (config not pinned — capture settings/extensions to reproduce)
+settings_sha:  f1bd1ab6b19dcbbf
+spec_commit:   dc25d347e577367d2bbf07debf6a8342cef7bbc6  (HEAD at run START = input spec/harness version; output committed AFTER)
