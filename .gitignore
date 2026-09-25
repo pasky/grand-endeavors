@@ -3,3 +3,4 @@
 
 # per-stage pi sessions (large JSONL; provenance is in MANIFEST.txt + research notes)
 */.sessions/
+__pycache__/

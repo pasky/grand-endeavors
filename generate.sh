@@ -122,6 +122,9 @@ write_manifest() {
 			|| echo "agent_dirty:   YES (config not pinned — capture settings/extensions to reproduce)"
 		echo "settings_sha:  $(sha256sum "$AGENT_DIR/settings.json" 2>/dev/null | cut -c1-16)"
 		echo "spec_commit:   $(git rev-parse HEAD)  (HEAD at run START = input spec/harness version; output committed AFTER)"
+		echo "fresh:         $([ "${FRESH:-}" = 1 ] && echo yes || echo no)"
+		# scope last + flattened to one line: needed to reproduce/regenerate the run
+		printf 'scope:         %s\n' "$(printf '%s' "$SCOPE" | tr '\n' ' ')"
 	} > "$OUT_DIR/MANIFEST.txt"
 }
 
