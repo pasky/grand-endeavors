@@ -387,6 +387,10 @@ Review and finalize $OUT_FILE (the "$SECTION" section for $PERIOD).
    verified source in the notes) and re-render affected charts with kpi.py.
    Section and store must agree.
    Re-run it until it reports 0 errors. Then report the changes you made.
+
+Modify ONLY $OUT_FILE, $KPI_FILE and $RESEARCH_DIR/*.md. Do NOT touch any other
+file, in particular not the period round-up README.md (roundup.sh regenerates
+it from the sections).
 EOF
 )"
 commit "$OUT_DIR $SECTION: review"
