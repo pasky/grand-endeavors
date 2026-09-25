@@ -1,0 +1,87 @@
+metric,obs,value,unit,role,source,note
+co2-mlo-monthly,2026-05,432.34,ppm,headline,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean; May 2026 seasonal peak and all-time monthly record (latest month published by period end); preliminary
+co2-trend-10yr-mlo-jan-dec,2025,2.56,ppm/yr,headline,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,NOAA Mauna Loa 10-yr average growth 2016-2025 = mean of NOAA Jan->Dec annual growth rates (as stated in note); 2025 preliminary
+co2-trend-10yr-global-jan-dec,2025,2.53,ppm/yr,headline,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,NOAA global marine-surface 10-yr average growth 2016-2025 = mean of NOAA Jan->Dec annual growth rates (as stated in note); differs from WMO annual-mean basis of co2-trend-10yr-global-wmo; 2025 preliminary
+co2-emissions-fossil-gcb,2025,38.1,GtCO2,headline,https://essd.copernicus.org/articles/18/3211/2026/,The Bend tracker: Global Carbon Budget 2025 fossil CO2 (fossil fuels + cement net of carbonation); preliminary; +1.0% (0.2% to 1.7%) on 2024; record high
+co2-mlo-monthly,2026-01,428.62,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean; preliminary
+co2-mlo-monthly,2026-02,429.35,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean; preliminary
+co2-mlo-monthly,2026-03,430.15,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean; preliminary
+co2-mlo-monthly,2026-04,431.12,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean; preliminary
+co2-mlo-monthly,2026-06,431.43,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean; preliminary; published early July 2026 (just after period end)
+co2-mlo-monthly,2016-05,407.90,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-mlo-monthly,2017-05,409.89,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-mlo-monthly,2018-05,411.44,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-mlo-monthly,2019-05,414.86,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-mlo-monthly,2020-05,417.28,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-mlo-monthly,2021-05,419.09,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-mlo-monthly,2022-05,420.97,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-mlo-monthly,2023-05,424.00,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-mlo-monthly,2024-05,426.90,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-mlo-monthly,2025-05,430.51,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa May monthly mean (annual seasonal peak); 2026 NOAA vintage
+co2-growth-mlo-yoy-monthly,2026-01,1.97,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean year-on-year change vs same month 2025; preliminary
+co2-growth-mlo-yoy-monthly,2026-02,2.26,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean year-on-year change vs same month 2025; preliminary
+co2-growth-mlo-yoy-monthly,2026-03,2.00,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean year-on-year change vs same month 2025; preliminary
+co2-growth-mlo-yoy-monthly,2026-04,1.48,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean year-on-year change vs same month 2025; preliminary
+co2-growth-mlo-yoy-monthly,2026-05,1.83,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean year-on-year change vs same month 2025; preliminary
+co2-growth-mlo-yoy-monthly,2026-06,1.82,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt,NOAA Mauna Loa monthly mean year-on-year change vs same month 2025; preliminary; June value published after period end
+co2-mlo-daily,2026-05-01,433.95,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_daily_mlo.txt,NOAA Mauna Loa daily mean; highest daily value in NOAA MLO daily file (record); preliminary
+co2-mlo-daily,2026-05-10,433.47,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_daily_mlo.txt,NOAA Mauna Loa daily mean; second-highest daily value; preliminary
+co2-global-monthly,2026-01,428.02,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_gl.txt,NOAA global marine-surface monthly mean; preliminary
+co2-global-monthly,2026-02,428.44,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_gl.txt,NOAA global marine-surface monthly mean; preliminary
+co2-global-monthly,2026-03,428.48,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_gl.txt,NOAA global marine-surface monthly mean; preliminary
+co2-global-monthly,2026-04,428.67,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_gl.txt,NOAA global marine-surface monthly mean; preliminary
+co2-global-monthly,2026-05,428.59,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_gl.txt,NOAA global marine-surface monthly mean; preliminary
+co2-global-monthly,2026-06,427.62,ppm,series,https://gml.noaa.gov/ccgg/trends/global.html,NOAA global marine-surface monthly mean; preliminary; published after period end
+co2-global-monthly,2025-06,425.90,ppm,series,https://gml.noaa.gov/ccgg/trends/global.html,"NOAA global marine-surface monthly mean (June 2025, as quoted on NOAA global page)"
+co2-mlo-annual,2016,404.41,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage
+co2-mlo-annual,2017,406.76,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage
+co2-mlo-annual,2018,408.72,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage
+co2-mlo-annual,2019,411.65,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage
+co2-mlo-annual,2020,414.21,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage
+co2-mlo-annual,2021,416.41,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage
+co2-mlo-annual,2022,418.53,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage
+co2-mlo-annual,2023,421.08,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage
+co2-mlo-annual,2024,424.61,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage
+co2-mlo-annual,2025,427.35,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual mean; 2026 NOAA vintage; preliminary
+co2-global-annual,2016,403.07,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage
+co2-global-annual,2017,405.22,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage
+co2-global-annual,2018,407.61,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage
+co2-global-annual,2019,410.07,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage
+co2-global-annual,2020,412.44,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage
+co2-global-annual,2021,414.70,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage
+co2-global-annual,2022,417.08,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage
+co2-global-annual,2023,419.35,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage
+co2-global-annual,2024,422.79,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage
+co2-global-annual,2025,425.62,ppm,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt,NOAA global marine-surface annual mean; 2026 NOAA vintage; preliminary
+co2-growth-mlo-jan-dec,2016,3.03,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change"
+co2-growth-mlo-jan-dec,2017,1.90,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change"
+co2-growth-mlo-jan-dec,2018,2.85,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change"
+co2-growth-mlo-jan-dec,2019,2.49,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change"
+co2-growth-mlo-jan-dec,2020,2.30,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change"
+co2-growth-mlo-jan-dec,2021,2.35,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change"
+co2-growth-mlo-jan-dec,2022,1.84,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change"
+co2-growth-mlo-jan-dec,2023,3.32,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change"
+co2-growth-mlo-jan-dec,2024,3.33,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change"
+co2-growth-mlo-jan-dec,2025,2.23,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa annual growth rate, Jan 1->Dec 31 change; preliminary"
+co2-growth-global-jan-dec,2016,2.83,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change"
+co2-growth-global-jan-dec,2017,2.14,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change"
+co2-growth-global-jan-dec,2018,2.39,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change"
+co2-growth-global-jan-dec,2019,2.50,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change"
+co2-growth-global-jan-dec,2020,2.33,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change"
+co2-growth-global-jan-dec,2021,2.38,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change"
+co2-growth-global-jan-dec,2022,2.24,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change"
+co2-growth-global-jan-dec,2023,2.70,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change"
+co2-growth-global-jan-dec,2024,3.76,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change"
+co2-growth-global-jan-dec,2025,2.06,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt,"NOAA global marine-surface annual growth rate, Jan 1->Dec 31 change; preliminary"
+co2-growth-mlo-annual-mean,2024,3.53,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual-mean increment 2024 minus 2023 (calendar-year averages)
+co2-growth-mlo-annual-mean,2025,2.74,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt,NOAA Mauna Loa annual-mean increment 2025 minus 2024 (calendar-year averages); preliminary
+co2-growth-mlo-annual-mean-scripps,2025,2.68,ppm/yr,series,https://www.metoffice.gov.uk/research/climate/seasonal-to-decadal/seasonal-forecast/forecasts/co2-forecast,Met Office/Scripps Mauna Loa annual-mean increment 2025 minus 2024
+co2-trend-5yr-mlo-jan-dec,2020,2.51,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa 5-yr average of Jan->Dec growth rates, 2016-2020"
+co2-trend-5yr-mlo-jan-dec,2025,2.61,ppm/yr,series,https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt,"NOAA Mauna Loa 5-yr average of Jan->Dec growth rates, 2021-2025; preliminary"
+co2-trend-10yr-mlo-scripps,2009,1.91,ppm/yr,series,https://www.metoffice.gov.uk/research/climate/seasonal-to-decadal/seasonal-forecast/forecasts/co2-forecast,"Met Office decadal average growth, 2000s (2000-2009), Scripps Mauna Loa basis"
+co2-trend-10yr-mlo-scripps,2019,2.41,ppm/yr,series,https://www.metoffice.gov.uk/research/climate/seasonal-to-decadal/seasonal-forecast/forecasts/co2-forecast,"Met Office decadal average growth, 2010s (2010-2019), Scripps Mauna Loa basis"
+co2-trend-2020s-mlo-scripps,2025,2.61,ppm/yr,series,https://www.metoffice.gov.uk/research/climate/seasonal-to-decadal/seasonal-forecast/forecasts/co2-forecast,"Met Office observed average growth for 2020-2025 ('first 5 years of the 2020s'), Scripps Mauna Loa basis"
+co2-emissions-total-gcb,2024,42.4,GtCO2,series,https://essd.copernicus.org/articles/18/3211/2026/,Global Carbon Budget total CO2 (fossil + land-use change)
+co2-emissions-total-gcb,2025,42.2,GtCO2,series,https://essd.copernicus.org/articles/18/3211/2026/,"Global Carbon Budget total CO2 (fossil + land-use change); preliminary; slightly lower than 2024 due to lower net land-use emissions (end of El Nino), not a structural fossil decline"
+co2-emissions-energy-iea,2025,38082,MtCO2,series,https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf,"IEA Global Energy Review 2026 energy CO2 (combustion + industrial processes, excl. flaring); preliminary; +0.4% (approx.), record"
+co2-emissions-fossil-industry-carbon-monitor,2025,37.2,GtCO2,series,https://www.nature.com/articles/s43017-026-00780-4,"Carbon Monitor fossil+industry CO2 (Nature Rev Earth Env, 14 Apr 2026); preliminary; +0.7%, record (news page gives 37.3)"
