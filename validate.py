@@ -241,11 +241,35 @@ def check_roundup(doc_path: str, text: str) -> None:
             err(f"roundup: number '{n}' (outside any section block) not found in any section of this period")
 
 
+# --- KPI store consistency ------------------------------------------------------
+def check_kpis(doc_path: str, text: str, research_dir: str | None) -> None:
+    import kpi  # lazy: kpi imports numbers()/traceable() from here
+    pdir = os.path.dirname(os.path.abspath(doc_path))
+    section = os.path.splitext(os.path.basename(doc_path))[0]
+    csv_path = os.path.join(pdir, "kpis", f"{section}.csv")
+    if not os.path.exists(csv_path):
+        err(f"kpis: no KPI store file {csv_path}")
+        return
+    evidence = [doc_path]
+    if research_dir and os.path.isdir(research_dir):
+        evidence += sorted(os.path.join(research_dir, f) for f in os.listdir(research_dir) if f.endswith(".md"))
+    errs, warns = kpi.check(csv_path, evidence)
+    for e in errs + kpi.headline_errors(text, csv_path) + kpi.verify_charts(text, pdir):
+        err(f"kpis: {e}")
+    for w in warns:
+        warn(f"kpis: {w}")
+    if not kpi.MARKER_RE.search(text):
+        warn("kpis: no store-rendered ('%% kpi:') chart in the section")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("doc")
     ap.add_argument("--plan")
     ap.add_argument("--research")
+    ap.add_argument("--kpis", action="store_true",
+                    help="check the run's KPI store <dir>/kpis/<section>.csv: schema, traceability, "
+                         "headline values reported, '%%%% kpi:' charts match the store")
     ap.add_argument("--roundup", action="store_true",
                     help="doc is a period round-up README: check section links + number traceability")
     args = ap.parse_args()
@@ -258,6 +282,8 @@ def main() -> int:
     check_coverage(text, args.plan, args.research)
     if args.roundup:
         check_roundup(args.doc, prose)
+    if args.kpis:
+        check_kpis(args.doc, text, args.research)
     check_links(text)  # network last (slowest)
 
     for w in WARNS:
