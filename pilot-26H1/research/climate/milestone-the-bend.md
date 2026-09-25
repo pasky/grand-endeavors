@@ -13,11 +13,11 @@ All 2025 numbers are preliminary.
 
 - **GCB 2025 (final paper, published in ESSD on 13 May 2026):** fossil CO2 was **38.1 GtCO2 in 2025, up 1.0% (range 0.2% to 1.7%) on 2024**. The paper calls this "an historical record high". Coal, oil and gas emissions each rose (+1.0%, +1.1% and +1.3%).
   https://essd.copernicus.org/articles/18/3211/2026/
-- **GCB total CO2 (fossil + land use), same paper:** 42.4 GtCO2 in 2024. The preliminary 2025 figure is "slightly lower" at **42.2 GtCO2**, "mainly attributable to the end of the El Niño conditions". This is a land-use fluctuation, not a structural fossil decline. Total emissions grew **0.3%/yr over 2015–2024**, compared with 1.9%/yr over 2005–2014. The remaining 1.5°C (50%) budget from the start of 2026 is **170 GtCO2, about 4 years** at 2025 emission levels.
+- **GCB total CO2 (fossil + land use), same paper:** 42.4 GtCO2 in 2024. The preliminary 2025 figure is "slightly lower" at **42.2 GtCO2**, "due to lower net land-use emissions"; the land-use decrease (to ~4.1 GtCO2) is "mainly attributable to the end of the El Niño conditions" (verified on the ESSD page, Sep 2026). This is a land-use fluctuation, not a structural fossil decline. Total emissions grew **0.3%/yr over 2015–2024**, compared with 1.9%/yr over 2005–2014. The remaining 1.5°C (50%) budget from the start of 2026 is **170 GtCO2, about 4 years** at 2025 emission levels.
   https://essd.copernicus.org/articles/18/3211/2026/
 - **IEA Global Energy Review 2026 (April 2026):** energy CO2 rose **about 0.4% in 2025 to 38,082 Mt**, a new record. This is the slowest growth since 2021. Including flaring, the total is "nearly 38.4 Gt". By region (Mt, change vs 2024):
   - China 12,718 (**−0.5%**)
-  - India 3,114 (−0.1%, the first fall under normal economic conditions)
+  - India 3,114 (−0.1%, the first fall on record under normal economic conditions; the IEA says this was "largely due to cyclical factors resulting from the strong monsoon", p. 13)
   - USA 4,606 (+2.2%)
   - EU 2,372 (−0.8%)
   - Advanced economies rose 0.5%, their first increase since 2018 excluding the post-Covid rebound.
