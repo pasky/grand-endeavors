@@ -268,7 +268,10 @@ HARD REQUIREMENTS:
   research note explicitly supports the causal link.
 - Cite the precise deep link from the research notes (dataset/PDF/figure), not a
   homepage or JS landing page.
-- Respect metric scopes exactly as the notes label them.
+- Respect metric scopes exactly as the notes label them. This includes
+  headline/summary/status lines: any "record", "peak", "rising" or "falling"
+  claim must name its measure (e.g. "fossil CO2 at a record", not "emissions at
+  a record") whenever another in-scope measure disagrees.
 
 SCOPE FOR THIS RUN: $SCOPE
 Open the file with a one-line note stating the period and (if narrowed) the

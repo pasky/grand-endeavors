@@ -43,25 +43,45 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
 
 ## Output quality (from deep reviews of pilot-26H1/climate.md)
 
-The harness prompts are now hardened against all of these (commit a53e679), but
-the EXISTING pilot-26H1 artifact still exhibits them — **regenerate with
-`FRESH=1 ./generate.sh pilot-26H1 climate "…scope…"`** (FRESH=1 is required, else
-the old research notes are reused and the deep-link/metric-scope research fixes
-won't be retested) to both verify the guardrails work and replace the defective
-artifact (don't hand-patch the toy — that defeats the harness test). Defects to
-confirm are gone after regen:
+The harness prompts were hardened against all of these (commit a53e679). **Verified
+by a FRESH regen** (`FRESH=1`, original toy-run scope, run 2026-09-25, spec 768de6a,
+commits a58ac87..8b7bd74; the scope is now recorded in MANIFEST.txt). No hand-patching.
+Key numbers were spot-checked against live sources (NOAA co2_gr_mlo 2016–25 mean =
+2.564; IEA GER 2026 PDF 38 082 Mt / +0.4%; ESSD GCB total CO₂ 42.2 Gt, "marginally
+below" 2024). The gate reports 0 errors and 0 warnings.
 
-- [ ] **Reservation A:** KPI defined as CO₂ ppm *and 10-year trend (ppm/yr)*;
-      output reported only single-year growth (+2.23), omitting the decadal
-      figure (~+2.57/yr from its own chart) — understated the trend.
-- [ ] **Reservation B:** Exec summary conflated atmospheric ppm-growth
-      (El-Niño-sink driven) with the emissions trajectory as one causal story.
-- [ ] IEA cited at JS landing page, not the verified PDF deep link in the note.
-- [ ] Mixed IEA energy-CO₂ vs GCB fossil+cement growth bases across years.
-- [ ] "The Bend" is defined as global **GHG/CO₂e**; evidence was mostly CO₂
-      proxies — either source GHG/CO₂e or explicitly state the proxy.
-- [ ] Internal contradiction: note said total CO₂ (incl. land-use) was slightly
-      *below* 2024, report said "global totals still inching to fresh records."
+- [x] **Reservation A:** the 10-yr trend is now in the exec summary and the dashboard:
+      2.56 ppm/yr MLO / 2.53 global (2016–25), plus a half-decade split (2.51→2.61),
+      *alongside* the single-year +2.23. The chart has a 10-yr mean line. The plan
+      stage picked up "10-year" from README even though the scope only said "recent
+      ppm/year trend".
+- [x] **Reservation B:** ppm growth is attributed to La Niña/sinks (Met Office), with an
+      explicit "concentration growth is not an emissions measure" note. The Bend is
+      assessed separately, from inventories.
+- [x] IEA is cited as the PDF deep link (iea.blob…/GlobalEnergyReview2026.pdf, pp. 13,
+      36, 45).
+- [x] Growth bases: each emissions estimate has its own row and scope label (GCB
+      fossil, IEA energy, Carbon Monitor fossil+industry, GCB total). The two ppm
+      growth definitions (NOAA Jan→Dec vs annual-mean) are also reconciled
+      explicitly.
+- [x] GHG vs CO₂: an explicit "Metric caveat" says no 2025 CO₂e total was published
+      within 26H1, so CO₂ is used as a proxy.
+- [x] Records contradiction: the report now says "every fossil and energy CO₂
+      estimate" hit a record and "only total CO₂, which includes land use, dipped",
+      which matches the note.
+  - [ ] residual nit: the status and bottom lines still say "Emissions are on a
+        near-plateau at a record level" without naming the scope. The draft prompt
+        was hardened (scoped superlatives in headline/status lines) but this is
+        **unverified until the next run**.
+
+Other observations from the regen:
+- [ ] Per-milestone multi-year **emissions chart** is still missing. The notes have
+      no year-by-year emissions series, so the research prompt must ask for one
+      for milestones too, not only for the KPI. (Related: "thinner formatting
+      guidance" above.)
+- Retrospective runs work: the research ran in Sep 2026 and picked up post-period
+  sources (EDGAR, Climate TRACE, CREA Q2). The notes quarantined these as "published
+  after 30 June", and the draft correctly left them out.
 
 ## Validation at scale
 
@@ -71,8 +91,8 @@ confirm are gone after regen:
 ## Content / housekeeping
 
 - [ ] Finish `TEMPLATE.md` (newsletter intro still ends in `..todo..`).
-- [ ] (low priority — owner says config is generally stable) optionally pin a
-      clean `~/.pi/agent` commit so manifests stop reporting `agent_dirty: YES`.
+- [x] (low priority) clean `~/.pi/agent` so manifests stop reporting
+      `agent_dirty: YES` (the 2026-09-25 run reports `agent_dirty: no`).
 
 ## Roadmap (from top-level README status)
 
