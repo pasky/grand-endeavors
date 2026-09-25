@@ -131,6 +131,28 @@ def _upto(section: str, period_dir: str) -> list[tuple[dt.date, str, list[dict]]
     return [v for v in vintages(section) if (v[0], v[1]) <= (as_of, me)]
 
 
+# --- KPI-specific number matching -------------------------------------------------
+# Unlike validate.numbers() (round-up prose), KPI values keep their sign (ASCII
+# '-' or U+2212 minus; a hyphen glued to a preceding digit, as in "2016-2025", is
+# a range, not a sign) and year-like integers are NOT dropped ($2000/kg is data).
+KPI_NUM_RE = re.compile(
+    r"(?<![\w.])[-\u2212]?(?:\d{1,3}(?:[,\u2009\u202f ]\d{3})+|\d+)(?:\.\d+)?(?![\d]|[.,]\d)"
+)
+
+
+def kpi_numbers(text: str) -> set[float]:
+    text = re.sub(r"https?://\S+", " ", text)  # URLs are not claims
+    return {float(re.sub(r"[,\u2009\u202f ]", "", m).replace("\u2212", "-"))
+            for m in KPI_NUM_RE.findall(text)}
+
+
+def kpi_traceable(value: str, pool: set[float]) -> bool:
+    """Signed match. A negative value may also match its unsigned magnitude
+    (prose says "fell 0.5%"); a positive value never matches a negative."""
+    v = float(value)
+    return v in pool or (v < 0 and -v in pool)
+
+
 # --- check --------------------------------------------------------------------
 def check(path: str, evidence: list[str] | None = None) -> tuple[list[str], list[str]]:
     errs: list[str] = []
@@ -147,24 +169,23 @@ def check(path: str, evidence: list[str] | None = None) -> tuple[list[str], list
         errs.append(f"{path}: {e} (file must live at <period-dir>/kpis/<section>.csv)")
         as_of = None
     if evidence:
-        from validate import numbers, traceable  # lazy: validate imports us lazily too
-        pool: set[str] = set()
+        pool: set[float] = set()
         for ev in evidence:
-            pool |= numbers(open(ev, encoding="utf-8").read())
+            pool |= kpi_numbers(open(ev, encoding="utf-8").read())
     seen_head, seen_key, units = set(), set(), {}
     for r in rows:
         at = f"{os.path.basename(path)}:{r['_line']}"
         if not METRIC_RE.match(r["metric"] or ""):
             errs.append(f"{at}: bad metric id '{r['metric']}'")
         try:
-            start, _ = obs_range(r["obs"] or "")
-            if as_of and start > as_of:
-                errs.append(f"{at}: obs {r['obs']} starts after the period's as-of date {as_of} (post-period data)")
+            _, end = obs_range(r["obs"] or "")
+            if as_of and end > as_of:
+                errs.append(f"{at}: obs {r['obs']} ends after the period's as-of date {as_of} (post-period or partial-period data; use a finer obs, e.g. YYYY-H1)")
         except ValueError:
             errs.append(f"{at}: malformed obs '{r['obs']}'")
         if not VALUE_RE.match(r["value"] or ""):
             errs.append(f"{at}: value '{r['value']}' is not a plain decimal")
-        elif evidence and not traceable(r["value"], pool):
+        elif evidence and not kpi_traceable(r["value"], pool):
             errs.append(f"{at}: value {r['value']} ({r['metric']} {r['obs']}) not found in the evidence files")
         if not (r["unit"] or "").strip():
             errs.append(f"{at}: empty unit")
@@ -183,12 +204,16 @@ def check(path: str, evidence: list[str] | None = None) -> tuple[list[str], list
                 errs.append(f"{at}: more than one headline row for {r['metric']}")
             seen_head.add(r["metric"])
     if not seen_head:
-        errs.append(f"{path}: no headline row (every run must record its current KPI reading)")
+        warns.append(f"{path}: no headline row — OK only if the KPI has no numeric reading this period (say why in the section)")
     # Continuity: earlier vintages exist but none shares a headline metric id.
     if as_of:
         me = os.path.basename(pdir)
         prior = [v for v in vintages(section) if (v[0], v[1]) < (as_of, me)]
         prior_ids = {r["metric"] for _, _, rs in prior for r in rs}
+        if prior:  # dropped components: last period's headlines missing now
+            ids_now = {r["metric"] for r in rows}
+            for m in sorted({r["metric"] for r in prior[-1][2] if r["role"] == "headline"} - ids_now):
+                warns.append(f"headline metric '{m}' of {prior[-1][1]} is not recorded in this run (dropped KPI component, or renamed id?)")
         for m in sorted(seen_head - prior_ids):
             if prior:
                 warns.append(f"headline metric '{m}' is new (not in any earlier period) — no delta possible; reuse an existing id if it is the same measure")
@@ -208,9 +233,15 @@ def context(period_dir: str, section: str) -> str:
     if not prior:
         return f"(no earlier KPI records for section '{section}' — you are defining its metric ids)"
     last: dict[str, tuple[str, dict]] = {}
-    for _, pname, rs in prior:
+    for _, pname, rs in prior:  # ascending: a later vintage replaces an earlier one
+        by_metric: dict[str, dict] = {}
         for r in rs:
-            last[r["metric"]] = (pname, r)  # later vintage wins
+            cur = by_metric.get(r["metric"])
+            if (cur is None or r["role"] == "headline"
+                    or (cur["role"] != "headline" and obs_range(r["obs"])[1] > obs_range(cur["obs"])[1])):
+                by_metric[r["metric"]] = r
+        for m, r in by_metric.items():
+            last[m] = (pname, r)
     lines = [f"Metric ids already used for '{section}' (reuse the SAME id for the SAME measure/basis):"]
     for m, (pname, r) in sorted(last.items()):
         note = f" — {r['note']}" if r["note"] else ""
@@ -240,7 +271,12 @@ def delta(period_dir: str, section: str) -> str:
         pname, p = prev
         d = float(r["value"]) - float(p["value"])
         nd = max(len(x.split(".")[1]) if "." in x else 0 for x in (r["value"], p["value"]))
-        if obs_kind(p["obs"]) != obs_kind(r["obs"]):
+        if p["obs"] == r["obs"]:
+            caveat = (" [same observation, unchanged — no new data]" if d == 0
+                      else " [same observation REVISED by the source — not a real-world change]")
+        elif obs_range(r["obs"])[0] < obs_range(p["obs"])[0]:
+            caveat = " [current obs is OLDER than the previous one — stale reading]"
+        elif obs_kind(p["obs"]) != obs_kind(r["obs"]):
             caveat = " [different obs granularity — not comparable]"
         elif obs_kind(r["obs"]).startswith("9999-99") and p["obs"][5:7] != r["obs"][5:7]:
             caveat = " [different calendar month — seasonal cycle not removed]"
@@ -332,22 +368,31 @@ def verify_charts(doc_text: str, period_dir: str) -> list[str]:
             continue
         got_x = re.search(r"x-axis\s+\[([^\]]*)\]", block)
         got_x = [x.strip().strip('"') for x in got_x[1].split(",")] if got_x else []
-        got_series = [[v.strip() for v in s.split(",")]
-                      for s in re.findall(r"^\s*(?:line|bar)(?:\s+\"[^\"]*\")?\s+\[([^\]]*)\]", block, re.M)]
+        named = [(n, [v.strip() for v in arr.split(",")]) for n, arr in
+                 re.findall(r"^\s*(?:line|bar)(?:\s+\"([^\"]*)\")?\s+\[([^\]]*)\]", block, re.M)]
+        got_series = [vs for _, vs in named]
         if got_x != xs:
             errs.append(f"kpi chart '{m[1]}': x-axis differs from store ({got_x} vs {xs})")
-        for vs in data:
-            if vs not in got_series:
+        metrics = a.metrics.split(",")
+        for metric, vs in zip(metrics, data):
+            if len(metrics) > 1:  # multi-metric: series must be bound by name
+                if (metric, vs) not in named:
+                    errs.append(f"kpi chart '{m[1]}': no series named \"{metric}\" with the store data")
+            elif vs not in got_series:
                 errs.append(f"kpi chart '{m[1]}': store series {vs} not present in the chart")
+        y = re.search(r"y-axis\s+(?:\"[^\"]*\"\s+)?(-?[\d.]+)\s*-->\s*(-?[\d.]+)", block)
+        vals = [float(v) for vs in data for v in vs]
+        if y and not float(y[1]) <= min(vals) <= max(vals) <= float(y[2]):
+            errs.append(f"kpi chart '{m[1]}': y-axis {y[1]}..{y[2]} clips the data ({min(vals)}..{max(vals)})")
     return errs
 
 
 def headline_errors(doc_text: str, csv_path: str) -> list[str]:
     """KPI consistency: every headline value of this run appears in the section."""
-    from validate import numbers, traceable
-    pool = numbers(doc_text)
+    # mermaid blocks don't count: a headline must be REPORTED, not just charted
+    pool = kpi_numbers(re.sub(r"```.*?```", "", doc_text, flags=re.DOTALL))
     return [f"kpi headline {r['metric']}={r['value']} {r['unit']} ({r['obs']}) not reported in the section"
-            for r in read_csv(csv_path) if r["role"] == "headline" and not traceable(r["value"], pool)]
+            for r in read_csv(csv_path) if r["role"] == "headline" and not kpi_traceable(r["value"], pool)]
 
 
 # --- CLI ----------------------------------------------------------------------

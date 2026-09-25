@@ -250,16 +250,23 @@ def check_kpis(doc_path: str, text: str, research_dir: str | None) -> None:
     if not os.path.exists(csv_path):
         err(f"kpis: no KPI store file {csv_path}")
         return
-    evidence = [doc_path]
+    # Evidence = the research notes ONLY (the section is generated output, so
+    # using it as evidence would be circular). Legacy runs without notes
+    # (pilot-2025 backfill) fall back to the section text.
+    evidence = []
     if research_dir and os.path.isdir(research_dir):
-        evidence += sorted(os.path.join(research_dir, f) for f in os.listdir(research_dir) if f.endswith(".md"))
+        evidence = sorted(os.path.join(research_dir, f) for f in os.listdir(research_dir) if f.endswith(".md"))
+    if not evidence:
+        evidence = [doc_path]
+        warn("kpis: no research notes given — store values traced to the section itself (legacy mode)")
     errs, warns = kpi.check(csv_path, evidence)
     for e in errs + kpi.headline_errors(text, csv_path) + kpi.verify_charts(text, pdir):
         err(f"kpis: {e}")
     for w in warns:
         warn(f"kpis: {w}")
-    if not kpi.MARKER_RE.search(text):
-        warn("kpis: no store-rendered ('%% kpi:') chart in the section")
+    has_series = any(r["role"] == "series" for r in kpi.read_csv(csv_path))
+    if has_series and not kpi.MARKER_RE.search(text):
+        err("kpis: store has series data but the section has no store-rendered ('%% kpi:') chart")
 
 
 def main() -> int:

@@ -70,9 +70,14 @@ cd "$ROOT"
 
 # Canonical sections (same list/order as roundup.sh). Validating here also keeps
 # MANIFEST-<section>.txt from ever colliding with MANIFEST-roundup.txt.
-case " robots-software robots-hardware rockets fusion health climate knowledge-beyond society-cohesion " in
-	*" $SECTION "*) : ;;
+case "$SECTION" in
+	robots-software|robots-hardware|rockets|fusion|health|climate|knowledge-beyond|society-cohesion) : ;;
 	*) echo "ERROR: unknown section '$SECTION'" >&2; exit 1 ;;
+esac
+# Period dirs live directly under the repo root (the KPI store only looks there).
+OUT_DIR="${OUT_DIR%/}"
+case "$OUT_DIR" in
+	""|*/*|.*|*[!A-Za-z0-9-]*) echo "ERROR: out-dir must be a plain top-level period dir name, e.g. pilot-26H1 (got '$OUT_DIR')" >&2; exit 1 ;;
 esac
 
 PERIOD="${OUT_DIR#pilot-}"             # reporting period told to the agents
@@ -104,12 +109,35 @@ mkdir -p "$RESEARCH_DIR" "$SESS_DIR"
 pi_run() {
 	label="$1"; prompt="$2"
 	echo ">>> [$SECTION/$OUT_DIR] $label"
+	pre_head="$(git rev-parse HEAD)"
+	pre_dirty="$(git status --porcelain --untracked-files=all | cut -c4-)"
 	# </dev/null: keep pi from consuming the caller's stdin (e.g. the research
 	# loop reading PLAN.txt) — otherwise pi slurps it and the loop ends early.
 	pi -p --approve \
 		--session-dir "$SESS_DIR" \
 		--name "${OUT_DIR}-${SECTION}-${label}" \
 		"$prompt" </dev/null
+	guard_paths "$pre_head" "$pre_dirty" "$label"
+}
+
+# Mechanical write-scope guard: a stage may only touch this run's own artifacts
+# (prompts say so, but an agent once edited the round-up README anyway). Checks
+# both what the agent committed itself and what it left uncommitted; paths that
+# were already dirty before the stage (ALLOW_DIRTY=1) are ignored.
+guard_paths() {
+	changed="$( { git diff --name-only "$1" HEAD; git status --porcelain --untracked-files=all | cut -c4-; } | sort -u)"
+	bad=""
+	for f in $changed; do  # our paths never contain whitespace
+		case "$f" in
+			"$MANIFEST"|"$KPI_FILE"|"$OUT_FILE"|"$RESEARCH_DIR"/*) : ;;
+			*) printf '%s\n' "$2" | grep -qxF -- "$f" || bad="$bad $f" ;;
+		esac
+	done
+	if [ -n "$bad" ]; then
+		echo "ERROR: stage '$3' modified files outside this run's artifacts:$bad" >&2
+		echo "       inspect/revert them (git status; git log $1..HEAD), then rerun." >&2
+		exit 1
+	fi
 }
 
 # Commit ONLY this run's OWN artifacts (manifest, research dir, output file) —
@@ -294,7 +322,11 @@ Rules:
   complete series so charts can be rendered from the store.
 - value: copy it VERBATIM from a note as a plain decimal (no ~, units or
   commas). No values you computed yourself unless the note states them.
-- obs must lie within or before $PERIOD. Skip projections and forecasts: the
+- If the KPI has NO numeric reading this period (e.g. undisclosed, or no KPI
+  defined), write no headline row rather than inventing a substitute. Say
+  why in your final message.
+- obs must END within $PERIOD (a full-year obs only once the year is over;
+  use YYYY-H1/YYYY-Qn/YYYY-MM for partial-year values). Skip projections and forecasts: the
   store holds observed/reported values only.
 - source: the note's deep-link URL for that value. note: the basis, window
   and qualifiers (preliminary, approx.).
