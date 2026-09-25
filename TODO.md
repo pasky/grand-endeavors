@@ -44,8 +44,8 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
       pilot-26H1 migrated). `<section>` is validated against the canonical list,
       so it can't collide with MANIFEST-roundup.txt.
 - [ ] Review-stage **scope creep** (seen in the 26H1 KPI re-run). It edited the
-      round-up README (now forbidden by the prompt, but not enforced
-      mechanically). It also did new analysis: computed rolling 10-yr means and
+      round-up README (now blocked mechanically by generate.sh's write-scope
+      guard). It also did new analysis: computed rolling 10-yr means and
       added post-period items plus new figures to the notes. The additions were
       verified, but review is meant to be critique plus spot-check.
 - [ ] Decide the **post-period context policy**: the review added clearly
