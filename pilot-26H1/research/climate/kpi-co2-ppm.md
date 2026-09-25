@@ -58,6 +58,24 @@ been published in early July (just after the period end).
   (IPCC C1 1.5°C scenarios require a 2020s decadal average of 1.33–1.79 ppm/yr).
   https://www.metoffice.gov.uk/research/climate/seasonal-to-decadal/seasonal-forecast/forecasts/co2-forecast
 
+- **Rolling 10-yr average of NOAA Jan→Dec growth rates (computed; verified against the files
+  on 25 Sep 2026).** Extra years needed: MLO 2011 1.92, 2012 2.65, 2013 1.99, 2014 2.17,
+  2015 2.95; global 2011 1.73, 2012 2.42, 2013 2.45, 2014 2.03, 2015 2.95.
+  MLO windows: 2011–20 2.43 · 2012–21 2.47 · 2013–22 2.39 · 2014–23 2.52 · 2015–24 2.64 ·
+  2016–25 2.56. Global: 2011–20 2.38 · 2015–24 2.62 · 2016–25 2.53. Global half-decades:
+  2016–20 2.44, 2021–25 2.63. The 2016–25 mean is lower than 2015–24 because the 2015
+  El Niño year (2.95) left the window and 2025 (2.23, La Niña) entered it; the half-decade
+  means still rise. NOAA global 2011–20 (2.38) is close to WMO's 2.4 for 2011–2020 used in
+  pilot-2025 (different basis: WMO annual means).
+  https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt
+  https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt
+- GCB 2025 (ESSD): "2024 had a record-high growth rate of 7.9 ± 0.02 GtC yr−1 (3.7 ppm) mainly due to the 2023/2024 El Niño conditions"; preliminary 2025 growth estimate 2.1 ppm.
+  https://essd.copernicus.org/articles/18/3211/2026/
+- Basis note: the Met Office 2026 forecast (429.4 ppm annual mean) is on the Scripps MLO
+  basis (Scripps observed 2025 annual mean 427.0 ppm per the same page), so it is not
+  additive to NOAA's 427.35.
+  https://www.metoffice.gov.uk/research/climate/seasonal-to-decadal/seasonal-forecast/forecasts/co2-forecast
+
 ## Historical datapoints for trend chart (NOAA MLO; global in brackets)
 
 | Year | Annual mean ppm | Jan→Dec growth ppm/yr | May peak (MLO monthly) |
