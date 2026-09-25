@@ -44,8 +44,14 @@ AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
 # Canonical section order (as in README.md); also the allow-list of inputs.
 ALL_SECTIONS="robots-software robots-hardware rockets fusion health climate knowledge-beyond society-cohesion"
 
+case "$OUT_DIR" in *[[:space:]]*)
+	echo "ERROR: out-dir must not contain whitespace: '$OUT_DIR'" >&2; exit 1 ;;
+esac
 [ -d "$OUT_DIR" ] || { echo "ERROR: no such period dir: $OUT_DIR" >&2; exit 1; }
-[ "$OUT_DIR" != "${REF_TEMPLATE%/*}" ] || { echo "ERROR: refusing to overwrite the reference round-up" >&2; exit 1; }
+# Compare canonical paths so ./pilot-2025, absolute paths or symlinks can't alias it.
+if [ "$(cd "$OUT_DIR" && pwd -P)" = "$(cd "${REF_TEMPLATE%/*}" && pwd -P)" ]; then
+	echo "ERROR: refusing to overwrite the reference round-up ($REF_TEMPLATE)" >&2; exit 1
+fi
 
 if [ -z "${ALLOW_DIRTY:-}" ] && [ -n "$(git status --porcelain)" ]; then
 	echo "ERROR: git worktree not clean. Commit/stash first, or set ALLOW_DIRTY=1." >&2
@@ -75,7 +81,11 @@ mkdir -p "$SESS_DIR"
 	echo "settings_sha:  $(sha256sum "$AGENT_DIR/settings.json" 2>/dev/null | cut -c1-16)"
 	echo "spec_commit:   $(git rev-parse HEAD)  (HEAD at run START; output committed AFTER)"
 	echo "inputs (git blob hash of each compiled section):"
-	for f in $section_files; do echo "  $(git hash-object "$f")  $f"; done
+	for s in $present; do
+		# separate assignment so a hashing failure trips set -e (fail closed)
+		h="$(git hash-object "$OUT_DIR/$s.md")"
+		echo "  $h  $OUT_DIR/$s.md"
+	done
 	echo "not_covered:   ${missing:-none}"
 } > "$MANIFEST"
 
