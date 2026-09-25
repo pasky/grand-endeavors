@@ -1,0 +1,15 @@
+metric,obs,value,unit,role,source,note
+doomsday-clock,2025,89,s,headline,https://thebulletin.org/doomsday-clock/2025-statement/,seconds to midnight
+trust-institutions-edelman,2025,56,%,headline,https://www.edelman.com/trust/2025/trust-barometer,"Edelman Trust Index, 28-country average"
+trust-government-oecd,2024,39,%,headline,https://www.oecd.org/en/publications/oecd-survey-on-drivers-of-trust-in-public-institutions-2024-results_9a20554b-en.html,OECD Trust Survey 2024: share with high trust in government (as reported)
+pop-in-autocracies-vdem,2024,72,%,headline,https://www.v-dem.net/documents/60/V-dem-dr__2025_lowres.pdf,"share of world population, V-Dem Democracy Report 2025 (data year 2024)"
+loneliness-prevalence-who,2025,16,%,headline,https://www.who.int/news/item/30-06-2025-social-connection-linked-to-improved-heath-and-reduced-risk-of-early-death,approx. (1 in 6 people globally)
+trust-government-us-pew,2015,19,%,series,https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/,trust federal government always/most of the time
+trust-government-us-pew,2017,18,%,series,https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/,trust federal government always/most of the time
+trust-government-us-pew,2019,17,%,series,https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/,trust federal government always/most of the time
+trust-government-us-pew,2020,27,%,series,https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/,trust federal government always/most of the time
+trust-government-us-pew,2021,24,%,series,https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/,trust federal government always/most of the time
+trust-government-us-pew,2022,20,%,series,https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/,trust federal government always/most of the time
+trust-government-us-pew,2023,16,%,series,https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/,trust federal government always/most of the time
+trust-government-us-pew,2024,22,%,series,https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/,trust federal government always/most of the time
+trust-government-us-pew,2025,17,%,headline,https://www.pewresearch.org/politics/2025/12/04/public-trust-in-government-1958-2025/,trust federal government always/most of the time

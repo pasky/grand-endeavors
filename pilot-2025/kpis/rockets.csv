@@ -1,0 +1,13 @@
+metric,obs,value,unit,role,source,note
+cost-to-leo-best,2025,1500,$/kg,headline,https://spacexstock.com/spacex-vs-competitors-launch-market-share-2025/,lowest cost/kg of an operational vehicle (Falcon Heavy)
+payload-mass-to-orbit,2025,3141,t,headline,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit (The Deluge tracker)
+payload-mass-to-orbit,2015,347,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit
+payload-mass-to-orbit,2016,337,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit
+payload-mass-to-orbit,2017,395,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit
+payload-mass-to-orbit,2018,389,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit
+payload-mass-to-orbit,2019,399,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit
+payload-mass-to-orbit,2020,572,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit
+payload-mass-to-orbit,2021,797,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit
+payload-mass-to-orbit,2022,1047,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit
+payload-mass-to-orbit,2023,1468,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit
+payload-mass-to-orbit,2024,2629,t,series,https://planet4589.org/space/stats/out/msatannual.txt,global payload mass launched to orbit

@@ -1,0 +1,16 @@
+metric,obs,value,unit,role,source,note
+co2-mlo-monthly,2025-11,426.5,ppm,headline,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa monthly mean (pilot-2025 dashboard)
+co2-trend-10yr-global-wmo,2020,2.4,ppm/yr,headline,https://wmo.int/news/media-centre/carbon-dioxide-levels-increase-record-amount-new-highs-2024,WMO decadal mean growth 2011-2020 (global)
+co2-mlo-monthly-scripps,2025-05,430.5,ppm,series,https://scripps.ucsd.edu/news/annual-carbon-dioxide-peak-passes-another-milestone,Scripps May monthly mean (annual peak)
+co2-global-annual,2024,422.8,ppm,series,https://gml.noaa.gov/ccgg/trends/global.html,NOAA global annual mean
+co2-growth-global-wmo,2024,3.5,ppm/yr,series,https://wmo.int/news/media-centre/carbon-dioxide-levels-increase-record-amount-new-highs-2024,WMO 2023->2024 increase (global annual means)
+co2-mlo-annual,2015,400.8,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
+co2-mlo-annual,2016,404.2,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
+co2-mlo-annual,2017,406.6,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
+co2-mlo-annual,2018,408.5,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
+co2-mlo-annual,2019,411.4,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
+co2-mlo-annual,2020,414.2,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
+co2-mlo-annual,2021,416.4,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
+co2-mlo-annual,2022,418.6,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
+co2-mlo-annual,2023,421.1,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
+co2-mlo-annual,2024,424.6,ppm,series,https://gml.noaa.gov/ccgg/trends/,NOAA Mauna Loa annual mean as charted in pilot-2025 (2016-19 differ from the 2026 NOAA vintage by up to 0.2)
