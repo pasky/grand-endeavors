@@ -26,8 +26,23 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
   - [ ] (future) snapshot each cited URL locally for permanence (link-rot proofing)
   - [ ] (future) KPI consistency: headline value matches research note + round-up
         README; every KPI sub-clause from README present in output
-- [ ] **Round-up generator** — final stage compiling section files into the
-      period `README.md` (the pilot-2025 round-up had this; not yet ported).
+- [x] **Round-up generator** (done — `roundup.sh <period-dir>`, run after all
+      sections; first output: pilot-26H1/README.md). It is a single pi summarize
+      stage (format ref: pilot-2025/README.md) plus `validate.py --roundup`: .md
+      links resolve, every section is linked, and every number in an endeavor
+      block traces to that section. Provenance is in MANIFEST-roundup.txt (input
+      blob hashes). Known limits:
+  - [ ] the number check is lexical only: it doesn't catch a right number on the
+        wrong metric, or status/verdict drift (e.g. pilot-2025's Fusion quick-ref
+        "Q=4.13" under a $/MWh KPI)
+  - [ ] no LLM review subagent pass (unlike sections). Add one if round-ups
+        drift in tone/structure
+  - [ ] found by the new check: pilot-2025/README.md says "41% of code is
+        AI-generated", which is absent from robots-software.md (legacy, not
+        fixed)
+- [ ] `generate.sh` writes ONE `<period>/MANIFEST.txt`, so each section run
+      overwrites the previous section's provenance. Needs per-section manifests
+      (e.g. `MANIFEST-<section>.txt`) before the first multi-section period.
 - [ ] **KPI time-series store** (`kpis.csv` or per-endeavor JSON) — makes charts
       reproducible and week-over-week deltas trivial; prerequisite for a cheap
       weekly cadence.
