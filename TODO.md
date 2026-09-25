@@ -40,12 +40,38 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
   - [ ] found by the new check: pilot-2025/README.md says "41% of code is
         AI-generated", which is absent from robots-software.md (legacy, not
         fixed)
-- [ ] `generate.sh` writes ONE `<period>/MANIFEST.txt`, so each section run
-      overwrites the previous section's provenance. Needs per-section manifests
-      (e.g. `MANIFEST-<section>.txt`) before the first multi-section period.
-- [ ] **KPI time-series store** (`kpis.csv` or per-endeavor JSON) — makes charts
-      reproducible and week-over-week deltas trivial; prerequisite for a cheap
-      weekly cadence.
+- [x] Per-section manifests `<period>/MANIFEST-<section>.txt` (commit 8af634c;
+      pilot-26H1 migrated). `<section>` is validated against the canonical list,
+      so it can't collide with MANIFEST-roundup.txt.
+- [ ] Review-stage **scope creep** (seen in the 26H1 KPI re-run). It edited the
+      round-up README (now forbidden by the prompt, but not enforced
+      mechanically). It also did new analysis: computed rolling 10-yr means and
+      added post-period items plus new figures to the notes. The additions were
+      verified, but review is meant to be critique plus spot-check.
+- [ ] Decide the **post-period context policy**: the review added clearly
+      labelled "published after 30 June" context to 26H1 (the draft had
+      excluded it). Either allow it, labelled, or forbid it in the prompts.
+- [x] **KPI time-series store** (done — `kpi.py`, schema in its docstring).
+      Each run writes its own vintage file `<period>/kpis/<section>.csv` (tidy
+      CSV). Stable metric ids make deltas a lookup (`kpi.py delta`), and charts
+      are rendered from the store (`kpi.py chart`, `%% kpi:` marker). Wired into
+      generate.sh: a recording stage after research, a store-driven draft, and
+      `validate.py --kpis`, which fails on chart drift, unreported headline
+      values, untraceable values and post-period obs.
+      Backfill: pilot-2025 (6 sections, clear-basis data only; skipped items are
+      listed in commit 6c0d19a). pilot-26H1 climate was backfilled by the
+      pipeline itself in an end-to-end re-run (07cf80c..96a4142, 0 errors). Its
+      delta to pilot-2025 works and carries a seasonality caveat. Known limits:
+  - [ ] no `published` date column: a value observed inside the period but
+        published after it (e.g. the June 2026 monthly mean) is only flagged in
+        `note`, so "what was known on the as-of date" can't be reconstructed
+        exactly
+  - [ ] legacy pilot-2025 approximations stay in charts for obs that no later
+        vintage re-records (e.g. 2015 annual CO₂; the "~" wholesale prices)
+  - [ ] round-up doesn't read the store yet (the Quick Reference could be
+        rendered deterministically from headline rows + deltas)
+  - [ ] continuity warnings are warn-only. An id rename silently breaks deltas
+        unless a human reads the warnings (3 legit new ids in the 26H1 run)
 - [ ] Decide on the **regressions vs the old OpenProse RECIPE** (from deep review):
   - [ ] per-stage **model specialization** (e.g. opus research/write, cheaper
         compile) instead of one default model everywhere
@@ -84,10 +110,9 @@ below" 2024). The gate reports 0 errors and 0 warnings.
 - [x] Records contradiction: the report now says "every fossil and energy CO₂
       estimate" hit a record and "only total CO₂, which includes land use, dipped",
       which matches the note.
-  - [ ] residual nit: the status and bottom lines still say "Emissions are on a
-        near-plateau at a record level" without naming the scope. The draft prompt
-        was hardened (scoped superlatives in headline/status lines) but this is
-        **unverified until the next run**.
+  - [x] residual nit (unscoped "emissions … record level") is fixed by the draft
+        prompt hardening. Verified in the 26H1 KPI re-run: "Fossil CO₂ emissions
+        reached a record in 2025".
 
 Other observations from the regen:
 - [ ] Per-milestone multi-year **emissions chart** is still missing. The notes have
