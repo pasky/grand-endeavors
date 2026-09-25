@@ -60,7 +60,7 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
 
 The harness prompts were hardened against all of these (commit a53e679). **Verified
 by a FRESH regen** (`FRESH=1`, original toy-run scope, run 2026-09-25, spec 768de6a,
-commits a58ac87..8b7bd74; the scope is now recorded in MANIFEST.txt). No hand-patching.
+commits a58ac87..8b7bd74; the scope is now recorded in the manifest). No hand-patching.
 Key numbers were spot-checked against live sources (NOAA co2_gr_mlo 2016–25 mean =
 2.564; IEA GER 2026 PDF 38 082 Mt / +0.4%; ESSD GCB total CO₂ 42.2 Gt, "marginally
 below" 2024). The gate reports 0 errors and 0 warnings.

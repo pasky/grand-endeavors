@@ -42,7 +42,7 @@
 #     being used as filenames; empty research notes abort the run.
 #
 # REPRODUCIBILITY:
-#   <out-dir>/MANIFEST.txt records pi version and the ~/.pi/agent commit (+dirty
+#   <out-dir>/MANIFEST-<section>.txt records pi version and the ~/.pi/agent commit (+dirty
 #   flag) + settings hash. Per-stage sessions are saved under <out-dir>/.sessions/
 #   (gitignored) for after-the-fact audit.
 #
@@ -68,12 +68,20 @@ SCOPE="${3:-Cover the FULL endeavor structure: the KPI plus every milestone and 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
+# Canonical sections (same list/order as roundup.sh). Validating here also keeps
+# MANIFEST-<section>.txt from ever colliding with MANIFEST-roundup.txt.
+case " robots-software robots-hardware rockets fusion health climate knowledge-beyond society-cohesion " in
+	*" $SECTION "*) : ;;
+	*) echo "ERROR: unknown section '$SECTION'" >&2; exit 1 ;;
+esac
+
 PERIOD="${OUT_DIR#pilot-}"             # reporting period told to the agents
 RESEARCH_DIR="$OUT_DIR/research/$SECTION"
 SESS_DIR="$OUT_DIR/.sessions"
 PLAN_FILE="$RESEARCH_DIR/PLAN.txt"
 OUT_FILE="$OUT_DIR/$SECTION.md"
 KPI_FILE="$OUT_DIR/kpis/$SECTION.csv"   # this run's KPI vintage (see kpi.py)
+MANIFEST="$OUT_DIR/MANIFEST-$SECTION.txt"  # per SECTION: sibling runs keep theirs
 REF_TEMPLATE="pilot-2025/climate.md"   # structural reference (format, not content)
 
 AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
@@ -110,7 +118,7 @@ pi_run() {
 commit() {
 	msg="$1"
 	paths=""
-	for p in "$OUT_DIR/MANIFEST.txt" "$RESEARCH_DIR" "$KPI_FILE" "$OUT_FILE"; do
+	for p in "$MANIFEST" "$RESEARCH_DIR" "$KPI_FILE" "$OUT_FILE"; do
 		[ -e "$p" ] && paths="$paths $p"
 	done
 	[ -n "$paths" ] || { echo "    (nothing to stage for: $msg)"; return 0; }
@@ -138,7 +146,7 @@ write_manifest() {
 		echo "fresh:         $([ "${FRESH:-}" = 1 ] && echo yes || echo no)"
 		# scope last + flattened to one line: needed to reproduce/regenerate the run
 		printf 'scope:         %s\n' "$(printf '%s' "$SCOPE" | tr '\n' ' ')"
-	} > "$OUT_DIR/MANIFEST.txt"
+	} > "$MANIFEST"
 }
 
 # === Pipeline ================================================================
@@ -394,4 +402,4 @@ if ! uv run validate.py "$OUT_FILE" --plan "$PLAN_FILE" --research "$RESEARCH_DI
 	if [ -n "${STRICT:-}" ]; then exit 1; fi
 fi
 
-echo ">>> done: $OUT_FILE  (research: $RESEARCH_DIR/, manifest: $OUT_DIR/MANIFEST.txt)"
+echo ">>> done: $OUT_FILE  (research: $RESEARCH_DIR/, manifest: $MANIFEST)"

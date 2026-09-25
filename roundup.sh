@@ -23,7 +23,7 @@
 # override), scoped commit of this stage's own artifacts only, saved pi session
 # under <out-dir>/.sessions/, non-fatal gate unless STRICT=1.
 # Provenance: <out-dir>/MANIFEST-roundup.txt (separate from the per-section
-# MANIFEST.txt) records the tool versions and the git blob hash of every input
+# MANIFEST-<section>.txt files) records the tool versions and the git blob hash of every input
 # section file.
 # =============================================================================
 
