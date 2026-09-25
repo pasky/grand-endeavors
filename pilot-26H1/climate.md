@@ -1,166 +1,180 @@
-# Climate and Environment — 26H1 (Jan–Jun 2026)
+*Period: 26H1 (Jan–Jun 2026), written as of end of June 2026. **Narrowed scope:** this run covers only the KPI (atmospheric CO₂ concentration and its trend) and one milestone, "The Bend". "The Balance", "The Ceiling" and all Open Challenges are out of scope.*
 
-> *Reporting period: first half of 2026 (Jan–Jun 2026), as of end of June 2026. **Scope note: this is a narrowed/toy run** — it covers only the KPI (atmospheric CO₂ concentration + 10-year trend) and the single milestone "The Bend" (peak global emissions). All other milestones ("The Balance", "The Ceiling") and all Open Challenges are intentionally omitted from this run.*
+# Climate and Environment — 26H1 Report
+
+> *This endeavor is unlike the other four: it is about fixing the past rather than improving the future.*
 
 ## Executive Summary
 
-**Bottom line: the atmosphere keeps worsening, while the emissions that drive it may be bending — but the bend is not yet behind us.**
+**The KPI is still getting worse.** Atmospheric CO₂ at Mauna Loa set another record at its May seasonal peak: **432.34 ppm** as a monthly mean[^noaa-mm-mlo]. The daily record was **433.95 ppm on 1 May 2026**[^noaa-daily-mlo]. The **10-year average growth rate is ~2.56 ppm/yr** (2016–2025, Mauna Loa)[^noaa-gr-mlo]. That trend is not slowing structurally. The 2020s so far are running slightly faster than 2016–20[^noaa-gr-mlo].
 
-- **The KPI is at a new record and still climbing.** Atmospheric CO₂ reached a 26H1 peak monthly mean of **432.34 ppm** at Mauna Loa in May 2026[^ml-monthly], up +1.83 ppm year-on-year. The latest weekly reading is **430.91 ppm** (week of 21 Jun 2026)[^ml-weekly], already in seasonal decline. The **10-year average growth rate is ~2.6 ppm/yr** (2016–2025)[^ml-gr] — the steepest decade on record and roughly triple the 1960s pace.
-- **"The Bend" has NOT been crossed.** Global emissions set a fresh record in 2025 (the latest full year): IEA puts energy-related CO₂ at a new high of nearly **38.4 Gt** (+~0.4%)[^iea-ger], and the Global Carbon Budget projects fossil + cement CO₂ at a record **38.1 Gt** (+1.1%)[^gcb]. The peak is therefore not yet in the rear-view mirror.
-- **But the emissions trend is genuinely improving.** Emissions growth is the slowest since 2021[^iea-ger], decade-over-decade total-CO₂ growth has collapsed from 1.9%/yr to 0.3%/yr[^gcb-decade], China was flat-to-falling for ~21 months through end-2025[^cb-21mo], and India's energy-CO₂ went flat for the first time on record[^iea-clean]. A 2026 wobble (China +2% in Q1) shows the peak is balanced on a knife-edge — plausibly imminent, but unconfirmed.
+**Short-term growth has slowed, for natural reasons.** The 2025 increase (+2.23 ppm at Mauna Loa) was well below the record years 2023–24 (+3.3 ppm each)[^noaa-gr-mlo]. Year-on-year gains in 26H1 are ~1.5–2.3 ppm[^noaa-mm-mlo]. The UK Met Office attributes this slowdown to a temporary strengthening of natural carbon sinks under La Niña-like conditions. It says the rate is still "too fast to track IPCC 1.5°C scenarios"[^metoffice].
 
-These two findings are kept deliberately separate: rising concentrations and an emissions plateau are *not* contradictory. Concentrations keep setting records as long as emissions remain net-positive, regardless of whether the emissions *flow* has peaked.
+**The Bend has not happened.** Every final or updated estimate published in 26H1 puts **2025 emissions at a new record**:
+- fossil CO₂ +1.0% (GCB)[^gcb]
+- energy CO₂ +0.4% (IEA)[^iea-ger]
+- fossil+industry CO₂ +0.7% (Carbon Monitor)[^carbon-monitor]
+
+Growth has slowed to a near-plateau, but China's emissions rose 2% in Q1 2026[^cb-china-q1]. A 2026 dip driven by the Hormuz oil shock is possible, but the IEA expects oil demand to rebound in 2027[^iea-omr].
+
+**Bottom line: we are on a plateau, not past the peak. CO₂ concentration keeps setting records at ~2.5 ppm/yr.**
 
 ---
 
 ## KPI Dashboard
 
-**KPI (per README): Atmospheric CO₂ concentration (ppm) AND its 10-year trend (ppm/year).** Both components are reported below. Measure = atmospheric CO₂ dry-air mole fraction (NOT emissions).
+**KPI (per README):** Atmospheric CO₂ concentration (ppm) **and** its 10-year trend (ppm/year).
+
+The table uses two separate series, which should not be mixed. **Mauna Loa (MLO)** is a single site in the subtropical Northern Hemisphere. It reads higher and has a larger seasonal cycle. The **NOAA global mean** comes from marine surface sites and runs ~1–2 ppm below MLO. All 2026 values are preliminary and may be recalibrated.
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| **Latest weekly mean (Mauna Loa, wk of 21 Jun 2026)** | **430.91 ppm** (1 yr ago 429.61; 10 yr ago 406.73) | [NOAA GML weekly][noaa-weekly] |
-| **Latest monthly mean (Mauna Loa, May 2026)** | **432.34 ppm** (+1.83 ppm vs May 2025) | [NOAA GML][noaa-trends] |
-| **26H1 annual peak (May 2026, seasonal maximum)** | **432.34 ppm** | [NOAA co2_mm_mlo][noaa-mm] |
-| **Latest global marine-surface monthly mean (Mar 2026)** | **428.60 ppm** (global lags ML ~2 months) | [NOAA global][noaa-global] |
-| **10-year average trend (2016–2025), Mauna Loa** | **~2.57 ppm/yr** (global network ~2.54 ppm/yr) | [NOAA growth rate][noaa-gr] |
+| **Concentration: May 2026 seasonal peak (MLO monthly mean)** | **432.34 ppm**, a new all-time monthly record, up +1.83 ppm on May 2025 (430.51) | NOAA GML[^noaa-mm-mlo] |
+| Concentration: record daily value (MLO) | **433.95 ppm** (1 May 2026) | NOAA GML[^noaa-daily-mlo] |
+| Concentration: May 2026 (NOAA global mean) | 428.59 ppm | NOAA GML[^noaa-mm-gl] |
+| Concentration: 2025 annual average | **427.35 ppm (MLO) / 425.62 ppm (global)**, both records | NOAA GML[^noaa-ann-mlo][^noaa-ann-gl] |
+| **Trend: 10-year average growth, 2016–2025** | **2.56 ppm/yr (MLO) / 2.53 ppm/yr (global)**. This is the mean of NOAA's annual Jan→Dec growth rates. | NOAA GML[^noaa-gr-mlo][^noaa-gr-gl] |
+| Trend: split by half-decade (MLO) | 2016–20 average 2.51 → 2021–25 average **2.61 ppm/yr** | NOAA GML[^noaa-gr-mlo] |
+| Trend: latest annual growth, 2025 (Jan→Dec) | **+2.23 ppm (MLO) / +2.06 ppm (global)**, down from the records of 2024 (MLO +3.33, global +3.76). Global 2025 is the smallest since 2014. | NOAA GML[^noaa-gr-mlo][^noaa-gr-gl] |
+| Trend: 26H1 year-on-year gains (MLO monthly) | +1.48 to +2.26 ppm. The May peaks of 2023–25 rose +2.9 to +3.6 ppm. | NOAA GML[^noaa-mm-mlo] |
+| Forecast (not an observation): 2026 MLO annual mean | 429.4 ± 0.6 ppm, a rise of **+2.37 ± 0.55 ppm**. The forecast would be +2.56 without La Niña. | UK Met Office (4 Feb 2026)[^metoffice] |
 
-[noaa-weekly]: https://gml.noaa.gov/ccgg/trends/weekly.html
-[noaa-trends]: https://gml.noaa.gov/ccgg/trends/
-[noaa-mm]: https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt
-[noaa-global]: https://gml.noaa.gov/ccgg/trends/global.html
-[noaa-gr]: https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt
+The table uses two definitions of annual growth. NOAA's growth rate is the change from 1 January to 31 December. The Met Office and Scripps instead compare calendar-year averages. On that basis, MLO rose +2.74 ppm from 2024 to 2025 (Met Office/Scripps figure: +2.68), against +3.53 ppm the year before[^noaa-ann-mlo][^metoffice].
 
-### Atmospheric CO₂ Concentration (Mauna Loa annual mean, ppm)
-
-```mermaid
-xychart-beta
-    title "Atmospheric CO₂ Concentration (Mauna Loa annual mean, ppm)"
-    x-axis [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
-    y-axis "CO₂ (ppm)" 395 --> 435
-    line [401.01, 404.41, 406.76, 408.72, 411.65, 414.21, 416.41, 418.53, 421.08, 424.61, 427.35]
-```
-*Data: [NOAA Global Monitoring Laboratory][noaa-annmean]. (2026 not yet a full year; May 2026 monthly peak = 432.34 ppm.)*
-
-[noaa-annmean]: https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt
-
-### 10-Year Trend — Annual CO₂ Growth Rate (Mauna Loa, ppm/year)
+### Concentration: May seasonal peak at Mauna Loa
 
 ```mermaid
 xychart-beta
-    title "Annual CO₂ Increase (Mauna Loa, ppm/year)"
-    x-axis [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
-    y-axis "ppm/year" 0 --> 4
-    bar [2.95, 3.03, 1.90, 2.85, 2.49, 2.30, 2.35, 1.85, 3.32, 3.33, 2.23]
+    title "Mauna Loa CO₂, May monthly mean (ppm)"
+    x-axis [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+    y-axis "CO₂ (ppm)" 405 --> 435
+    line [407.90, 409.89, 411.44, 414.86, 417.28, 419.09, 420.97, 424.00, 426.90, 430.51, 432.34]
 ```
-*Data: [NOAA Growth Rates][noaa-gr]. 10-year mean (2016–2025) ≈ 2.57 ppm/yr.*
+*Data: NOAA GML MLO monthly means[^noaa-mm-mlo]. The 2026 value is preliminary.*
 
-**Assessment: 🔴 Worsening.** Atmospheric CO₂ climbs to a new record every year, hitting 432.34 ppm in May 2026 (the 26H1 peak). The ~2.6 ppm/yr 10-year trend is the steepest decade on record, well above the 1960s (~0.8 ppm/yr) and 2000s (~2.0 ppm/yr) decadal averages. The single-year spikes are noisy — 2024 set a record annual jump (Mauna Loa +3.33 ppm; global +3.74 ppm) driven by El Niño and wildfire emissions weakening land/ocean uptake, and 2025 fell back to +2.23 ppm (still positive)[^ml-gr-record]. This year-to-year variability reflects sink/ENSO dynamics, not the emissions trajectory directly. The KPI will keep worsening until emissions fall to near net-zero.
+### Trend: annual growth rate vs the 10-year average
+
+```mermaid
+xychart-beta
+    title "Mauna Loa CO₂ growth, Jan→Dec (ppm/yr); line = 2016–25 mean 2.56"
+    x-axis [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+    y-axis "ppm/yr" 1.5 --> 3.5
+    bar [3.03, 1.90, 2.85, 2.49, 2.30, 2.35, 1.84, 3.32, 3.33, 2.23]
+    line [2.56, 2.56, 2.56, 2.56, 2.56, 2.56, 2.56, 2.56, 2.56, 2.56]
+```
+*Data: NOAA GML MLO growth rates[^noaa-gr-mlo]*
+
+**Assessment: 🔴 Worsening.** Concentration set new records in 26H1. The rate of increase has fallen temporarily from the 2023–24 record pace. The Met Office attributes this to a strengthening of natural sinks under La Niña-like conditions[^metoffice]. The 10-year trend of ~2.5 ppm/yr shows no structural slowdown. IPCC C1 (1.5°C) scenarios require a 2020s decadal average of **1.33–1.79 ppm/yr**, compared with ~2.6 ppm/yr observed for 2020–25[^metoffice].
+
+*Note on scope:* concentration growth is **not** an emissions measure. Year-to-year changes in ppm/yr are dominated by fluctuations in natural sinks (ENSO). The 2025–26 slowdown is therefore not evidence of an emissions peak. The Bend is assessed separately below from emissions inventories.
 
 ---
 
 ## Milestone Status
 
-### 🟡 "The Bend" — Peak Global Emissions
+### 🟡 "The Bend": Peak Global Emissions
 
-**Status: Not achieved — approaching (improving trend).** The README milestone is the peak of global **greenhouse-gas** emissions; this run assesses it through global **CO₂** emissions — the dominant driver (~three-quarters of GHGs) — which have **not yet definitively peaked** (non-CO₂ gases such as methane and N₂O are not separately adjudicated here). Global CO₂ totals set fresh records in 2025, so the peak is not in the rear-view mirror — but growth is decelerating sharply and a structural peak is plausibly imminent.
+**Status: Approaching, not achieved. Emissions have plateaued at a record level, but the peak year is not definitively behind us.**
 
-> *Measure note: this milestone concerns **emissions** (flow, Gt CO₂/yr), distinct from the atmospheric-concentration KPI above. "Peak emissions" is tracked here via **CO₂** only (non-CO₂ GHGs are not separately assessed). The three authoritative datasets below use **different boundaries** and must not be conflated: IEA = energy combustion + industrial-process CO₂ (IEA labels it "energy-related" but its GER 2026 methodology *includes* cement/steel/chemicals process emissions; excludes land-use); Global Carbon Budget = fossil + cement CO₂; Carbon Monitor = near-real-time fossil CO₂ (different method/coverage).*
+The estimates below use different metric boundaries, and each figure applies only to its own boundary. All 2025 figures are preliminary.
 
-#### 2025 — a new record, by every dataset (but slowing)
+| Estimate (published in 26H1) | Scope | 2025 value | Change vs 2024 | Source |
+|---|---|---|---|---|
+| Global Carbon Budget 2025, final paper (13 May 2026) | Fossil CO₂ (fossil fuels + cement) | **38.1 GtCO₂**, "an historical record high" | **+1.0%** (range +0.2% to +1.7%) | ESSD[^gcb] |
+| IEA Global Energy Review 2026 (Apr 2026) | Energy CO₂ (combustion + industrial processes) | **38,082 Mt**, a record | **+0.4%**, the slowest growth since 2021 | IEA PDF[^iea-ger] |
+| Carbon Monitor (14 Apr 2026) | Fossil + industry CO₂ | **37.2 Gt**, a record | **+0.7%** | Nature Rev. Earth Environ.[^carbon-monitor] |
+| Global Carbon Budget 2025 | Total CO₂ (fossil + land-use change) | 42.2 GtCO₂ | Slightly below 2024 (42.4), "mainly attributable to the end of the El Niño conditions" (land use, not fossil) | ESSD[^gcb] |
 
-| Dataset (scope) | 2025 emissions | Change vs 2024 | Label | Source |
-|-----------------|----------------|----------------|-------|--------|
-| **IEA** — energy combustion + industrial-process CO₂ | **~38.4 Gt** | **+~0.4%** (+~145 Mt); slowest since 2021 | Estimated full-year, record high | [IEA GER 2026 (PDF)][iea-ger-pdf] |
-| **Global Carbon Budget** — fossil + cement CO₂ | **38.1 Gt** | **+1.1%** | Projection (Nov 2025) | [GCP 2025][gcb-page] |
-| **Carbon Monitor** — near-real-time fossil CO₂ | **37.3 Gt**[^cm-news] | **+0.7%** | Year-in-Review (Apr 2026) | [Carbon Monitor][cm-news] |
+**Evidence for a plateau:**
+- **Emissions growth has slowed sharply.** GCB puts growth in total CO₂ at 0.3%/yr over 2015–2024, down from 1.9%/yr over 2005–2014[^gcb].
+- **Fossil power generation fell in 2025**, by 0.2% (−38 TWh). This is the first year without a rise since 2020, and the first time a fall came from clean-power growth rather than a crisis. Clean power (+887 TWh) grew faster than demand (+849 TWh)[^ember-ger]. Carbon Monitor finds power-sector emissions fell 0.9%[^carbon-monitor].
+- **China and India flattened out.** According to IEA energy CO₂ figures for 2025, China fell 0.5% and India 0.1%. India's fall is the first under normal economic conditions[^iea-ger]. Carbon Monitor says both countries "entered an emission plateau"[^carbon-monitor]. CREA finds China's CO₂ fell 0.3% in 2025 and had been "flat or falling" for 21 months since March 2024[^cb-china-21m].
 
-All three agree: **2025 was a new record and still rising** — the peak is not behind us. The three different headline numbers reflect different scope/method, not a disagreement on direction. (By fuel, GCB projects coal +0.8%, oil +1%, gas +1.3%; total CO₂ *including* land-use change was projected slightly *below* 2024 as land-use-change emissions fell to 4.1 Gt[^gcb-fuel].)
+**Evidence against "definitively behind us":**
+- **2025 set a new record** in every global estimate above except total CO₂. The fossil-fuel increase was broad: coal +1.0%, oil +1.1%, gas +1.3%[^gcb].
+- **Advanced economies rebounded.** US energy CO₂ rose 2.2%. Advanced economies overall rose 0.5%, their first increase since 2018 excluding the post-Covid rebound[^iea-ger].
+- **China's direction is contested, and 2026 started with a setback.** GCB puts China's 2025 fossil CO₂ at +0.4% (range −0.1% to +0.9%), while the IEA says −0.5% and CREA −0.3%[^gcb]. China's CO₂ **rose 2% year on year in Q1 2026**. Power-sector emissions rose 4% because wind and solar output was "wasted" (curtailed), although emissions "remain below the peak in March 2024"[^cb-china-q1]. China also appears to have retroactively changed the scope of its official carbon-intensity metric. Under the new metric, CO₂ rose 7% over 2020–25, compared with 14% under the previous statistics. The gap is about 700–730 MtCO₂/yr[^cb-china-metric].
+- **A 2026 dip would be driven by a shock.** The IEA's June Oil Market Report forecasts 2026 oil demand **falling 1.1 mb/d** after the Hormuz disruption. It then forecasts a **rebound of 2 mb/d to 105.3 mb/d in 2027**, which is above the implied 2025 level[^iea-omr]. Any return to coal looks limited: in a worst case, coal power rises no more than 1.8% in 2026[^cb-coal].
+- **Expert view at the start of the period:** "global emissions have yet to decline (even if they have plateaued)" (Z. Hausfather, 5 Jan 2026)[^hausfather].
 
-#### The "bend" signal — why a peak is plausibly imminent
+**Why it matters:** GCB estimates the remaining 1.5°C (50%) carbon budget from the start of 2026 at **170 GtCO₂**. That is about **4 years** at 2025 emission levels[^gcb].
 
-```mermaid
-xychart-beta
-    title "Global Fossil + Cement CO₂ Emissions (GtCO₂/year)"
-    x-axis [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
-    y-axis "GtCO₂" 33 --> 39
-    line [35.5, 35.5, 36.0, 36.6, 36.7, 35.3, 36.6, 37.1, 37.4, 37.7, 38.1]
-```
-*Data: Global Carbon Budget 2025 — fossil + cement CO₂ (GtCO₂, to nearest 0.1 Gt; 2025 projected at 38.1 Gt, +1.1% over 2024's ~37.7 Gt)[^gcb-series]. Fossil CO₂ grew only ~0.2 Gt/yr over the past decade — the visual "bend."*
+#### Key 26H1 developments
 
-- **Growth is collapsing on a decadal basis.** Total CO₂ growth has slowed to **0.3%/yr over the past decade**, versus **1.9%/yr the previous decade**[^gcb-decade] — the clearest structural "bend" signal, though still positive (no peak yet).
-- **Clean-energy structural drivers (IEA, 2025).** Solar PV met **>one-quarter of global primary energy demand growth** (a first); annual renewable capacity additions hit a record **800 GW**; clean tech deployed since 2019 now avoids ~8% of global emissions[^iea-clean].
-- **China and India — the two largest developing-country emitters — both flashed turning-point signals.** China's coal-fired generation fell ~1.5% and **India's energy-CO₂ went flat for the first time on record**[^iea-clean]. China's CO₂ was **"flat or falling" for 21 months** through end-2025 (since March 2024), likely securing a full-year 2025 decline of −0.3% (a 7% drop in cement CO₂ offsetting a +0.1% fossil component)[^cb-21mo].
+| Date | Event | Source |
+|------|-------|--------|
+| **12 Feb 2026** | CREA: China's CO₂ fell 0.3% in 2025 and has been flat or falling for 21 months | [Carbon Brief][cb-china-21m] |
+| **Apr 2026** | IEA Global Energy Review: energy CO₂ +0.4% to a record 38.1 Gt; China −0.5%, India −0.1%, US +2.2% | [IEA PDF][iea-ger] |
+| **14 Apr 2026** | Carbon Monitor: record 37.2 Gt (+0.7%); power-sector emissions −0.9% | [Nature Rev. Earth Environ.][carbon-monitor] |
+| **21 Apr 2026** | Ember: fossil power generation −0.2% in 2025, the first fall driven by clean power | [Ember][ember-ger] |
+| **13 May 2026** | Global Carbon Budget 2025 final paper: fossil CO₂ 38.1 Gt (+1.0%), a record | [ESSD][gcb] |
+| **26 May 2026** | Carbon Brief: China's new carbon metric leaves a gap of about 700–730 MtCO₂/yr | [Carbon Brief][cb-china-metric] |
+| **4 Jun 2026** | CREA: China's CO₂ rose 2% in Q1 2026 | [Carbon Brief][cb-china-q1] |
+| **17 Jun 2026** | IEA Oil Market Report: 2026 oil demand −1.1 mb/d, rebounding +2 mb/d in 2027 | [IEA][iea-omr] |
 
-> *Dataset reconciliation worth flagging: GCB (Nov 2025) projected China fossil CO₂ at **+0.4%** for 2025, while CREA/Carbon Brief (Feb 2026, fuller data) estimates **total China CO₂ at −0.3%**. The gap is largely scope/timing: GCB = fossil-only Nov projection; CREA = fossil + cement (cement −7% drags the total down) with a post-year update[^cb-21mo].*
-
-#### The 26H1 wobble — peak on a knife-edge
-
-No full global H1-2026 emissions tally had been published by end-June 2026, so China's quarterly data is the freshest within-period signal — and it complicates the picture: **China's CO₂ grew ~2% year-on-year in Q1 2026** (Jan–Mar), reversing nearly two years of flat/falling output — **but emissions remain below the March-2024 peak**[^cb-2026]. The driver was a surge in **"wasted"/curtailed wind and solar** (inflexible coal contracts and grid-management friction): coal+gas power generation rose +4% in Q1, while cement fell −7% and crude steel −5% amid an −11% drop in real-estate investment. Carbon Brief's read is that "power-sector CO₂ would have been flat without the rise in wasted wind and solar" — i.e. grid-integration friction, not a structural reversal. The peak case is intact but **unconfirmed as of end-June 2026**.
-
-> **Context (from "The Bend" emissions data, not the KPI):** IEA notes the 2025 ~0.4% rise "coincided with record atmospheric CO₂ concentrations of about 427 ppm"[^iea-ppm] (the 2025 *annual-mean* level — the KPI's May-2026 monthly peak is higher, 432 ppm). This is a *co-occurrence*, not a causal bridge — atmospheric concentration and the emissions flow are distinct metrics tracked separately in this report.
-
-[iea-ger-pdf]: https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf
-[gcb-page]: https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/
-[cm-news]: https://carbonmonitor.org/news
+[cb-china-21m]: https://www.carbonbrief.org/analysis-chinas-co2-emissions-have-now-been-flat-or-falling-for-21-months
+[iea-ger]: https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf
+[carbon-monitor]: https://www.nature.com/articles/s43017-026-00780-4
+[ember-ger]: https://ember-energy.org/latest-insights/global-electricity-review-2026/
+[gcb]: https://essd.copernicus.org/articles/18/3211/2026/
+[cb-china-metric]: https://www.carbonbrief.org/analysis-chinas-new-carbon-metric-leaves-germany-sized-gap-in-its-emissions
+[cb-china-q1]: https://www.carbonbrief.org/analysis-chinas-co2-climbs-2-in-early-2026-due-to-wasted-wind-and-solar
+[iea-omr]: https://www.iea.org/reports/oil-market-report-june-2026
 
 ---
 
 ## Beyond the Framework
 
-- **The 1.5°C budget is nearly gone.** The Global Carbon Budget 2025 finds the remaining 1.5°C carbon budget "virtually exhausted": **~170 Gt CO₂ ≈ 4 years** at the 2025 *total*-CO₂ emission rate (fossil + land-use ≈ 42 Gt/yr), with lead author Pierre Friedlingstein stating that "keeping global warming below 1.5°C is no longer plausible"[^gcb-budget].
-- **Why the KPI and the milestone can move in opposite directions.** This run makes the structural point concrete: emissions growth can decelerate toward a peak ("The Bend" improving) even as atmospheric concentration sets fresh records ("the KPI" worsening). Concentration only stops rising once emissions reach *near net-zero*, not merely when they stop growing.
+- **Renewables overtook coal in global electricity in 2025**, with a 33.8% share against 33.0% for coal. Fossil generation fell in China (−0.9%) and India (−3.3%)[^ember-ger].
 
 ---
 
 ## Reference Data
 
-### Primary datasets (deep links)
+| Dataset | Link |
+|---|---|
+| NOAA MLO monthly means | https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt |
+| NOAA MLO daily means | https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_daily_mlo.txt |
+| NOAA global monthly means | https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_gl.txt |
+| NOAA MLO / global annual means | https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt · https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt |
+| NOAA MLO / global annual growth rates | https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt · https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt |
 
-| Series | Source file |
-|--------|-------------|
-| Mauna Loa annual mean CO₂ (ppm) | [co2_annmean_mlo.txt](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt) |
-| Mauna Loa monthly mean CO₂ (ppm) | [co2_mm_mlo.txt](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt) |
-| Mauna Loa annual growth rate (ppm/yr) | [co2_gr_mlo.txt](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt) |
-| Global annual mean CO₂ (ppm) | [co2_annmean_gl.txt](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt) |
-| Global annual growth rate (ppm/yr) | [co2_gr_gl.txt](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt) |
-| Growth-rate methodology | [NOAA gr.html](https://gml.noaa.gov/ccgg/trends/gr.html) |
+**MLO monthly means for 2026 (preliminary):** Jan 428.62 · Feb 429.35 · Mar 430.15 · Apr 431.12 · **May 432.34** · Jun 431.43 ppm. Year-on-year changes: +1.97, +2.26, +2.00, +1.48, +1.83, +1.82[^noaa-mm-mlo]. NOAA publishes each monthly value in the following month, so the June figure only appeared in early July, just after the period ended.
 
-### Reference table — CO₂ concentration & growth (2015–2025)
+**Historical series (MLO; NOAA global in brackets):**
 
-| Year | ML annual mean (ppm) | ML growth (ppm/yr) | Global annual mean (ppm) | Global growth (ppm/yr) |
-|------|----------------------|--------------------|--------------------------|------------------------|
-| 2015 | 401.01 | 2.95 | 399.65 | 2.96 |
-| 2016 | 404.41 | 3.03 | 403.09 | 2.83 |
-| 2017 | 406.76 | 1.90 | 405.22 | 2.15 |
-| 2018 | 408.72 | 2.85 | 407.61 | 2.37 |
-| 2019 | 411.65 | 2.49 | 410.07 | 2.50 |
-| 2020 | 414.21 | 2.30 | 412.44 | 2.33 |
-| 2021 | 416.41 | 2.35 | 414.70 | 2.38 |
-| 2022 | 418.53 | 1.85 | 417.08 | 2.25 |
-| 2023 | 421.08 | 3.32 | 419.36 | 2.72 |
-| 2024 | 424.61 | 3.33 | 422.79 | 3.74 |
-| 2025 | 427.35 | 2.23 | 425.65 | 2.13 |
-
-*Data: NOAA GML — Mauna Loa [annual mean][noaa-annmean] & [growth rate][noaa-gr]; global [annual mean](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt) & [growth rate](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt).*
+| Year | Annual mean (ppm) | Jan→Dec growth (ppm/yr) |
+|---|---|---|
+| 2016 | 404.41 [403.07] | 3.03 [2.83] |
+| 2017 | 406.76 [405.22] | 1.90 [2.14] |
+| 2018 | 408.72 [407.61] | 2.85 [2.39] |
+| 2019 | 411.65 [410.07] | 2.49 [2.50] |
+| 2020 | 414.21 [412.44] | 2.30 [2.33] |
+| 2021 | 416.41 [414.70] | 2.35 [2.38] |
+| 2022 | 418.53 [417.08] | 1.84 [2.24] |
+| 2023 | 421.08 [419.35] | 3.32 [2.70] |
+| 2024 | 424.61 [422.79] | 3.33 [3.76] |
+| 2025 | 427.35 [425.62] | 2.23 [2.06] |
 
 ---
 
 ## Footnotes
 
-[^ml-monthly]: NOAA GML — Trends in Atmospheric CO₂, May 2026 monthly mean = 432.34 ppm (vs May 2025 = 430.51 ppm). Raw file: [co2_mm_mlo.txt](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt); page: [gml.noaa.gov/ccgg/trends](https://gml.noaa.gov/ccgg/trends/)
-[^ml-weekly]: NOAA GML — [Weekly mean CO₂ at Mauna Loa](https://gml.noaa.gov/ccgg/trends/weekly.html): 430.91 ppm for the week beginning 21 Jun 2026 (one year ago 429.61; ten years ago 406.73).
-[^ml-gr]: NOAA GML — [Mauna Loa annual growth rate](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt): 10-yr average 2016–2025 = 2.57 ppm/yr (global network 2.54 ppm/yr via [co2_gr_gl.txt](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt)).
-[^ml-gr-record]: NOAA GML growth-rate files: 2024 record annual jump (Mauna Loa +3.33 ppm/yr; global +3.74 ppm/yr), driven by El Niño + wildfire emissions reducing land/ocean uptake; 2025 fell back to +2.23 (ML) / +2.13 (global) ppm/yr. [co2_gr_mlo.txt](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt), [co2_gr_gl.txt](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt)
-[^iea-ger]: IEA Global Energy Review 2026 (~Apr 2026): global energy-related CO₂ rose ~0.4% in 2025 (slowest since 2021), +~145 Mt, to a new high of nearly 38.4 Gt (~5% above 2019). [IEA GER 2026 (PDF)](https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf)
-[^gcb]: Global Carbon Budget 2025 (published 13 Nov 2025): fossil CO₂ projected +1.1% in 2025 to a record 38.1 Gt CO₂. [globalcarbonbudget.org](https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/)
-[^gcb-fuel]: Global Carbon Budget 2025: by fuel, coal +0.8%, oil +1%, gas +1.3%; land-use-change CO₂ projected down to 4.1 Gt, making total CO₂ (fossil + land-use) projected slightly lower than 2024. [globalcarbonbudget.org](https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/)
-[^gcb-decade]: Global Carbon Budget 2025: total CO₂ growth has slowed to 0.3%/yr over the past decade vs 1.9%/yr the previous decade. [globalcarbonbudget.org](https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/)
-[^gcb-series]: Global Carbon Budget 2025 fossil + cement CO₂ series (GtCO₂); 2025 projected at a record 38.1 Gt (+1.1%), surpassing 2024 (~37.7 Gt); fossil CO₂ grew ~0.2 Gt/yr over the past decade. Carbon Brief: [Fossil-fuel CO₂ emissions to set new record in 2025, as land sink 'recovers'](https://www.carbonbrief.org/analysis-fossil-fuel-co2-emissions-to-set-new-record-in-2025-as-land-sink-recovers/); [globalcarbonbudget.org](https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/).
-[^gcb-budget]: Global Carbon Budget 2025: remaining 1.5°C carbon budget "virtually exhausted" — 170 Gt CO₂ ≈ 4 years at the 2025 *total*-CO₂ emission rate (fossil + land-use ≈ 42 Gt/yr); Friedlingstein (who led the study): "keeping global warming below 1.5°C is no longer plausible." [globalcarbonbudget.org](https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/)
-[^iea-clean]: IEA Global Energy Review 2026: solar PV met >one-quarter of global primary energy demand growth (first time on record for a modern renewable); record 800 GW of annual renewable additions; clean tech since 2019 avoids ~8% of global emissions (incl. ~800 Mt avoided coal demand); China coal-fired generation −1.5%; India energy-CO₂ flat for the first time on record. [IEA GER 2026 (PDF)](https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf)
-[^iea-ppm]: IEA Global Energy Review 2026 (p.41): the 2025 ~0.4% rise "coincided with record atmospheric CO₂ concentrations of about 427 ppm." (Co-occurrence statement; concentration and emissions are distinct metrics.) [IEA GER 2026 (PDF)](https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf)
-[^cb-21mo]: Carbon Brief / CREA (Lauri Myllyvirta, 12 Feb 2026): China's CO₂ "flat or falling" for 21 months since March 2024; Q4 2025 −1%, likely securing FY2025 −0.3% (fossil +0.1% offset by cement −7%); carbon intensity −4.7%. Notes GCB-vs-CREA reconciliation (scope/timing). [carbonbrief.org](https://www.carbonbrief.org/analysis-chinas-co2-emissions-have-now-been-flat-or-falling-for-21-months/)
-[^cb-2026]: Carbon Brief / CREA (3–4 Jun 2026): China's CO₂ grew ~2% year-on-year in Q1 2026 but remained below the March-2024 peak; driven by curtailed/"wasted" wind & solar; coal+gas power generation +4%, cement −7%, crude steel −5% (real-estate investment −11%). [carbonbrief.org](https://www.carbonbrief.org/analysis-chinas-co2-climbs-2-in-early-2026-due-to-wasted-wind-and-solar/)
-[^cm-news]: Carbon Monitor "Year in Review: Global carbon emissions and decarbonization in 2025": global fossil CO₂ in 2025 +0.7% vs 2024, reaching 37.3 Gt (a third distinct figure reflecting different scope/method; all three datasets agree 2025 was a record and still rising). Peer-reviewed write-up: [Nature Reviews Earth & Environment, doi:10.1038/s43017-026-00780-4](https://doi.org/10.1038/s43017-026-00780-4); summary on [carbonmonitor.org/news](https://carbonmonitor.org/news).
+[^noaa-mm-mlo]: [NOAA GML: Mauna Loa monthly mean CO₂ (co2_mm_mlo.txt)](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt)
+[^noaa-daily-mlo]: [NOAA GML: Mauna Loa daily mean CO₂ (co2_daily_mlo.txt)](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_daily_mlo.txt)
+[^noaa-mm-gl]: [NOAA GML: global monthly mean CO₂ (co2_mm_gl.txt)](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_gl.txt)
+[^noaa-ann-mlo]: [NOAA GML: Mauna Loa annual mean CO₂ (co2_annmean_mlo.txt)](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_mlo.txt)
+[^noaa-ann-gl]: [NOAA GML: global annual mean CO₂ (co2_annmean_gl.txt)](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_annmean_gl.txt)
+[^noaa-gr-mlo]: [NOAA GML: Mauna Loa annual CO₂ growth rates (co2_gr_mlo.txt)](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt). The 10-year and 5-year averages are computed from this file.
+[^noaa-gr-gl]: [NOAA GML: global annual CO₂ growth rates (co2_gr_gl.txt)](https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt)
+[^metoffice]: [UK Met Office: 2026 CO₂ forecast (4 Feb 2026)](https://www.metoffice.gov.uk/research/climate/seasonal-to-decadal/seasonal-forecast/forecasts/co2-forecast)
+[^gcb]: [Global Carbon Budget 2025, ESSD 18, 3211 (13 May 2026)](https://essd.copernicus.org/articles/18/3211/2026/)
+[^iea-ger]: [IEA Global Energy Review 2026 (PDF), pp. 13, 36, 45](https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf)
+[^carbon-monitor]: [Carbon Monitor, Nature Reviews Earth & Environment (14 Apr 2026)](https://www.nature.com/articles/s43017-026-00780-4)
+[^ember-ger]: [Ember Global Electricity Review 2026 (21 Apr 2026)](https://ember-energy.org/latest-insights/global-electricity-review-2026/)
+[^cb-china-21m]: [Carbon Brief/CREA: China's CO₂ flat or falling for 21 months (12 Feb 2026)](https://www.carbonbrief.org/analysis-chinas-co2-emissions-have-now-been-flat-or-falling-for-21-months)
+[^cb-china-q1]: [Carbon Brief/CREA: China's CO₂ climbs 2% in early 2026 (4 Jun 2026)](https://www.carbonbrief.org/analysis-chinas-co2-climbs-2-in-early-2026-due-to-wasted-wind-and-solar)
+[^cb-china-metric]: [Carbon Brief: China's new carbon metric leaves Germany-sized gap (26 May 2026)](https://www.carbonbrief.org/analysis-chinas-new-carbon-metric-leaves-germany-sized-gap-in-its-emissions)
+[^iea-omr]: [IEA Oil Market Report, June 2026 (17 Jun 2026)](https://www.iea.org/reports/oil-market-report-june-2026)
+[^cb-coal]: [Carbon Brief/Ember: No significant return to coal in 2026 despite Iran crisis (28 Apr 2026)](https://www.carbonbrief.org/world-will-not-see-significant-return-to-coal-in-2026-despite-iran-crisis/)
+[^hausfather]: [Z. Hausfather, The Climate Brink: "Keep it in the ground" (5 Jan 2026)](https://www.theclimatebrink.com/p/keep-it-in-the-ground)
