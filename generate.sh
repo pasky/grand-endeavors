@@ -46,6 +46,14 @@
 #   flag) + settings hash. Per-stage sessions are saved under <out-dir>/.sessions/
 #   (gitignored) for after-the-fact audit.
 #
+# KPI TIME SERIES:
+#   After research, a recording stage writes this run's KPI readings to
+#   <out-dir>/kpis/<section>.csv (schema + semantics: kpi.py docstring), reusing
+#   the metric ids of earlier periods so deltas are a lookup. The draft gets the
+#   deterministic delta vs the previous period and renders KPI charts from the
+#   store (`kpi.py chart`); the gate (validate.py --kpis) fails on store/section
+#   drift.
+#
 # DURABILITY:
 #   Research is persisted as committed Markdown notes under
 #   <out-dir>/research/<section>/ — citation-bearing artifacts kept and reviewable.
@@ -65,6 +73,7 @@ RESEARCH_DIR="$OUT_DIR/research/$SECTION"
 SESS_DIR="$OUT_DIR/.sessions"
 PLAN_FILE="$RESEARCH_DIR/PLAN.txt"
 OUT_FILE="$OUT_DIR/$SECTION.md"
+KPI_FILE="$OUT_DIR/kpis/$SECTION.csv"   # this run's KPI vintage (see kpi.py)
 REF_TEMPLATE="pilot-2025/climate.md"   # structural reference (format, not content)
 
 AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
@@ -75,6 +84,10 @@ if [ -z "${ALLOW_DIRTY:-}" ] && [ -n "$(git status --porcelain)" ]; then
 	git status --short >&2
 	exit 1
 fi
+
+# Period name must be one kpi.py can date (the KPI store orders vintages by it).
+uv run kpi.py context "$OUT_DIR" "$SECTION" >/dev/null \
+	|| { echo "ERROR: out-dir '$OUT_DIR' is not a recognized period (see kpi.py)" >&2; exit 1; }
 
 mkdir -p "$RESEARCH_DIR" "$SESS_DIR"
 
@@ -97,7 +110,7 @@ pi_run() {
 commit() {
 	msg="$1"
 	paths=""
-	for p in "$OUT_DIR/MANIFEST.txt" "$RESEARCH_DIR" "$OUT_FILE"; do
+	for p in "$OUT_DIR/MANIFEST.txt" "$RESEARCH_DIR" "$KPI_FILE" "$OUT_FILE"; do
 		[ -e "$p" ] && paths="$paths $p"
 	done
 	[ -n "$paths" ] || { echo "    (nothing to stage for: $msg)"; return 0; }
@@ -242,6 +255,53 @@ EOF
 	commit "$OUT_DIR $SECTION: research $slug"
 done 3< "$PLAN_VALID"
 
+# --- Stage 2b: record KPI readings into the time-series store ----------------
+# Always re-recorded (cheap) so the store tracks the current notes.
+mkdir -p "$(dirname "$KPI_FILE")"
+rm -f "$KPI_FILE"
+pi_run kpis "$(cat <<EOF
+Record this run's KPI readings for section "$SECTION", period "$PERIOD", into
+the KPI time-series store file $KPI_FILE (CSV).
+
+Read ./README.md (the "$SECTION" KPI definition, plus milestones that have a
+numeric tracker) and the research notes $RESEARCH_DIR/*.md. The notes are the
+ONLY source of values. Read the schema in the docstring of ./kpi.py
+(\`uv run kpi.py --help\`).
+
+Existing metric ids from earlier periods (the store's continuity):
+$(uv run kpi.py context "$OUT_DIR" "$SECTION")
+
+Rules:
+- Header exactly: metric,obs,value,unit,role,source,note
+- REUSE an existing metric id whenever the measure AND basis are the same (same
+  station/series, same growth definition, same emissions scope). Create a new
+  id ONLY for a genuinely different measure or basis, and never reuse an id for
+  a different basis. Ids should name the basis (e.g. co2-mlo-monthly vs
+  co2-global-monthly; co2-growth-mlo-jan-dec vs co2-growth-mlo-annual-mean).
+- role=headline: this report's current reading of EVERY KPI component (e.g.
+  latest concentration AND the multi-year trend), plus any numeric milestone
+  tracker. At most one headline row per metric.
+- role=series: the historical datapoints the notes give for trend charts (e.g.
+  annual means, annual growth rates, the same month in each year). Record
+  complete series so charts can be rendered from the store.
+- value: copy it VERBATIM from a note as a plain decimal (no ~, units or
+  commas). No values you computed yourself unless the note states them.
+- obs must lie within or before $PERIOD. Skip projections and forecasts: the
+  store holds observed/reported values only.
+- source: the note's deep-link URL for that value. note: the basis, window
+  and qualifiers (preliminary, approx.).
+
+Then run this and fix EVERY error until it reports 0 errors (also act on
+continuity warnings):
+    uv run kpi.py check $KPI_FILE --evidence $RESEARCH_DIR/*.md
+Write ONLY $KPI_FILE.
+EOF
+)"
+[ -s "$KPI_FILE" ] || { echo "ERROR: KPI stage wrote no $KPI_FILE" >&2; exit 1; }
+uv run kpi.py check "$KPI_FILE" --evidence "$RESEARCH_DIR"/*.md \
+	|| { echo "ERROR: KPI store file failed kpi.py check" >&2; exit 1; }
+commit "$OUT_DIR $SECTION: KPI readings"
+
 # --- Stage 3: draft ----------------------------------------------------------
 pi_run draft "$(cat <<EOF
 Write the newsletter section "$SECTION" for period "$PERIOD" into $OUT_FILE.
@@ -273,6 +333,20 @@ HARD REQUIREMENTS:
   claim must name its measure (e.g. "fossil CO2 at a record", not "emissions at
   a record") whenever another in-scope measure disagrees.
 
+KPI TIME SERIES (store: $KPI_FILE; check it and ./kpi.py):
+- Every headline value in $KPI_FILE MUST be reported in the KPI Dashboard.
+- Change since the previous report (deterministic, from the store):
+$(uv run kpi.py delta "$OUT_DIR" "$SECTION")
+  Report a change only where it is comparable (same metric id; if a caveat is
+  shown, or the obs dates differ materially, say so or omit it). The two
+  readings must never be framed as a trend.
+- Render KPI trend charts FROM THE STORE and paste them verbatim, keeping the
+  "%% kpi:" marker line. You may edit only the title and y-axis line, e.g.
+      uv run kpi.py chart $OUT_DIR $SECTION <metric>[,<metric>] [--match 'GLOB'] [--label year] [--title "..."]
+  (--match e.g. '*-05' for one month in each year). You may add a derived
+  overlay series (e.g. a constant mean line) as an extra line. Do not
+  hand-type store data into charts.
+
 SCOPE FOR THIS RUN: $SCOPE
 Open the file with a one-line note stating the period and (if narrowed) the
 scope. Write $OUT_FILE and give a brief summary of what you wrote.
@@ -300,7 +374,10 @@ Review and finalize $OUT_FILE (the "$SECTION" section for $PERIOD).
    prose.
 5. Run the mechanical validator and fix EVERY error it reports (undefined
    footnotes/refs, mermaid axis/series length mismatches, dead citation URLs):
-       uv run validate.py $OUT_FILE --plan $PLAN_FILE --research $RESEARCH_DIR
+       uv run validate.py $OUT_FILE --plan $PLAN_FILE --research $RESEARCH_DIR --kpis
+   If you correct a KPI value, correct it in $KPI_FILE too (only with a
+   verified source in the notes) and re-render affected charts with kpi.py.
+   Section and store must agree.
    Re-run it until it reports 0 errors. Then report the changes you made.
 EOF
 )"
@@ -308,10 +385,11 @@ commit "$OUT_DIR $SECTION: review"
 
 # --- Stage 5: validation gate (deterministic, no-LLM) ------------------------
 # Mechanical checks the LLM review can't be talked out of: footnote/reference
-# integrity, mermaid axis/series lengths, dead citation URLs, PLAN coverage.
+# integrity, mermaid axis/series lengths, dead citation URLs, PLAN coverage,
+# KPI store consistency (headlines reported, '%% kpi:' charts match the store).
 # Non-fatal by default (report + record); set STRICT=1 to fail the run on errors.
 echo ">>> [$SECTION/$OUT_DIR] validate"
-if ! uv run validate.py "$OUT_FILE" --plan "$PLAN_FILE" --research "$RESEARCH_DIR"; then
+if ! uv run validate.py "$OUT_FILE" --plan "$PLAN_FILE" --research "$RESEARCH_DIR" --kpis; then
 	echo "!!! validation gate reported errors in $OUT_FILE"
 	if [ -n "${STRICT:-}" ]; then exit 1; fi
 fi
