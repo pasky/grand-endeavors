@@ -56,10 +56,12 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
       CSV). Stable metric ids make deltas a lookup (`kpi.py delta`), and charts
       are rendered from the store (`kpi.py chart`, `%% kpi:` marker). Wired into
       generate.sh: a recording stage after research, a store-driven draft, and
-      `validate.py --kpis`, which fails on chart drift, unreported headline
-      values, untraceable values and post-period obs.
+      `validate.py --kpis`, which errors on chart drift or clipping, unmarked
+      charts, headlines not reported in prose, values not traceable to the
+      notes, and post/partial-period obs. The Stage-5 gate is still non-fatal
+      unless STRICT=1. Every pi stage now has a mechanical write-scope guard.
       Backfill: pilot-2025 (6 sections, clear-basis data only; skipped items are
-      listed in commit 6c0d19a). pilot-26H1 climate was backfilled by the
+      listed in commit 90eedf5). pilot-26H1 climate was backfilled by the
       pipeline itself in an end-to-end re-run (07cf80c..96a4142, 0 errors). Its
       delta to pilot-2025 works and carries a seasonality caveat. Known limits:
   - [ ] no `published` date column: a value observed inside the period but
@@ -70,8 +72,25 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
         vintage re-records (e.g. 2015 annual CO₂; the "~" wholesale prices)
   - [ ] round-up doesn't read the store yet (the Quick Reference could be
         rendered deterministically from headline rows + deltas)
-  - [ ] continuity warnings are warn-only. An id rename silently breaks deltas
-        unless a human reads the warnings (3 legit new ids in the 26H1 run)
+  - [ ] continuity warnings are warn-only (new or dropped headline ids). An id
+        rename silently breaks deltas unless a human reads them. Consider a small
+        reviewed **metric contract** per section (definition, unit, expected KPI
+        components, explicit retirements/basis changes) instead of only
+        "reuse ids"
+  - [ ] **vintage semantics** (from design review, foundational): the period
+        as-of date is not the data vintage. Decide between strict "known as of"
+        and retrospective reporting, then add published/retrieved dates (see
+        the `published` item above). Equal-as-of periods (26H2 vs 2026, pilot vs
+        prod) are ordered by name. A rerun overwrites its period's snapshot, so
+        reproducing a chart needs a pinned repo commit
+  - [ ] no withdrawal mechanism: a bad point stays in stitched charts until a
+        later vintage re-records that obs. Legacy (report-extracted, approx.)
+        rows have no visible quality tier
+  - [ ] weekly cost/churn: the record stage re-transcribes full histories via an
+        LLM every run. Carry verified observations forward and record only new
+        or revised ones
+  - [ ] chart overlays (extra series) are unchecked, and the y-axis label is
+        free text (unit could be mislabeled)
 - [ ] Decide on the **regressions vs the old OpenProse RECIPE** (from deep review):
   - [ ] per-stage **model specialization** (e.g. opus research/write, cheaper
         compile) instead of one default model everywhere
