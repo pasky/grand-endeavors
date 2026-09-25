@@ -1,0 +1,11 @@
+# Round-up manifest — pilot-26H1
+report_period: 26H1
+generated_at:  2026-09-25T13:16:12Z
+pi_version:    0.87.1
+agent_commit:  c2e242606c955984bf579f278ffacd8096beae8c
+agent_dirty:   no
+settings_sha:  43113ecd4450fcf0
+spec_commit:   9c73a9f5998d1c8b507acefd62623ee9f3b6035b  (HEAD at run START; output committed AFTER)
+inputs (git blob hash of each compiled section):
+  157d97e57dd8afae66089daff94ddf94feb7bd8a  pilot-26H1/climate.md
+not_covered:   robots-software robots-hardware rockets fusion health knowledge-beyond society-cohesion
