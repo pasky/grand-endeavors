@@ -155,11 +155,93 @@ def check_coverage(text: str, plan_path: str | None, research_dir: str | None) -
             )
 
 
+# --- round-up (period README.md) checks --------------------------------------
+# A number token not glued to letters/digits/dots (so "26H1", "CO2", "v2.1"
+# are skipped). Thousands separators (comma/space/thin space) are normalized.
+NUM_RE = re.compile(r"(?<![\w.])\d{1,3}(?:[,\u2009\u202f ]\d{3})+(?:\.\d+)?(?![\w])|(?<![\w.])\d+(?:\.\d+)?(?![\w])")
+MDLINK_RE = re.compile(r"\]\(([^)\s]+)\)")
+
+
+def numbers(text: str) -> set[str]:
+    text = re.sub(r"https?://\S+", " ", text)  # URLs are not claims
+    out = set()
+    for m in NUM_RE.findall(text):
+        n = re.sub(r"[,\u2009\u202f ]", "", m)
+        if "." not in n:
+            v = int(n)
+            # small counts and bare years are too ambiguous to trace
+            if v < 10 or 1900 <= v <= 2100:
+                continue
+        out.add(n)
+    return out
+
+
+def traceable(n: str, pool: set[str]) -> bool:
+    if n in pool:
+        return True
+    f = float(n)  # tolerate trailing-zero differences (2.50 vs 2.5)
+    return any(float(p) == f for p in pool)
+
+
+def check_roundup(doc_path: str, text: str) -> None:
+    """Round-up README: every local .md link resolves, every section file in the
+    period dir is linked, and every number traces to its linked section (the
+    round-up must summarize, never add facts)."""
+    base = os.path.dirname(os.path.abspath(doc_path))
+    me = os.path.basename(doc_path)
+    sections = sorted(
+        f for f in os.listdir(base)
+        if f.endswith(".md") and f != me and f[0].islower()
+    )
+    local = [
+        t for t in MDLINK_RE.findall(text)
+        if not re.match(r"[a-z]+:", t) and t.split("#")[0].endswith(".md")
+    ]
+    linked = {t.split("#")[0] for t in local}
+    for t in sorted(linked):
+        if not os.path.exists(os.path.join(base, t)):
+            err(f"roundup: link to missing section file '{t}'")
+    for s in sections:
+        if s not in linked:
+            err(f"roundup: section file '{s}' exists but is not linked from {me}")
+
+    # Attribute each block to the section it links to: a block ends at the line
+    # holding its section link and starts after the previous one (or a '---'
+    # rule). Text outside any block (intro, quick-reference table) is checked
+    # against the union of all linked sections.
+    sec_text = {
+        s: open(os.path.join(base, s), encoding="utf-8").read()
+        for s in linked if os.path.exists(os.path.join(base, s))
+    }
+    union = set().union(*(numbers(t) for t in sec_text.values())) if sec_text else set()
+    block: list[str] = []
+    unattributed: list[str] = []
+    for line in text.splitlines():
+        links = [t.split("#")[0] for t in MDLINK_RE.findall(line) if t.split("#")[0] in sec_text]
+        if line.strip() == "---":
+            unattributed += block
+            block = []
+        elif links:
+            pool = numbers(sec_text[links[0]])
+            for n in sorted(numbers("\n".join(block + [line]))):
+                if not traceable(n, pool):
+                    err(f"roundup: number '{n}' in the {links[0]} block not found in {links[0]}")
+            block = []
+        else:
+            block.append(line)
+    unattributed += block
+    for n in sorted(numbers("\n".join(unattributed))):
+        if not traceable(n, union):
+            err(f"roundup: number '{n}' (outside any section block) not found in any linked section")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("doc")
     ap.add_argument("--plan")
     ap.add_argument("--research")
+    ap.add_argument("--roundup", action="store_true",
+                    help="doc is a period round-up README: check section links + number traceability")
     args = ap.parse_args()
 
     text = open(args.doc, encoding="utf-8").read()
@@ -168,6 +250,8 @@ def main() -> int:
     check_reference_links(prose)
     check_mermaid(text)
     check_coverage(text, args.plan, args.research)
+    if args.roundup:
+        check_roundup(args.doc, prose)
     check_links(text)  # network last (slowest)
 
     for w in WARNS:
