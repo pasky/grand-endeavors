@@ -57,6 +57,17 @@ been published in early July (just after the period end).
   conditions"; 2.56 ppm without La Niña), still **"too fast to track IPCC 1.5°C scenarios"**
   (IPCC C1 1.5°C scenarios require a 2020s decadal average of 1.33–1.79 ppm/yr).
   https://www.metoffice.gov.uk/research/climate/seasonal-to-decadal/seasonal-forecast/forecasts/co2-forecast
+  - **Scope correction (28 Sep 2026 spot-check of the Met Office page).** Both the La Niña attribution ("slightly slowed by a temporary strengthening of natural carbon sinks associated with moderate La Niña-like conditions in late 2025 and early 2026") and "too fast to track IPCC 1.5°C scenarios" describe the **forecast 2025→2026 rise**. They do not describe the observed 2025 NOAA Jan→Dec slowdown.
+  - The same page says the observed 2025 annual-mean rise (2.68 ppm, Scripps) was *larger* than the Met Office forecast of 2.26 ± 0.56.
+  - The page's own 1.33–1.79 figure appears in the IPCC C1 table, alongside "2.61 (2020-2025)" observed.
+  - The Met Office forecast the May 2026 monthly mean at 432.2 ± 0.6 ppm (Table 3); NOAA observed 432.34.
+- **26H1 year-on-year slowdown vs recent May peaks** (computed from co2_mm_mlo.txt, which was re-fetched on 28 Sep 2026 and still has File Creation 5 Sep 2026; 432.34 is the file maximum):
+  - May-over-May gains: 2023 424.00 − 420.97 = +3.03; 2024 426.90 − 424.00 = +2.90; 2025 430.51 − 426.90 = +3.61 ppm, so the range is +2.9 to +3.6.
+  - The 2026 Jan–Jun gains were +1.48 to +2.26 ppm.
+  https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt
+- **Comparison with pilot-2025 headlines** (from pilot-2025/kpis/climate.csv):
+  - Concentration: co2-mlo-monthly 2025-11 = 426.5 ppm. The current NOAA file gives Nov 2025 = 426.46.
+  - Trend: co2-trend-10yr-global-wmo 2020 = 2.4 ppm/yr (WMO, global annual means, 2011–2020), with role = headline. The like-for-like NOAA Jan→Dec global mean is 2.38 for 2011–20 and 2.53 for 2016–25 (computed below).
 
 - **Rolling 10-yr average of NOAA Jan→Dec growth rates (computed; verified against the files
   on 25 Sep 2026).** Extra years needed: MLO 2011 1.92, 2012 2.65, 2013 1.99, 2014 2.17,
@@ -69,6 +80,8 @@ been published in early July (just after the period end).
   pilot-2025 (different basis: WMO annual means).
   https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt
   https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt
+- GCB 2025 (ESSD) cross-check of the 10-yr trend: "The atmospheric CO2 growth rate was 5.6 ± 0.02 GtC yr−1 (2.6 ppm) during the decade 2015–2024". This is GCB's global basis and agrees with NOAA's 2015–24 means (MLO 2.64, global 2.62). Verified on the ESSD page on 28 Sep 2026.
+  https://essd.copernicus.org/articles/18/3211/2026/
 - GCB 2025 (ESSD): "2024 had a record-high growth rate of 7.9 ± 0.02 GtC yr−1 (3.7 ppm) mainly due to the 2023/2024 El Niño conditions"; preliminary 2025 growth estimate 2.1 ppm.
   https://essd.copernicus.org/articles/18/3211/2026/
 - Basis note: the Met Office 2026 forecast (429.4 ppm annual mean) is on the Scripps MLO

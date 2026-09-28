@@ -23,7 +23,13 @@ All 2025 numbers are preliminary.
   - EU 2,372 (−0.8%)
   - Advanced economies rose 0.5%, their first increase since 2018 excluding the post-Covid rebound.
 
-  https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf (pp. 13, 36, 45)
+  https://iea.blob.core.windows.net/assets/df903e1c-49c6-4757-8cbf-6fbcfe7611a0/GlobalEnergyReview2026.pdf (PDF pp. 13–14, 36, 45)
+- **Spot-check of the IEA PDF (28 Sep 2026, review stage; page numbers are PDF page indices):**
+  - p. 36 verbatim: "Global growth in energy-related CO2 emissions slowed in 2025, rising by around 0.4%, the slowest rate since 2021." This is the IEA's own wording and is quoted as such in the section.
+  - p. 13: "In advanced economies, emissions rose by 0.5%, the first annual increase since 2018 (excluding the post-Covid rebound)."
+  - p. 14 (correction: not p. 13): India's fall, "largely due to cyclical factors resulting from the strong monsoon".
+  - p. 45 table: World 38,082; US 4,606 (+2.2%); EU 2,372 (−0.8%); China 12,718 (−0.5%); India 3,114 (−0.1%).
+  - p. 6: advanced economies (+0.5%) grew faster than emerging and developing economies (+0.3%) "for the first time since the 1990s".
 - **Carbon Monitor (Nature Reviews Earth & Environment, 14 Apr 2026):** fossil+industry CO2 reached **a record 37.2 Gt in 2025, up 0.7%**. Global **power-sector emissions fell 0.9%**. The authors say China and India "entered an emission plateau", while the US and EU rebounded. The Carbon Monitor news page gives 37.3 Gt.
   https://www.nature.com/articles/s43017-026-00780-4
 - **Ember Global Electricity Review 2026 (21 Apr 2026):** global **fossil power generation fell 0.2% (−38 TWh) in 2025**: "For the first time since the Covid-19 pandemic in 2020, and only the fifth time this century, fossil generation did not rise". (Correction, 25 Sep 2026 spot-check: the landing page does not say this was "the first fall driven by clean power rather than a crisis"; it says clean power met all new demand, "halting fossil generation growth".) Clean power (+887 TWh) exceeded demand growth (+849 TWh). Fossil generation fell in China (−0.9%) and India (−3.3%). Renewables (33.8%) overtook coal (33.0%).
@@ -44,6 +50,8 @@ All 2025 numbers are preliminary.
 
 - **IEA Oil Market Report (17 Jun 2026):** 2026 global oil demand is forecast to **fall by 1.1 mb/d**, after Q2 deliveries dropped 5 mb/d year on year. However, demand is forecast to **rebound by 2 mb/d to 105.3 mb/d in 2027**. That would be above the implied 2025 level, so any 2026 dip is expected to be temporary rather than a structural peak.
   https://www.iea.org/reports/oil-market-report-june-2026
+  - Spot-check, 28 Sep 2026: the page says demand is "forecast to decline by 1.1 mb/d y-o-y in 2026", that "2Q26 deliveries plunged by 5 mb/d y-o-y", and that demand is "projected to rise by a relatively modest 2 mb/d to 105.3 mb/d" in 2027.
+  - The implied 2025 level is computed from those figures: 105.3 − 2 = 103.3 mb/d in 2026, and 103.3 + 1.1 = about 104.4 mb/d in 2025.
 - **Ember via Carbon Brief (28 Apr 2026):** the "return to coal" is limited. In a worst case, global coal power rises no more than **1.8% in 2026**, and CREA data showed no return to coal as of March.
   https://www.carbonbrief.org/world-will-not-see-significant-return-to-coal-in-2026-despite-iran-crisis/
 - **Expert view at the start of the period (Z. Hausfather, 5 Jan 2026):** "global emissions have yet to decline (even if they have plateaued)."
