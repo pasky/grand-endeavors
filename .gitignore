@@ -7,3 +7,4 @@ __pycache__/
 
 # pi-side-agents local runtime setup (never commit)
 .pi/
+ledger/staging/

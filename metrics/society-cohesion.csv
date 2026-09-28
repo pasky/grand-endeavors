@@ -1,7 +1,7 @@
-metric,unit,required_from,retired_after,definition
-doomsday-clock,s,,,"Bulletin of the Atomic Scientists Doomsday Clock setting, in seconds to midnight, announced in the obs year"
-trust-institutions-edelman,%,,,"Edelman Trust Barometer Trust Index: average trust in business, government, NGOs and media across the surveyed countries (28 in 2025)"
-trust-government-oecd,%,,,"OECD Trust Survey headline share of respondents trusting their national government, cross-country average, in the OECD's own headline trust category (whether that category is 'high' only or 'high or moderately high' is unconfirmed: the next research run must confirm it at the source, then record it in this definition via an audited edit)"
-pop-in-autocracies-vdem,%,,,V-Dem Democracy Report share of world population living in autocracies (electoral + closed) in the data year
-loneliness-prevalence-who,%,,,WHO Commission on Social Connection estimate of the share of people worldwide experiencing loneliness (approximate)
-trust-government-us-pew,%,,,Pew Research share of US adults who trust the federal government to do what is right always or most of the time
+metric,unit,cadence,release_lag_days,required_from,retired_after,definition
+doomsday-clock,s,annual,,,,"Bulletin of the Atomic Scientists Doomsday Clock setting, in seconds to midnight, announced in the obs year"
+trust-institutions-edelman,%,annual,,,,"Edelman Trust Barometer Trust Index: average trust in business, government, NGOs and media across the surveyed countries (28 in 2025)"
+trust-government-oecd,%,irregular,,,,"OECD Trust Survey headline share of respondents trusting their national government, cross-country average, in the OECD's own headline trust category (whether that category is 'high' only or 'high or moderately high' is unconfirmed: the next research run must confirm it at the source, then record it in this definition via an audited edit)"
+pop-in-autocracies-vdem,%,annual,,,,V-Dem Democracy Report share of world population living in autocracies (electoral + closed) in the data year
+loneliness-prevalence-who,%,irregular,,,,WHO Commission on Social Connection estimate of the share of people worldwide experiencing loneliness (approximate)
+trust-government-us-pew,%,irregular,,,,Pew Research share of US adults who trust the federal government to do what is right always or most of the time

@@ -36,9 +36,9 @@ def store_env():
     root = tempfile.mkdtemp()
     kpi.ROOT = root
     write_csv(f"{root}/metrics/climate.csv", kpi.REG_COLUMNS, [
-        ["co2-mlo-monthly", "ppm", "pilot-26H1", "", "NOAA Mauna Loa monthly mean CO2 dry-air mole fraction"],
-        ["co2-trend-old", "ppm/yr", "", "pilot-2025", "Old basis decadal trend of global annual means (retired)"],
-        ["co2-mlo-annual", "ppm", "", "", "NOAA Mauna Loa calendar-year annual mean CO2"],
+        ["co2-mlo-monthly", "ppm", "annual", "10", "pilot-26H1", "", "NOAA Mauna Loa monthly mean CO2 dry-air mole fraction"],
+        ["co2-trend-old", "ppm/yr", "annual", "10", "", "pilot-2025", "Old basis decadal trend of global annual means (retired)"],
+        ["co2-mlo-annual", "ppm", "annual", "10", "", "", "NOAA Mauna Loa calendar-year annual mean CO2"],
     ])
     write_csv(f"{root}/pilot-2025/kpis/climate.csv", kpi.COLUMNS, [
         ["co2-mlo-monthly", "2025-11", "426.5", "ppm", "headline", "https://x.org/a", ""],
@@ -95,7 +95,7 @@ def main():
     errs, _ = check26(ok)
     case("header-only registry still enforces registration", has(errs, "not in metrics/climate.csv"))
     with open(f"{kpi.ROOT}/metrics/climate.csv", "a") as f:
-        f.write("co2-mlo-monthly,ppm,,,NOAA monthly mean, unquoted comma here\n")
+        f.write("co2-mlo-monthly,ppm,monthly,7,,,NOAA monthly mean, unquoted comma here\n")
     case("registry row with an unquoted comma is rejected",
          any("wrong number of fields" in e for e in kpi.load_registry("climate")[1]))
 

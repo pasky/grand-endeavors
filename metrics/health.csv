@@ -1,3 +1,3 @@
-metric,unit,required_from,retired_after,definition
-hale-global,years,,,WHO Global Health Estimates population-weighted global healthy life expectancy (HALE) at birth for the obs year
-hale-median-country,years,pilot-26H1,,"Median across countries of WHO Global Health Estimates healthy life expectancy (HALE) at birth, both sexes, for the obs year (the README KPI; unweighted by population)"
+metric,unit,cadence,release_lag_days,required_from,retired_after,definition
+hale-global,years,irregular,,,,WHO Global Health Estimates population-weighted global healthy life expectancy (HALE) at birth for the obs year
+hale-median-country,years,irregular,,pilot-26H1,,"Median across countries of WHO Global Health Estimates healthy life expectancy (HALE) at birth, both sexes, for the obs year (the README KPI; unweighted by population)"

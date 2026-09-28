@@ -12,7 +12,10 @@ Each period's file is a VINTAGE: what that report knew as of its as-of date
 (data gets revised, e.g. NOAA recalibration, so vintages are kept, not merged).
 
 METRIC REGISTRY (the continuity contract; one per section, across periods)
-    metrics/<section>.csv   columns: metric,unit,required_from,retired_after,definition
+    metrics/<section>.csv   columns: metric,unit,cadence,release_lag_days,required_from,retired_after,definition
+    cadence: daily|weekly|monthly|quarterly|annual|irregular. release_lag_days: typical
+    days from the end of the observed period to publication (empty = no regular
+    release); drives rule-basis publication dates and "expected by" in views.
     Every metric id used in a store file MUST be registered, with the registry's
     unit. definition = the exact measure, basis/station/scope and window, so
     "same id" provably means "same measure". required_from=<period>: from then on
@@ -63,7 +66,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 COLUMNS = ["metric", "obs", "value", "unit", "role", "source", "note"]
-REG_COLUMNS = ["metric", "unit", "required_from", "retired_after", "definition"]
+REG_COLUMNS = ["metric", "unit", "cadence", "release_lag_days", "required_from", "retired_after", "definition"]
+CADENCES = {"daily", "weekly", "monthly", "quarterly", "annual", "irregular"}
 ROLES = {"headline", "series", "unavailable"}
 METRIC_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 VALUE_RE = re.compile(r"^-?\d+(?:\.\d+)?$")
@@ -204,6 +208,10 @@ def load_registry(section: str) -> tuple[dict[str, dict] | None, list[str]]:
                 errs.append(f"{at}: empty unit")
             if len((row["definition"] or "").split()) < 5:
                 errs.append(f"{at}: definition of '{m}' too thin — state the exact measure, basis/station/scope and window")
+            if row["cadence"] not in CADENCES:
+                errs.append(f"{at}: cadence must be one of {sorted(CADENCES)}")
+            if row["release_lag_days"] and not row["release_lag_days"].isdigit():
+                errs.append(f"{at}: release_lag_days must be a non-negative integer or empty")
             for col, key in (("required_from", "_req"), ("retired_after", "_ret")):
                 row[key] = None
                 if row[col]:
