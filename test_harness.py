@@ -209,6 +209,47 @@ def main():
     case("verified value supersedes the legacy one despite an earlier publication date",
          errs == [] and stats["obs_in"] == 1 and ledger.obs_as_of("climate")[("co2-mlo-monthly", "2025-11")]["value"] == "426.46")
 
+    # --- verification-review regressions -----------------------------------------------------
+    fixture()
+    so = f"{kpi.ROOT}/staged.csv"
+    write_csv(so, ledger.OBS_COLUMNS, [
+        obs("co2-mlo-annual", "2024", "425", "2026-09-01", "seen", verification="collector", retrieved="2026-09-01"),
+        obs("co2-mlo-annual", "2024", "426", "2026-09-02", "seen", verification="collector", retrieved="2026-09-02"),
+        obs("co2-mlo-annual", "2023", "1", "2026-09-02", "seen", verification="rejected", retrieved="2026-09-02")])
+    e1, _ = ledger.merge("climate", [], [so])
+    n_rej = len(ledger.load_jsonl(ledger.path("rejected", "climate")))
+    e2, st2 = ledger.merge("climate", [], [so])
+    case("observation batch replay (two revisions + a reject) is a full no-op",
+         e1 == [] and e2 == [] and st2["obs_in"] == 0 and n_rej == len(ledger.load_jsonl(ledger.path("rejected", "climate")))
+         and ledger.check_section("climate")[0] == [])
+    open(os.path.join(kpi.ROOT, "ledger", ".lock-climate"), "w").close()   # empty leftover lock file
+    case("an empty leftover lock file does not block merges (OS-held flock)", ledger.merge("climate", [], [so])[0] == [])
+    stg = f"{kpi.ROOT}/chain.jsonl"
+    same = "The same corrected claim text appears in a three-record replacement chain."
+    write_jsonl(stg, [ev("2026-06-11-a", "2026-06-11", same),
+                      ev("2026-06-11-c", "2026-06-11", same, supersedes=["2026-06-11-a"]),
+                      ev("2026-06-11-b", "2026-06-11", same, supersedes=["2026-06-11-c"])])
+    case("supersedes chains validate independently of record order",
+         ledger.merge("climate", [stg])[0] == [] and ledger.check_section("climate")[0] == [])
+    cyc = [ev("2026-06-12-x", "2026-06-12", "Cycle member one with its own distinct claim text here.", supersedes=["2026-06-12-y"]),
+           ev("2026-06-12-y", "2026-06-12", "Cycle member two with a different distinct claim text.", supersedes=["2026-06-12-x"])]
+    case("supersedes cycles are rejected", has(ledger.validate_state("climate", cyc, [], [])[0], "cycle"))
+    # stale: same-day and late-discovered evidence
+    fixture()
+    a = {"id": "2026-09-28-milestone-the-bend", "target": "milestone:the-bend", "status": "yellow", "label": "x",
+         "made_at": "2026-09-28", "rationale": "r", "evidence": ["2026-05-13-gcb-final"], "by": "t"}
+    write_jsonl(f"{kpi.ROOT}/a.jsonl", [a])
+    ledger.merge("climate", [], [], [f"{kpi.ROOT}/a.jsonl"])
+    until = __import__("datetime").date(2026, 9, 29)
+    fresh = lambda: [t for t, _ in ledger.stale_targets("climate", until)]
+    case("sealed assessment is not stale without new evidence", "milestone:the-bend" not in fresh())
+    write_jsonl(stg, [ev("2026-09-20-late-found", "2026-09-20", "A late-discovered September item about the emissions peak question.")])
+    ledger.merge("climate", [stg])
+    case("late-discovered evidence (published before made_at) makes the assessment stale", "milestone:the-bend" in fresh())
+    case("assessment ties on made_at: the later appended record wins",
+         (write_jsonl(ledger.path("assessments", "climate"), [dict(a, id="x-9", label="old"), dict(a, id="x-10", label="new")]) or True)
+         and ledger.assessment_as_of("climate", until)["milestone:the-bend"]["label"] == "new")
+
     # --- snapshot ---------------------------------------------------------------------
     fixture()
     pdir = f"{kpi.ROOT}/pilot-26H1"
@@ -233,6 +274,16 @@ def main():
          any(k["metric"] == "co2-old-required" for k in ledger.snapshot(pdir, "climate")["kpi_headlines"]))
     write_csv(f"{kpi.ROOT}/metrics/climate.csv", reg_rows[0], reg_rows[1:])
     ev_text = ledger.snapshot_evidence_text(snap)
+    write_jsonl(f"{kpi.ROOT}/sup.jsonl", [ev("2026-05-13-gcb-final-r2", "2026-05-13",
+        "Global Carbon Budget final paper: 2025 fossil CO2 was 38.1 GtCO2, up 1.0 percent.", supersedes=["2026-05-13-gcb-final"])])
+    write_jsonl(ledger.path("assessments", "climate"), [{"id": "2026-07-14-milestone-the-bend", "target": "milestone:the-bend",
+        "status": "yellow", "label": "x", "made_at": "2026-07-14", "rationale": "r", "evidence": ["2026-05-13-gcb-final"], "by": "t"}])
+    ledger.merge("climate", [f"{kpi.ROOT}/sup.jsonl"])
+    s3 = ledger.snapshot(pdir, "climate")
+    kept = [e for e in s3["background_events"] if e["id"] == "2026-05-13-gcb-final"]
+    case("snapshot keeps superseded assessment evidence, flagged superseded_by",
+         kept and kept[0].get("superseded_by") == "2026-05-13-gcb-final-r2")
+    case("all series are frozen (short ones too)", "co2-mlo-monthly" in s3["series"])
     case("typed evidence pool excludes metadata (significance, ids)", '"significance"' not in ev_text and "gcb-final" not in ev_text)
     write_jsonl(ledger.path("events", "climate"), ledger.events("climate") + [
         ev("2026-01-05-minor-evidence", "2026-01-05", "A minor but cited analysis says emissions have plateaued in 2025.", sig=1)])
@@ -280,6 +331,11 @@ def main():
                     [list(r.values())[:11] for r in ledger.observations("climate")]
                     + [obs("co2-mlo-annual", "2020", "414.21", "2021-01-10", "rule")]) or True)
          and gate(doc) == [])
+    old = {k: v for k, v in snap.items() if k not in ("series", "framework")}
+    json.dump(old, open(sp, "w"))
+    case("pre-freeze snapshots fail explicitly (no silent live-ledger fallback)",
+         has(gate(doc), "predates"))
+    json.dump(snap, open(sp, "w"))
     case("URLs with balanced parentheses are extracted whole",
          validate.extract_urls("[x](https://a.org/S0092-8674(25)00284-3).") == ["https://a.org/S0092-8674(25)00284-3"])
 

@@ -54,8 +54,11 @@ SESS_DIR="ledger/.sessions"
 REGISTRY="metrics/$SECTION.csv"
 LEDGER_PATHS="ledger/events/$SECTION.jsonl ledger/observations/$SECTION.csv ledger/assessments/$SECTION.jsonl ledger/rejected/$SECTION.jsonl ledger/state/$SECTION.json $REGISTRY"
 ALLOWED="$STAGE/ $REGISTRY"   # agents: staging + (audited) registry additions only
-APPEND_ONLY="$REGISTRY"        # guard: existing registry rows can never change
+APPEND_ONLY="$REGISTRY"        # guard: registry rows accepted before this run can never change
 mkdir -p "$STAGE"
+APPEND_ONLY_BASE="$STAGE/append-only-base"   # run-start baseline (verifier may drop intake additions)
+mkdir -p "$APPEND_ONLY_BASE"
+[ -f "$REGISTRY" ] && cp "$REGISTRY" "$APPEND_ONLY_BASE/$(echo "$REGISTRY" | tr / _)"
 echo ">>> [$RUN_NAME] until $UNTIL, staging $STAGE"
 RUN_START="$(git rev-parse HEAD)"
 
@@ -78,6 +81,9 @@ while IFS='|' read -r topic name desc <&3; do
 	if [ -n "${ITEMS:-}" ]; then case " $ITEMS " in *" $topic "*) : ;; *) continue ;; esac; fi
 	slug="$(printf '%s' "$topic" | tr ':' '-')"
 	ISINCE="$(item_since "$topic")"
+	if [ "$UNTIL" \< "$ISINCE" ]; then
+		echo "ERROR: window for $topic would run backwards ($ISINCE > UNTIL $UNTIL); set SINCE explicitly" >&2; exit 1
+	fi
 	DONE_ITEMS="$DONE_ITEMS $topic"
 	ev="$STAGE/$slug.events.jsonl"; ob="$STAGE/$slug.obs.csv"
 	pi_run "intake-$slug" "$(cat <<EOF

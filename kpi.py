@@ -181,8 +181,13 @@ def chart_data(period_dir: str, section: str, metrics: list[str], match: str | N
     period = period_of_dir(period_dir)
     end = period_as_of(period)
     snap_p = os.path.join(period_dir, "snapshot", f"{section}.json")
-    frozen = json.load(open(snap_p, encoding="utf-8")).get("series") if os.path.exists(snap_p) else None
-    if frozen is None:
+    frozen = None
+    if os.path.exists(snap_p):
+        frozen = json.load(open(snap_p, encoding="utf-8")).get("series")
+        if frozen is None:
+            raise ValueError(f"{snap_p} predates frozen series; its charts cannot be verified "
+                             "reproducibly (regenerate the bulletin)")
+    else:
         table = ledger.obs_as_of(section, ledger.cutoff(period))
         frozen = {}
         for (mm, o), r in table.items():

@@ -48,7 +48,10 @@ commit() {
 # $ALLOWED. Checks committed changes since the stage began, uncommitted changes,
 # and edits to files that were ALREADY dirty (by content hash). Files in
 # $APPEND_ONLY must keep their previous content as a prefix (e.g. the metric
-# registry: rows may be added, never edited). Gitignored paths are invisible to
+# registry: rows may be added, never edited); the baseline is $APPEND_ONLY_BASE
+# (a directory of copies taken by the caller, e.g. at run start, so a later stage
+# may still remove an earlier stage's unaccepted additions), else the content
+# before each stage. Gitignored paths are invisible to
 # git, so staging directories are out of scope by construction.
 _dirty_hashes() {
 	git status --porcelain --untracked-files=all | cut -c4- | while read -r f; do
@@ -57,7 +60,10 @@ _dirty_hashes() {
 }
 
 guard_paths() {  # $1 pre-HEAD, $2 pre-dirty "path hash" lines, $3 label, $4 append-only snapshot dir
-	changed="$( { git diff --name-only "$1" HEAD; git status --porcelain --untracked-files=all | cut -c4-; } | sort -u)"
+	# every path changed since the stage began, PLUS every path that was dirty
+	# before it (so restoring/deleting a pre-dirty file is caught too)
+	changed="$( { git diff --name-only "$1" HEAD; git status --porcelain --untracked-files=all | cut -c4-;
+		printf '%s\n' "$2" | cut -d' ' -f1; } | grep -v '^$' | sort -u)"
 	bad=""
 	for f in $changed; do
 		ok=""
@@ -69,7 +75,7 @@ guard_paths() {  # $1 pre-HEAD, $2 pre-dirty "path hash" lines, $3 label, $4 app
 		printf '%s\n' "$2" | grep -qxF -- "$now" || bad="$bad $f"   # new change, or a dirty file edited further
 	done
 	for f in ${APPEND_ONLY:-}; do
-		old="$4/$(echo "$f" | tr / _)"
+		old="${APPEND_ONLY_BASE:-$4}/$(echo "$f" | tr / _)"
 		[ -f "$old" ] || continue
 		n="$(wc -c < "$old")"
 		if [ ! -f "$f" ] || ! head -c "$n" "$f" | cmp -s - "$old"; then

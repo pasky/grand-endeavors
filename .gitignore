@@ -11,3 +11,4 @@ ledger/staging/
 
 # derived views (explore.py build/dashboard); rebuilt from the ledger, never committed
 build/
+ledger/.lock-*

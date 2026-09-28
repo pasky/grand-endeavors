@@ -271,8 +271,10 @@ def check_snapshot(doc_path: str, text: str, snap_path: str) -> None:
     # 5. coverage (structural): every milestone/challenge of the snapshot's frozen
     #    framework has its own heading (older snapshots: README at validation time)
     heads = "\n".join(ln.lower() for ln in prose.splitlines() if ln.lstrip().startswith("#"))
-    frame = snap.get("framework") or [{"topic": f"{k[:-1]}:{s}", "name": n}
-                                      for k, items in ledger.readme_topics(snap["section"]).items() for s, n in items]
+    frame = snap.get("framework")
+    if frame is None:
+        err("snapshot: predates the frozen README framework (regenerate the bulletin)")
+        frame = []
     for f in frame:
         if f["topic"].startswith(("milestone:", "challenge:")) and f["name"].lower() not in heads:
             err(f"snapshot: {f['topic'].split(':')[0]} '{f['name']}' has no heading of its own "
