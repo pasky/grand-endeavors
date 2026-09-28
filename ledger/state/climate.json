@@ -1,15 +1,33 @@
 {
  "section": "climate",
- "last_until": "2026-09-28",
  "runs": [
   {
    "run": "20260928T171544Z",
    "since": "2026-09-15",
    "until": "2026-09-28",
-   "items": "all",
+   "items": [
+    "kpi",
+    "milestone:the-bend",
+    "milestone:the-balance",
+    "milestone:the-ceiling",
+    "challenge:net-zero-transition",
+    "challenge:permanent-removal",
+    "challenge:sunlight-management",
+    "beyond"
+   ],
    "staged_events": 36,
    "spec_commit": "1476c0499c0314e7ab2d8c8d45a598f24f06bc06",
    "pi": "0.87.1"
   }
- ]
+ ],
+ "items": {
+  "kpi": "2026-09-28",
+  "milestone:the-bend": "2026-09-28",
+  "milestone:the-balance": "2026-09-28",
+  "milestone:the-ceiling": "2026-09-28",
+  "challenge:net-zero-transition": "2026-09-28",
+  "challenge:permanent-removal": "2026-09-28",
+  "challenge:sunlight-management": "2026-09-28",
+  "beyond": "2026-09-28"
+ }
 }
