@@ -6,12 +6,12 @@
 
 ## Executive Summary
 
-**Bottom line:** No new KPI data arrived this week. The Mauna Loa headline is still the August 2026 monthly mean of 427.55 ppm[^noaa-mm], and the 10-year trend is still 2.56 ppm/yr[^noaa-gr]. The KPI stays 🔴 "Worsening". The week's news is on the emissions side. Carbon Brief *projects* that global fossil CO₂ emissions will fall by about 0.5% in 2026, driven by the Strait of Hormuz crisis[^cb-fossil-fall]. That is a projection, not an achieved decline. India's CO₂ grew 3.7% year on year in H1 2026[^cb-india]. "The Bend" stays 🟡 "Approaching, not achieved".
+**Bottom line:** Carbon Brief *projects* that global fossil CO₂ emissions will fall by about 0.5% in 2026, driven by the Strait of Hormuz crisis[^cb-fossil-fall]. That is a shock-driven projection, not an achieved decline, and India's CO₂ grew 3.7% year on year in H1 2026[^cb-india]. "The Bend" stays 🟡 "Approaching, not achieved". No new KPI headline data arrived: the Mauna Loa headline is still the August 2026 monthly mean of 427.55 ppm[^noaa-mm] and the 10-year trend is still 2.56 ppm/yr[^noaa-gr], so the KPI stays 🔴 "Worsening". A record El Niño reading this week puts the La Niña premise of the KPI rationale in question[^cb-nino].
 
 **The good news:**
-- *Achieved:* Greensand entered commercial operation on 18 September 2026 as the EU's first full-scale offshore CO₂ storage site, with capacity of up to 400,000 tCO₂ per year in its first phase[^greensand].
 - *Data:* IRENA reports that a record 693 GW of renewable power capacity was added worldwide in 2025[^irena].
-- *Data:* CREA's indicators point to a broad-based decline in China's emissions in August 2026. Coal power generation was −5.2% year on year, its second consecutive monthly fall[^crea-china-aug].
+- *Analysis:* CREA's indicators point to a broad-based decline in China's emissions in August 2026. Coal power generation was −5.2% year on year, its second consecutive monthly fall[^crea-china-aug].
+- *Achieved:* Greensand entered commercial operation on 18 September 2026 as the EU's first full-scale offshore CO₂ storage site, with capacity of up to 400,000 tCO₂ per year in its first phase[^greensand].
 - *Announced:* Google made its largest carbon removal purchase to date: 1 million tonnes of enhanced-rock-weathering removal from Terradot, to be delivered by 2040[^google-terradot]. ADM plans to sell removal credits from its 800,000+ tCO₂-per-year biogenic capture operation[^adm].
 
 **The bad news:**
@@ -19,7 +19,8 @@
 - *Data:* Global energy intensity improved by only 1.7% in 2025. The goal is 4% per year, so meeting it by 2030 now requires 5.6% per year[^irena].
 - *Projection:* ExxonMobil raised its 2050 projection for global energy-related CO₂ to 30 billion tonnes, up from the 27 billion tonnes it projected a year earlier[^exxon][^reuters-exxon].
 - *Setback:* At the UN General Assembly, US President Trump attacked the IMO Net-Zero Framework for shipping as a "global carbon tax"[^trump-imo].
-- *Beyond:* The Planetary Health Check 2026 finds seven of nine planetary boundaries transgressed[^pik]. A Carbon Brief analysis finds that the daily Niño 3.4 anomaly hit a record 3.11°C[^cb-nino].
+- *Data:* The daily Niño 3.4 sea-surface temperature anomaly hit an all-time record of 3.11°C on 21 September, per a Carbon Brief analysis[^cb-nino].
+- *Analysis:* The Planetary Health Check 2026 finds seven of nine planetary boundaries transgressed, all with worsening trends[^pik].
 
 ---
 
@@ -32,16 +33,17 @@
 | **Mauna Loa monthly mean CO₂** (NOAA MLO) | **427.55 ppm** (2026-08; published 2026-09-07, rule-estimated; preliminary)[^noaa-mm] | 427.55 ppm (2026-08) | +0.00 — ⚠️ **not comparable**: same observation, unchanged: no new data | 425.48 ppm (2025-08), change **+2.07 ppm** |
 | **10-year trend** (mean of NOAA MLO Jan→Dec growth rates, 2016–2025) | **2.56 ppm/yr** (2025; published 2026-01-10, rule-estimated)[^noaa-gr] | 2.56 ppm/yr (2025) | +0.00 — ⚠️ **not comparable**: same observation, unchanged: no new data | not provided |
 
-The "change" column does not show a trend. Both headlines are the same observations that were current at the previous cutoff (2026-09-15).
+Both headlines are the same observations that were current at the previous cutoff (2026-09-15), so the "change" column shows no trend.
+
+**New this week (not a KPI headline):** NOAA MLO daily mean 426.32 ppm on 2026-09-20 (preliminary; a single daily reading, not comparable with monthly means)[^noaa-daily].
 
 **Earlier context (not new this week):**
 
 | Metric | Value | Obs |
 |---|---|---|
-| NOAA MLO daily mean (latest, preliminary; a single daily reading, not comparable with monthly means) | 426.32 ppm | 2026-09-20[^noaa-daily] |
 | NOAA MLO monthly mean, record (seasonal peak) | 432.34 ppm, +1.83 ppm on May 2025 | May 2026[^noaa-mm] |
 | NOAA MLO daily mean, record | 433.95 ppm | 1 May 2026[^noaa-daily] |
-| NOAA MLO year-on-year monthly change (latest) | +1.82 ppm | 2026-06[^noaa-mm] |
+| NOAA MLO year-on-year monthly change (June 2026) | +1.82 ppm | 2026-06[^noaa-mm] |
 | NOAA MLO annual mean (record) | 427.35 ppm | 2025[^noaa-ann] |
 | NOAA global marine-surface annual mean (record) | 425.62 ppm | 2025[^noaa-ann-gl] |
 | NOAA MLO annual growth rate (Jan 1 → Dec 31) | 2.23 ppm/yr | 2025[^noaa-gr] |
@@ -73,7 +75,9 @@ xychart-beta
 ```
 *Data: mean of the last 10 NOAA MLO Jan→Dec annual growth rates[^noaa-gr].*
 
-**Assessment: 🔴 Worsening** (as of 2026-07-14; unchanged, no new assessment since then). The rationale on record: Mauna Loa set new records in 26H1, with a 432.34 ppm monthly mean in May 2026 and a 433.95 ppm daily mean on 1 May[^noaa-mm][^noaa-daily]. The 10-year trend dipped from 2.64 to 2.56 ppm/yr for a mechanical reason: the El Niño year 2015 left the window. Half-decade means still rose (2.51 → 2.61 ppm/yr), so there is no structural slowdown[^noaa-gr]. Year-on-year growth slowed temporarily (+1.48 to +2.26 ppm in Jan–Jun 2026)[^noaa-mm]. That slowdown matches in direction the Met Office forecast of a slower 2026 rise, which it attributes to La Niña-like conditions. Growth remains far above the 1.33-1.79 ppm/yr that IPCC 1.5°C pathways require[^metoffice].
+**Assessment: 🔴 Worsening** (as of 2026-07-14; unchanged, no new assessment since then). The rationale on record: Mauna Loa set new records in 26H1, with a 432.34 ppm monthly mean in May 2026 and a 433.95 ppm daily mean on 1 May[^noaa-mm][^noaa-daily]. The 10-year trend dipped from 2.64 to 2.56 ppm/yr for a mechanical reason: the El Niño year 2015 left the window. Half-decade means still rose (2.51 → 2.61 ppm/yr), so there is no structural slowdown[^noaa-gr]. Year-on-year growth slowed temporarily (+1.48 to +2.26 ppm in Jan–Jun 2026)[^noaa-mm]. The direction matches the Met Office forecast of a slower 2026 rise, which it attributed to La Niña-like conditions. Growth remains far above the 1.33-1.79 ppm/yr 2020s decadal-average growth that IPCC 1.5°C pathways require (Met Office, Scripps annual-mean basis)[^metoffice].
+
+*Tension:* the Met Office forecast cited above assumed La Niña-like conditions. This week Carbon Brief reports a record Niño 3.4 anomaly (see Beyond the Framework)[^cb-nino]. The KPI assessment has not been revisited since.
 
 ---
 
@@ -83,15 +87,15 @@ xychart-beta
 
 **Status: Approaching, not achieved** (assessed as of 2026-07-14; unchanged, no new assessment since then)
 
-*Rationale on record:* Every 2025 estimate published in 26H1 was a new record:
+*Rationale on record:* Every 2025 CO₂ estimate published in 26H1 was a new record, except GCB total CO₂, which dipped slightly due to lower land-use emissions as El Niño ended:
 - GCB fossil CO₂: 38.1 GtCO₂ (+1.0%)[^gcb]
 - IEA energy CO₂: 38,082 MtCO₂ (+0.4%)[^iea-ger]
 - Carbon Monitor fossil+industry CO₂: 37.2 GtCO₂ (+0.7%)[^carbon-monitor]
 
-Growth has slowed to a plateau. However, China's CO₂ rose 2% in Q1 2026, and the IEA expects the 2026 fall in oil demand to rebound above the 2025 level in 2027. The peak is therefore not definitively behind us. *Caveat:* the milestone covers all greenhouse gases, but those estimates are CO₂ only.
+Growth has slowed to a plateau. However, China's CO₂ rose 2% in Q1 2026[^cb-china-q1], and the IEA expects the 2026 fall in oil demand to rebound above the 2025 level in 2027[^iea-omr]. The peak is therefore not definitively behind us. *Caveat:* the milestone covers all greenhouse gases, but no global 2025 total-GHG estimate was published within 26H1, so CO₂ estimates serve as the proxy.
 
 **New this period:**
-- *Projection* (16 Sep): Carbon Brief projects that **global fossil CO₂ emissions will fall by about 0.5% in 2026**, driven by the Strait of Hormuz crisis[^cb-fossil-fall]. This follows up the IEA's June Oil Market Report. That report forecast a 1.1 mb/d fall in global oil demand in 2026, then a rise to 105.3 mb/d in 2027, above the implied 2025 level of about 104.4 mb/d[^iea-omr]. The fall is projected, not achieved, and the IEA expects oil demand to rebound in 2027.
+- *Projection* (16 Sep): Carbon Brief projects that **global fossil CO₂ emissions will fall by about 0.5% in 2026**, driven by the Strait of Hormuz crisis[^cb-fossil-fall]. For context, the IEA's June Oil Market Report forecast a 1.1 mb/d fall in global oil demand in 2026, then a rise to 105.3 mb/d in 2027, above the implied 2025 level of about 104.4 mb/d[^iea-omr].
 - *Data* (17 Sep): A CREA analysis for Carbon Brief finds that **India's CO₂ emissions grew 3.7% year on year in H1 2026**[^cb-india].
   - Steel and cement emissions rose 8% and are now 23% of India's CO₂.
   - Power-sector CO₂ was flat versus H1 2024, because clean energy met all of the 7% (63 TWh) growth in electricity demand over two years.
@@ -104,7 +108,7 @@ Growth has slowed to a plateau. However, China's CO₂ rose 2% in Q1 2026, and t
 
 *Earlier context (published before this period):*
 - Carbon Brief/CREA found that China's CO₂ fell 1% in Q2 2026 as oil use dropped 9%. That left first-half 2026 emissions "up marginally" but still below their 2023-24 peak[^cb-china-q].
-- Climate TRACE estimated total greenhouse-gas emissions of 29.7 GtCO₂e in H1 2026, up 0.2% on H1 2025[^ctrace].
+- Climate TRACE estimated total greenhouse-gas emissions of 29.7 GtCO₂e in H1 2026, up 0.2% on H1 2025 (China −0.3%, US −0.4%, India +1.5%)[^ctrace].
 
 ---
 
@@ -113,14 +117,14 @@ Growth has slowed to a plateau. However, China's CO₂ rose 2% in Q1 2026, and t
 **Status: Distant — 53 GtCO2e/year to eliminate** (assessed as of 2026-01-03; unchanged, no new assessment since then. This assessment was migrated from the 2025 report and rests on legacy records.)
 
 *Rationale on record:* Global GHG emissions were 53.2 GtCO2e in 2024[^edgar], and fossil CO₂ hit a record in 2025, far from net zero. Net-zero targets cover 77% of global GDP[^nzt]. However, 2025 was a year of retreat:
-- the US withdrew from the Paris Agreement;
-- banks exited the Net-Zero Banking Alliance;
-- companies delayed their targets.
+- the US withdrew from the Paris Agreement[^cat];
+- banks exited the Net-Zero Banking Alliance[^guardian-retreat];
+- companies delayed their targets[^guardian-retreat].
 
-Most IEA net-zero pathway benchmarks are off track.
+Most IEA net-zero pathway benchmarks are off track[^iea-nze].
 
 **New this period:**
-- *Setback* (22 Sep): In his UN General Assembly address, US President Donald Trump attacked the **IMO Net-Zero Framework** as a "global carbon tax" and vowed "there will be no global taxes" while he is president[^trump-imo]. The framework is the proposed global standard for the greenhouse-gas intensity of marine fuels, with an emissions-pricing mechanism, meant to deliver the IMO goal of net-zero international shipping emissions by or around 2050. The speech signals continued US opposition ahead of the expected adoption vote at an extraordinary MEPC session on 4 December 2026. US pressure had already postponed adoption by a year in October 2025[^gcaptain].
+- *Setback* (22 Sep): In his UN General Assembly address, US President Donald Trump attacked the **IMO Net-Zero Framework** as a "global carbon tax" and vowed "there will be no global taxes" while he is president[^trump-imo]. The framework is the proposed global standard for the greenhouse-gas intensity of marine fuels, with an emissions-pricing mechanism, meant to deliver the IMO goal of net-zero international shipping emissions by or around 2050. The speech signals continued US opposition to the framework[^icn].
 
 ---
 
@@ -130,11 +134,11 @@ Most IEA net-zero pathway benchmarks are off track.
 
 *Rationale on record:*
 - 2024 was the first calendar year to exceed 1.5°C above pre-industrial (WMO 1.55°C)[^wmo].
-- The long-term Paris metric remains ~1.3-1.4°C.
-- WMO gives 70% odds that the 2025-2029 average also exceeds 1.5°C.
-- The 1.5°C carbon budget is virtually exhausted.
+- The long-term Paris metric remains ~1.3-1.4°C[^wmo-sotgc].
+- WMO gives 70% odds that the 2025-2029 average also exceeds 1.5°C[^wmo].
+- The 1.5°C carbon budget is virtually exhausted[^gcb-2025-news].
 
-**New this period:** No new events tagged to this milestone.
+**New this period:** No new events are tagged to this milestone. See the record Niño 3.4 reading under Beyond the Framework[^cb-nino].
 
 *Earlier context (published after this assessment was made, before this period):* The Global Carbon Budget 2025 final paper (13 May 2026) put the remaining carbon budget for a 50% chance of limiting warming to 1.5°C at 170 GtCO2 from the start of 2026. That is about 4 years at 2025 emission levels[^gcb].
 
@@ -162,10 +166,6 @@ Most IEA net-zero pathway benchmarks are off track.
   - The projection is far above the roughly 11 billion tonnes in IPCC "likely below 2°C" scenarios.
   - Coal is still 15% of the 2050 energy mix.
   - Carbon capture and storage reaches 2 billion tonnes per year, down from its prior 3.1 billion.
-
-  This is a company projection, not an observation.
-- *Achieved* (18 Sep): Greensand began commercial CO₂ storage in the Danish North Sea. See Permanent Removal below[^greensand].
-- *Setback* (22 Sep): US opposition to the IMO Net-Zero Framework for shipping. See "The Balance" above[^trump-imo].
 
 ### Permanent Removal
 
@@ -206,8 +206,6 @@ Most IEA net-zero pathway benchmarks are off track.
   - Stratospheric aerosol injection kept simulated overshoot warming below 2°C in all three deployments tested: tropical, Northern-Hemisphere mid-latitude and Southern-Hemisphere mid-latitude.
   - Deployment location strongly shapes side effects via the AMOC.
   - Legacy effects on sea-level rise and permafrost persist for centuries after SAI ends.
-
-  These are model results, not observations.
 
 ---
 
@@ -263,7 +261,13 @@ Most IEA net-zero pathway benchmarks are off track.
 [^nzt]: [Net Zero Stocktake 2025](https://zerotracker.net/analysis/net-zero-stocktake-2025) (legacy record)
 [^wmo]: [WMO: 2024 warmest year on record, about 1.55°C above pre-industrial](https://wmo.int/news/media-centre/wmo-confirms-2024-warmest-year-record-about-155degc-above-pre-industrial-level) (legacy record)
 [^trump-imo]: [American Presidency Project: Remarks to the UN General Assembly, 22 September 2026](https://www.presidency.ucsb.edu/documents/remarks-the-united-nations-general-assembly-new-york-city-21)
-[^gcaptain]: [gCaptain: Trump Takes Aim at Shipping's Net-Zero Plan at UN](https://gcaptain.com/trump-takes-aim-at-imo-shipping-carbon-plan-at-un/)
+[^icn]: [Inside Climate News: Competing Climate Visions Clash at UN General Assembly](https://insideclimatenews.org/news/22092026/un-general-assembly-opens-with-clashing-climate-views/)
+[^cb-china-q1]: [Carbon Brief/CREA: China's CO2 climbs 2% in early 2026 due to wasted wind and solar](https://www.carbonbrief.org/analysis-chinas-co2-climbs-2-in-early-2026-due-to-wasted-wind-and-solar)
+[^cat]: [Climate Action Tracker: net-zero target evaluations](https://climateactiontracker.org/global/cat-net-zero-target-evaluations/) (legacy record)
+[^guardian-retreat]: [Guardian: Was 2025 the year that business retreated from net zero?](https://www.theguardian.com/environment/2025/dec/20/was-2025-the-year-that-business-retreated-from-net-zero)
+[^iea-nze]: [IEA: Net Zero Roadmap](https://www.iea.org/reports/net-zero-roadmap-a-global-pathway-to-keep-the-15-c-goal-in-reach) (legacy record)
+[^wmo-sotgc]: [WMO: State of the Global Climate 2024](https://wmo.int/publication-series/state-of-global-climate-2024) (legacy record)
+[^gcb-2025-news]: [Global Carbon Budget 2025: fossil fuel CO2 emissions hit record high in 2025](https://globalcarbonbudget.org/fossil-fuel-co2-emissions-hit-record-high-in-2025/) (legacy record)
 [^irena]: [IRENA et al.: Delivering on the UAE Consensus (2026)](https://www.irena.org/-/media/Files/IRENA/Agency/Publication/2026/Sep/IRENA_OUT_Tracking_the_UAE_Consensus_2026.pdf)
 [^reuters-irena]: [Reuters: Global renewable deployment must double to hit 2030 climate target](https://www.reuters.com/sustainability/cop/global-renewable-deployment-must-double-hit-2030-climate-target-report-says-2026-09-21/)
 [^iea-elec]: [IEA: Electrification – Special report](https://www.iea.org/reports/electrification)

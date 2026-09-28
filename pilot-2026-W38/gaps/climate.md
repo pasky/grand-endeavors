@@ -14,3 +14,9 @@
 - 2026 update on net-zero targets and NDCs ahead of COP31 (Net Zero Tracker; outstanding NDCs).
 - Solar geoengineering field activity and governance developments in 2026.
 - Status assessments for the three Open Challenges (none exist in the ledger).
+- Extend the NOAA metrics `co2-growth-mlo-yoy-monthly` and `co2-global-monthly` past 2026-06 (the MLO monthly series already reaches 2026-08), so the dashboard's year-on-year and global rows are current.
+- India's 2026 emissions: reconcile CREA/Carbon Brief (+3.7% CO₂ in H1 2026) with Climate TRACE (+1.5% all-GHG in H1 2026), or add a third estimate.
+- Global EV sales for 2025/2026 (Net-Zero Transition has only legacy 2024–25 EV records).
+- 2026 clean-energy investment figures (e.g. IEA World Energy Investment 2026, BNEF); only legacy 2024 figures are in the snapshot.
+- Total contracted and delivered CDR volumes for 2026 (e.g. CDR.fyi), to put Argus's offtake-only figures in scale.
+- National positions and decision papers on the IMO Net-Zero Framework after the 22 Sep 2026 UNGA speech.
