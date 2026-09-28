@@ -1,9 +1,9 @@
 # Bulletin manifest — pilot-26H1 / climate
 period:        26H1  (cutoff 2026-07-14; new = published after 2026-01-14)
-generated_at:  2026-09-28T18:38:17Z
-ledger_commit: 5bc519c541d3aa207bb39daa36263456669d90be  (the snapshot is the ledger at this commit, as of the cutoff)
+generated_at:  2026-09-28T20:25:19Z
+ledger_commit: d43304d947c752cb2b01afeecf641f8d80a17e09  (the snapshot is the ledger at this commit, as of the cutoff)
 pi_version:    0.87.1
 agent_commit:  c2e242606c955984bf579f278ffacd8096beae8c
 agent_dirty:   no
 settings_sha:  43113ecd4450fcf0
-spec_commit:   5bc519c541d3aa207bb39daa36263456669d90be
+spec_commit:   d43304d947c752cb2b01afeecf641f8d80a17e09
