@@ -1,0 +1,13 @@
+metric,obs,value,unit,source,published,published_basis,retrieved,collector,verification,note
+cost-to-leo-best,2025,1500,$/kg,https://spacexstock.com/spacex-vs-competitors-launch-market-share-2025/,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,lowest cost/kg of an operational vehicle (Falcon Heavy)
+payload-mass-to-orbit,2025,3141,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit (The Deluge tracker)
+payload-mass-to-orbit,2015,347,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit
+payload-mass-to-orbit,2016,337,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit
+payload-mass-to-orbit,2017,395,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit
+payload-mass-to-orbit,2018,389,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit
+payload-mass-to-orbit,2019,399,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit
+payload-mass-to-orbit,2020,572,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit
+payload-mass-to-orbit,2021,797,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit
+payload-mass-to-orbit,2022,1047,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit
+payload-mass-to-orbit,2023,1468,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit
+payload-mass-to-orbit,2024,2629,t,https://planet4589.org/space/stats/out/msatannual.txt,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/rockets.csv,legacy,global payload mass launched to orbit

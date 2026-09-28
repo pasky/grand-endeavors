@@ -1,0 +1,5 @@
+metric,obs,value,unit,source,published,published_basis,retrieved,collector,verification,note
+metr-80-horizon-frontier,2025-11,32.3,min,https://metr.org/assets/benchmark_results.yaml,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/robots-software.csv,legacy,best model 80% time horizon (GPT-5.1-Codex-Max)
+metr-50-horizon-frontier,2025-11,288.9,min,https://metr.org/assets/benchmark_results.yaml,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/robots-software.csv,legacy,best model 50% time horizon (Claude Opus 4.5)
+metr-80-horizon-frontier,2025-08,26.6,min,https://metr.org/assets/benchmark_results.yaml,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/robots-software.csv,legacy,GPT-5 (new frontier at release)
+metr-80-horizon-frontier,2025-04,21.4,min,https://metr.org/assets/benchmark_results.yaml,2026-01-04,seen,2026-01-04,backfill:pilot-2025/kpis/robots-software.csv,legacy,o3 (new frontier at release)
