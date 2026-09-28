@@ -241,7 +241,9 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
     if e["significance"] not in (1, 2, 3):
         errs.append(f"{at}: significance must be 1, 2 or 3")
     v = e["verification"]
-    allowed = STAGED_VERIF if staged else EV_VERIF
+    # staged mode also accepts ledger statuses (lint validates staged + existing
+    # records together); admission is decided separately in prepare()
+    allowed = (STAGED_VERIF | EV_VERIF) if staged else EV_VERIF
     if not isinstance(v, dict) or v.get("status") not in allowed:
         errs.append(f"{at}: verification.status must be one of {sorted(allowed)}")
     elif v["status"] != "legacy" and not (v.get("by") and v.get("at")):
@@ -318,7 +320,7 @@ def check_obs_row(r: dict, reg: dict | None, staged: bool = False) -> list[str]:
                 want = min(kpi.obs_range(r["obs"])[1] + dt.timedelta(days=int(lag)), day(r["retrieved"]))
                 if day(r["published"]) != want:
                     errs.append(f"{at}: rule-basis published must be {want} (obs end + {lag}d, capped at retrieved)")
-    allowed = STAGED_VERIF if staged else OBS_VERIF
+    allowed = (STAGED_VERIF | OBS_VERIF) if staged else OBS_VERIF
     if r["verification"] not in allowed:
         errs.append(f"{at}: verification must be one of {sorted(allowed)}")
     if not r["collector"]:

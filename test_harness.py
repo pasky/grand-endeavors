@@ -190,6 +190,9 @@ def main():
     unv = ev("2026-06-09-unv", "2026-06-09", "A claim that the verifier never looked at at all.", status="unverified")
     write_jsonl(st, [unv])
     case("lint --final rejects leftover unverified records", has(ledger.lint("climate", [st], final=True), "still unverified"))
+    write_jsonl(st, [ev("2026-06-10-fresh", "2026-06-10", "A new staged claim linted next to existing legacy records.", status="unverified")])
+    case("lint passes staged records alongside existing legacy records (no status false positives)",
+         ledger.lint("climate", [st]) == [])
     so = f"{kpi.ROOT}/staged.csv"
     write_csv(so, ledger.OBS_COLUMNS, [obs("co2-mlo-annual", "2024", "424.610", "2025-01-10", "rule", verification="collector")])
     errs, stats = ledger.merge("climate", [], [so])
