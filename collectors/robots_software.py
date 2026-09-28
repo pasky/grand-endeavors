@@ -24,6 +24,12 @@ Choices:
     publication date, so the series answers "best horizon among models released
     by that date", computed from the current file vintage (METR re-estimates
     earlier models when the task suite changes; re-runs then append revisions).
+    This approximates the registry's "publicly evaluated as of the obs date":
+    METR's evaluation of a model is published some time after its release.
+  - Append-only safety: every date the ledger already holds for these metrics
+    (earlier runs, legacy YYYY-MM rows) is re-stated as the frontier as of that
+    date per the current file, so if METR revises a model down, the stale peak
+    gets a corrected (newer) row instead of lingering.
   - Frontiers are computed independently for p50 and p80 (METR's is_sota flag
     tracks p50 only). Ties on one date keep the higher estimate.
   - value = point estimate rounded half-up to 2 decimals (minutes); the note
@@ -37,6 +43,7 @@ import re
 import sys
 
 import common
+import kpi
 
 SECTION = "robots-software"
 URL = "https://metr.org/assets/benchmark_results_1_1.yaml"
@@ -90,18 +97,34 @@ def frontier(ms: list[dict], q: str) -> list[dict]:
     return out
 
 
-def collect(fixture: str | None, today: dt.date, collector: str) -> list[dict]:
+def best_as_of(ms: list[dict], q: str, when: dt.date) -> dict | None:
+    """Model with the highest q estimate among those released by `when`."""
+    pool = [m for m in ms if q in m and dt.date.fromisoformat(m["release"]) <= when]
+    return max(pool, key=lambda m: (m[q]["estimate"], m["release"]), default=None)
+
+
+def collect(fixture: str | None, today: dt.date, collector: str, existing=()) -> list[dict]:
     reg = common.registry(SECTION)
     bench, ms = models(common.fetch(URL, fixture))
     rows = []
+
+    def add(metric, obs, m, q, what):
+        e = m[q]
+        ci = f"; CI {e['ci_low']:.2f}-{e['ci_high']:.2f} min" if "ci_low" in e and "ci_high" in e else ""
+        note = (f"{what}: {m['id']} ({m['benchmark'] or bench}{ci}); dated by model release_date "
+                f"in METR's {bench} results file (no evaluation date in the file)")
+        rows.append(common.row(reg, metric, obs, common.round_half_up(e["estimate"], 2),
+                               URL, note, collector, str(today)))
+
     for q, metric in METRICS.items():
-        for m in frontier(ms, q):
-            e = m[q]
-            ci = f"; CI {e['ci_low']:.2f}-{e['ci_high']:.2f} min" if "ci_low" in e and "ci_high" in e else ""
-            note = (f"new {q} frontier: {m['id']} ({m['benchmark'] or bench}{ci}); obs = model release_date "
-                    f"in METR's {bench} results file (no evaluation date in the file)")
-            rows.append(common.row(reg, metric, m["release"], common.round_half_up(e["estimate"], 2),
-                                   URL, note, collector, str(today)))
+        new = {m["release"]: m for m in frontier(ms, q)}
+        for obs, m in new.items():
+            add(metric, obs, m, q, f"new {q} frontier")
+        # Re-state every other date already in the ledger for this metric against the
+        # current vintage, so a re-estimated (or removed) model cannot leave a stale peak.
+        for obs in sorted({r["obs"] for r in existing if r["metric"] == metric} - set(new)):
+            if m := best_as_of(ms, q, kpi.obs_range(obs)[1]):
+                add(metric, obs, m, q, f"{q} frontier as of {obs} per the current file, set by {m['release']}")
     return rows
 
 

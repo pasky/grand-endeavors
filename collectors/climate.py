@@ -15,7 +15,8 @@ text with '#' comment headers (incl. '# File Creation: <ctime>'):
 
 Choices:
   - Values are copied verbatim from the file (e.g. '1.90'), so unchanged
-    re-observations dedup on merge; negative values (missing sentinels) are skipped.
+    re-observations dedup on merge; missing-value sentinels (-99.99 etc., any
+    value <= -99) are skipped. Negative growth rates are legitimate and kept.
   - Full history is emitted, except the daily file: only the last DAILY_DAYS days
     before the file's latest date (volume).
   - Derived KPI trends co2-trend-{10,5}yr-{mlo,global}-jan-dec: mean of the N
@@ -39,6 +40,7 @@ import common
 SECTION = "climate"
 BASE = "https://gml.noaa.gov/webdata/ccgg/trends/co2/"
 DAILY_DAYS = 60
+MISSING_BELOW = Decimal("-99")  # NOAA sentinels are -99.99 / -999.99
 TRENDS = [  # (metric, growth-rate file, window years, scope label)
     ("co2-trend-10yr-mlo-jan-dec", "co2_gr_mlo.txt", 10, "MLO"),
     ("co2-trend-5yr-mlo-jan-dec", "co2_gr_mlo.txt", 5, "MLO"),
@@ -61,6 +63,10 @@ def file_created(text: str) -> str | None:
     return None
 
 
+def present(value: str) -> bool:
+    return Decimal(value) > MISSING_BELOW
+
+
 def src_note(fname: str, text: str) -> str:
     created = file_created(text)
     return f"{fname}, file created {created}" if created else fname
@@ -70,19 +76,19 @@ def parse_monthly(text: str, value_col: int = 3) -> list[tuple[str, str, list[st
     """[(YYYY-MM, value, tokens)] from a co2_mm_*.txt file."""
     out = []
     for t in data_rows(text):
-        if Decimal(t[value_col]) >= 0:
+        if present(t[value_col]):
             out.append((f"{int(t[0]):04d}-{int(t[1]):02d}", t[value_col], t))
     return out
 
 
 def parse_annual(text: str) -> list[tuple[str, str]]:
     """[(YYYY, value)] from a co2_annmean_*.txt or co2_gr_*.txt file."""
-    return [(t[0], t[1]) for t in data_rows(text) if Decimal(t[1]) >= 0]
+    return [(t[0], t[1]) for t in data_rows(text) if present(t[1])]
 
 
 def parse_daily(text: str, days: int = DAILY_DAYS) -> list[tuple[str, str]]:
     """[(YYYY-MM-DD, value)] for the last `days` days up to the file's latest date."""
-    rows = [(dt.date(int(t[0]), int(t[1]), int(t[2])), t[4]) for t in data_rows(text) if Decimal(t[4]) >= 0]
+    rows = [(dt.date(int(t[0]), int(t[1]), int(t[2])), t[4]) for t in data_rows(text) if present(t[4])]
     if not rows:
         return []
     last = max(d for d, _ in rows)
@@ -116,7 +122,7 @@ def monthly_flags(obs: str, tokens: list[str], last_obs: str, station_mlo: bool)
     return flags
 
 
-def collect(fixture: str | None, today: dt.date, collector: str) -> list[dict]:
+def collect(fixture: str | None, today: dt.date, collector: str, existing=()) -> list[dict]:
     reg = common.registry(SECTION)
     texts = {f: common.fetch(BASE + f, fixture) for f in (
         "co2_mm_mlo.txt", "co2_mm_gl.txt", "co2_annmean_mlo.txt", "co2_annmean_gl.txt",

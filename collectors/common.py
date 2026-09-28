@@ -9,7 +9,10 @@ Time semantics (DESIGN.md §2), applied by `row()`:
   - published = obs end + registry release_lag_days, capped at retrieved
     (ledger.rule_published, basis=rule) when the registry gives a lag;
     otherwise published = retrieved (basis=seen);
-  - a collector may pass an explicit source-stated date (basis=source).
+  - a collector may pass an explicit source-stated date (basis=source);
+  - revisions (`mark_revisions`): a value that differs from every value already
+    in the ledger for its (metric, obs) became known when we first saw it, so a
+    rule-basis date (the original release) becomes basis=seen, published=retrieved.
 
 CLI shared by all collectors:  <collector>.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
   --fixture DIR  read each source from DIR/<basename of its URL> instead of the network.
@@ -71,6 +74,22 @@ def row(reg: dict, metric: str, obs: str, value: str, source: str, note: str,
             "note": note}
 
 
+def mark_revisions(rows: list[dict], existing: list[dict]) -> list[dict]:
+    """Re-date rule-basis rows that revise a value already in the ledger (see module doc)."""
+    have: dict[tuple[str, str], set[Decimal]] = {}
+    for r in existing:
+        have.setdefault((r["metric"], r["obs"]), set()).add(Decimal(r["value"]))
+    out = []
+    for r in rows:
+        prior = have.get((r["metric"], r["obs"]))
+        if prior and Decimal(r["value"]) not in prior and r["published_basis"] == "rule":
+            r = dict(r, published=r["retrieved"], published_basis="seen",
+                     note=r["note"] + f"; revises earlier ledger value(s) {', '.join(sorted(map(str, prior)))}"
+                                      " (published = first seen)")
+        out.append(r)
+    return out
+
+
 def check(rows: list[dict], reg: dict) -> list[str]:
     """ledger.check_obs_row errors for all rows (empty = mergeable)."""
     errs = []
@@ -88,7 +107,8 @@ def write(path: str, rows: list[dict]) -> None:
 
 
 def main(section: str, script: str, collect) -> int:
-    """Standard CLI: collect(fixture_dir, today, collector_id) -> rows; validate; write."""
+    """Standard CLI: collect(fixture_dir, today, collector_id, existing_ledger_rows) -> rows;
+    mark revisions against the ledger; validate; write."""
     ap = argparse.ArgumentParser(description=sys.modules["__main__"].__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", required=True, help="staged observations CSV to write")
@@ -97,7 +117,9 @@ def main(section: str, script: str, collect) -> int:
                     help="retrieval date (default: today, UTC)")
     a = ap.parse_args()
     today = dt.date.fromisoformat(a.today)
-    rows = collect(a.fixture, today, f"collectors/{os.path.basename(script)}@{today}")
+    existing = ledger.observations(section)
+    rows = collect(a.fixture, today, f"collectors/{os.path.basename(script)}@{today}", existing)
+    rows = mark_revisions(rows, existing)
     errs = check(rows, registry(section))
     for e in errs:
         print(f"  ERROR {e}", file=sys.stderr)

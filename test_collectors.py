@@ -77,6 +77,8 @@ g10 = {y: v for y, v, _ in climate.trend(gr_gl, 10)}
 g5 = {y: v for y, v, _ in climate.trend(gr_gl, 5)}
 case("climate: global trends match the verified ledger (10yr 2020/2024/2025 = 2.38/2.62/2.53; 5yr 2020/2025 = 2.44/2.63)",
      (g10["2020"], g10["2024"], g10["2025"], g5["2020"], g5["2025"]) == ("2.38", "2.62", "2.53", "2.44", "2.63"))
+case("climate: negative growth rates are kept, only <= -99 sentinels are dropped",
+     climate.parse_annual("  2025  -0.20  0.10\n  2024  -99.99  -9.99\n") == [("2025", "-0.20")])
 case("climate: no trend window across a gap in the years",
      climate.trend([("2000", "1"), ("2001", "1"), ("2003", "1"), ("2004", "1")], 3) == [])
 
@@ -138,6 +140,25 @@ case("metr: frontier series is strictly increasing per metric",
 case("metr: an HTML 404 page is rejected, not silently parsed as empty",
      raises_exit(robots_software.models, "<!DOCTYPE html>\n<title>404 - METR</title>\n"))
 
+# two vintages: METR re-estimates gemini_3_1_pro (a p80 frontier point) far down
+with tempfile.TemporaryDirectory() as tmp:
+    v2 = fixture("benchmark_results_1_1.yaml").replace("estimate: 89.801503", "estimate: 1.0")
+    with open(os.path.join(tmp, "benchmark_results_1_1.yaml"), "w") as f:
+        f.write(v2)
+    v1_rows = robots_software.collect(FIX, dt.date(2026, 9, 1), "v1")
+    v2_rows = robots_software.collect(tmp, TODAY, "v2", v1_rows)
+restated = by_key(v2_rows).get(("metr-80-horizon-frontier", "2026-02-19"))
+case("metr: a revised-away frontier date is re-stated at the current frontier (69.87, not 89.80)",
+     restated is not None and restated["value"] == "69.87" and "claude_opus_4_6_inspect" in restated["note"])
+latest = {}
+for r in v1_rows + v2_rows:  # ledger as-of rule: per (metric, obs) the latest-known row wins
+    latest[(r["metric"], r["obs"])] = r
+head = max((r for (m, _), r in latest.items() if m == "metr-80-horizon-frontier"), key=lambda r: r["obs"])
+case("metr: after both vintages the latest p80 frontier in the ledger view is 69.87", head["value"] == "69.87")
+case("metr: legacy YYYY-MM ledger dates are re-stated as of the month end",
+     by_key(robots_software.collect(FIX, TODAY, "x", [{"metric": "metr-80-horizon-frontier", "obs": "2024-04"}]))
+     [("metr-80-horizon-frontier", "2024-04")]["value"] == "0.93")
+
 # --- rockets (JSR) ---------------------------------------------------------------------
 parsed = rockets.parse(fixture("msatannual.txt"))
 case("jsr: year rows parsed (Total column, verbatim), all-time Total row skipped",
@@ -153,6 +174,18 @@ case("jsr: 2025 = 3194.0 t, rule-published 2026-01-15",
      (r["value"], r["unit"], r["published"], r["published_basis"]) == ("3194.0", "t", "2026-01-15", "rule"))
 case("jsr: unexpected column layout fails loudly",
      raises_exit(rockets.parse, "# Bin YDate USA Total\n 1 2020 1.0\n"))
+
+# --- revisions (common.mark_revisions) -------------------------------------------------------
+ledger_rows = [{"metric": "payload-mass-to-orbit", "obs": "2025", "value": "3141"},
+               {"metric": "payload-mass-to-orbit", "obs": "2024", "value": "2625.90"}]
+marked = by_key(common.mark_revisions(rrow, ledger_rows))
+r = marked[("payload-mass-to-orbit", "2025")]
+case("revisions: a changed value is re-dated to first seen (basis seen, published = retrieved)",
+     (r["published"], r["published_basis"]) == ("2026-09-28", "seen") and "3141" in r["note"])
+case("revisions: numerically unchanged and brand-new obs keep the rule date",
+     marked[("payload-mass-to-orbit", "2024")]["published_basis"] == "rule"
+     and marked[("payload-mass-to-orbit", "2016")]["published"] == "2017-01-15")
+case("revisions: re-dated rows still pass ledger.check_obs_row", registry_ok("rockets", list(marked.values())))
 
 # --- CLI: staged file loads with the exact ledger header ------------------------------------
 with tempfile.TemporaryDirectory() as tmp:

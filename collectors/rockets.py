@@ -50,7 +50,7 @@ def parse(text: str) -> list[tuple[int, str]]:
     return out
 
 
-def collect(fixture: str | None, today: dt.date, collector: str) -> list[dict]:
+def collect(fixture: str | None, today: dt.date, collector: str, existing=()) -> list[dict]:
     reg = common.registry(SECTION)
     lag = dt.timedelta(days=int(reg[METRIC]["release_lag_days"] or 0))
     return [common.row(reg, METRIC, str(year), value, URL,
