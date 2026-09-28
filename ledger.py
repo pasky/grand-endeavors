@@ -6,9 +6,15 @@ COMMANDS
   ledger.py check [section ...]                    validate ledger files (all sections by default)
   ledger.py topics <section>                       valid topic tags (from README.md)
   ledger.py recent <section> [--limit N]           compact event list (for intake dedup prompts)
-  ledger.py lint <section> [--events F] [--obs F]  validate a staged file (run before merge)
-  ledger.py merge <section> [--events F] [--obs F] merge VERIFIED staged records into the ledger
-                                                   (rejected ones -> ledger/rejected/)
+  ledger.py lint <section> [--events F..] [--obs F..] [--assessments F..] [--final]
+                                                   validate staged files as if merged
+  ledger.py merge <section> [--events F..] [--obs F..] [--assessments F..]
+                                                   validate the whole proposed state, then merge
+                                                   admitted records atomically (idempotent on replay;
+                                                   rejected ones -> ledger/rejected/)
+  ledger.py stale <section> --until D              assessment targets with newer evidence (+ next ids)
+  ledger.py items <section>                        gather watch list from README
+  ledger.py state <section> [--get-item T | --record JSON]  per-item gather watermarks
   ledger.py cutoff <period>                        bulletin cutoff date (+ previous period's cutoff)
   ledger.py snapshot <period-dir> <section>        write <period-dir>/snapshot/<section>.json
 """
@@ -175,6 +181,20 @@ def rule_published(obs: str, lag_days: str, retrieved: str) -> str:
 
 
 # --- validation -------------------------------------------------------------------
+def _valid_day(s) -> bool:
+    try:
+        return bool(DAY_RE.match(str(s))) and bool(day(str(s)))
+    except ValueError:
+        return False
+
+
+def _valid_date(s) -> bool:
+    try:
+        return bool(DATE_RE.match(str(s))) and bool(date_end(str(s)))
+    except ValueError:
+        return False
+
+
 def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -> list[str]:
     at = f"event {e.get('id', '?')}"
     errs = []
@@ -183,22 +203,27 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
     errs += [f"{at}: missing '{k}'" for k in need if k not in e]
     if errs:
         return errs
-    extra = set(e) - set(need) - {"metrics", "relates", "note", "_line"}
+    extra = set(e) - set(need) - {"metrics", "relates", "supersedes", "note", "_line"}
     if extra:
         errs.append(f"{at}: unknown field(s) {sorted(extra)}")
     if not EVENT_ID_RE.match(str(e["id"])):
         errs.append(f"{at}: id must be YYYY-MM-DD-slug")
-    if not DATE_RE.match(str(e["date"])):
-        errs.append(f"{at}: bad date '{e['date']}'")
-    elif not str(e["id"]).startswith(str(e["date"])[:10] if len(str(e["date"])) == 10 else str(e["date"])):
+    if not _valid_date(e["date"]):
+        errs.append(f"{at}: bad date '{e['date']}' (YYYY, YYYY-MM or YYYY-MM-DD, a real date)")
+    elif not str(e["id"]).startswith(str(e["date"])):
         errs.append(f"{at}: id must start with the event date")
+    elif not _valid_day(str(e["id"])[:10]):
+        errs.append(f"{at}: id date prefix is not a real date")
     for k in ("published", "retrieved"):
-        if not DAY_RE.match(str(e[k])):
-            errs.append(f"{at}: {k} must be YYYY-MM-DD")
-    if e["published_basis"] not in BASES:
+        if not _valid_day(e[k]):
+            errs.append(f"{at}: {k} must be a real YYYY-MM-DD date")
+    if e["published_basis"] not in BASES:  # 'rule' = scheduled data release, estimated date
         errs.append(f"{at}: published_basis must be one of {sorted(BASES)}")
-    if not errs and day(e["published"]) > day(e["retrieved"]):
-        errs.append(f"{at}: published after retrieved")
+    if not errs:
+        if day(e["published"]) > day(e["retrieved"]):
+            errs.append(f"{at}: published after retrieved")
+        if e["published_basis"] == "seen" and e["published"] != e["retrieved"]:
+            errs.append(f"{at}: published_basis=seen means published = retrieved (first seen)")
     if e["kind"] not in EVENT_KINDS:
         errs.append(f"{at}: kind '{e['kind']}' not in {sorted(EVENT_KINDS)}")
     if not isinstance(e["topics"], list) or not e["topics"]:
@@ -224,6 +249,9 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
     for r in e.get("relates", []) or []:
         if not isinstance(r, dict) or r.get("rel") not in RELS or not r.get("id"):
             errs.append(f"{at}: relates entries need id + rel in {sorted(RELS)}")
+    sup = e.get("supersedes", [])
+    if not isinstance(sup, list) or not all(isinstance(x, str) for x in sup):
+        errs.append(f"{at}: supersedes must be a list of event ids")
     for m in e.get("metrics", []) or []:
         if not isinstance(m, dict) or not {"metric", "obs", "value"} <= set(m):
             errs.append(f"{at}: metrics entries need metric, obs, value")
@@ -242,8 +270,8 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
         errs.append(f"{at}: status must be green/yellow/red")
     if a["target"] not in topics - {"beyond"}:
         errs.append(f"{at}: unknown target '{a['target']}'")
-    if not DAY_RE.match(str(a["made_at"])):
-        return errs + [f"{at}: made_at must be YYYY-MM-DD"]
+    if not _valid_day(a["made_at"]):
+        return errs + [f"{at}: made_at must be a real YYYY-MM-DD date"]
     if not a["evidence"]:
         errs.append(f"{at}: needs evidence (event ids)")
     for eid in a["evidence"]:
@@ -271,8 +299,8 @@ def check_obs_row(r: dict, reg: dict | None, staged: bool = False) -> list[str]:
     if not URL_RE.match(r["source"] or ""):
         errs.append(f"{at}: source must be one http(s) URL")
     for k in ("published", "retrieved"):
-        if not DAY_RE.match(r[k] or ""):
-            errs.append(f"{at}: {k} must be YYYY-MM-DD")
+        if not _valid_day(r[k]):
+            errs.append(f"{at}: {k} must be a real YYYY-MM-DD date")
     if r["published_basis"] not in BASES:
         errs.append(f"{at}: published_basis must be one of {sorted(BASES)}")
     if not errs:
@@ -280,6 +308,8 @@ def check_obs_row(r: dict, reg: dict | None, staged: bool = False) -> list[str]:
             errs.append(f"{at}: published after retrieved")
         if day(r["published"]) < kpi.obs_range(r["obs"])[0]:
             errs.append(f"{at}: published before the observed period began")
+        if r["published_basis"] == "seen" and r["published"] != r["retrieved"]:
+            errs.append(f"{at}: published_basis=seen means published = retrieved (first seen)")
         if r["published_basis"] == "rule":
             lag = (reg or {}).get(r["metric"], {}).get("release_lag_days")
             if not lag:
@@ -296,44 +326,61 @@ def check_obs_row(r: dict, reg: dict | None, staged: bool = False) -> list[str]:
     return errs
 
 
-def check_section(section: str) -> tuple[list[str], list[str]]:
+def _claim_key(e: dict) -> str:
+    return re.sub(r"\W+", " ", str(e.get("claim", "")).lower()).strip()
+
+
+def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dict],
+                   staged_statuses: bool = False) -> tuple[list[str], list[str]]:
+    """THE validation path for a (proposed) ledger state; used by check, lint and merge."""
     import kpi
     errs, warns = [], []
-    try:
-        evs, obs, ass = events(section), observations(section), assessments(section)
-    except ValueError as e:
-        return [str(e)], []
     topics = valid_topics(section)
     reg, reg_errs = kpi.load_registry(section)
-    if obs:
+    if obs or any(e.get("metrics") for e in evs):
         errs += reg_errs
-    ids = {}
+    ids: dict[str, dict] = {}
     for e in evs:
-        errs += check_event(e, section, topics)
+        es = check_event(e, section, topics, staged=staged_statuses)
+        errs += es
         if e.get("id") in ids:
-            errs.append(f"event {e['id']}: duplicate id")
+            errs.append(f"event {e.get('id')}: duplicate id")
         ids[e.get("id")] = e
+        if es:
+            continue
         for m in e.get("metrics", []) or []:
             if reg is not None and m.get("metric") not in reg:
                 errs.append(f"event {e['id']}: linked metric '{m.get('metric')}' not registered")
-    seen_claim = {}
+    seen_claim: dict[str, str] = {}
+    superseded_by: dict[str, str] = {}
     for e in evs:
+        eid = e.get("id")
         for r in e.get("relates", []) or []:
-            if r.get("id") not in ids:
-                errs.append(f"event {e['id']}: relates to unknown event '{r.get('id')}'")
-            elif r["id"] == e["id"]:
-                errs.append(f"event {e['id']}: relates to itself")
-        c = re.sub(r"\W+", " ", str(e.get("claim", "")).lower()).strip()
-        if c in seen_claim:
-            errs.append(f"event {e['id']}: same claim as {seen_claim[c]} (duplicate)")
-        seen_claim[c] = e.get("id")
-    warns += near_duplicates(evs)
+            if isinstance(r, dict) and r.get("id") not in ids:
+                errs.append(f"event {eid}: relates to unknown event '{r.get('id')}'")
+            elif isinstance(r, dict) and r.get("id") == eid:
+                errs.append(f"event {eid}: relates to itself")
+        for s in e.get("supersedes", []) or []:
+            if s not in ids:
+                errs.append(f"event {eid}: supersedes unknown event '{s}'")
+            elif s == eid:
+                errs.append(f"event {eid}: supersedes itself")
+            elif s in superseded_by:
+                errs.append(f"event {eid}: '{s}' is already superseded by {superseded_by[s]}")
+            else:
+                superseded_by[s] = eid
+        c = _claim_key(e)
+        other = seen_claim.get(c)
+        if other and other not in (e.get("supersedes") or []) and eid not in (ids.get(other, {}).get("supersedes") or []):
+            errs.append(f"event {eid}: same claim as {other} (duplicate; to correct or add a source, use supersedes)")
+        seen_claim[c] = eid
+    warns += near_duplicates([e for e in evs if e.get("id") not in superseded_by])
     keys = set()
     for r in obs:
-        errs += check_obs_row(r, reg)
-        k = (r["metric"], r["obs"], r["published"], r["value"])
+        errs += check_obs_row(r, reg, staged=staged_statuses)
+        k = (r.get("metric"), r.get("obs"), r.get("published"), r.get("value"), r.get("verification"))
         if k in keys:
-            errs.append(f"obs {r['metric']}@{r['obs']}: exact duplicate row (line {r['_line']})")
+            errs.append(f"obs {r.get('metric')}@{r.get('obs')}: exact duplicate row (line {r.get('_line')})")
         keys.add(k)
     aids = set()
     for a in ass:
@@ -344,16 +391,24 @@ def check_section(section: str) -> tuple[list[str], list[str]]:
     return errs, warns
 
 
+def check_section(section: str) -> tuple[list[str], list[str]]:
+    try:
+        return validate_state(section, events(section), observations(section), assessments(section))
+    except ValueError as e:
+        return [str(e)], []
+
+
 def _words(text: str) -> set[str]:
     return {w for w in re.findall(r"[a-z0-9.]+", text.lower()) if len(w) > 2}
 
 
 def near_duplicates(evs: list[dict], threshold: float = 0.6, days: int = 7) -> list[str]:
     """Warn on likely duplicate events: claim word-overlap (Jaccard) >= threshold
-    and dates within `days`, unless linked via relates."""
+    and dates within `days`, unless linked via relates/supersedes or stating
+    different figures."""
     import kpi
     out = []
-    items = sorted(((date_end(str(e["date"])), e) for e in evs if DATE_RE.match(str(e.get("date", "")))),
+    items = sorted(((date_end(str(e["date"])), e) for e in evs if _valid_date(e.get("date", ""))),
                    key=lambda t: t[0])
     words = {e["id"]: _words(str(e.get("claim", ""))) for _, e in items}
     for i, (d1, a) in enumerate(items):
@@ -361,12 +416,13 @@ def near_duplicates(evs: list[dict], threshold: float = 0.6, days: int = 7) -> l
             if (d2 - d1).days > days:
                 break
             wa, wb = words[a["id"]], words[b["id"]]
-            linked = {r.get("id") for r in (a.get("relates") or []) + (b.get("relates") or [])}
+            linked = {r.get("id") for r in (a.get("relates") or []) + (b.get("relates") or [])} \
+                | set(a.get("supersedes") or []) | set(b.get("supersedes") or [])
             na, nb = kpi.kpi_numbers(str(a.get("claim", ""))), kpi.kpi_numbers(str(b.get("claim", "")))
             if na and nb and na != nb:
                 continue  # parallel claims with different figures (e.g. solar vs wind LCOE)
             if wa and wb and len(wa & wb) / len(wa | wb) >= threshold and not linked & {a["id"], b["id"]}:
-                out.append(f"events {a['id']} / {b['id']}: near-identical claims — duplicate? (merge, or link with relates)")
+                out.append(f"events {a['id']} / {b['id']}: near-identical claims — duplicate? (supersede, or link with relates)")
     return out
 
 
@@ -409,18 +465,31 @@ def prev_cutoff(period: str) -> dt.date:
     return prev_end + dt.timedelta(days=LAG[k])
 
 
+
 # --- as-of queries ----------------------------------------------------------------------
 def known_at(rec: dict) -> dt.date:
     return day(rec["published"]) if "published" in rec else day(rec["made_at"])
 
 
-def obs_as_of(section: str, when: dt.date) -> dict[tuple[str, str], dict]:
-    """{(metric, obs): row} — latest-known row per observation as of `when`."""
+def tier(r: dict) -> int:
+    """Observation precedence: any non-legacy row outranks a legacy (report-
+    extracted) one, whatever their publication dates (legacy migration dates are
+    not source revisions)."""
+    return 0 if r.get("verification") == "legacy" else 1
+
+
+def _rank(r: dict) -> tuple:
+    return (tier(r), known_at(r), r["retrieved"])
+
+
+def obs_as_of(section: str, when: dt.date | None = None, rows: list[dict] | None = None) -> dict[tuple[str, str], dict]:
+    """{(metric, obs): effective row} as of `when` (None = everything): among rows
+    known by then, the highest-ranked (non-legacy first, then latest known)."""
     out: dict[tuple[str, str], dict] = {}
-    for r in observations(section):
-        if known_at(r) <= when:
+    for r in observations(section) if rows is None else rows:
+        if when is None or known_at(r) <= when:
             k = (r["metric"], r["obs"])
-            if k not in out or (known_at(r), r["retrieved"]) >= (known_at(out[k]), out[k]["retrieved"]):
+            if k not in out or _rank(r) >= _rank(out[k]):
                 out[k] = r
     return out
 
@@ -432,64 +501,104 @@ def latest_obs(table: dict, metric: str, when: dt.date | None = None) -> dict | 
     return max(rows, key=lambda r: (kpi.obs_range(r["obs"])[1], kpi.obs_range(r["obs"])[0])) if rows else None
 
 
+def effective_events(evs: list[dict], when: dt.date | None = None) -> list[dict]:
+    """Events known by `when`, minus those superseded by a record also known by then."""
+    known = [e for e in evs if when is None or known_at(e) <= when]
+    gone = {s for e in known for s in (e.get("supersedes") or [])}
+    return [e for e in known if e["id"] not in gone]
+
+
 def assessment_as_of(section: str, when: dt.date) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for a in assessments(section):
         if day(a["made_at"]) <= when:
-            if a["target"] not in out or a["made_at"] >= out[a["target"]]["made_at"]:
+            if a["target"] not in out or (a["made_at"], a["id"]) >= (out[a["target"]]["made_at"], out[a["target"]]["id"]):
                 out[a["target"]] = a
+    return out
+
+
+def stale_targets(section: str, until: dt.date) -> list[tuple[str, str]]:
+    """Assessment targets (kpi + milestones) needing a (re)assessment as of `until`:
+    never assessed, or verified evidence (events tagged with the target; for kpi
+    also non-legacy observations of required metrics) became known after the
+    latest assessment. Returns [(target, next free assessment id)]."""
+    import kpi
+    valid = sorted(t for t in valid_topics(section) if t == "kpi" or t.startswith("milestone:"))
+    current = assessment_as_of(section, until)
+    evs = [e for e in effective_events(events(section), until) if e["verification"]["status"] != "legacy"]
+    reg = kpi.load_registry(section)[0] or {}
+    req = {m for m, row in reg.items() if kpi.required_active(row, until)}
+    ids = {a["id"] for a in assessments(section)}
+    out = []
+    for t in valid:
+        a = current.get(t)
+        since = day(a["made_at"]) if a else None
+        newer = any(t in e["topics"] and (since is None or known_at(e) > since) for e in evs)
+        if t == "kpi" and not newer and since:
+            newer = any(r["metric"] in req and tier(r) and since < known_at(r) <= until
+                        for r in observations(section))
+        if a is None or newer:
+            base = f"{until}-{t.replace(':', '-')}"
+            aid, n = base, 1
+            while aid in ids:
+                n += 1
+                aid = f"{base}-{n}"
+            out.append((t, aid))
     return out
 
 
 # --- snapshot -----------------------------------------------------------------------------
 def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
-    """Deterministic bulletin input: the ledger as of the period's cutoff."""
+    """Deterministic, SELF-CONTAINED bulletin input: the ledger as of the period's
+    cutoff, including chart series and the README framework, so drafting and
+    validation need no live state."""
     import kpi
     period = os.path.basename(os.path.normpath(period_dir)).removeprefix("pilot-")
     cut, prev = cutoff(period), prev_cutoff(period)
-    start = period_start(period)
+    start, end = period_start(period), kpi.period_as_of(period)
+    prev_end = start - dt.timedelta(days=1)
     reg, _ = kpi.load_registry(section)
     reg = reg or {}
-    evs = [e for e in events(section) if known_at(e) <= cut]
+    evs = effective_events(events(section), cut)
     by_id = {e["id"]: e for e in evs}
     new = [e for e in evs if known_at(e) > prev and e["verification"]["status"] != "legacy"]
     new_ids = {e["id"] for e in new}
     bg_from = dt.date(start.year - background_years, start.month, 1)
     background = [e for e in evs if e["id"] not in new_ids and e["significance"] >= 2
                   and date_end(e["date"]) >= bg_from]
-    # lifecycle: pull in earlier events that new ones update/retract
+    have = new_ids | {e["id"] for e in background}
+    # lifecycle: earlier events that new ones update/retract
     for e in new:
         for r in e.get("relates", []) or []:
-            if r["id"] in by_id and r["id"] not in new_ids and by_id[r["id"]] not in background:
-                background.append(by_id[r["id"]])
+            if r["id"] in by_id and r["id"] not in have:
+                background.append(by_id[r["id"]]); have.add(r["id"])
     # evidence cited by the current/previous assessments must be visible too
     ass_now, ass_prev = assessment_as_of(section, cut), assessment_as_of(section, prev)
-    have = new_ids | {e["id"] for e in background}
     for a in list(ass_now.values()) + list(ass_prev.values()):
         for eid in a.get("evidence", []):
             if eid in by_id and eid not in have:
-                background.append(by_id[eid])
-                have.add(eid)
+                background.append(by_id[eid]); have.add(eid)
     now_t, prev_t = obs_as_of(section, cut), obs_as_of(section, prev)
-    end, prev_end = kpi.period_as_of(period), start - dt.timedelta(days=1)
     kpis = []
     for m, row in reg.items():
-        if not kpi.required_active(row, cut):
+        if not kpi.required_active(row, end):   # requirement judged at the PERIOD END
             continue
         cur = latest_obs(now_t, m, end)        # obs within the period, known by the cutoff
         before = latest_obs(prev_t, m, prev_end)
         change = None
         if cur and before:
             nd = max(len(v.split(".")[1]) if "." in v else 0 for v in (cur["value"], before["value"]))
+            same_obs = cur["obs"] == before["obs"]
+            seasonal = len(cur["obs"]) == 7 and len(before["obs"]) == 7 and cur["obs"][5:] != before["obs"][5:]
             change = {"value": f"{float(cur['value']) - float(before['value']):+.{nd}f}",
                       "from_obs": before["obs"], "to_obs": cur["obs"],
-                      "comparable": kpi.obs_kind(cur["obs"]) == kpi.obs_kind(before["obs"])
-                      and not (len(cur["obs"]) == 7 and cur["obs"][5:] != before["obs"][5:]),
-                      "caveat": ("same observation, unchanged: no new data" if cur["obs"] == before["obs"]
+                      "comparable": kpi.obs_kind(cur["obs"]) == kpi.obs_kind(before["obs"]) and not seasonal,
+                      "caveat": ("same observation, unchanged: no new data" if same_obs
                                  and float(cur["value"]) == float(before["value"]) else
-                                 "same observation revised by the source" if cur["obs"] == before["obs"] else
-                                 "different calendar month: seasonal cycle not removed"
-                                 if len(cur["obs"]) == 7 and cur["obs"][5:] != before["obs"][5:] else "")}
+                                 "same observation revised by the source" if same_obs else
+                                 "different calendar month: seasonal cycle not removed" if seasonal else
+                                 "different observation granularity" if kpi.obs_kind(cur["obs"]) != kpi.obs_kind(before["obs"])
+                                 else "")}
         year_ago = None
         if cur and len(cur["obs"]) == 7:  # monthly: the like-for-like comparison
             ya = now_t.get((m, f"{int(cur['obs'][:4]) - 1}{cur['obs'][4:]}"))
@@ -501,17 +610,20 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
                      "current": clean(cur) if cur else None,
                      "previous": clean(before) if before else None, "change": change,
                      "year_ago": year_ago})
-    chartable = []
+    series, chartable = {}, []
     for m in sorted({m for (m, _) in now_t}):
-        obs = sorted(o for (mm, o) in now_t if mm == m and kpi.obs_range(o)[1] <= end)
-        if len(obs) >= 5:
-            chartable.append({"metric": m, "n": len(obs), "first": obs[0], "last": obs[-1],
-                              "granularities": sorted({kpi.obs_kind(o) for o in obs})})
+        pts = sorted(([o, r["value"]] for (mm, o), r in now_t.items()
+                      if mm == m and kpi.obs_range(o)[1] <= end), key=lambda p: kpi.obs_range(p[0])[0])
+        if len(pts) >= 5:
+            series[m] = pts
+            chartable.append({"metric": m, "n": len(pts), "first": pts[0][0], "last": pts[-1][0],
+                              "granularities": sorted({kpi.obs_kind(o) for o, _ in pts})})
     other_obs = sorted({m for (m, _) in now_t} - {k["metric"] for k in kpis})
     return {
         "section": section, "period": period, "period_start": str(start),
-        "period_end": str(kpi.period_as_of(period)), "cutoff": str(cut), "previous_cutoff": str(prev),
+        "period_end": str(end), "cutoff": str(cut), "previous_cutoff": str(prev),
         "rule": "records with known_at (published) <= cutoff; 'new' = known_at in (previous_cutoff, cutoff]",
+        "framework": [{"topic": t, "name": n, "description": d} for t, n, d in readme_items(section)],
         "new_events": [clean(e) for e in sorted(new, key=lambda e: (e["date"], e["id"]))],
         "background_events": [clean(e) for e in sorted(background, key=lambda e: (e["date"], e["id"]))],
         "kpi_headlines": kpis,
@@ -519,14 +631,46 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
                            "definition": reg.get(m, {}).get("definition", ""),
                            "latest": clean(latest_obs(now_t, m, end) or {})} for m in other_obs],
         "chartable_metrics": chartable,
+        "series": series,
         "assessments": {t: {"current": clean(a), "previous": clean(ass_prev[t]) if t in ass_prev else None}
                         for t, a in sorted(ass_now.items())},
     }
 
 
-def snapshot_text(snap: dict) -> str:
-    """All claim/value text of a snapshot (for number traceability)."""
-    return json.dumps(snap, ensure_ascii=False)
+def snapshot_evidence_text(snap: dict) -> str:
+    """The typed, citable text of a snapshot (for number traceability): claims,
+    notes and dates of events; KPI values/changes; latest other-metric values;
+    assessment labels/rationales; framework descriptions; period dates. NOT ids,
+    significance, chart series or other metadata."""
+    parts = [snap.get("period", ""), snap.get("period_start", ""), snap.get("period_end", ""),
+             snap.get("cutoff", ""), snap.get("previous_cutoff", "")]
+    for f in snap.get("framework", []):
+        parts += [f["name"], f["description"]]
+    for e in snap["new_events"] + snap["background_events"]:
+        parts += [e["claim"], e.get("note", ""), str(e["date"]), e["published"]]
+        parts += [f"{m['obs']} {m['value']}" for m in e.get("metrics", []) or []]
+    for k in snap["kpi_headlines"]:
+        for r in (k["current"], k["previous"]):
+            if r:
+                parts += [r["obs"], r["value"], r["published"], r.get("note", "")]
+        if k["change"]:
+            parts += [k["change"]["value"], k["change"]["from_obs"], k["change"]["to_obs"]]
+        if k["year_ago"]:
+            parts += [k["year_ago"]["obs"], k["year_ago"]["value"], k["year_ago"]["change"]]
+        parts.append(k["definition"])
+    for o in snap["other_metrics"]:
+        if o["latest"]:
+            parts += [o["latest"]["obs"], o["latest"]["value"], o["latest"]["published"], o["latest"].get("note", "")]
+        parts.append(o.get("definition", ""))
+    for a in snap["assessments"].values():
+        for x in (a["current"], a["previous"]):
+            if x:
+                parts += [x["label"], x["rationale"], x["made_at"]]
+    return "\n".join(p for p in parts if p)
+
+
+def snapshot_text(snap: dict) -> str:  # backwards-compatible name
+    return snapshot_evidence_text(snap)
 
 
 def snapshot_urls(snap: dict) -> set[str]:
@@ -543,142 +687,176 @@ def snapshot_urls(snap: dict) -> set[str]:
     return urls
 
 
-# --- merge -------------------------------------------------------------------------------
-def lint(section: str, ev_file: str | None, obs_file: str | None, allow_legacy: bool = False,
-         ass_file: str | None = None) -> list[str]:
-    """Validate a STAGED file before merge: schema, topics, ids unique vs file and
-    ledger, relates resolvable (file ∪ ledger), no duplicate claims."""
-    import kpi
-    errs: list[str] = []
-    topics = valid_topics(section)
-    existing = {e["id"]: e for e in events(section)}
-    staged = load_jsonl(ev_file) if ev_file else []
-    seen: set[str] = set()
-    claims = {re.sub(r"\W+", " ", str(e.get("claim", "")).lower()).strip(): e["id"] for e in existing.values()}
-    for e in staged:
-        es = check_event(e, section, topics, staged=True)
-        st = e.get("verification", {}).get("status") if isinstance(e.get("verification"), dict) else None
-        if allow_legacy and st == "legacy":
-            es = [x for x in es if "verification.status" not in x]
-        errs += es
-        if e.get("id") in seen or e.get("id") in existing:
-            errs.append(f"event {e.get('id')}: duplicate id (in file or already in ledger)")
-        seen.add(e.get("id"))
-        c = re.sub(r"\W+", " ", str(e.get("claim", "")).lower()).strip()
-        if c in claims:
-            errs.append(f"event {e.get('id')}: same claim as {claims[c]}")
-        claims[c] = e.get("id")
-    for e in staged:
-        for r in e.get("relates", []) or []:
-            if isinstance(r, dict) and r.get("id") not in seen | set(existing):
-                errs.append(f"event {e.get('id')}: relates to unknown event '{r.get('id')}'")
-    if obs_file:
-        reg, reg_errs = kpi.load_registry(section)
-        errs += reg_errs
-        for r in load_obs(obs_file):
-            errs += check_obs_row(r, reg, staged=True)
-    if ass_file:
-        all_ev = dict(existing) | {e["id"]: e for e in staged if "id" in e}
-        have = {a["id"] for a in assessments(section)}
-        for a in load_jsonl(ass_file):
-            errs += check_assessment(a, topics, all_ev)
-            if a.get("id") in have:
-                errs.append(f"assessment {a.get('id')}: duplicate id")
-            have.add(a.get("id"))
-    return errs
+# --- merge (prepare -> validate the whole proposed state -> write) ------------------------
+def _same(a: dict, b: dict) -> bool:
+    return clean(a) == clean(b)
 
 
-def merge(section: str, ev_file: str | None, obs_file: str | None,
-          allow_legacy: bool = False, ass_file: str | None = None) -> tuple[list[str], dict]:
-    """Admit verified/corrected/collector staged records; reject the rest to
-    ledger/rejected/. All-or-nothing: any schema error aborts without writing."""
-    import kpi
+def prepare(section: str, ev_files=(), obs_files=(), ass_files=(), allow_legacy: bool = False,
+            lint_mode: bool = False) -> tuple[list[str], list[str], dict]:
+    """Plan a merge of staged files. Replays are idempotent: a staged record that
+    is identical to one already in the ledger (or rejected/) is a no-op; a
+    conflicting one is an error. In lint_mode, 'unverified' records are validated
+    as if admitted (nothing is written)."""
     errs: list[str] = []
-    stats = {"events_in": 0, "events_rejected": 0, "obs_in": 0, "obs_rejected": 0, "obs_dup": 0}
     topics = valid_topics(section)
-    staged_ev = load_jsonl(ev_file) if ev_file else []
-    staged_obs = load_obs(obs_file) if obs_file else []
-    reg, reg_errs = kpi.load_registry(section)
-    existing = {e["id"]: e for e in events(section)}
-    admit_ev, reject_ev = [], []
-    for e in staged_ev:
-        es = check_event(e, section, topics, staged=True)
-        if allow_legacy and e.get("verification", {}).get("status") == "legacy":
-            es = [x for x in es if "verification.status" not in x]
-        if es:
-            errs += es
-            continue
-        st = e["verification"]["status"]
-        if st in ("verified", "corrected") or (allow_legacy and st == "legacy"):
-            if e["id"] in existing:
-                errs.append(f"event {e['id']}: id already in the ledger (to add a source or status change, stage a NEW event with relates)")
-            admit_ev.append(e)
-        else:
-            reject_ev.append(e)
-    ids = set(existing) | {e["id"] for e in admit_ev}
-    for e in admit_ev:
-        for r in e.get("relates", []) or []:
-            if r["id"] not in ids:
-                errs.append(f"event {e['id']}: relates to unknown event '{r['id']}'")
-    admit_obs, reject_obs = [], []
-    # numeric identity: "572.0" re-states "572" (not a revision)
-    have = {(r["metric"], r["obs"], float(r["value"])) for r in observations(section)}
-    if staged_obs:
-        errs += reg_errs
-    for r in staged_obs:
-        es = check_obs_row(r, reg, staged=True)
-        if es:
-            errs += es
-            continue
-        if r["verification"] in ("verified", "corrected", "collector"):
-            key = (r["metric"], r["obs"], float(r["value"]))
-            if key in have:
-                stats["obs_dup"] += 1  # unchanged re-observation: nothing new to record
+    cur_ev, cur_obs, cur_ass = events(section), observations(section), assessments(section)
+    rejected_now = load_jsonl(path("rejected", section))
+    by_id = {e["id"]: e for e in cur_ev}
+    ass_by_id = {a["id"]: a for a in cur_ass}
+    admit_statuses = {"verified", "corrected"} | ({"legacy"} if allow_legacy else set()) \
+        | ({"unverified"} if lint_mode else set())
+    plan = {"events": [], "obs": [], "ass": [], "rejected": [], "stats": dict.fromkeys(
+        ["events_in", "events_rejected", "events_replayed", "obs_in", "obs_rejected", "obs_dup",
+         "assessments_in", "assessments_replayed"], 0)}
+    st = plan["stats"]
+    staged_ids: dict[str, dict] = {}
+    for f in ev_files:
+        for e in load_jsonl(f):
+            es = check_event(e, section, topics, staged=True)
+            if allow_legacy and isinstance(e.get("verification"), dict) and e["verification"].get("status") == "legacy":
+                es = [x for x in es if "verification.status" not in x]
+            if es:
+                errs += [f"{os.path.basename(f)}: {x}" for x in es]
                 continue
-            have.add(key)
-            admit_obs.append(r)
-        else:
-            reject_obs.append(r)
-    staged_ass = load_jsonl(ass_file) if ass_file else []
-    all_ev = existing | {e["id"]: e for e in admit_ev}
-    have_ass = {a["id"] for a in assessments(section)}
-    for a in staged_ass:
-        errs += check_assessment(a, topics, all_ev)
-        if a.get("id") in have_ass:
-            errs.append(f"assessment {a.get('id')}: duplicate id")
-        have_ass.add(a.get("id"))
-    if errs:
-        return errs, stats
-    os.makedirs(os.path.dirname(path("events", section)), exist_ok=True)
-    if staged_ass:
-        os.makedirs(os.path.dirname(path("assessments", section)), exist_ok=True)
-        with open(path("assessments", section), "a", encoding="utf-8") as f:
-            for a in staged_ass:
-                f.write(json.dumps(clean(a), ensure_ascii=False) + "\n")
-    stats["assessments_in"] = len(staged_ass)
-    if admit_ev:
-        with open(path("events", section), "a", encoding="utf-8") as f:
-            for e in sorted(admit_ev, key=lambda e: e["id"]):
-                f.write(json.dumps(clean(e), ensure_ascii=False) + "\n")
-    rejected = [clean(e) | {"_kind": "event"} for e in reject_ev] + \
-               [clean(r) | {"_kind": "observation"} for r in reject_obs]
-    if rejected:
-        os.makedirs(os.path.dirname(path("rejected", section)), exist_ok=True)
-        with open(path("rejected", section), "a", encoding="utf-8") as f:
-            for rec in rejected:
-                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-    if admit_obs:
-        p = path("observations", section)
-        os.makedirs(os.path.dirname(p), exist_ok=True)
-        new_file = not os.path.exists(p)
-        with open(p, "a", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=OBS_COLUMNS, lineterminator="\n", extrasaction="ignore")
-            if new_file:
+            eid, status = e["id"], e["verification"]["status"]
+            if eid in staged_ids:
+                if not _same(e, staged_ids[eid]):
+                    errs.append(f"event {eid}: staged twice with different content")
+                continue
+            staged_ids[eid] = e
+            if status in admit_statuses:
+                if eid in by_id:
+                    if _same(e, by_id[eid]):
+                        st["events_replayed"] += 1
+                    else:
+                        errs.append(f"event {eid}: id already in the ledger with different content "
+                                    f"(to correct it or add a source, stage a NEW record with \"supersedes\": [\"{eid}\"])")
+                    continue
+                plan["events"].append(e)
+                st["events_in"] += 1
+            elif status == "rejected" or (status == "unverified" and not lint_mode):
+                if not any(_same(e | {"_kind": "event"}, x) for x in rejected_now):
+                    plan["rejected"].append(clean(e) | {"_kind": "event"})
+                st["events_rejected"] += 1
+            else:
+                errs.append(f"event {eid}: status '{status}' cannot be merged")
+    effective = obs_as_of(section)  # current effective row per (metric, obs)
+    for f in obs_files:
+        for r in load_obs(f):
+            es = check_obs_row(r, __import__("kpi").load_registry(section)[0], staged=True)
+            if es:
+                errs += [f"{os.path.basename(f)}: {x}" for x in es]
+                continue
+            if r["verification"] in {"verified", "corrected", "collector"} | ({"legacy"} if allow_legacy else set()) \
+                    | ({"unverified"} if lint_mode else set()):
+                k = (r["metric"], r["obs"])
+                eff = effective.get(k)
+                # no-op iff the EFFECTIVE value is numerically equal and not outranked
+                if eff and float(eff["value"]) == float(r["value"]) and tier(eff) >= tier(r):
+                    st["obs_dup"] += 1
+                    continue
+                plan["obs"].append(r)
+                effective[k] = r if not eff or _rank(r) >= _rank(eff) else eff
+                st["obs_in"] += 1
+            else:
+                plan["rejected"].append(clean(r) | {"_kind": "observation"})
+                st["obs_rejected"] += 1
+    for f in ass_files:
+        for a in load_jsonl(f):
+            aid = a.get("id")
+            if aid in ass_by_id:
+                if _same(a, ass_by_id[aid]):
+                    st["assessments_replayed"] += 1
+                else:
+                    errs.append(f"assessment {aid}: id already in the ledger with different content")
+                continue
+            plan["ass"].append(a)
+            st["assessments_in"] += 1
+    # the whole proposed state must validate (the same checks as `ledger.py check`)
+    se, warns = validate_state(section, cur_ev + plan["events"], cur_obs + plan["obs"],
+                               cur_ass + plan["ass"], staged_statuses=lint_mode)
+    errs += se
+    return errs, warns, plan
+
+
+class _Lock:
+    """Exclusive per-section merge lock (ledger/.lock-<section>); stale if its pid died."""
+    def __init__(self, section: str):
+        self.p = os.path.join(ROOT, "ledger", f".lock-{section}")
+
+    def __enter__(self):
+        os.makedirs(os.path.dirname(self.p), exist_ok=True)
+        for _ in range(2):
+            try:
+                fd = os.open(self.p, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                os.write(fd, str(os.getpid()).encode()); os.close(fd)
+                return self
+            except FileExistsError:
+                try:
+                    os.kill(int(open(self.p).read() or 0), 0)
+                    raise RuntimeError(f"ledger {self.p} is locked by a running merge")
+                except (ProcessLookupError, ValueError):
+                    os.remove(self.p)  # stale
+        raise RuntimeError(f"could not take {self.p}")
+
+    def __exit__(self, *a):
+        try:
+            os.remove(self.p)
+        except FileNotFoundError:
+            pass
+
+
+def _append_atomic(p: str, text: str) -> None:
+    """Append by rewrite: old bytes + new text -> temp file -> os.replace."""
+    if not text:
+        return
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    old = open(p, encoding="utf-8").read() if os.path.exists(p) else ""
+    if old and not old.endswith("\n"):
+        old += "\n"
+    tmp = f"{p}.tmp-{os.getpid()}"
+    with open(tmp, "w", encoding="utf-8", newline="") as f:
+        f.write(old + text)
+    os.replace(tmp, p)
+
+
+def merge(section: str, ev_files=(), obs_files=(), ass_files=(),
+          allow_legacy: bool = False) -> tuple[list[str], dict]:
+    """Validate everything first; write nothing on any error. Files are written
+    rejected -> observations -> events -> assessments, each atomically; since
+    replays are no-ops, re-running after a crash completes the merge."""
+    with _Lock(section):
+        errs, _, plan = prepare(section, ev_files, obs_files, ass_files, allow_legacy)
+        if errs:
+            return errs, plan["stats"]
+        jl = lambda recs: "".join(json.dumps(clean(r) if not r.get("_kind") else r, ensure_ascii=False) + "\n"
+                                  for r in recs)
+        _append_atomic(path("rejected", section), jl(plan["rejected"]))
+        if plan["obs"]:
+            buf = io.StringIO()
+            w = csv.DictWriter(buf, fieldnames=OBS_COLUMNS, lineterminator="\n", extrasaction="ignore")
+            if not os.path.exists(path("observations", section)):
                 w.writeheader()
-            w.writerows(admit_obs)
-    stats.update(events_in=len(admit_ev), events_rejected=len(reject_ev),
-                 obs_in=len(admit_obs), obs_rejected=len(reject_obs))
-    return [], stats
+            w.writerows(plan["obs"])
+            _append_atomic(path("observations", section), buf.getvalue())
+        _append_atomic(path("events", section), jl(sorted(plan["events"], key=lambda e: e["id"])))
+        _append_atomic(path("assessments", section), jl(plan["ass"]))
+        return [], plan["stats"]
+
+
+def lint(section: str, ev_files=(), obs_files=(), ass_files=(), allow_legacy: bool = False,
+         final: bool = False) -> list[str]:
+    """Validate staged files as if merged (nothing written). final=True: no
+    'unverified' record may remain (run after the verifier)."""
+    errs, _, _ = prepare(section, ev_files, obs_files, ass_files, allow_legacy, lint_mode=not final)
+    if final:
+        for f in ev_files:
+            errs += [f"event {e.get('id')}: still unverified" for e in load_jsonl(f)
+                     if isinstance(e.get("verification"), dict) and e["verification"].get("status") == "unverified"]
+        for f in obs_files:
+            errs += [f"obs {r['metric']}@{r['obs']}: still unverified" for r in load_obs(f) if r["verification"] == "unverified"]
+    return errs
 
 
 # --- CLI ---------------------------------------------------------------------------------
@@ -688,18 +866,18 @@ def main() -> int:
     c = sub.add_parser("check"); c.add_argument("sections", nargs="*")
     t = sub.add_parser("topics"); t.add_argument("section", choices=SECTIONS)
     r = sub.add_parser("recent"); r.add_argument("section", choices=SECTIONS); r.add_argument("--limit", type=int, default=150)
-    m = sub.add_parser("merge"); m.add_argument("section", choices=SECTIONS)
-    m.add_argument("--events"); m.add_argument("--obs")
-    m.add_argument("--legacy", action="store_true", help="admit verification=legacy (one-off report conversions)")
-    m.add_argument("--assessments")
-    li = sub.add_parser("lint"); li.add_argument("section", choices=SECTIONS)
-    li.add_argument("--events"); li.add_argument("--obs"); li.add_argument("--legacy", action="store_true")
-    li.add_argument("--assessments")
+    for name in ("merge", "lint"):
+        m = sub.add_parser(name); m.add_argument("section", choices=SECTIONS)
+        m.add_argument("--events", nargs="*", default=[]); m.add_argument("--obs", nargs="*", default=[])
+        m.add_argument("--assessments", nargs="*", default=[])
+        m.add_argument("--legacy", action="store_true", help="admit verification=legacy (one-off report conversions)")
+        if name == "lint":
+            m.add_argument("--final", action="store_true", help="after verify: no 'unverified' record may remain")
     cu = sub.add_parser("cutoff"); cu.add_argument("period")
     it = sub.add_parser("items"); it.add_argument("section", choices=SECTIONS)
-    to = sub.add_parser("touched"); to.add_argument("section", choices=SECTIONS); to.add_argument("files", nargs="*")
+    sta = sub.add_parser("stale"); sta.add_argument("section", choices=SECTIONS); sta.add_argument("--until", required=True)
     stt = sub.add_parser("state"); stt.add_argument("section", choices=SECTIONS)
-    stt.add_argument("--get", choices=["last_until"]); stt.add_argument("--record", help="JSON object of a finished run")
+    stt.add_argument("--get-item", help="last_until of one watch item"); stt.add_argument("--record", help="JSON object of a finished run")
     s = sub.add_parser("snapshot"); s.add_argument("period_dir"); s.add_argument("section", choices=SECTIONS)
     a = ap.parse_args()
     try:
@@ -717,19 +895,19 @@ def main() -> int:
         if a.cmd == "topics":
             print("\n".join(sorted(valid_topics(a.section))))
         elif a.cmd == "recent":
-            evs = sorted(events(a.section), key=lambda e: (e["date"], e["id"]))[-a.limit:]
+            evs = sorted(effective_events(events(a.section)), key=lambda e: (e["date"], e["id"]))[-a.limit:]
             for e in evs:
                 print(f"{e['id']} [{e['kind']}; {','.join(e['topics'])}; {e['verification']['status']}] {e['claim']}")
             if not evs:
                 print(f"(no events yet for {a.section})")
         elif a.cmd == "merge":
-            errs, stats = merge(a.section, a.events, a.obs, a.legacy, a.assessments)
+            errs, stats = merge(a.section, a.events, a.obs, a.assessments, a.legacy)
             for e in errs:
                 print(f"  ERROR {e}")
-            print(f"merge {a.section}: {'ABORTED' if errs else 'ok'} {stats}")
+            print(f"merge {a.section}: {'ABORTED (nothing written)' if errs else 'ok'} {stats}")
             return 1 if errs else 0
         elif a.cmd == "lint":
-            errs = lint(a.section, a.events, a.obs, a.legacy, a.assessments)
+            errs = lint(a.section, a.events, a.obs, a.assessments, a.legacy, a.final)
             for e in errs:
                 print(f"  ERROR {e}")
             print(f"lint {a.section}: {len(errs)} error(s)")
@@ -737,31 +915,26 @@ def main() -> int:
         elif a.cmd == "items":
             for topic, name, desc in readme_items(a.section):
                 print(f"{topic}|{name}|{desc}")
-        elif a.cmd == "touched":
-            # assessment targets affected by admitted records in these staged files,
-            # plus targets that have never been assessed
-            targets = set()
-            for f in a.files:
-                for e in load_jsonl(f):
-                    if e.get("verification", {}).get("status") in ("verified", "corrected"):
-                        targets |= {t for t in e.get("topics", []) if t == "kpi" or t.startswith("milestone:")}
-            valid = {t for t in valid_topics(a.section) if t == "kpi" or t.startswith("milestone:")}
-            targets |= valid - {x["target"] for x in assessments(a.section)}
-            print(" ".join(sorted(targets & valid)))
+        elif a.cmd == "stale":
+            for target, aid in stale_targets(a.section, day(a.until)):
+                print(f"{target}|{aid}")
         elif a.cmd == "state":
             p = path("state", a.section)
-            st = json.load(open(p)) if os.path.exists(p) else {"section": a.section, "last_until": None, "runs": []}
-            if a.get:
-                print(st.get(a.get) or "")
+            st = json.load(open(p)) if os.path.exists(p) else {"section": a.section, "items": {}, "runs": []}
+            st.setdefault("items", {})
+            if a.get_item:
+                print(st["items"].get(a.get_item) or "")
             elif a.record:
                 run = json.loads(a.record)
                 st["runs"].append(run)
-                st["last_until"] = max(filter(None, [st.get("last_until"), run["until"]]))
+                for item in run["items"]:
+                    st["items"][item] = max(filter(None, [st["items"].get(item), run["until"]]))
+                st.pop("last_until", None)  # superseded by per-item watermarks
                 os.makedirs(os.path.dirname(p), exist_ok=True)
                 with open(p, "w") as f:
                     json.dump(st, f, indent=1, ensure_ascii=False)
                     f.write("\n")
-                print(f"state {a.section}: last_until={st['last_until']} runs={len(st['runs'])}")
+                print(f"state {a.section}: items={st['items']} runs={len(st['runs'])}")
         elif a.cmd == "cutoff":
             print(f"cutoff {cutoff(a.period)} previous_cutoff {prev_cutoff(a.period)} "
                   f"period {period_start(a.period)}..{__import__('kpi').period_as_of(a.period)}")
@@ -774,7 +947,7 @@ def main() -> int:
                 f.write("\n")
             print(f"wrote {out}: {len(snap['new_events'])} new, {len(snap['background_events'])} background events, "
                   f"{len(snap['kpi_headlines'])} KPI headlines, cutoff {snap['cutoff']}")
-    except ValueError as e:
+    except (ValueError, RuntimeError) as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1
     return 0

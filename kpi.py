@@ -173,18 +173,25 @@ def required_active(row: dict, as_of: dt.date) -> bool:
 
 def chart_data(period_dir: str, section: str, metrics: list[str], match: str | None,
                label: str, since: str | None = None) -> tuple[list[str], list[list[str]]]:
-    """x labels + one value list per metric: the ledger as of the period's
-    cutoff (latest known row per obs), obs ending by the period end."""
+    """x labels + one value list per metric: the FROZEN series of the period's
+    committed snapshot (<period-dir>/snapshot/<section>.json) when it exists,
+    else the ledger as of the period's cutoff (obs ending by the period end)."""
+    import json
     import ledger
     period = period_of_dir(period_dir)
     end = period_as_of(period)
-    table = ledger.obs_as_of(section, ledger.cutoff(period))
+    snap_p = os.path.join(period_dir, "snapshot", f"{section}.json")
+    frozen = json.load(open(snap_p, encoding="utf-8")).get("series") if os.path.exists(snap_p) else None
+    if frozen is None:
+        table = ledger.obs_as_of(section, ledger.cutoff(period))
+        frozen = {}
+        for (mm, o), r in table.items():
+            if obs_range(o)[1] <= end:
+                frozen.setdefault(mm, []).append([o, r["value"]])
     series: list[dict[str, str]] = []
     for m in metrics:
-        pts = {o: r["value"] for (mm, o), r in table.items()
-               if mm == m and obs_range(o)[1] <= end
-               and (not match or fnmatch.fnmatchcase(o, match))
-               and (not since or o[:4] >= since)}
+        pts = {o: v for o, v in frozen.get(m, [])
+               if (not match or fnmatch.fnmatchcase(o, match)) and (not since or o[:4] >= since)}
         if not pts:
             raise ValueError(f"no ledger points for {section}/{m} (match={match}, since={since})")
         series.append(pts)

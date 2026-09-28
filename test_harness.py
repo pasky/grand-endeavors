@@ -153,19 +153,58 @@ def main():
     write_jsonl(st, [ev("2026-06-04-good", "2026-06-04", "CREA: China CO2 rose 2% year on year in Q1 2026, per Carbon Brief."),
                      ev("2026-06-05-bad", "2026-06-05", "Rejected by the verifier because the source does not say this.", status="rejected")])
     n0 = len(ledger.events("climate"))
-    errs, stats = ledger.merge("climate", st, None)
+    errs, stats = ledger.merge("climate", [st])
     case("merge admits verified, rejects the rest to ledger/rejected",
          errs == [] and stats["events_in"] == 1 and stats["events_rejected"] == 1
          and len(ledger.events("climate")) == n0 + 1 and os.path.exists(ledger.path("rejected", "climate")))
     write_jsonl(st, [ev("2026-06-06-ok", "2026-06-06", "A perfectly fine verified claim about emissions in 2026."),
                      ev("2026-06-07-broken", "2026-06-07", "x", topics=("nope",))])
     n1 = len(ledger.events("climate"))
-    errs, _ = ledger.merge("climate", st, None)
+    errs, _ = ledger.merge("climate", [st])
     case("merge is all-or-nothing on schema errors", errs != [] and len(ledger.events("climate")) == n1)
+    good = ev("2026-06-06-ok", "2026-06-06", "A perfectly fine verified claim about emissions in 2026.")
+    write_jsonl(st, [good, good])
+    errs, stats = ledger.merge("climate", [st])
+    n2 = len(ledger.events("climate"))
+    errs2, stats2 = ledger.merge("climate", [st])
+    case("same event twice in a batch is merged once; exact replay is a no-op",
+         errs == [] and stats["events_in"] == 1 and errs2 == [] and stats2["events_replayed"] == 1
+         and len(ledger.events("climate")) == n2 and ledger.check_section("climate")[0] == [])
+    write_jsonl(st, [dict(good, claim="A conflicting different claim reusing an existing event id.")])
+    case("conflicting replay of an existing id is rejected",
+         has(ledger.merge("climate", [st])[0], "different content"))
+    fix = ev("2026-06-06-ok-r2", "2026-06-06", "A perfectly fine verified claim about emissions in 2026.",
+             supersedes=["2026-06-06-ok"])
+    fix["sources"].append({"url": "https://x.org/second-source", "title": "t2", "primary": False})
+    write_jsonl(st, [fix])
+    errs, _ = ledger.merge("climate", [st])
+    eff = {e["id"] for e in ledger.effective_events(ledger.events("climate"))}
+    case("supersedes: correction with the same claim merges; views drop the superseded record",
+         errs == [] and "2026-06-06-ok-r2" in eff and "2026-06-06-ok" not in eff)
+    bad_date = ev("2026-99-99-x", "2026-06-06", "A claim with an impossible date prefix in its id.")
+    bad_date["date"] = "2026-99-99"
+    case("impossible dates are rejected", has(ledger.check_event(bad_date, "climate", topics), "bad date"))
+    seen = ev("2026-06-08-seen", "2026-06-08", "A claim whose publication date is only first-seen.")
+    seen["published_basis"] = "seen"
+    case("basis=seen requires published = retrieved", has(ledger.check_event(seen, "climate", topics), "first seen"))
+    unv = ev("2026-06-09-unv", "2026-06-09", "A claim that the verifier never looked at at all.", status="unverified")
+    write_jsonl(st, [unv])
+    case("lint --final rejects leftover unverified records", has(ledger.lint("climate", [st], final=True), "still unverified"))
     so = f"{kpi.ROOT}/staged.csv"
     write_csv(so, ledger.OBS_COLUMNS, [obs("co2-mlo-annual", "2024", "424.610", "2025-01-10", "rule", verification="collector")])
-    errs, stats = ledger.merge("climate", None, so)
+    errs, stats = ledger.merge("climate", [], [so])
     case("numerically equal re-observation is not a revision", errs == [] and stats["obs_dup"] == 1 and stats["obs_in"] == 0)
+    for v, when in (("425", "2026-09-01"), ("424.61", "2026-09-02")):
+        write_csv(so, ledger.OBS_COLUMNS, [obs("co2-mlo-annual", "2024", v, when, "seen", verification="collector", retrieved=when)])
+        ledger.merge("climate", [], [so])
+    case("revision back to an earlier value is recorded (compared with the EFFECTIVE row)",
+         ledger.obs_as_of("climate")[("co2-mlo-annual", "2024")]["value"] == "424.61")
+    case("non-legacy observations outrank later-dated legacy ones",
+         ledger.obs_as_of("climate")[("co2-mlo-monthly", "2025-11")]["verification"] == "legacy")  # only a legacy row exists
+    write_csv(so, ledger.OBS_COLUMNS, [obs("co2-mlo-monthly", "2025-11", "426.46", "2025-12-07", "rule", verification="collector")])
+    errs, stats = ledger.merge("climate", [], [so])
+    case("verified value supersedes the legacy one despite an earlier publication date",
+         errs == [] and stats["obs_in"] == 1 and ledger.obs_as_of("climate")[("co2-mlo-monthly", "2025-11")]["value"] == "426.46")
 
     # --- snapshot ---------------------------------------------------------------------
     fixture()
@@ -182,6 +221,16 @@ def main():
     case("snapshot: seasonal caveat + same-month-last-year comparison",
          not k["change"]["comparable"] and k["year_ago"]["change"] == "+1.82")
     case("snapshot: retired metrics never required", all(x["metric"] != "co2-trend-old" for x in snap["kpi_headlines"]))
+    case("snapshot is self-contained: frozen series + README framework",
+         snap["series"]["co2-mlo-annual"][-1] == ["2025", "427.35"] and any(f["name"] == "The Bend" for f in snap["framework"]))
+    reg_rows = list(csv.reader(open(f"{kpi.ROOT}/metrics/climate.csv")))
+    write_csv(f"{kpi.ROOT}/metrics/climate.csv", reg_rows[0], reg_rows[1:] + [
+        ["co2-old-required", "ppm", "annual", "10", "pilot-2025", "pilot-26H1", "A metric required through 26H1 then retired"]])
+    case("requirement judged at the period end (retired_after = this period still counts)",
+         any(k["metric"] == "co2-old-required" for k in ledger.snapshot(pdir, "climate")["kpi_headlines"]))
+    write_csv(f"{kpi.ROOT}/metrics/climate.csv", reg_rows[0], reg_rows[1:])
+    ev_text = ledger.snapshot_evidence_text(snap)
+    case("typed evidence pool excludes metadata (significance, ids)", '"significance"' not in ev_text and "gcb-final" not in ev_text)
     write_jsonl(ledger.path("events", "climate"), ledger.events("climate") + [
         ev("2026-01-05-minor-evidence", "2026-01-05", "A minor but cited analysis says emissions have plateaued in 2025.", sig=1)])
     write_jsonl(ledger.path("assessments", "climate"), [
@@ -207,7 +256,7 @@ def main():
     json.dump(snap, open(sp, "w"))
     names = [n for items in ledger.readme_topics("climate").values() for _, n in items]
     doc = (f"# Climate\n\nCO2 was 431.43 ppm in June 2026[^a].\n\n{chart}\n\n"
-           + "\n".join(f"- {n}: no significant developments." for n in names)
+           + "\n".join(f"### {n}\nNo significant developments." for n in names)
            + "\n\n[^a]: [GCB](https://x.org/2026-05-13-gcb-final)\n")
     dp = f"{pdir}/climate.md"
 
@@ -220,7 +269,16 @@ def main():
     case("bulletin gate: number not in snapshot is caught", has(gate(doc.replace("431.43 ppm", "431.43 ppm (about 432)")), "number 432"))
     case("bulletin gate: URL outside the snapshot is caught", has(gate(doc.replace("https://x.org/2026-05-13-gcb-final", "https://evil.org/x")), "not a source"))
     case("bulletin gate: unreported KPI headline is caught", has(gate(doc.replace("431.43 ppm", "high")), "not reported"))
-    case("bulletin gate: uncovered milestone is caught", has(gate(doc.replace("- The Bend:", "- Something:")), "The Bend"))
+    case("bulletin gate: uncovered milestone is caught", has(gate(doc.replace("### The Bend", "### Something")), "The Bend"))
+    case("bulletin gate: a name only in prose (no heading) does not count as coverage",
+         has(gate(doc.replace("### The Bend\n", "The Bend is mentioned.\n")), "The Bend"))
+    case("bulletin gate: charts come from the frozen snapshot, not today's ledger",
+         (write_csv(ledger.path("observations", "climate"), ledger.OBS_COLUMNS,
+                    [list(r.values())[:11] for r in ledger.observations("climate")]
+                    + [obs("co2-mlo-annual", "2020", "414.21", "2021-01-10", "rule")]) or True)
+         and gate(doc) == [])
+    case("URLs with balanced parentheses are extracted whole",
+         validate.extract_urls("[x](https://a.org/S0092-8674(25)00284-3).") == ["https://a.org/S0092-8674(25)00284-3"])
 
     # --- link probe (mocked, no network) -----------------------------------------------------
     def seq(*codes):

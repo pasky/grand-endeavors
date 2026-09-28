@@ -91,10 +91,12 @@ def check_mermaid(text: str) -> None:
 
 # --- citation URL liveness --------------------------------------------------
 def extract_urls(text: str) -> list[str]:
-    raw = re.findall(r"https?://[^\s)\]<>\"']+", text)
+    raw = re.findall(r"https?://[^\s\]<>\"']+", text)
     seen, out = set(), []
     for u in raw:
         u = u.rstrip(".,;:")
+        while u.endswith(")") and u.count(")") > u.count("("):  # markdown link close, keep "(25)"
+            u = u[:-1].rstrip(".,;:")
         if u not in seen:
             seen.add(u)
             out.append(u)
@@ -248,7 +250,7 @@ def check_snapshot(doc_path: str, text: str, snap_path: str) -> None:
             err(f"snapshot: cited URL is not a source of any snapshot record: {url}")
     # 2. numbers in prose (not footnote/reference definitions: titles, page numbers)
     body = re.sub(r"https?://\S+", " ", DEF_LINE_RE.sub(" ", prose))
-    pool = kpi.kpi_numbers(ledger.snapshot_text(snap))
+    pool = kpi.kpi_numbers(ledger.snapshot_evidence_text(snap))  # typed evidence only
     missing = sorted(n for n in kpi.kpi_numbers(body) if not (n in pool or (n < 0 and -n in pool)))
     for n in missing:
         err(f"snapshot: number {n:g} in the prose does not occur in the snapshot (use snapshot values verbatim)")
@@ -266,12 +268,15 @@ def check_snapshot(doc_path: str, text: str, snap_path: str) -> None:
     req = {k["metric"] for k in snap["kpi_headlines"]}
     if any(c["metric"] in req for c in snap["chartable_metrics"]) and not kpi.MARKER_RE.search(text):
         err("snapshot: a required KPI has a chartable series but the bulletin has no ledger-rendered ('%% kpi:') chart")
-    # 5. coverage: every README milestone and challenge is addressed by name
-    low = prose.lower()
-    for kind, items in ledger.readme_topics(snap["section"]).items():
-        for slug, name in items:
-            if name.lower() not in low:
-                err(f"snapshot: {kind[:-1]} '{name}' is not covered (say 'no significant developments' if none)")
+    # 5. coverage (structural): every milestone/challenge of the snapshot's frozen
+    #    framework has its own heading (older snapshots: README at validation time)
+    heads = "\n".join(ln.lower() for ln in prose.splitlines() if ln.lstrip().startswith("#"))
+    frame = snap.get("framework") or [{"topic": f"{k[:-1]}:{s}", "name": n}
+                                      for k, items in ledger.readme_topics(snap["section"]).items() for s, n in items]
+    for f in frame:
+        if f["topic"].startswith(("milestone:", "challenge:")) and f["name"].lower() not in heads:
+            err(f"snapshot: {f['topic'].split(':')[0]} '{f['name']}' has no heading of its own "
+                "(say 'no significant developments' under it if none)")
 
 
 def main() -> int:
