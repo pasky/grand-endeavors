@@ -1,11 +1,9 @@
-# Generation manifest — pilot-26H1
-report_period: 26H1
-section:       climate
-generated_at:  2026-09-28T15:19:31Z
+# Bulletin manifest — pilot-26H1 / climate
+period:        26H1  (cutoff 2026-07-14; new = published after 2026-01-14)
+generated_at:  2026-09-28T18:38:17Z
+ledger_commit: 5bc519c541d3aa207bb39daa36263456669d90be  (the snapshot is the ledger at this commit, as of the cutoff)
 pi_version:    0.87.1
 agent_commit:  c2e242606c955984bf579f278ffacd8096beae8c
 agent_dirty:   no
 settings_sha:  43113ecd4450fcf0
-spec_commit:   e0bb7213d6dc0bdf54d8a13d18d09572f986f802  (HEAD at run START = input spec/harness version; output committed AFTER)
-fresh:         no
-scope:         TOY/NARROW RUN: cover ONLY (1) the KPI — atmospheric CO2 concentration (ppm) and its recent ppm/year trend — and (2) the single milestone 'The Bend' (is the year of peak global greenhouse-gas emissions definitively behind us?). Reporting period is the first half of 2026 (Jan-Jun 2026); we are at end of June 2026. Skip all other milestones and all challenges. Keep it compact.
+spec_commit:   5bc519c541d3aa207bb39daa36263456669d90be
