@@ -206,6 +206,30 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
     return errs
 
 
+def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[str]:
+    """made_at = the as-of date of the evidence considered (not wall-clock), so
+    every evidence event must be known by then; `by` records the actual run."""
+    at = f"assessment {a.get('id')}"
+    errs = [f"{at}: missing '{k}'" for k in ("id", "target", "status", "label", "made_at", "rationale", "evidence", "by")
+            if k not in a]
+    if errs:
+        return errs
+    if a["status"] not in ASSESS_STATUS:
+        errs.append(f"{at}: status must be green/yellow/red")
+    if a["target"] not in topics - {"beyond"}:
+        errs.append(f"{at}: unknown target '{a['target']}'")
+    if not DAY_RE.match(str(a["made_at"])):
+        return errs + [f"{at}: made_at must be YYYY-MM-DD"]
+    if not a["evidence"]:
+        errs.append(f"{at}: needs evidence (event ids)")
+    for eid in a["evidence"]:
+        if eid not in evs:
+            errs.append(f"{at}: evidence '{eid}' is not an event")
+        elif known_at(evs[eid]) > day(a["made_at"]):
+            errs.append(f"{at}: evidence '{eid}' was published after made_at (hindsight)")
+    return errs
+
+
 def check_obs_row(r: dict, reg: dict | None, staged: bool = False) -> list[str]:
     import kpi
     at = f"obs {r.get('metric')}@{r.get('obs')} (line {r.get('_line')})"
@@ -289,22 +313,10 @@ def check_section(section: str) -> tuple[list[str], list[str]]:
         keys.add(k)
     aids = set()
     for a in ass:
-        at = f"assessment {a.get('id')}"
-        for k in ("id", "target", "status", "label", "made_at", "rationale", "evidence", "by"):
-            if k not in a:
-                errs.append(f"{at}: missing '{k}'")
+        errs += check_assessment(a, topics, ids)
         if a.get("id") in aids:
-            errs.append(f"{at}: duplicate id")
+            errs.append(f"assessment {a.get('id')}: duplicate id")
         aids.add(a.get("id"))
-        if a.get("status") not in ASSESS_STATUS:
-            errs.append(f"{at}: status must be green/yellow/red")
-        if a.get("target") not in topics - {"beyond"}:
-            errs.append(f"{at}: unknown target '{a.get('target')}'")
-        if not DAY_RE.match(str(a.get("made_at", ""))):
-            errs.append(f"{at}: made_at must be YYYY-MM-DD")
-        for eid in a.get("evidence", []) or []:
-            if eid not in ids:
-                errs.append(f"{at}: evidence '{eid}' is not an event")
     return errs, warns
 
 
@@ -473,7 +485,8 @@ def snapshot_urls(snap: dict) -> set[str]:
 
 
 # --- merge -------------------------------------------------------------------------------
-def lint(section: str, ev_file: str | None, obs_file: str | None, allow_legacy: bool = False) -> list[str]:
+def lint(section: str, ev_file: str | None, obs_file: str | None, allow_legacy: bool = False,
+         ass_file: str | None = None) -> list[str]:
     """Validate a STAGED file before merge: schema, topics, ids unique vs file and
     ledger, relates resolvable (file ∪ ledger), no duplicate claims."""
     import kpi
@@ -505,11 +518,19 @@ def lint(section: str, ev_file: str | None, obs_file: str | None, allow_legacy: 
         errs += reg_errs
         for r in load_obs(obs_file):
             errs += check_obs_row(r, reg, staged=True)
+    if ass_file:
+        all_ev = dict(existing) | {e["id"]: e for e in staged if "id" in e}
+        have = {a["id"] for a in assessments(section)}
+        for a in load_jsonl(ass_file):
+            errs += check_assessment(a, topics, all_ev)
+            if a.get("id") in have:
+                errs.append(f"assessment {a.get('id')}: duplicate id")
+            have.add(a.get("id"))
     return errs
 
 
 def merge(section: str, ev_file: str | None, obs_file: str | None,
-          allow_legacy: bool = False) -> tuple[list[str], dict]:
+          allow_legacy: bool = False, ass_file: str | None = None) -> tuple[list[str], dict]:
     """Admit verified/corrected/collector staged records; reject the rest to
     ledger/rejected/. All-or-nothing: any schema error aborts without writing."""
     import kpi
@@ -557,9 +578,23 @@ def merge(section: str, ev_file: str | None, obs_file: str | None,
             admit_obs.append(r)
         else:
             reject_obs.append(r)
+    staged_ass = load_jsonl(ass_file) if ass_file else []
+    all_ev = existing | {e["id"]: e for e in admit_ev}
+    have_ass = {a["id"] for a in assessments(section)}
+    for a in staged_ass:
+        errs += check_assessment(a, topics, all_ev)
+        if a.get("id") in have_ass:
+            errs.append(f"assessment {a.get('id')}: duplicate id")
+        have_ass.add(a.get("id"))
     if errs:
         return errs, stats
     os.makedirs(os.path.dirname(path("events", section)), exist_ok=True)
+    if staged_ass:
+        os.makedirs(os.path.dirname(path("assessments", section)), exist_ok=True)
+        with open(path("assessments", section), "a", encoding="utf-8") as f:
+            for a in staged_ass:
+                f.write(json.dumps(clean(a), ensure_ascii=False) + "\n")
+    stats["assessments_in"] = len(staged_ass)
     if admit_ev:
         with open(path("events", section), "a", encoding="utf-8") as f:
             for e in sorted(admit_ev, key=lambda e: e["id"]):
@@ -595,8 +630,10 @@ def main() -> int:
     m = sub.add_parser("merge"); m.add_argument("section", choices=SECTIONS)
     m.add_argument("--events"); m.add_argument("--obs")
     m.add_argument("--legacy", action="store_true", help="admit verification=legacy (one-off report conversions)")
+    m.add_argument("--assessments")
     li = sub.add_parser("lint"); li.add_argument("section", choices=SECTIONS)
     li.add_argument("--events"); li.add_argument("--obs"); li.add_argument("--legacy", action="store_true")
+    li.add_argument("--assessments")
     cu = sub.add_parser("cutoff"); cu.add_argument("period")
     s = sub.add_parser("snapshot"); s.add_argument("period_dir"); s.add_argument("section", choices=SECTIONS)
     a = ap.parse_args()
@@ -621,13 +658,13 @@ def main() -> int:
             if not evs:
                 print(f"(no events yet for {a.section})")
         elif a.cmd == "merge":
-            errs, stats = merge(a.section, a.events, a.obs, a.legacy)
+            errs, stats = merge(a.section, a.events, a.obs, a.legacy, a.assessments)
             for e in errs:
                 print(f"  ERROR {e}")
             print(f"merge {a.section}: {'ABORTED' if errs else 'ok'} {stats}")
             return 1 if errs else 0
         elif a.cmd == "lint":
-            errs = lint(a.section, a.events, a.obs, a.legacy)
+            errs = lint(a.section, a.events, a.obs, a.legacy, a.assessments)
             for e in errs:
                 print(f"  ERROR {e}")
             print(f"lint {a.section}: {len(errs)} error(s)")

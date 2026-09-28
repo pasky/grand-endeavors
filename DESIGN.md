@@ -86,7 +86,11 @@ and "overdue" in views, and `rule`-basis publication dates) and
 
 **Assessment** (`assessments/<section>.jsonl`): `{id, target ("kpi" |
 "milestone:<slug>"), status ("green"|"yellow"|"red"), label, made_at, rationale,
-evidence: [event ids], by}`. Its `known_at` is `made_at`.
+evidence: [event ids], by}`. `made_at` is the as-of date of the evidence that was
+considered, not the wall-clock time of the run (`by` records the run). Every
+evidence event must be known by `made_at` (checked), so a retrospective
+assessment ("status as of 14 Jul given what was public then") is honest and
+reproducible. Its `known_at` is `made_at`.
 
 `legacy` records were converted from the pilot-2025 reports. They are useful
 history, but they were not verified at ingest. Views flag them, and bulletins
