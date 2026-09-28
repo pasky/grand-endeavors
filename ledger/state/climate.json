@@ -18,6 +18,18 @@
    "staged_events": 36,
    "spec_commit": "1476c0499c0314e7ab2d8c8d45a598f24f06bc06",
    "pi": "0.87.1"
+  },
+  {
+   "run": "20260928T192539Z",
+   "since": "per-item",
+   "until": "2026-09-28",
+   "items": [
+    "kpi",
+    "beyond"
+   ],
+   "staged_events": 8,
+   "spec_commit": "1c1aedaa4d647cc813018d456c59bb5b1b5ea7b3",
+   "pi": "0.87.1"
   }
  ],
  "items": {
