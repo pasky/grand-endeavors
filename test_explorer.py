@@ -46,6 +46,7 @@ co2-monthly,ppm,monthly,7,pilot-26H1,,Monthly mean CO2 at a fixture station for 
 co2-trend,ppm/yr,annual,10,pilot-26H1,,Ten-year mean CO2 growth for the fixture tests
 co2-never,ppm,monthly,7,pilot-26H1,,A required metric that was never observed at all
 co2-old,ppm/yr,annual,,,pilot-2025,Retired decadal growth series kept only for history
+horizon,minutes,irregular,,,,Task horizon with both dated (daily) and monthly obs labels
 co2-nolag,ppm,annual,,,,"Annual series with no regular release (empty lag) "" onmouseover=""x"
 """
 
@@ -59,6 +60,15 @@ OBS = [
     ("co2-old", "2020", "2.4", "ppm/yr", "2025-01-03", "legacy"),
     ("co2-monthly", "2026-09", "430.00", "ppm", "2026-09-05", "verified"),  # period still in progress
     ("co2-nolag", "2023", "1.0", "ppm", "2024-02-01", "verified"),
+    ("co2-monthly", "2025-06", "426.00", "ppm", "2025-07-07", "verified"),  # year-ago comparison
+    # precedence: a LATER-dated legacy row must not override the verified value
+    ("co2-monthly", "2026-04", "427.80", "ppm", "2026-05-07", "verified"),
+    ("co2-monthly", "2026-04", "427.9", "ppm", "2026-08-01", "legacy"),
+    # mixed granularity: 3 daily obs + 1 monthly headline obs
+    ("horizon", "2026-01-10", "30", "minutes", "2026-01-10", "collector"),
+    ("horizon", "2026-03-05", "45", "minutes", "2026-03-05", "collector"),
+    ("horizon", "2026-04-02", "60", "minutes", "2026-04-02", "collector"),
+    ("horizon", "2026-04", "58", "minutes", "2026-05-01", "collector"),
 ]
 
 EVENTS = [
@@ -149,7 +159,7 @@ def main():
         case("as-of filters events (late news excluded)", n("events") == 2)
         case("event_topics / sources / relates flattened",
              (n("event_topics"), n("event_sources"), n("event_relates")) == (3, 3, 1))
-        case("observations incl. revisions", n("observations") == 8)
+        case("observations incl. revisions", n("observations") == 15)
         case("assessments as-of (later one excluded)", n("assessments") == 2)
         case("sections: all SECTIONS, README-less ones included", n("sections") == len(ledger.SECTIONS))
         case("topics from README", {r[0] for r in q(db, "SELECT topic FROM topics WHERE section='climate'")}
@@ -176,6 +186,47 @@ def main():
                    (ledger.latest_obs(table, mm, when) or {}).get("value") == val
                    for mm, obs, val in q(db, "SELECT metric, obs, value_text FROM latest_kpi"))
         case("latest_kpi agrees with ledger.latest_obs(obs_as_of)", same)
+        # P1 precedence: tier (non-legacy > legacy) before known_at
+        cur = dict(q(db, "SELECT verification, value_text FROM current_obs WHERE metric='co2-monthly' AND obs='2026-04'"))
+        case("later-dated legacy row does not override verified (current_obs)", cur == {"verified": "427.80"})
+        eff = q(db, "SELECT metric, obs, value_text FROM current_obs")
+        case("current_obs == ledger.obs_as_of (one implementation)",
+             sorted(eff) == sorted((m_, o_, r["value"]) for (m_, o_), r in table.items()))
+        case("observations.tier/effective columns",
+             q(db, "SELECT tier, effective FROM observations WHERE metric='co2-monthly' AND obs='2026-04' "
+                   "ORDER BY tier") == [(0, 0), (1, 1)])
+        # comparability safeguards (as ledger.snapshot)
+        k = q(db, "SELECT change_text, change_label, comparable, caveat, year_ago_obs, year_ago_change_text "
+                  "FROM latest_kpi WHERE metric='co2-monthly'")[0]
+        case("monthly change vs previous obs: labelled, flagged seasonal, year-ago like-for-like",
+             k == ("+1.15", "vs previous observation (2026-05)", 0,
+                   "different calendar month: seasonal cycle not removed", "2025-06", "+3.25"))
+        k = q(db, "SELECT obs, prev_obs, comparable, caveat FROM latest_kpi WHERE metric='horizon'")[0]
+        case("granularity change flagged not comparable",
+             k == ("2026-04", "2026-04-02", 0, "different observation granularity"))
+        k = q(db, "SELECT comparable, caveat, year_ago_obs FROM latest_kpi WHERE metric='co2-trend'")[0]
+        case("annual vs annual comparable, no year-ago row", k == (1, "", None))
+        mk = lambda o, v: {"metric": "x", "obs": o, "value": v}
+        c = explore.compare
+        case("compare: same obs revised -> not comparable",
+             (c(mk("2026-05", "1.5"), mk("2026-05", "1.4"))["comparable"],
+              c(mk("2026-05", "1.5"), mk("2026-05", "1.4"))["caveat"]) == (False, "same observation revised by the source"))
+        case("compare: same obs unchanged", c(mk("2026", "2"), mk("2026", "2.0"))["caveat"]
+             == "same observation, unchanged: no new data")
+        case("compare: same calendar month a year apart is comparable",
+             c(mk("2026-05", "430"), mk("2025-05", "427.5")) ==
+             {"value": "+2.5", "from_obs": "2025-05", "to_obs": "2026-05", "comparable": True, "caveat": ""})
+        case("compare: daily vs daily comparable", c(mk("2026-05-02", "3"), mk("2026-05-01", "1"))["comparable"])
+        # sparkline: one granularity only
+        db.row_factory = sqlite3.Row
+        row = lambda m_: db.execute("SELECT * FROM latest_kpi WHERE metric=?", (m_,)).fetchone()
+        pts, kind = explore.spark_points(db, row("horizon"))
+        case("sparkline falls back to the dominant granularity, never mixes",
+             kind == "daily" and [str(d) for d, _ in pts] == ["2026-01-10", "2026-03-05", "2026-04-02"])
+        pts, kind = explore.spark_points(db, row("co2-monthly"))
+        case("sparkline uses the headline granularity",
+             kind == "monthly" and len(pts) == 4 and (D("2026-04-30"), 427.8) in pts)
+        db.row_factory = None
         ass = ledger.assessment_as_of("climate", when)
         case("milestone_status agrees with ledger.assessment_as_of",
              {t: a["id"] for t, a in ass.items()} ==
@@ -204,7 +255,7 @@ def main():
         thread = q(db, queries["lifecycle_threads"]["sql"])
         case("lifecycle thread via relates", len(thread) == 1 and thread[0][1] == "2026-03-01-first-peak-claim")
         legacy = {(r[1], r[2]): r[3] for r in q(db, queries["legacy_vs_verified"]["sql"])}
-        case("legacy vs verified counts", legacy[("events", "legacy")] == 1 and legacy[("observations", "legacy")] == 2)
+        case("legacy vs verified counts", legacy[("events", "legacy")] == 1 and legacy[("observations", "legacy")] == 3)
         db.close()
 
         # earlier / later as-of: revision not yet known; later assessment + event visible
@@ -234,7 +285,13 @@ def main():
         case("dashboard escapes attributes", "<b onclick" not in page and '" onmouseover="' not in page
              and "&quot;&gt;&lt;b onclick" in page)
         case("dashboard sparkline", "<svg" in page and "<polyline" in page)
-        case("dashboard change vs previous", "+1.15" in page)
+        case("dashboard change vs previous: labelled + not-comparable flag",
+             "+1.15 vs previous observation (2026-05): 428.10 " in page
+             and "not comparable: different calendar month: seasonal cycle not removed" in page)
+        case("dashboard year-ago change", "+3.25</span> vs same month a year earlier (2025-06: 426.00)" in page)
+        case("dashboard comparable change has an arrow", "\u25bc -0.08</span> vs previous observation (2024): 2.64"
+             in page)
+        case("dashboard sparkline names its granularity", "<title>3 daily obs 2026-01-10..2026-04-02" in page)
         case("dashboard lifecycle link", 'href="#ev-climate-2026-03-01-first-peak-claim"' in page)
         case("dashboard as-of excludes late event", "late announcement" not in page)
         case("dashboard shows required + gap tiles, folds the rest",

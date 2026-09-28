@@ -45,14 +45,22 @@ CREATE TABLE event_topics (section TEXT, event_id TEXT, topic TEXT);
 CREATE TABLE event_sources (section TEXT, event_id TEXT, ord INTEGER, url TEXT, title TEXT, is_primary INTEGER);
 CREATE TABLE event_relates (section TEXT, event_id TEXT, rel TEXT, related_id TEXT);
 CREATE TABLE observations (section TEXT, metric TEXT, obs TEXT, obs_start TEXT, obs_end TEXT,
-    value REAL, value_text TEXT, unit TEXT, source TEXT, published TEXT, published_basis TEXT,
-    retrieved TEXT, known_at TEXT, collector TEXT, verification TEXT, note TEXT, line INTEGER);
+    obs_kind TEXT, value REAL, value_text TEXT, unit TEXT, source TEXT, published TEXT,
+    published_basis TEXT, retrieved TEXT, known_at TEXT, collector TEXT, verification TEXT,
+    note TEXT, tier INTEGER, effective INTEGER, line INTEGER);
 CREATE TABLE assessments (section TEXT, id TEXT, target TEXT, status TEXT, label TEXT, made_at TEXT,
     known_at TEXT, rationale TEXT, evidence JSON, by TEXT, line INTEGER);
 CREATE TABLE metrics (section TEXT, metric TEXT, unit TEXT, cadence TEXT, release_lag_days INTEGER,
     required_from TEXT, retired_after TEXT, definition TEXT, required INTEGER, retired INTEGER,
     n_obs INTEGER, latest_obs TEXT, latest_obs_end TEXT, latest_known_at TEXT, next_expected TEXT,
     overdue INTEGER, status TEXT, PRIMARY KEY (section, metric));
+CREATE TABLE latest_kpi (section TEXT, metric TEXT, unit TEXT, required INTEGER, retired INTEGER,
+    cadence TEXT, obs TEXT, obs_kind TEXT, value REAL, value_text TEXT, known_at TEXT,
+    verification TEXT, source TEXT, prev_obs TEXT, prev_value REAL, prev_value_text TEXT,
+    change REAL, change_text TEXT, change_label TEXT, comparable INTEGER, caveat TEXT,
+    year_ago_obs TEXT, year_ago_value_text TEXT, year_ago_change_text TEXT,
+    next_expected TEXT, overdue INTEGER, status TEXT, definition TEXT,
+    PRIMARY KEY (section, metric));
 
 CREATE INDEX ev_known ON events (known_at);
 CREATE INDEX ev_date ON events (date_end);
@@ -64,27 +72,13 @@ CREATE INDEX obs_metric ON observations (section, metric, obs_end);
 CREATE INDEX obs_known ON observations (known_at);
 CREATE INDEX ass_target ON assessments (section, target, made_at);
 
--- the latest-known row per (metric, obs): source revisions are appended, never overwritten
-CREATE VIEW current_obs AS
-SELECT * FROM (SELECT o.*, ROW_NUMBER() OVER (PARTITION BY section, metric, obs
-                ORDER BY known_at DESC, retrieved DESC, line DESC) AS rn FROM observations o)
-WHERE rn = 1;
+-- the effective row per (metric, obs), as chosen by ledger.obs_as_of (precedence
+-- (tier, known_at, retrieved): a non-legacy row outranks any legacy one)
+CREATE VIEW current_obs AS SELECT * FROM observations WHERE effective = 1;
 
 -- headline candidates: only periods that have ended by as_of (as ledger.latest_obs(..., when))
 CREATE VIEW headline_obs AS
 SELECT * FROM current_obs WHERE obs_end <= (SELECT value FROM build_info WHERE key = 'as_of');
-
-CREATE VIEW latest_kpi AS
-WITH ranked AS (SELECT h.*, ROW_NUMBER() OVER (PARTITION BY section, metric
-                ORDER BY obs_end DESC, obs_start DESC) AS k FROM headline_obs h)
-SELECT m.section, m.metric, m.unit, m.required, m.retired, m.cadence,
-       cur.obs, cur.value, cur.value_text, cur.known_at, cur.verification, cur.source,
-       prev.obs AS prev_obs, prev.value AS prev_value, prev.value_text AS prev_value_text,
-       round(cur.value - prev.value, 9) AS change, m.next_expected, m.overdue, m.status, m.definition
-FROM metrics m
-LEFT JOIN ranked cur ON cur.section = m.section AND cur.metric = m.metric AND cur.k = 1
-LEFT JOIN ranked prev ON prev.section = m.section AND prev.metric = m.metric AND prev.k = 2
-ORDER BY m.section, m.required DESC, m.metric;
 
 CREATE VIEW milestone_status AS
 WITH ranked AS (SELECT a.*, ROW_NUMBER() OVER (PARTITION BY section, target
@@ -122,13 +116,18 @@ TABLE_DOCS = {
     "event_topics": "One row per (event, topic tag).",
     "event_sources": "One row per event source URL (ord 0 = first-listed).",
     "event_relates": "Event lifecycle links: event_id --rel--> related_id (update, retraction, ...).",
-    "observations": "KPI datapoints incl. source revisions (ledger/observations); known_at = published.",
+    "observations": "KPI datapoints incl. source revisions (ledger/observations); known_at = published. "
+                    "tier: 0 legacy, 1 otherwise; effective=1 marks the row ledger.obs_as_of picks per "
+                    "(metric, obs): highest (tier, known_at, retrieved).",
     "assessments": "Timestamped milestone/KPI status judgments; known_at = made_at.",
     "metrics": "Metric registry (metrics/*.csv) + derived: latest obs, next_expected "
                "(latest obs end + cadence + release_lag_days), overdue vs as_of.",
-    "current_obs": "Latest-known row per (metric, obs) (revisions resolved).",
+    "current_obs": "Effective row per (metric, obs) (ledger.obs_as_of: non-legacy beats legacy, "
+                   "then the latest known revision).",
     "headline_obs": "current_obs restricted to periods that ended by as_of (headline/schedule basis).",
-    "latest_kpi": "Latest value per registered metric, with the previous obs and the change.",
+    "latest_kpi": "Latest value per registered metric (ledger.latest_obs), the change vs the previous "
+                  "observation with ledger.snapshot's comparability flag/caveat (granularity, calendar "
+                  "month, same obs), and the like-for-like change vs the same month a year earlier.",
     "milestone_status": "Latest assessment per milestone/challenge/kpi target ('not yet assessed' if none), "
                         "with the previous status; legacy_evidence=1 if all evidence events are legacy.",
     "recent_events": "Events, most recently known first.",
@@ -136,9 +135,11 @@ TABLE_DOCS = {
 }
 
 QUERIES = {
-    "kpi_dashboard": ("KPI dashboard", "Latest value, change vs previous obs and schedule per metric.",
+    "kpi_dashboard": ("KPI dashboard", "Latest value, change vs previous observation (with its "
+        "comparability flag), year-ago change for monthly series, and schedule per metric.",
         "SELECT section, metric, required, value_text || ' ' || unit AS latest, obs, known_at, "
-        "verification, prev_value_text AS previous, prev_obs, round(change, 4) AS change, "
+        "verification, prev_value_text AS previous, change_text AS change, change_label, comparable, "
+        "caveat, year_ago_obs, year_ago_change_text AS year_ago_change, "
         "next_expected, status FROM latest_kpi WHERE NOT retired ORDER BY section, required DESC, metric"),
     "events_by_milestone": ("Events by milestone", "Events tagged with a topic, e.g. milestone:the-bend.",
         "SELECT e.section, e.date, e.known_at, e.kind, e.significance, e.verification_status, e.claim, "
@@ -188,6 +189,36 @@ def next_expected(cadence: str, lag: str, obs_end: dt.date) -> dt.date | None:
     else:
         return None
     return nxt + dt.timedelta(days=int(lag))
+
+
+def _change_text(cur: str, before: str) -> str:
+    nd = max(len(v.split(".")[1]) if "." in v else 0 for v in (cur, before))
+    return f"{float(cur) - float(before):+.{nd}f}"
+
+
+def compare(cur: dict, before: dict) -> dict:
+    """Change cur vs before with ledger.snapshot's safeguards (same caveat texts):
+    not comparable across observation granularities (kpi.obs_kind), across
+    different calendar months (seasonal cycle not removed), or for the same obs
+    (a source revision is not a change over time)."""
+    same_obs = cur["obs"] == before["obs"]
+    seasonal = len(cur["obs"]) == 7 and len(before["obs"]) == 7 and cur["obs"][5:] != before["obs"][5:]
+    other_kind = kpi.obs_kind(cur["obs"]) != kpi.obs_kind(before["obs"])
+    return {"value": _change_text(cur["value"], before["value"]), "from_obs": before["obs"], "to_obs": cur["obs"],
+            "comparable": not (same_obs or seasonal or other_kind),
+            "caveat": ("same observation, unchanged: no new data" if same_obs
+                       and float(cur["value"]) == float(before["value"]) else
+                       "same observation revised by the source" if same_obs else
+                       "different calendar month: seasonal cycle not removed" if seasonal else
+                       "different observation granularity" if other_kind else "")}
+
+
+def year_ago(table: dict, cur: dict) -> dict | None:
+    """Like-for-like change for a monthly obs: the same month a year earlier (as ledger.snapshot)."""
+    if len(cur["obs"]) != 7:
+        return None
+    ya = table.get((cur["metric"], f"{int(cur['obs'][:4]) - 1}{cur['obs'][4:]}"))
+    return ya and {"obs": ya["obs"], "value": ya["value"], "change": _change_text(cur["value"], ya["value"])}
 
 
 def readme_meta(section: str) -> tuple[str, str, str, dict[str, str]]:
@@ -272,16 +303,24 @@ def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
             for r in e.get("relates") or []:
                 ins("event_relates", (sec, e.get("id"), r.get("rel"), r.get("id")))
 
+        obs_rows = []
         for r, known in _known(ledger.observations(sec), as_of, f"observations/{sec}"):
             try:
-                start, end = kpi.obs_range(r["obs"])
-                value = float(r["value"])
+                kpi.obs_range(r["obs"]), float(r["value"])
             except ValueError:
                 warn(f"observations/{sec}:{r['_line']}: skipping malformed obs/value")
                 continue
-            ins("observations", (sec, r["metric"], r["obs"], str(start), str(end), value, r["value"],
-                                 r["unit"], r["source"], r["published"], r["published_basis"],
-                                 r["retrieved"], known, r["collector"], r["verification"], r["note"], r["_line"]))
+            obs_rows.append(r)
+        # ONE precedence implementation: the ledger's (tier, known_at, retrieved) rank
+        eff = ledger.obs_as_of(sec, as_of, rows=obs_rows)
+        eff_lines = {r["_line"] for r in eff.values()}
+        for r in obs_rows:
+            start, end = kpi.obs_range(r["obs"])
+            ins("observations", (sec, r["metric"], r["obs"], str(start), str(end), kpi.obs_kind(r["obs"]),
+                                 float(r["value"]), r["value"], r["unit"], r["source"], r["published"],
+                                 r["published_basis"], r["retrieved"], str(ledger.known_at(r)), r["collector"],
+                                 r["verification"], r["note"], ledger.tier(r), int(r["_line"] in eff_lines),
+                                 r["_line"]))
 
         for a, known in _known(ledger.assessments(sec), as_of, f"assessments/{sec}"):
             ins("assessments", (sec, a.get("id"), a.get("target"), a.get("status"), a.get("label"),
@@ -290,19 +329,34 @@ def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
 
         reg, _ = kpi.load_registry(sec)
         for m, row in (reg or {}).items():
-            rows = db.execute("SELECT obs, obs_end, known_at FROM headline_obs WHERE section=? AND metric=? "
-                              "ORDER BY obs_end DESC, obs_start DESC", (sec, m)).fetchall()
-            last = rows[0] if rows else None
+            # headline = ledger.latest_obs: effective rows whose period ended by as_of
+            n_obs = sum(1 for (mm, _), r in eff.items() if mm == m and kpi.obs_range(r["obs"])[1] <= as_of)
+            cur = ledger.latest_obs(eff, m, as_of)
+            prev = ledger.latest_obs({k: r for k, r in eff.items() if k != (m, cur["obs"])}, m, as_of) \
+                if cur else None
+            end = kpi.obs_range(cur["obs"])[1] if cur else None
             retired = bool(row["_ret"] and as_of > row["_ret"])
-            nxt = next_expected(row["cadence"], row["release_lag_days"], D(last[1])) if last else None
+            nxt = next_expected(row["cadence"], row["release_lag_days"], end) if cur else None
             overdue = bool(nxt and nxt < as_of and not retired)
-            status = ("retired" if retired else "no data" if not last else "overdue" if overdue else "ok")
+            status = ("retired" if retired else "no data" if not cur else "overdue" if overdue else "ok")
+            required = int(kpi.required_active(row, as_of))
             ins("metrics", (sec, m, row["unit"], row["cadence"],
                             int(row["release_lag_days"]) if row["release_lag_days"].isdigit() else None,
                             row["required_from"], row["retired_after"], row["definition"],
-                            int(kpi.required_active(row, as_of)), int(retired), len(rows),
-                            *(last or (None, None, None)),
+                            required, int(retired), n_obs,
+                            cur and cur["obs"], end and str(end), cur and str(ledger.known_at(cur)),
                             nxt and str(nxt), int(overdue), status))
+            ch = compare(cur, prev) if cur and prev else None
+            ya = year_ago(eff, cur) if cur else None
+            ins("latest_kpi", (sec, m, row["unit"], required, int(retired), row["cadence"],
+                               *((cur["obs"], kpi.obs_kind(cur["obs"]), float(cur["value"]), cur["value"],
+                                  str(ledger.known_at(cur)), cur["verification"], cur["source"])
+                                 if cur else (None,) * 7),
+                               *((prev["obs"], float(prev["value"]), prev["value"]) if prev else (None,) * 3),
+                               *((float(ch["value"]), ch["value"], f"vs previous observation ({prev['obs']})",
+                                  int(ch["comparable"]), ch["caveat"]) if ch else (None,) * 5),
+                               *((ya["obs"], ya["value"], ya["change"]) if ya else (None,) * 3),
+                               nxt and str(nxt), int(overdue), status, row["definition"]))
     db.commit()
 
 
@@ -356,6 +410,7 @@ h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
 .badge{display:inline-block;font-size:11px;border-radius:4px;padding:0 5px;margin-left:4px;
 border:1px solid currentColor;vertical-align:1px}.b-legacy{color:#975a16;background:#fffaf0}
 .b-verified,.b-corrected,.b-collector{color:var(--green)}.b-req{color:var(--acc)}
+.nc{opacity:.75}.b-nc{color:var(--mute);font-size:10px}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
 .s-green{background:var(--green)}.s-yellow{background:var(--yellow)}.s-red{background:var(--red)}
 .s-none{border:2px dashed var(--mute)}ul{padding-left:0;list-style:none;margin:0}
@@ -381,11 +436,7 @@ def badge(status) -> str:
     return f'<span class="badge b-{esc(status)}">{esc(status or "unverified")}</span>'
 
 
-def _decimals(s: str | None) -> int:
-    return len(s.split(".")[1]) if s and "." in s else 0
-
-
-def sparkline(points: list[tuple[dt.date, float]], w: int = 200, h: int = 34, pad: int = 3) -> str:
+def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200, h: int = 34, pad: int = 3) -> str:
     if len(points) < 2:
         return ""
     x0, x1 = points[0][0].toordinal(), points[-1][0].toordinal()
@@ -395,7 +446,8 @@ def sparkline(points: list[tuple[dt.date, float]], w: int = 200, h: int = 34, pa
     pts = " ".join(f"{sx(d):.1f},{sy(v):.1f}" for d, v in points)
     d, v = points[-1]
     return (f'<svg class="spark" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img">'
-            f'<title>{len(points)} obs {points[0][0]}..{d}; range {lo:g}..{hi:g}</title>'
+            f'<title>{len(points)} {esc(kind + " " if kind else "")}obs {points[0][0]}..{d}; '
+            f'range {lo:g}..{hi:g}</title>'
             f'<polyline points="{pts}" fill="none" stroke="currentColor" stroke-width="1.5"/>'
             f'<circle cx="{sx(d):.1f}" cy="{sy(v):.1f}" r="2.5" fill="currentColor"/></svg>')
 
@@ -409,16 +461,18 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
     body = (f'<div class="v">{esc(k["value_text"])} <small>{esc(k["unit"])}</small></div>'
             f'<div class="d">obs {esc(k["obs"])} · known {esc(k["known_at"])} · '
             f'{link(k["source"], "source")}{badge(k["verification"])}</div>')
+    if k["year_ago_obs"] is not None:  # like-for-like first: the comparable change
+        body += (f'<div class="c">{_arrow(k["year_ago_change_text"])} vs same month a year earlier '
+                 f'({esc(k["year_ago_obs"])}: {esc(k["year_ago_value_text"])})</div>')
     if k["prev_obs"] is not None:
-        ch = k["change"]
-        cls, arrow = ("up", "▲") if ch > 0 else ("down", "▼") if ch < 0 else ("", "=")
-        dec = max(_decimals(k["value_text"]), _decimals(k["prev_value_text"]))
-        body += (f'<div class="c"><span class="{cls}">{arrow} {ch:+.{dec}f}</span> vs '
-                 f'{esc(k["prev_value_text"])} ({esc(k["prev_obs"])})</div>')
-    pts = [(dt.date.fromisoformat(r["obs_end"]), r["value"]) for r in db.execute(
-        "SELECT obs_end, value FROM headline_obs WHERE section=? AND metric=? ORDER BY obs_end, obs_start",
-        (k["section"], k["metric"]))]
-    body += sparkline(pts)
+        if k["comparable"]:
+            body += (f'<div class="c">{_arrow(k["change_text"])} {esc(k["change_label"])}: '
+                     f'{esc(k["prev_value_text"])}</div>')
+        else:
+            body += (f'<div class="c nc" title="not comparable: {esc(k["caveat"])}">'
+                     f'{esc(k["change_text"])} {esc(k["change_label"])}: {esc(k["prev_value_text"])} '
+                     f'<span class="badge b-nc">not comparable: {esc(k["caveat"])}</span></div>')
+    body += sparkline(*spark_points(db, k))
     if k["overdue"]:
         body += f'<div class="gap">OVERDUE — next obs expected by {esc(k["next_expected"])}</div>'
     elif k["next_expected"]:
@@ -428,6 +482,30 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
     else:
         body += f'<div class="d">{esc(k["cadence"])} data, no fixed release date</div>'
     return f'<div class="tile{" overdue" if k["overdue"] else ""}">{head}{body}</div>'
+
+
+def _arrow(change_text: str) -> str:
+    v = float(change_text)
+    cls, arrow = ("up", "▲") if v > 0 else ("down", "▼") if v < 0 else ("", "=")
+    return f'<span class="{cls}">{arrow} {esc(change_text)}</span>'
+
+
+KIND_NAMES = {"9999": "annual", "9999-99": "monthly", "9999-99-99": "daily",
+              "9999-Q9": "quarterly", "9999-H9": "half-yearly"}
+
+
+def spark_points(db: sqlite3.Connection, k: sqlite3.Row) -> tuple[list[tuple[dt.date, float]], str]:
+    """Headline series of ONE granularity (never e.g. daily mixed with monthly):
+    the headline obs's own, unless it has < 2 points, then the dominant one."""
+    kinds = db.execute("SELECT obs_kind, COUNT(*) FROM headline_obs WHERE section=? AND metric=? "
+                       "GROUP BY obs_kind ORDER BY COUNT(*) DESC, obs_kind", (k["section"], k["metric"])).fetchall()
+    if not kinds:
+        return [], ""
+    kind = k["obs_kind"] if dict(kinds).get(k["obs_kind"], 0) >= 2 else kinds[0][0]
+    pts = [(dt.date.fromisoformat(r[0]), r[1]) for r in db.execute(
+        "SELECT obs_end, value FROM headline_obs WHERE section=? AND metric=? AND obs_kind=? "
+        "ORDER BY obs_end, obs_start", (k["section"], k["metric"], kind))]
+    return pts, KIND_NAMES.get(kind, kind)
 
 
 def event_li(e: sqlite3.Row, names: dict[str, str]) -> str:
