@@ -10,9 +10,26 @@ Time semantics (DESIGN.md §2), applied by `row()`:
     (ledger.rule_published, basis=rule) when the registry gives a lag;
     otherwise published = retrieved (basis=seen);
   - a collector may pass an explicit source-stated date (basis=source);
-  - revisions (`mark_revisions`): a value that differs from every value already
-    in the ledger for its (metric, obs) became known when we first saw it, so a
-    rule-basis date (the original release) becomes basis=seen, published=retrieved.
+  - revisions (`mark_revisions`): each staged value is compared with the
+    EFFECTIVE ledger row for its (metric, obs) (ledger.obs_as_of: non-legacy rows
+    outrank legacy ones regardless of dates, then the latest known wins), not
+    with every historical value:
+      * equal to an effective non-legacy row -> unchanged; the rule-basis date is
+        kept and `ledger.py merge` dedups the row (no-op);
+      * different from an effective non-legacy row -> a source REVISION (including
+        a revert to an earlier value): it became known when we first saw it, so a
+        rule-basis date (the original release) becomes basis=seen, published=retrieved;
+      * the effective row is legacy (only report-extracted rows exist) -> the
+        collector value IS the primary-source value, not a revision: it keeps its
+        rule/source date (the original release), which is when that number was
+        actually public. It outranks the legacy row by tier whatever the dates
+        (the legacy value was a report's transcription, not a separate source
+        vintage); committed bulletin snapshots are frozen, so this changes no
+        published bulletin, only as-of views/re-runs, which then show the
+        primary value from its release date. If the legacy value differed, the
+        note says so (for the audit trail).
+    Only rule-basis dates are re-dated: a source-stated date is the source's own
+    (revision) date, and seen-basis rows are already dated first-seen.
 
 CLI shared by all collectors:  <collector>.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
   --fixture DIR  read each source from DIR/<basename of its URL> instead of the network.
@@ -74,18 +91,26 @@ def row(reg: dict, metric: str, obs: str, value: str, source: str, note: str,
             "note": note}
 
 
+def is_revision(r: dict, eff: dict | None) -> bool:
+    """Staged row `r` revises the effective ledger row `eff` (see module doc)."""
+    return (eff is not None and ledger.tier(eff) > 0
+            and Decimal(r["value"]) != Decimal(eff["value"]))
+
+
 def mark_revisions(rows: list[dict], existing: list[dict]) -> list[dict]:
-    """Re-date rule-basis rows that revise a value already in the ledger (see module doc)."""
-    have: dict[tuple[str, str], set[Decimal]] = {}
-    for r in existing:
-        have.setdefault((r["metric"], r["obs"]), set()).add(Decimal(r["value"]))
+    """Re-date rule-basis rows that revise the EFFECTIVE ledger value (see module doc).
+    `existing` = the section's ledger rows (ledger.observations)."""
+    effective = ledger.obs_as_of("", rows=list(existing))
     out = []
     for r in rows:
-        prior = have.get((r["metric"], r["obs"]))
-        if prior and Decimal(r["value"]) not in prior and r["published_basis"] == "rule":
+        eff = effective.get((r["metric"], r["obs"]))
+        if is_revision(r, eff) and r["published_basis"] == "rule":
             r = dict(r, published=r["retrieved"], published_basis="seen",
-                     note=r["note"] + f"; revises earlier ledger value(s) {', '.join(sorted(map(str, prior)))}"
+                     note=r["note"] + f"; revises effective ledger value {eff['value']}"
+                                      f" ({eff['verification']}, published {eff['published']})"
                                       " (published = first seen)")
+        elif eff is not None and ledger.tier(eff) == 0 and Decimal(r["value"]) != Decimal(eff["value"]):
+            r = dict(r, note=r["note"] + f"; primary-source value, outranks legacy report value {eff['value']}")
         out.append(r)
     return out
 

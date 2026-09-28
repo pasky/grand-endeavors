@@ -176,8 +176,13 @@ case("jsr: unexpected column layout fails loudly",
      raises_exit(rockets.parse, "# Bin YDate USA Total\n 1 2020 1.0\n"))
 
 # --- revisions (common.mark_revisions) -------------------------------------------------------
-ledger_rows = [{"metric": "payload-mass-to-orbit", "obs": "2025", "value": "3141"},
-               {"metric": "payload-mass-to-orbit", "obs": "2024", "value": "2625.90"}]
+def lrow(obs, value, published, verification="collector", basis="rule", retrieved=None, metric="payload-mass-to-orbit"):
+    """A ledger row (only the fields mark_revisions / obs_as_of look at matter)."""
+    return {"metric": metric, "obs": obs, "value": value, "unit": "t", "published": published,
+            "published_basis": basis, "retrieved": retrieved or published, "verification": verification}
+
+
+ledger_rows = [lrow("2025", "3141", "2026-01-15"), lrow("2024", "2625.90", "2025-01-15", "verified")]
 marked = by_key(common.mark_revisions(rrow, ledger_rows))
 r = marked[("payload-mass-to-orbit", "2025")]
 case("revisions: a changed value is re-dated to first seen (basis seen, published = retrieved)",
@@ -186,6 +191,61 @@ case("revisions: numerically unchanged and brand-new obs keep the rule date",
      marked[("payload-mass-to-orbit", "2024")]["published_basis"] == "rule"
      and marked[("payload-mass-to-orbit", "2016")]["published"] == "2017-01-15")
 case("revisions: re-dated rows still pass ledger.check_obs_row", registry_ok("rockets", list(marked.values())))
+
+# effective-row semantics: compare with ledger.obs_as_of's winner, not with every historical value
+revert = [lrow("2025", "3194.0", "2026-01-15"),                                     # original release
+          lrow("2025", "3200.0", "2026-05-01", basis="seen")]                       # later source revision
+r = by_key(common.mark_revisions(rrow, revert))[("payload-mass-to-orbit", "2025")]
+case("revisions: a revert to an EARLIER value (3194.0 after 3200.0) is a revision, re-dated to first seen",
+     (r["published"], r["published_basis"]) == ("2026-09-28", "seen") and "3200.0" in r["note"])
+r = by_key(common.mark_revisions(rrow, revert[::-1] + [lrow("2025", "3194", "2026-06-01", "verified", "source")]))[
+    ("payload-mass-to-orbit", "2025")]
+case("revisions: equal to the effective row (numerically, 3194 vs 3194.0) -> unchanged, rule date kept",
+     (r["published"], r["published_basis"]) == ("2026-01-15", "rule") and "revises" not in r["note"])
+legacy_only = [lrow("2025", "3100", "2026-08-01", "legacy", "seen"), lrow("2024", "2625.9", "2026-08-01", "legacy", "seen")]
+lm = by_key(common.mark_revisions(rrow, legacy_only))
+case("revisions: only a legacy row exists (differing) -> primary-source value keeps its rule date, note flags legacy",
+     (lm[("payload-mass-to-orbit", "2025")]["published"], lm[("payload-mass-to-orbit", "2025")]["published_basis"])
+     == ("2026-01-15", "rule") and "legacy report value 3100" in lm[("payload-mass-to-orbit", "2025")]["note"])
+case("revisions: only a legacy row exists (equal) -> rule date kept (merge admits it: outranks legacy)",
+     lm[("payload-mass-to-orbit", "2024")]["published_basis"] == "rule" and "legacy" not in lm[("payload-mass-to-orbit", "2024")]["note"])
+mixed = [lrow("2025", "3194.0", "2026-01-15"), lrow("2025", "3300", "2026-08-01", "legacy", "seen")]
+r = by_key(common.mark_revisions(rrow, mixed))[("payload-mass-to-orbit", "2025")]
+case("revisions: a newer legacy row does not outrank a non-legacy one (equal to the effective collector row)",
+     r["published_basis"] == "rule" and "revises" not in r["note"])
+
+# end to end through the real ledger.prepare (merge planning), with a stubbed ledger state
+def effective_after(existing, staged, quiet=False):
+    """(rows ledger.prepare would admit, obs_as_of of existing + admitted) for a rockets merge."""
+    existing = [dict(r, source="https://example.invalid/x", collector="test", note="") for r in existing]
+    saved = ledger.observations, ledger.events, ledger.assessments
+    with tempfile.TemporaryDirectory() as tmp:
+        f = os.path.join(tmp, "staged.csv")
+        common.write(f, staged)
+        try:
+            ledger.observations, ledger.events, ledger.assessments = (lambda s: list(existing)), (lambda s: []), (lambda s: [])
+            errs, _, plan = ledger.prepare("rockets", obs_files=[f])
+        finally:
+            ledger.observations, ledger.events, ledger.assessments = saved
+    for e in [] if quiet else errs[:5]:
+        print("     ", e)
+    admitted = plan["obs"] if not errs else None
+    return admitted, ledger.obs_as_of("", rows=existing + (admitted or []))
+
+
+adm, eff = effective_after(revert, common.mark_revisions(rrow, revert))
+case("revisions: after merging, the reverted value is the effective one",
+     adm is not None and eff[("payload-mass-to-orbit", "2025")]["value"] == "3194.0"
+     and eff[("payload-mass-to-orbit", "2025")]["collector"] == "collectors/rockets.py@2026-09-28")
+case("revisions: without re-dating, the reverted value would NOT become effective (merge refuses the exact "
+     "duplicate of the original row, or it stays outranked; regression guard)",
+     effective_after(revert, rrow, quiet=True)[1][("payload-mass-to-orbit", "2025")]["value"] == "3200.0")
+adm, eff = effective_after(legacy_only, common.mark_revisions(rrow, legacy_only))
+case("revisions: legacy-only rows are superseded by the collector value (both the equal and the differing one)",
+     adm is not None and eff[("payload-mass-to-orbit", "2025")]["value"] == "3194.0" and eff[("payload-mass-to-orbit", "2024")]["verification"] == "collector")
+same = [lrow(r["obs"], r["value"], r["published"]) for r in rrow]
+case("revisions: a re-run against its own output is a no-op (all rows dedup)",
+     effective_after(same, common.mark_revisions(rrow, same))[0] == [])
 
 # --- CLI: staged file loads with the exact ledger header ------------------------------------
 with tempfile.TemporaryDirectory() as tmp:
