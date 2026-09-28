@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Robots/software KPI collector: METR time-horizon benchmark -> frontier series.
+"""Robots/software KPI collector: METR time-horizon benchmark -> release-cohort series.
 
 Usage:  uv run collectors/robots_software.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
 
@@ -17,20 +17,24 @@ Format (YAML, parsed line-wise by `yaml_paths`, no dependency):
         release_date: YYYY-MM-DD
         scaffolds: [...]
 
-Output: metr-50-horizon-frontier / metr-80-horizon-frontier, one row per date on
-which the frontier (highest point estimate of any model in the file) improved.
+Output: metr-50-horizon-by-release / metr-80-horizon-by-release, one row per date on
+which the release-cohort best (highest point estimate of any model in the file
+released by that date) improved.
 Choices:
   - obs = the model's release_date (YYYY-MM-DD). The file has no evaluation or
-    publication date, so the series answers "best horizon among models released
+    publication date, so the series answers "best horizon among models RELEASED
     by that date", computed from the current file vintage (METR re-estimates
     earlier models when the task suite changes; re-runs then append revisions).
-    This approximates the registry's "publicly evaluated as of the obs date":
-    METR's evaluation of a model is published some time after its release.
+    This is a release-cohort reconstruction, NOT metr-*-horizon-frontier ("best
+    of any model publicly evaluated as of the obs date": METR's evaluation of a
+    model is published some time after its release, and later vintages re-score
+    old models). Hence its own registry ids (*-by-release); the *-frontier ids
+    keep only the pilot-2025 report values (legacy).
   - Append-only safety: every date the ledger already holds for these metrics
-    (earlier runs, legacy YYYY-MM rows) is re-stated as the frontier as of that
-    date per the current file, so if METR revises a model down, the stale peak
+    (earlier runs, incl. YYYY-MM dates) is re-stated as the best among models
+    released by that date per the current file, so if METR revises a model down, the stale peak
     gets a corrected (newer) row instead of lingering.
-  - Frontiers are computed independently for p50 and p80 (METR's is_sota flag
+  - The series are computed independently for p50 and p80 (METR's is_sota flag
     tracks p50 only). Ties on one date keep the higher estimate.
   - value = point estimate rounded half-up to 2 decimals (minutes); the note
     names the model, its per-model benchmark version and the CI.
@@ -47,7 +51,7 @@ import kpi
 
 SECTION = "robots-software"
 URL = "https://metr.org/assets/benchmark_results_1_1.yaml"
-METRICS = {"p50": "metr-50-horizon-frontier", "p80": "metr-80-horizon-frontier"}
+METRICS = {"p50": "metr-50-horizon-by-release", "p80": "metr-80-horizon-by-release"}
 
 
 def yaml_paths(text: str) -> dict[tuple[str, ...], str]:
@@ -119,12 +123,12 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
     for q, metric in METRICS.items():
         new = {m["release"]: m for m in frontier(ms, q)}
         for obs, m in new.items():
-            add(metric, obs, m, q, f"new {q} frontier")
+            add(metric, obs, m, q, f"new best {q} by release date")
         # Re-state every other date already in the ledger for this metric against the
         # current vintage, so a re-estimated (or removed) model cannot leave a stale peak.
         for obs in sorted({r["obs"] for r in existing if r["metric"] == metric} - set(new)):
             if m := best_as_of(ms, q, kpi.obs_range(obs)[1]):
-                add(metric, obs, m, q, f"{q} frontier as of {obs} per the current file, set by {m['release']}")
+                add(metric, obs, m, q, f"best {q} among models released by {obs} per the current file, set by {m['release']}")
     return rows
 
 

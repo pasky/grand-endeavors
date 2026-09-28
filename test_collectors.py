@@ -130,7 +130,19 @@ case("metr: p80 frontier is computed independently of p50",
 mrow = robots_software.collect(FIX, TODAY, "collectors/robots_software.py@2026-09-28")
 mk = by_key(mrow)
 case("metr: all rows pass ledger.check_obs_row against metrics/robots-software.csv", registry_ok("robots-software", mrow))
-r = mk[("metr-80-horizon-frontier", "2026-02-19")]
+case("metr: emits the release-cohort ids only (never the as-publicly-evaluated *-frontier ids)",
+     {r["metric"] for r in mrow} == {"metr-50-horizon-by-release", "metr-80-horizon-by-release"})
+reg_rs = common.registry("robots-software")
+case("metr: registry: by-release ids (min, irregular, no lag); p80 required from 26H1, old p80 frontier retired after 2025",
+     all((reg_rs[m]["unit"], reg_rs[m]["cadence"], reg_rs[m]["release_lag_days"]) == ("min", "irregular", "")
+         and "RELEASED" in reg_rs[m]["definition"] for m in robots_software.METRICS.values())
+     and reg_rs["metr-80-horizon-by-release"]["required_from"] == "pilot-26H1"
+     and reg_rs["metr-80-horizon-frontier"]["retired_after"] == "pilot-2025")
+case("metr: legacy rows of the old *-frontier ids are NOT re-stated under the new ids",
+     not any(r["obs"] == "2025-11" for r in robots_software.collect(
+         FIX, TODAY, "x", [{"metric": "metr-80-horizon-frontier", "obs": "2025-11"},
+                           {"metric": "metr-50-horizon-frontier", "obs": "2025-11"}])))
+r = mk[("metr-80-horizon-by-release", "2026-02-19")]
 case("metr: row = release date, 2-dp estimate, basis seen, note names the model",
      r["value"] == "89.80" and r["published"] == r["retrieved"] == "2026-09-28" and r["published_basis"] == "seen"
      and "gemini_3_1_pro" in r["note"] and "release_date" in r["note"] and r["unit"] == "min")
@@ -147,17 +159,17 @@ with tempfile.TemporaryDirectory() as tmp:
         f.write(v2)
     v1_rows = robots_software.collect(FIX, dt.date(2026, 9, 1), "v1")
     v2_rows = robots_software.collect(tmp, TODAY, "v2", v1_rows)
-restated = by_key(v2_rows).get(("metr-80-horizon-frontier", "2026-02-19"))
+restated = by_key(v2_rows).get(("metr-80-horizon-by-release", "2026-02-19"))
 case("metr: a revised-away frontier date is re-stated at the current frontier (69.87, not 89.80)",
      restated is not None and restated["value"] == "69.87" and "claude_opus_4_6_inspect" in restated["note"])
 latest = {}
 for r in v1_rows + v2_rows:  # ledger as-of rule: per (metric, obs) the latest-known row wins
     latest[(r["metric"], r["obs"])] = r
-head = max((r for (m, _), r in latest.items() if m == "metr-80-horizon-frontier"), key=lambda r: r["obs"])
+head = max((r for (m, _), r in latest.items() if m == "metr-80-horizon-by-release"), key=lambda r: r["obs"])
 case("metr: after both vintages the latest p80 frontier in the ledger view is 69.87", head["value"] == "69.87")
-case("metr: legacy YYYY-MM ledger dates are re-stated as of the month end",
-     by_key(robots_software.collect(FIX, TODAY, "x", [{"metric": "metr-80-horizon-frontier", "obs": "2024-04"}]))
-     [("metr-80-horizon-frontier", "2024-04")]["value"] == "0.93")
+case("metr: YYYY-MM ledger dates of the metric are re-stated as of the month end",
+     by_key(robots_software.collect(FIX, TODAY, "x", [{"metric": "metr-80-horizon-by-release", "obs": "2024-04"}]))
+     [("metr-80-horizon-by-release", "2024-04")]["value"] == "0.93")
 
 # --- rockets (JSR) ---------------------------------------------------------------------
 parsed = rockets.parse(fixture("msatannual.txt"))
