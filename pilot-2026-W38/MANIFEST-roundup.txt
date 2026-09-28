@@ -1,11 +1,11 @@
 # Round-up manifest — pilot-2026-W38
 report_period: 2026-W38
-generated_at:  2026-09-28T19:05:41Z
+generated_at:  2026-09-28T19:59:14Z
 pi_version:    0.87.1
 agent_commit:  c2e242606c955984bf579f278ffacd8096beae8c
 agent_dirty:   no
 settings_sha:  43113ecd4450fcf0
-spec_commit:   83853f792ac6496a01b161c0c62eccbab100c6b9  (HEAD at run START; output committed AFTER)
+spec_commit:   1521430ba8dc3e5e6532b14ba89beb49e9217486  (HEAD at run START; output committed AFTER)
 inputs (git blob hash of each compiled section):
-  9147e1c9b48925049aa2ffca3e5c12601d549bd8  pilot-2026-W38/climate.md
+  cddd5d26b2a7599dac19f7b9e4abbbfe3c81f08b  pilot-2026-W38/climate.md
 not_covered:   robots-software robots-hardware rockets fusion health knowledge-beyond society-cohesion
