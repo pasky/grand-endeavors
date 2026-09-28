@@ -1,0 +1,6 @@
+# NOAA GML fixture snippet (tests only)
+# File Creation: Sat Sep  5 03:55:32 2026
+# year     mean      unc
+  1979   336.85     0.10
+  2024   422.79     0.09
+  2025   425.62     0.05

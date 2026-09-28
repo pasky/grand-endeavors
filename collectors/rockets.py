@@ -35,7 +35,7 @@ METRIC = "payload-mass-to-orbit"
 def parse(text: str) -> list[tuple[int, str]]:
     """[(year, total tonnes)] for every year row of msatannual.txt (incl. a partial current year)."""
     lines = [ln for ln in text.splitlines() if ln.strip()]
-    header = next((ln.lstrip("#").split() for ln in lines if ln.startswith("#")), [])
+    header = next((ln.lstrip("#").split() for ln in lines if ln.startswith("#") and "YDate" in ln), [])
     if "YDate" not in header or "Total" not in header:
         raise SystemExit(f"{URL}: unexpected header {header} (need YDate and Total columns)")
     iy, it = header.index("YDate"), header.index("Total")

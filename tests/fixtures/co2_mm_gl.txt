@@ -1,0 +1,7 @@
+# NOAA GML fixture snippet (tests only); the 2026-07 -99.99 row is a synthetic missing-value sentinel
+# File Creation: Sat Sep  5 03:55:32 2026
+# year   month       decimal       average   average_unc         trend     trend_unc
+  1979       1      1979.042        336.56          0.10        335.92          0.09
+  2026       5      2026.375        428.59          0.10        427.05          0.06
+  2026       6      2026.458        427.62          0.10        427.20          0.06
+  2026       7      2026.542        -99.99         -9.99        -99.99         -9.99

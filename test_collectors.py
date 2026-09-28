@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""Offline regression tests for the deterministic KPI collectors (collectors/*.py).
+
+Run:  uv run test_collectors.py     (no network; sources come from tests/fixtures/,
+                                     small verbatim snippets of the real files)
+"""
+import datetime as dt
+import os
+import subprocess
+import sys
+import tempfile
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+FIX = os.path.join(ROOT, "tests", "fixtures")
+sys.path.insert(0, os.path.join(ROOT, "collectors"))
+
+import climate  # noqa: E402
+import common  # noqa: E402
+import ledger  # noqa: E402
+import robots_software  # noqa: E402
+import rockets  # noqa: E402
+
+FAILS = []
+TODAY = dt.date(2026, 9, 28)
+
+
+def case(name, cond):
+    if not cond:
+        FAILS.append(name)
+    print(("ok   " if cond else "FAIL ") + name)
+
+
+def raises_exit(fn, *a):
+    try:
+        fn(*a)
+    except SystemExit:
+        return True
+    return False
+
+
+def fixture(name):
+    return common.fetch("https://example.invalid/" + name, FIX)
+
+
+def by_key(rows):
+    return {(r["metric"], r["obs"]): r for r in rows}
+
+
+def registry_ok(section, rows):
+    """Every row passes ledger.check_obs_row against the section registry."""
+    errs = common.check(rows, common.registry(section))
+    for e in errs[:5]:
+        print("     ", e)
+    return not errs and bool(rows)
+
+
+# --- climate -------------------------------------------------------------------
+mm = climate.parse_monthly(fixture("co2_mm_mlo.txt"))
+case("climate: monthly MLO parses every data row, values verbatim",
+     len(mm) == 8 and mm[0][:2] == ("1958-03", "315.71") and ("2026-05", "432.34") in [m[:2] for m in mm])
+gl = climate.parse_monthly(fixture("co2_mm_gl.txt"))
+case("climate: negative missing-value sentinel is skipped", [m[0] for m in gl] == ["1979-01", "2026-05", "2026-06"])
+case("climate: file creation date parsed from header", climate.file_created(fixture("co2_mm_mlo.txt")) == "2026-09-05")
+case("climate: growth file keeps source formatting ('1.90')",
+     ("2017", "1.90") in climate.parse_annual(fixture("co2_gr_mlo.txt")))
+
+gr_mlo = climate.parse_annual(fixture("co2_gr_mlo.txt"))
+gr_gl = climate.parse_annual(fixture("co2_gr_gl.txt"))
+t10 = {y: v for y, v, _ in climate.trend(gr_mlo, 10)}
+case("climate: 10-yr MLO trend 2025 = mean 2016-2025 = 2.56", t10.get("2025") == "2.56")
+case("climate: 10-yr MLO trend 2020 = 2.43 (24.25/10 rounded half-up, not float 2.42)", t10.get("2020") == "2.43")
+case("climate: 10-yr trend starts at the first full window (2010-2019)", min(t10) == "2019")
+case("climate: 5-yr MLO trend 2025 = 2.61, 2020 = 2.51",
+     {y: v for y, v, _ in climate.trend(gr_mlo, 5)}.get("2025") == "2.61"
+     and {y: v for y, v, _ in climate.trend(gr_mlo, 5)}.get("2020") == "2.51")
+g10 = {y: v for y, v, _ in climate.trend(gr_gl, 10)}
+g5 = {y: v for y, v, _ in climate.trend(gr_gl, 5)}
+case("climate: global trends match the verified ledger (10yr 2020/2024/2025 = 2.38/2.62/2.53; 5yr 2020/2025 = 2.44/2.63)",
+     (g10["2020"], g10["2024"], g10["2025"], g5["2020"], g5["2025"]) == ("2.38", "2.62", "2.53", "2.44", "2.63"))
+case("climate: no trend window across a gap in the years",
+     climate.trend([("2000", "1"), ("2001", "1"), ("2003", "1"), ("2004", "1")], 3) == [])
+
+daily = dict(climate.parse_daily(fixture("co2_daily_mlo.txt")))
+case("climate: daily keeps only the last 60 days before the file's latest date",
+     "2026-09-24" in daily and "2026-07-27" in daily and "2026-07-26" not in daily and "2026-05-01" not in daily)
+
+crow = climate.collect(FIX, TODAY, "collectors/climate.py@2026-09-28")
+ck = by_key(crow)
+case("climate: all rows pass ledger.check_obs_row against metrics/climate.csv", registry_ok("climate", crow))
+case("climate: emits every source metric and the four derived trends",
+     {r["metric"] for r in crow} == {"co2-mlo-monthly", "co2-global-monthly", "co2-mlo-annual", "co2-global-annual",
+                                     "co2-growth-mlo-jan-dec", "co2-growth-global-jan-dec", "co2-mlo-daily",
+                                     "co2-trend-10yr-mlo-jan-dec", "co2-trend-5yr-mlo-jan-dec",
+                                     "co2-trend-10yr-global-jan-dec", "co2-trend-5yr-global-jan-dec"})
+r = ck[("co2-mlo-monthly", "2026-05")]
+case("climate: rule-basis publication (obs end + 7 d), provenance fields",
+     (r["published"], r["published_basis"], r["retrieved"], r["verification"], r["collector"])
+     == ("2026-06-07", "rule", "2026-09-28", "collector", "collectors/climate.py@2026-09-28"))
+case("climate: rule publication is capped at retrieved (daily 2026-09-24 + 2 d vs retrieved 09-25)",
+     by_key(climate.collect(FIX, dt.date(2026, 9, 25), "x"))[("co2-mlo-daily", "2026-09-24")]["published"] == "2026-09-25")
+case("climate: notes flag Scripps era, interpolated month, Maunakea site, preliminary",
+     "Scripps" in ck[("co2-mlo-monthly", "1958-03")]["note"]
+     and "interpolated" in ck[("co2-mlo-monthly", "1975-12")]["note"]
+     and "Maunakea" in ck[("co2-mlo-monthly", "2023-01")]["note"]
+     and "preliminary" in ck[("co2-mlo-monthly", "2025-09")]["note"]
+     and "preliminary" not in ck[("co2-mlo-monthly", "2025-08")]["note"]
+     and "preliminary" in ck[("co2-mlo-annual", "2025")]["note"]
+     and "preliminary" not in ck[("co2-mlo-annual", "2024")]["note"])
+tr = ck[("co2-trend-10yr-mlo-jan-dec", "2025")]
+case("climate: trend row is marked derived, cites the growth file and window",
+     tr["value"] == "2.56" and tr["source"].endswith("/co2_gr_mlo.txt") and "Derived" in tr["note"]
+     and "2016-2025" in tr["note"] and "co2_gr_mlo.txt" in tr["note"] and tr["unit"] == "ppm/yr")
+
+# --- robots-software (METR) --------------------------------------------------------
+case("metr: yaml_paths reads nested scalars, ignores comments and list items",
+     robots_software.yaml_paths("a: # c\n  b:\n    c: 1\n  d: x\n  l:\n  - y: 2\ne: 3\n")
+     == {("a", "b", "c"): "1", ("a", "d"): "x", ("e",): "3"})
+bench, ms = robots_software.models(fixture("benchmark_results_1_1.yaml"))
+case("metr: fixture models parsed (benchmark name, 6 models, release dates, estimates)",
+     bench == "METR-Horizon-v1.1" and len(ms) == 6
+     and {m["id"]: m["release"] for m in ms}["gpt_4_turbo_inspect"] == "2024-04-09"
+     and abs({m["id"]: m for m in ms}["claude_opus_4_6_inspect"]["p50"]["estimate"] - 718.8) < 0.1)
+case("metr: p50 frontier = models that beat every earlier release (same-date tie keeps the higher)",
+     [m["id"] for m in robots_software.frontier(ms, "p50")] == ["gpt_4", "gpt_4_1106_inspect", "claude_opus_4_6_inspect"])
+case("metr: p80 frontier is computed independently of p50",
+     [m["id"] for m in robots_software.frontier(ms, "p80")]
+     == ["gpt_4", "gpt_4_turbo_inspect", "claude_opus_4_6_inspect", "gemini_3_1_pro"])
+mrow = robots_software.collect(FIX, TODAY, "collectors/robots_software.py@2026-09-28")
+mk = by_key(mrow)
+case("metr: all rows pass ledger.check_obs_row against metrics/robots-software.csv", registry_ok("robots-software", mrow))
+r = mk[("metr-80-horizon-frontier", "2026-02-19")]
+case("metr: row = release date, 2-dp estimate, basis seen, note names the model",
+     r["value"] == "89.80" and r["published"] == r["retrieved"] == "2026-09-28" and r["published_basis"] == "seen"
+     and "gemini_3_1_pro" in r["note"] and "release_date" in r["note"] and r["unit"] == "min")
+case("metr: frontier series is strictly increasing per metric",
+     all(float(a["value"]) < float(b["value"]) for m in robots_software.METRICS.values()
+         for a, b in zip([x for x in mrow if x["metric"] == m], [x for x in mrow if x["metric"] == m][1:])))
+case("metr: an HTML 404 page is rejected, not silently parsed as empty",
+     raises_exit(robots_software.models, "<!DOCTYPE html>\n<title>404 - METR</title>\n"))
+
+# --- rockets (JSR) ---------------------------------------------------------------------
+parsed = rockets.parse(fixture("msatannual.txt"))
+case("jsr: year rows parsed (Total column, verbatim), all-time Total row skipped",
+     parsed == [(1956, "0.0"), (2016, "337.4"), (2024, "2625.9"), (2025, "3194.0"), (2026, "2120.6")])
+rrow = rockets.collect(FIX, TODAY, "collectors/rockets.py@2026-09-28")
+case("jsr: the partial current year (2026) is NOT emitted", [r["obs"] for r in rrow] == ["1956", "2016", "2024", "2025"])
+case("jsr: a year is emitted only once its release lag has passed (2025 absent on 2026-01-10)",
+     "2025" not in [r["obs"] for r in rockets.collect(FIX, dt.date(2026, 1, 10), "x")]
+     and "2025" in [r["obs"] for r in rockets.collect(FIX, dt.date(2026, 1, 15), "x")])
+case("jsr: all rows pass ledger.check_obs_row against metrics/rockets.csv", registry_ok("rockets", rrow))
+r = by_key(rrow)[("payload-mass-to-orbit", "2025")]
+case("jsr: 2025 = 3194.0 t, rule-published 2026-01-15",
+     (r["value"], r["unit"], r["published"], r["published_basis"]) == ("3194.0", "t", "2026-01-15", "rule"))
+case("jsr: unexpected column layout fails loudly",
+     raises_exit(rockets.parse, "# Bin YDate USA Total\n 1 2020 1.0\n"))
+
+# --- CLI: staged file loads with the exact ledger header ------------------------------------
+with tempfile.TemporaryDirectory() as tmp:
+    ok = True
+    for script, section in (("climate.py", "climate"), ("robots_software.py", "robots-software"), ("rockets.py", "rockets")):
+        out = os.path.join(tmp, f"{section}.csv")
+        p = subprocess.run([sys.executable, os.path.join(ROOT, "collectors", script), "--fixture", FIX,
+                            "--out", out, "--today", "2026-09-28"], capture_output=True, text=True)
+        try:
+            rows = ledger.load_obs(out)  # raises unless the header is exactly OBS_COLUMNS
+            ok &= p.returncode == 0 and bool(rows) and all(r["verification"] == "collector" for r in rows)
+        except (OSError, ValueError) as e:
+            print("     ", script, e, p.stderr[-500:])
+            ok = False
+    case("cli: each collector writes a staged CSV with exactly ledger.OBS_COLUMNS", ok)
+
+print(f"\n{len(FAILS)} failure(s)" if FAILS else "\nall collector tests passed")
+sys.exit(1 if FAILS else 0)
