@@ -1,0 +1,9 @@
+# Bulletin manifest — pilot-2026-W38 / climate
+period:        2026-W38  (cutoff 2026-09-22; new = published after 2026-09-15)
+generated_at:  2026-09-28T18:53:54Z
+ledger_commit: 3bfc7028771a9e8000496337a00a3aaa7e8f14bd  (the snapshot is the ledger at this commit, as of the cutoff)
+pi_version:    0.87.1
+agent_commit:  c2e242606c955984bf579f278ffacd8096beae8c
+agent_dirty:   no
+settings_sha:  43113ecd4450fcf0
+spec_commit:   3bfc7028771a9e8000496337a00a3aaa7e8f14bd
