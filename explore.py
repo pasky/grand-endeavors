@@ -91,10 +91,15 @@ WITH ranked AS (SELECT a.*, ROW_NUMBER() OVER (PARTITION BY section, target
                 ORDER BY made_at DESC, line DESC) AS k FROM assessments a)
 SELECT t.section, t.topic AS target, t.kind, t.name, t.ord,
        COALESCE(a.status, 'not yet assessed') AS status, a.label, a.made_at, a.rationale,
-       a.evidence, a.id AS assessment_id,
+       a.evidence, a.by, a.id AS assessment_id,
+       -- 1 when every evidence event is legacy (an unverified pilot-2025 judgment)
+       (SELECT MIN(e.verification_status = 'legacy') FROM json_each(a.evidence) j
+         JOIN events e ON e.section = a.section AND e.id = j.value) AS legacy_evidence,
+       p.status AS prev_status, p.made_at AS prev_made_at,
        (SELECT COUNT(*) FROM event_topics et
          WHERE et.section = t.section AND et.topic = t.topic) AS n_events
 FROM topics t LEFT JOIN ranked a ON a.section = t.section AND a.target = t.topic AND a.k = 1
+LEFT JOIN ranked p ON p.section = t.section AND p.target = t.topic AND p.k = 2
 WHERE t.kind != 'beyond'
 ORDER BY t.section, t.ord;
 
@@ -124,7 +129,8 @@ TABLE_DOCS = {
     "current_obs": "Latest-known row per (metric, obs) (revisions resolved).",
     "headline_obs": "current_obs restricted to periods that ended by as_of (headline/schedule basis).",
     "latest_kpi": "Latest value per registered metric, with the previous obs and the change.",
-    "milestone_status": "Latest assessment per milestone/challenge/kpi target ('not yet assessed' if none).",
+    "milestone_status": "Latest assessment per milestone/challenge/kpi target ('not yet assessed' if none), "
+                        "with the previous status; legacy_evidence=1 if all evidence events are legacy.",
     "recent_events": "Events, most recently known first.",
     "gaps": "Registered (non-retired) metrics that are overdue or were never observed.",
 }
@@ -417,8 +423,10 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
         body += f'<div class="gap">OVERDUE — next obs expected by {esc(k["next_expected"])}</div>'
     elif k["next_expected"]:
         body += f'<div class="d">next expected by {esc(k["next_expected"])}</div>'
+    elif k["cadence"] == "irregular":
+        body += '<div class="d">irregular releases (no schedule)</div>'
     else:
-        body += f'<div class="d">{esc(k["cadence"])} cadence (no schedule)</div>'
+        body += f'<div class="d">{esc(k["cadence"])} data, no fixed release date</div>'
     return f'<div class="tile{" overdue" if k["overdue"] else ""}">{head}{body}</div>'
 
 
@@ -440,47 +448,72 @@ def event_li(e: sqlite3.Row, names: dict[str, str]) -> str:
 
 def section_html(db: sqlite3.Connection, s: sqlite3.Row, n_recent: int = 8) -> str:
     sec = s["section"]
-    out = [f'<section id="{esc(sec)}"><h2>{esc(s["grp"] + " › " if s["grp"] else "")}{esc(s["title"])}</h2>']
-    out.append(f'<div class="mute">KPI: {esc(s["kpi"]) if s["kpi"] else "<span class=gap>no KPI defined in README</span>"}</div>')
-    out.append("<h3>KPI metrics</h3>")
+    ms = db.execute("SELECT * FROM milestone_status WHERE section=? ORDER BY ord", (sec,)).fetchall()
     tiles = db.execute("SELECT * FROM latest_kpi WHERE section=? AND NOT retired "
                        "ORDER BY required DESC, metric", (sec,)).fetchall()
+    framework = bool(s["kpi"] or len(ms) > 1)  # supplemental sections have no KPI/milestones by design
+    out = [f'<section id="{esc(sec)}"><h2>{esc(s["grp"] + " › " if s["grp"] else "")}{esc(s["title"])}</h2>']
+    if s["kpi"]:
+        out.append(f'<div class="mute">KPI: {esc(s["kpi"])}</div>')
+    elif not framework:
+        out.append('<div class="mute">Supplemental section: no KPI, milestones or challenges in README.</div>')
+
+    # required metrics and every gap are always shown; the rest of the registry folds away
+    main = [t for t in tiles if t["required"] or t["status"] in ("overdue", "no data")]
+    if not any(t["required"] for t in tiles):  # no headline metrics: nothing to fold behind
+        main = tiles
+    rest = [t for t in tiles if t not in main]
+    out.append("<h3>KPI metrics</h3>")
     if not tiles:
-        out.append(f'<div class="gap">no metrics registered yet (metrics/{esc(sec)}.csv)</div>')
-    elif not any(t["required"] for t in tiles):
+        cls = "gap" if s["kpi"] else "mute"
+        out.append(f'<div class="{cls}">no metrics registered yet (metrics/{esc(sec)}.csv)</div>')
+    elif s["kpi"] and not any(t["required"] for t in tiles):
         out.append('<div class="gap">no required KPI metric in the registry yet</div>')
-    out.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in tiles) + "</div>")
+    out.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in main) + "</div>")
+    if rest:
+        out.append(f"<details><summary>{len(rest)} more registered metric(s)</summary>"
+                   '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
 
     out.append('<div class="cols"><div>')
-    ms = db.execute("SELECT * FROM milestone_status WHERE section=? ORDER BY ord", (sec,)).fetchall()
     for kind, title in (("kpi", "KPI assessment"), ("milestone", "Milestones"), ("challenge", "Challenges")):
         rows = [m for m in ms if m["kind"] == kind]
         if not rows:
-            if kind != "kpi":
+            if kind != "kpi" and framework:
                 out.append(f'<h3>{title}</h3><div class="gap">none listed in README</div>')
             continue
         out.append(f"<h3>{title}</h3><ul>")
         for m in rows:
             if m["assessment_id"]:
+                prev = (f", was {esc(m['prev_status'])} on {esc(m['prev_made_at'])}"
+                        if m["prev_status"] and m["prev_status"] != m["status"] else "")
                 st = (f'<span class="dot s-{esc(m["status"])}"></span><b>{esc(m["name"])}</b> — '
-                      f'{esc(m["label"])} <span class="mute">({esc(m["status"])}, assessed {esc(m["made_at"])})</span>')
+                      f'{esc(m["label"])} <span class="mute">({esc(m["status"])}, assessed '
+                      f'{esc(m["made_at"])}{prev})</span>{badge("legacy") if m["legacy_evidence"] else ""}')
             else:
                 st = (f'<span class="dot s-none"></span><b>{esc(m["name"])}</b> — '
                       f'<span class="gap">not yet assessed</span>')
-            out.append(f'<li class="ms" title="{esc(m["rationale"] or "")}">{st} '
+            tip = f'{m["rationale"]} [by {m["by"]}]' if m["assessment_id"] else ""
+            out.append(f'<li class="ms" title="{esc(tip)}">{st} '
                        f'<span class="mute">· {m["n_events"]} event(s)</span></li>')
         out.append("</ul>")
 
+    # latest = most recently known; older ones fold away by significance, newest first
     names = {r["topic"]: r["name"] for r in db.execute("SELECT topic, name FROM topics WHERE section=?", (sec,))}
-    evs = db.execute("SELECT * FROM events WHERE section=? ORDER BY known_at DESC, date_end DESC, id DESC",
+    evs = db.execute("SELECT * FROM events WHERE section=? "
+                     "ORDER BY known_at DESC, date_end DESC, significance DESC, id DESC",
                      (sec,)).fetchall()
     out.append(f"</div><div><h3>Latest events ({len(evs)})</h3>")
     if not evs:
         out.append('<div class="gap">no events in the ledger yet</div>')
     out.append("<ul>" + "".join(event_li(e, names) for e in evs[:n_recent]) + "</ul>")
-    if len(evs) > n_recent:
-        out.append(f"<details><summary>{len(evs) - n_recent} older event(s)</summary><ul>"
-                   + "".join(event_li(e, names) for e in evs[n_recent:]) + "</ul></details>")
+    older = sorted(evs[n_recent:], key=lambda e: (e["date_end"] or "", e["known_at"], e["id"]), reverse=True)
+    for sig, label in ((3, "major"), (2, "notable"), (1, "minor")):
+        group = [e for e in older if (e["significance"] or 1) == sig]
+        if group:
+            n_leg = sum(e["verification_status"] == "legacy" for e in group)
+            out.append(f"<details><summary>{len(group)} earlier {label} event(s)"
+                       f"{f' ({n_leg} legacy)' if n_leg else ''}</summary><ul>"
+                       + "".join(event_li(e, names) for e in group) + "</ul></details>")
     return "".join(out) + "</div></div></section>"
 
 

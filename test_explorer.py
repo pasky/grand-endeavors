@@ -92,6 +92,9 @@ ASSESSMENTS = [
     {"id": "climate-the-bend-2026-10-01", "target": "milestone:the-bend", "status": "red",
      "label": "Rebound", "made_at": "2026-10-01", "rationale": "Later judgment.",
      "evidence": [], "by": "assess-agent"},
+    {"id": "climate-the-balance-2026-03-03", "target": "milestone:the-balance", "status": "red",
+     "label": "Distant", "made_at": "2026-03-03", "rationale": "Pilot-era judgment.",
+     "evidence": ["2026-03-01-first-peak-claim"], "by": "migration:pilot-2025/climate.md"},
 ]
 
 
@@ -147,7 +150,7 @@ def main():
         case("event_topics / sources / relates flattened",
              (n("event_topics"), n("event_sources"), n("event_relates")) == (3, 3, 1))
         case("observations incl. revisions", n("observations") == 8)
-        case("assessments as-of (later one excluded)", n("assessments") == 1)
+        case("assessments as-of (later one excluded)", n("assessments") == 2)
         case("sections: all SECTIONS, README-less ones included", n("sections") == len(ledger.SECTIONS))
         case("topics from README", {r[0] for r in q(db, "SELECT topic FROM topics WHERE section='climate'")}
              == {"kpi", "beyond", "milestone:the-bend", "milestone:the-balance", "challenge:permanent-removal"})
@@ -179,8 +182,11 @@ def main():
              dict(q(db, "SELECT target, assessment_id FROM milestone_status WHERE assessment_id IS NOT NULL")))
         ms = {r[0]: r[1] for r in q(db, "SELECT target, status FROM milestone_status WHERE section='climate'")}
         case("milestone_status latest + not yet assessed",
-             ms.get("milestone:the-bend") == "green" and ms.get("milestone:the-balance") == "not yet assessed"
+             ms.get("milestone:the-bend") == "green" and ms.get("challenge:permanent-removal") == "not yet assessed"
              and "beyond" not in ms)
+        leg = dict(q(db, "SELECT target, legacy_evidence FROM milestone_status WHERE assessment_id IS NOT NULL"))
+        case("milestone_status flags all-legacy evidence",
+             leg == {"milestone:the-bend": 0, "milestone:the-balance": 1})
         case("recent_events newest known first", q(db, "SELECT id FROM recent_events")[0][0] == "2026-07-01-peak-update")
 
         meta = json.load(open(os.path.join(out, "metadata.json")))
@@ -210,7 +216,8 @@ def main():
         explore.build_db(db, D("2026-10-10"))
         case("later as-of sees late event + newer assessment",
              q(db, "SELECT COUNT(*) FROM events")[0][0] == 3 and
-             q(db, "SELECT status FROM milestone_status WHERE target='milestone:the-bend'")[0][0] == "red")
+             q(db, "SELECT status, prev_status FROM milestone_status WHERE target='milestone:the-bend'")[0]
+             == ("red", "green"))
 
         page = explore.dashboard(D("2026-09-28"))
         case("dashboard escapes claims", "<script>alert(1)" not in page and "&lt;script&gt;alert(1)" in page)
@@ -230,6 +237,14 @@ def main():
         case("dashboard change vs previous", "+1.15" in page)
         case("dashboard lifecycle link", 'href="#ev-climate-2026-03-01-first-peak-claim"' in page)
         case("dashboard as-of excludes late event", "late announcement" not in page)
+        case("dashboard shows required + gap tiles, folds the rest",
+             page.index("co2-never") < page.index("more registered metric") < page.index("co2-nolag"))
+        db = sqlite3.connect(":memory:")
+        explore.build_db(db, D("2026-10-10"))
+        db.row_factory = sqlite3.Row
+        sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), 1)
+        case("older events fold by significance", "1 earlier notable event(s) (1 legacy)" in sec
+             and "1 earlier major event(s)" in sec and "was green on 2026-07-02" in sec)
         case("dashboard deterministic", page == explore.dashboard(D("2026-09-28")))
 
         with mock.patch.object(sys, "argv", ["explore.py", "dashboard", "--as-of", "2026-09-28",
