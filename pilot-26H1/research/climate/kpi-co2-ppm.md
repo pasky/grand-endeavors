@@ -61,6 +61,9 @@ been published in early July (just after the period end).
   - The same page says the observed 2025 annual-mean rise (2.68 ppm, Scripps) was *larger* than the Met Office forecast of 2.26 ± 0.56.
   - The page's own 1.33–1.79 figure appears in the IPCC C1 table, alongside "2.61 (2020-2025)" observed.
   - The Met Office forecast the May 2026 monthly mean at 432.2 ± 0.6 ppm (Table 3); NOAA observed 432.34.
+  - **Basis correction (28 Sep 2026, final review).** The Met Office forecasts and verification tables use the Scripps MLO series, not NOAA's. The same page's 2025 verification table gives Scripps May 2025 = 430.2 ppm, while NOAA's co2_mm_mlo.txt gives 430.51 for the same month. The Scripps-basis May 2026 forecast (432.2) therefore must not be compared with NOAA's 432.34, and the earlier "on track" remark is withdrawn. The section only says the *direction* of the observed 2026 slowdown matches the forecast slower annual-mean rise.
+  - Re-verified on the page on 28 Sep 2026: "forecast the 2026 annual average CO2 concentration at Mauna Loa to be 429.4 ± 0.6 ppm"; forecast rise "2.37± 0.55"; IPCC C1 2020s "1.33 1.75 1.79" vs observed "2.61 (2020-2025)"; "Published 4th February 2026".
+  - URL note: the 2026 forecast lives at the generic `.../forecasts/co2-forecast` URL, which the Met Office reuses each year (earlier years move to `co2-forecast-for-YYYY`; `co2-forecast-for-2026` returned HTTP 404 on 28 Sep 2026). No dated permalink exists yet, so the section footnote records the access date.
 - **26H1 year-on-year slowdown vs recent May peaks** (computed from co2_mm_mlo.txt, which was re-fetched on 28 Sep 2026 and still has File Creation 5 Sep 2026; 432.34 is the file maximum):
   - May-over-May gains: 2023 424.00 − 420.97 = +3.03; 2024 426.90 − 424.00 = +2.90; 2025 430.51 − 426.90 = +3.61 ppm, so the range is +2.9 to +3.6.
   - The 2026 Jan–Jun gains were +1.48 to +2.26 ppm.
@@ -69,6 +72,10 @@ been published in early July (just after the period end).
   - Concentration: co2-mlo-monthly 2025-11 = 426.5 ppm. The current NOAA file gives Nov 2025 = 426.46.
   - Trend: co2-trend-10yr-global-wmo 2020 = 2.4 ppm/yr (WMO, global annual means, 2011–2020), with role = headline. The like-for-like NOAA Jan→Dec global mean is 2.38 for 2011–20 and 2.53 for 2016–25 (computed below).
 
+- **Final-review spot-check (28 Sep 2026):** co2_mm_mlo.txt (File Creation 5 Sep 2026) re-fetched: May 2026 = 432.34, the maximum monthly value in the file (next: Jun 2026 431.43, Apr 2026 431.12). co2_gr_mlo.txt and co2_gr_gl.txt re-fetched: 2016–2025 values unchanged, 10-yr means 25.64/10 = 2.564 (MLO) and 25.33/10 = 2.533 (global).
+  https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt
+  https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_mlo.txt
+  https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_gr_gl.txt
 - **Rolling 10-yr average of NOAA Jan→Dec growth rates (computed; verified against the files
   on 25 Sep 2026).** Extra years needed: MLO 2011 1.92, 2012 2.65, 2013 1.99, 2014 2.17,
   2015 2.95; global 2011 1.73, 2012 2.42, 2013 2.45, 2014 2.03, 2015 2.95.

@@ -13,6 +13,7 @@ All 2025 numbers are preliminary.
 
 - **GCB 2025 (final paper, published in ESSD on 13 May 2026):** fossil CO2 was **38.1 GtCO2 in 2025, up 1.0% (range 0.2% to 1.7%) on 2024**. The paper calls this "an historical record high". Coal, oil and gas emissions each rose (+1.0%, +1.1% and +1.3%).
   https://essd.copernicus.org/articles/18/3211/2026/
+  - Spot-check, 28 Sep 2026 (ESSD page): "grew by 1.0 % in 2025 (0.2 % to 1.7 %) to 10.4 GtC (38.1 GtCO2), an historical record high"; "Emissions from coal, oil and gas in 2025 are all expected to be above their 2024 levels (by 1.0 %, 1.1 % and 1.3 % respectively)"; total CO2 "42.4 GtCO2 yr−1 in 2024, with a slightly lower preliminary estimate of ... 42.2 GtCO2 yr−1 for 2025"; remaining 1.5 °C budget "50 GtC, 170 GtCO2 left, equivalent to around 4 years at the 2025 emissions levels".
 - **Change vs pilot-2025:** pilot-2025/climate.md reported the Nov 2025 GCB projection of 38.1 GtCO2 (+1.1%) for 2025. The final ESSD paper keeps 38.1 GtCO2 and gives +1.0%.
 - **GCB total CO2 (fossil + land use), same paper:** 42.4 GtCO2 in 2024. The preliminary 2025 figure is "slightly lower" at **42.2 GtCO2**, "due to lower net land-use emissions"; the land-use decrease (to ~4.1 GtCO2) is "mainly attributable to the end of the El Niño conditions" (verified on the ESSD page, Sep 2026). This is a land-use fluctuation, not a structural fossil decline. Total emissions grew **0.3%/yr over 2015–2024**, compared with 1.9%/yr over 2005–2014. The remaining 1.5°C (50%) budget from the start of 2026 is **170 GtCO2, about 4 years** at 2025 emission levels.
   https://essd.copernicus.org/articles/18/3211/2026/
@@ -32,8 +33,10 @@ All 2025 numbers are preliminary.
   - p. 6: advanced economies (+0.5%) grew faster than emerging and developing economies (+0.3%) "for the first time since the 1990s".
 - **Carbon Monitor (Nature Reviews Earth & Environment, 14 Apr 2026):** fossil+industry CO2 reached **a record 37.2 Gt in 2025, up 0.7%**. Global **power-sector emissions fell 0.9%**. The authors say China and India "entered an emission plateau", while the US and EU rebounded. The Carbon Monitor news page gives 37.3 Gt.
   https://www.nature.com/articles/s43017-026-00780-4
+  - Spot-check, 28 Sep 2026 (Key points on the article page): "Global emissions reached a record of 37.2 Gt CO2 in 2025, yet the annual growth rate has flattened to 0.7%. Global power sector emissions dropped by –0.9%"; "China and India entered an emission plateau owing to massive renewable expansion, whereas the USA and EU saw emission rebounds". Published 14 April 2026.
 - **Ember Global Electricity Review 2026 (21 Apr 2026):** global **fossil power generation fell 0.2% (−38 TWh) in 2025**: "For the first time since the Covid-19 pandemic in 2020, and only the fifth time this century, fossil generation did not rise". (Correction, 25 Sep 2026 spot-check: the landing page does not say this was "the first fall driven by clean power rather than a crisis"; it says clean power met all new demand, "halting fossil generation growth".) Clean power (+887 TWh) exceeded demand growth (+849 TWh). Fossil generation fell in China (−0.9%) and India (−3.3%). Renewables (33.8%) overtook coal (33.0%).
   https://ember-energy.org/latest-insights/global-electricity-review-2026/
+  - Spot-check, 28 Sep 2026: this URL is the report page itself (key takeaways and chapter links), not the Ember homepage. It states that "low-carbon power generation increased by 887 TWh in 2025, outpacing electricity demand growth of 849 TWh"; that fossil generation "did not rise, recording a small fall of 38 TWh (-0.2%)"; and that "renewables (33.8%, 10,730 TWh) overtook coal power (33.0%, 10,476 TWh)".
 
 ## Major emitters: China
 
@@ -45,6 +48,7 @@ All 2025 numbers are preliminary.
   https://www.carbonbrief.org/analysis-chinas-co2-climbs-2-in-early-2026-due-to-wasted-wind-and-solar
 - **China's official statistics are uncertain (Carbon Brief, 26 May 2026).** China appears to have changed the scope of its carbon-intensity metric retroactively. As a result, official figures now imply CO2 rose only 7% over 2020–2025, compared with 14% under the previous statistics. That leaves a gap of about 700–730 MtCO2 per year.
   https://www.carbonbrief.org/analysis-chinas-new-carbon-metric-leaves-germany-sized-gap-in-its-emissions
+  - Spot-check, 28 Sep 2026: the article says China "has now made what appears to be a retrospective change" (China has not officially announced it). It gives the gap as "700m tonnes of CO2 (MtCO2) per year" in the summary and "730m tonnes" in the body (1,430 MtCO2 rise under the old statistics vs 690 MtCO2 implied by the new metric). The section keeps the "appears" hedge.
 
 ## 2026 outlook in 26H1: the Hormuz (Iran-war) energy shock
 
@@ -63,6 +67,7 @@ All 2025 numbers are preliminary.
   https://climatetrace.org/news/climate-trace-data-show-marginal-increase-in-global-emissions-in-the-first-half-of-2026
 - **China, Q2 2026 (Carbon Brief/CREA, 3 Sep 2026):** CO2 fell 1% as oil use dropped 9%. H1 2026 was "up marginally" but still below the 2023–24 peak.
   https://www.carbonbrief.org/analysis-chinas-co2-emissions-fall-in-q2-2026-due-to-plummeting-oil-use
+  - Spot-check, 28 Sep 2026 (datePublished 2026-09-02T23:01 UTC, i.e. 3 Sep UK time): "China's carbon dioxide (CO2) emissions fell by 1% in the second quarter of 2026, as oil consumption plummeted amid the strait of Hormuz crisis"; "The country's use of oil fell by 9% overall"; "emissions are up marginally across the first half of the year, but they remain below their peak in 2023-24". Now cited in the section's post-period list.
 - **EDGAR 2026 report (September 2026):** total GHG excluding LULUCF was **54.1 GtCO2e in 2025, up 0.7%** and still rising. China was +0.1% and the US +2.2%.
   https://edgar.jrc.ec.europa.eu/report_2026
   Report PDF (p. 1: "54.1 Gt CO2eq in 2025, increasing by 0.7% compared to 2024"; the HTML page answers HEAD with 404): https://edgar.jrc.ec.europa.eu/booklet/GHG_emissions_of_all_world_countries_booklet_2026report.pdf
