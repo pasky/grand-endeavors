@@ -207,34 +207,8 @@ def next_expected(cadence: str, lag: str, obs_end: dt.date) -> dt.date | None:
     return nxt + dt.timedelta(days=int(lag))
 
 
-def _change_text(cur: str, before: str) -> str:
-    nd = max(len(v.split(".")[1]) if "." in v else 0 for v in (cur, before))
-    return f"{float(cur) - float(before):+.{nd}f}"
-
-
-def compare(cur: dict, before: dict) -> dict:
-    """Change cur vs before with ledger.snapshot's safeguards (same caveat texts):
-    not comparable across observation granularities (kpi.obs_kind), across
-    different calendar months (seasonal cycle not removed), or for the same obs
-    (a source revision is not a change over time)."""
-    same_obs = cur["obs"] == before["obs"]
-    seasonal = len(cur["obs"]) == 7 and len(before["obs"]) == 7 and cur["obs"][5:] != before["obs"][5:]
-    other_kind = kpi.obs_kind(cur["obs"]) != kpi.obs_kind(before["obs"])
-    return {"value": _change_text(cur["value"], before["value"]), "from_obs": before["obs"], "to_obs": cur["obs"],
-            "comparable": not (same_obs or seasonal or other_kind),
-            "caveat": ("same observation, unchanged: no new data" if same_obs
-                       and float(cur["value"]) == float(before["value"]) else
-                       "same observation revised by the source" if same_obs else
-                       "different calendar month: seasonal cycle not removed" if seasonal else
-                       "different observation granularity" if other_kind else "")}
-
-
-def year_ago(table: dict, cur: dict) -> dict | None:
-    """Like-for-like change for a monthly obs: the same month a year earlier (as ledger.snapshot)."""
-    if len(cur["obs"]) != 7:
-        return None
-    ya = table.get((cur["metric"], f"{int(cur['obs'][:4]) - 1}{cur['obs'][4:]}"))
-    return ya and {"obs": ya["obs"], "value": ya["value"], "change": _change_text(cur["value"], ya["value"])}
+# One implementation of change/comparability semantics: ledger.py (shared with snapshots).
+_change_text, compare, year_ago = ledger.change_text, ledger.compare, ledger.year_ago
 
 
 def readme_meta(section: str) -> tuple[str, str, str, dict[str, str]]:

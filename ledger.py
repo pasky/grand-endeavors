@@ -549,6 +549,37 @@ def stale_targets(section: str, until: dt.date) -> list[tuple[str, str]]:
     return out
 
 
+def change_text(cur: str, before: str) -> str:
+    nd = max(len(v.split(".")[1]) if "." in v else 0 for v in (cur, before))
+    return f"{float(cur) - float(before):+.{nd}f}"
+
+
+def compare(cur: dict, before: dict) -> dict:
+    """Change cur vs before, with comparability safeguards (used by snapshots and the explorer):
+    not comparable across observation granularities (kpi.obs_kind), across
+    different calendar months (seasonal cycle not removed), or for the same obs
+    (a source revision is not a change over time)."""
+    same_obs = cur["obs"] == before["obs"]
+    seasonal = len(cur["obs"]) == 7 and len(before["obs"]) == 7 and cur["obs"][5:] != before["obs"][5:]
+    import kpi
+    other_kind = kpi.obs_kind(cur["obs"]) != kpi.obs_kind(before["obs"])
+    return {"value": change_text(cur["value"], before["value"]), "from_obs": before["obs"], "to_obs": cur["obs"],
+            "comparable": not (same_obs or seasonal or other_kind),
+            "caveat": ("same observation, unchanged: no new data" if same_obs
+                       and float(cur["value"]) == float(before["value"]) else
+                       "same observation revised by the source" if same_obs else
+                       "different calendar month: seasonal cycle not removed" if seasonal else
+                       "different observation granularity" if other_kind else "")}
+
+
+def year_ago(table: dict, cur: dict) -> dict | None:
+    """Like-for-like change for a monthly obs: the same month a year earlier."""
+    if len(cur["obs"]) != 7:
+        return None
+    ya = table.get((cur["metric"], f"{int(cur['obs'][:4]) - 1}{cur['obs'][4:]}"))
+    return ya and {"obs": ya["obs"], "value": ya["value"], "change": change_text(cur["value"], ya["value"])}
+
+
 # --- snapshot -----------------------------------------------------------------------------
 def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
     """Deterministic, SELF-CONTAINED bulletin input: the ledger as of the period's
@@ -587,31 +618,12 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
             continue
         cur = latest_obs(now_t, m, end)        # obs within the period, known by the cutoff
         before = latest_obs(prev_t, m, prev_end)
-        change = None
-        if cur and before:
-            nd = max(len(v.split(".")[1]) if "." in v else 0 for v in (cur["value"], before["value"]))
-            same_obs = cur["obs"] == before["obs"]
-            seasonal = len(cur["obs"]) == 7 and len(before["obs"]) == 7 and cur["obs"][5:] != before["obs"][5:]
-            change = {"value": f"{float(cur['value']) - float(before['value']):+.{nd}f}",
-                      "from_obs": before["obs"], "to_obs": cur["obs"],
-                      "comparable": kpi.obs_kind(cur["obs"]) == kpi.obs_kind(before["obs"]) and not seasonal,
-                      "caveat": ("same observation, unchanged: no new data" if same_obs
-                                 and float(cur["value"]) == float(before["value"]) else
-                                 "same observation revised by the source" if same_obs else
-                                 "different calendar month: seasonal cycle not removed" if seasonal else
-                                 "different observation granularity" if kpi.obs_kind(cur["obs"]) != kpi.obs_kind(before["obs"])
-                                 else "")}
-        year_ago = None
-        if cur and len(cur["obs"]) == 7:  # monthly: the like-for-like comparison
-            ya = now_t.get((m, f"{int(cur['obs'][:4]) - 1}{cur['obs'][4:]}"))
-            if ya:
-                nd = max(len(v.split(".")[1]) if "." in v else 0 for v in (cur["value"], ya["value"]))
-                year_ago = {"obs": ya["obs"], "value": ya["value"],
-                            "change": f"{float(cur['value']) - float(ya['value']):+.{nd}f}"}
+        change = compare(cur, before) if cur and before else None
+        year_ago_ = year_ago(now_t, cur) if cur else None
         kpis.append({"metric": m, "unit": row["unit"], "definition": row["definition"],
                      "current": clean(cur) if cur else None,
                      "previous": clean(before) if before else None, "change": change,
-                     "year_ago": year_ago})
+                     "year_ago": year_ago_})
     series, chartable = {}, []
     for m in sorted({m for (m, _) in now_t}):
         pts = sorted(([o, r["value"]] for (mm, o), r in now_t.items()
