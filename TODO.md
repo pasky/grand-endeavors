@@ -43,8 +43,10 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
 - [x] Per-section manifests `<period>/MANIFEST-<section>.txt` (commit 8af634c;
       pilot-26H1 migrated). `<section>` is validated against the canonical list,
       so it can't collide with MANIFEST-roundup.txt.
-- [x] Review-stage research is allowed but now **audited** (Stage 4b, commit
-      14b7dda). A fresh agent re-verifies the review's note diff and the run's
+- [x] Review-stage research is allowed but now **audited** (Stage 4b, commits
+      14b7dda + e0bb721). The audit covers the review's changes to the notes,
+      section and store, plus the run's registry changes; the pending baseline
+      survives failed or interrupted runs. A fresh agent re-verifies the review's note diff and the run's
       registry diff against the sources, and may only correct or remove. First
       run (0716892..81a3ba2): all 20 review additions verified, no edits. The
       write-scope guard blocks edits outside the run's artifacts.
@@ -144,6 +146,16 @@ Other observations from the regen:
 - Retrospective runs work: the research ran in Sep 2026 and picked up post-period
   sources (EDGAR, Climate TRACE, CREA Q2). The notes quarantined these as "published
   after 30 June", and the draft correctly left them out.
+
+- [x] Regression tests: `uv run test_harness.py` (23 cases, no network). Extend
+      it whenever a check changes.
+- [ ] Link liveness is a heuristic (two-GET 404 rule). Cached or bot 404s can
+      still false-positive now that the gate is fatal (STRICT=0 overrides), and
+      HEAD-200 is trusted without a GET.
+- [ ] fusion KPI ("worldwide average electricity cost") is not registered yet:
+      README doesn't say wholesale or retail, so its first real run must register
+      the basis (audited). The OECD trust registry definition awaits
+      confirmation of the trust category at the source.
 
 ## Validation at scale
 
