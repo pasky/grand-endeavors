@@ -14,7 +14,7 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
 - [x] **Validation gate** (done — validate.py, commit dc25d34 + hardening): footnote/
       reference-link integrity, mermaid xychart axis/series lengths, dead-URL
       (404/410 hard-fail; 403/timeout/neterr warn), PLAN-slug coverage; wired as
-      review-stage self-check + Stage-5 backstop (STRICT=1 to fail run). Known
+      review-stage self-check + Stage-5 backstop (fatal by default; STRICT=0 = report-only). Known
       limitations to harden later:
   - [ ] coverage is a soft heuristic (any-URL-overlap, warn-only) — won't catch
         missing KPI sub-components, dropped slugs sharing a URL, or redirected
@@ -58,8 +58,8 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
       generate.sh: a recording stage after research, a store-driven draft, and
       `validate.py --kpis`, which errors on chart drift or clipping, unmarked
       charts, headlines not reported in prose, values not traceable to the
-      notes, and post/partial-period obs. The Stage-5 gate is still non-fatal
-      unless STRICT=1. Every pi stage now has a mechanical write-scope guard.
+      notes, and post/partial-period obs. The Stage-5 gate is fatal by default
+      (STRICT=0 = report-only). Every pi stage now has a mechanical write-scope guard.
       Backfill: pilot-2025 (6 sections, clear-basis data only; skipped items are
       listed in commit 90eedf5). pilot-26H1 climate was backfilled by the
       pipeline itself in an end-to-end re-run (07cf80c..96a4142, 0 errors). Its

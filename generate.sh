@@ -431,11 +431,13 @@ commit "$OUT_DIR $SECTION: review"
 # Mechanical checks the LLM review can't be talked out of: footnote/reference
 # integrity, mermaid axis/series lengths, dead citation URLs, PLAN coverage,
 # KPI store consistency (headlines reported, '%% kpi:' charts match the store).
-# Non-fatal by default (report + record); set STRICT=1 to fail the run on errors.
+# FATAL by default: a run whose output fails the gate exits non-zero (the output
+# is already committed for inspection, but automation must not publish it).
+# STRICT=0 downgrades to report-only.
 echo ">>> [$SECTION/$OUT_DIR] validate"
 if ! uv run validate.py "$OUT_FILE" --plan "$PLAN_FILE" --research "$RESEARCH_DIR" --kpis; then
 	echo "!!! validation gate reported errors in $OUT_FILE"
-	if [ -n "${STRICT:-}" ]; then exit 1; fi
+	[ "${STRICT:-1}" = 0 ] || exit 1
 fi
 
 echo ">>> done: $OUT_FILE  (research: $RESEARCH_DIR/, manifest: $MANIFEST)"

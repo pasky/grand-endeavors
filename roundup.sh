@@ -21,7 +21,7 @@
 #
 # Same conventions as generate.sh: clean-worktree preflight (ALLOW_DIRTY=1 to
 # override), scoped commit of this stage's own artifacts only, saved pi session
-# under <out-dir>/.sessions/, non-fatal gate unless STRICT=1.
+# under <out-dir>/.sessions/, fatal gate (STRICT=0 for report-only).
 # Provenance: <out-dir>/MANIFEST-roundup.txt (separate from the per-section
 # MANIFEST-<section>.txt files) records the tool versions and the git blob hash of every input
 # section file.
@@ -164,6 +164,6 @@ fi
 echo ">>> [roundup/$OUT_DIR] validate"
 if ! uv run validate.py "$OUT_FILE" --roundup; then
 	echo "!!! validation gate reported errors in $OUT_FILE"
-	if [ -n "${STRICT:-}" ]; then exit 1; fi
+	[ "${STRICT:-1}" = 0 ] || exit 1
 fi
 echo ">>> done: $OUT_FILE  (manifest: $MANIFEST)"

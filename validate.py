@@ -17,6 +17,7 @@ import argparse
 import os
 import re
 import sys
+import time
 import urllib.request
 import urllib.error
 
@@ -108,12 +109,17 @@ def check_links(text: str) -> None:
 
 
 def probe(url: str) -> str:
-    # Try HEAD then GET. A definitive 404/410 is returned immediately; any other
-    # HEAD failure (403/405/5xx or socket error) falls through to GET, since many
-    # servers reject HEAD but serve GET. Network-level failures map to "neterr"
-    # (warn-level), never a hard "dead".
+    # HEAD first (cheap); then GET, and a second GET after a pause. A URL is
+    # "dead" only if BOTH GETs say 404/410: some servers 404 on HEAD but serve
+    # GET (EDGAR), and some 404 transiently (seen with the Met Office). Other
+    # HTTP errors (403/405/5xx) and network failures ("neterr") are warn-level.
     last = "neterr"
-    for method in ("HEAD", "GET"):
+    gets_dead = 0
+    for i, method in enumerate(("HEAD", "GET", "GET")):
+        if i == 2:
+            if gets_dead == 0 and last not in ("404", "410"):
+                break  # first GET failed non-fatally; no need to retry
+            time.sleep(3)
         try:
             req = urllib.request.Request(
                 url, method=method, headers={"User-Agent": "Mozilla/5.0 (validate.py)"}
@@ -121,14 +127,14 @@ def probe(url: str) -> str:
             with urllib.request.urlopen(req, timeout=15) as r:
                 return "ok" if r.status < 400 else str(r.status)
         except urllib.error.HTTPError as e:
-            if e.code in (404, 410):
-                return str(e.code)
             last = str(e.code)
-            continue  # HEAD blocked/unsupported or 5xx — retry with GET
+            if method == "GET" and e.code in (404, 410):
+                gets_dead += 1
         except Exception:
             last = "neterr"  # timeout / DNS / TLS / connection — transient, warn
-            continue
-    return last
+    if gets_dead == 2:
+        return last
+    return "neterr" if last in ("404", "410") else last
 
 
 # --- coverage: every PLAN slug's note is cited in the output -----------------
