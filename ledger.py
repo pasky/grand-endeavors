@@ -6,6 +6,7 @@ COMMANDS
   ledger.py check [section ...]                    validate ledger files (all sections by default)
   ledger.py topics <section>                       valid topic tags (from README.md)
   ledger.py recent <section> [--limit N]           compact event list (for intake dedup prompts)
+  ledger.py lint <section> [--events F] [--obs F]  validate a staged file (run before merge)
   ledger.py merge <section> [--events F] [--obs F] merge VERIFIED staged records into the ledger
                                                    (rejected ones -> ledger/rejected/)
   ledger.py cutoff <period>                        bulletin cutoff date (+ previous period's cutoff)
@@ -451,7 +452,43 @@ def snapshot_urls(snap: dict) -> set[str]:
 
 
 # --- merge -------------------------------------------------------------------------------
-def merge(section: str, ev_file: str | None, obs_file: str | None) -> tuple[list[str], dict]:
+def lint(section: str, ev_file: str | None, obs_file: str | None, allow_legacy: bool = False) -> list[str]:
+    """Validate a STAGED file before merge: schema, topics, ids unique vs file and
+    ledger, relates resolvable (file ∪ ledger), no duplicate claims."""
+    import kpi
+    errs: list[str] = []
+    topics = valid_topics(section)
+    existing = {e["id"]: e for e in events(section)}
+    staged = load_jsonl(ev_file) if ev_file else []
+    seen: set[str] = set()
+    claims = {re.sub(r"\W+", " ", str(e.get("claim", "")).lower()).strip(): e["id"] for e in existing.values()}
+    for e in staged:
+        es = check_event(e, section, topics, staged=True)
+        st = e.get("verification", {}).get("status") if isinstance(e.get("verification"), dict) else None
+        if allow_legacy and st == "legacy":
+            es = [x for x in es if "verification.status" not in x]
+        errs += es
+        if e.get("id") in seen or e.get("id") in existing:
+            errs.append(f"event {e.get('id')}: duplicate id (in file or already in ledger)")
+        seen.add(e.get("id"))
+        c = re.sub(r"\W+", " ", str(e.get("claim", "")).lower()).strip()
+        if c in claims:
+            errs.append(f"event {e.get('id')}: same claim as {claims[c]}")
+        claims[c] = e.get("id")
+    for e in staged:
+        for r in e.get("relates", []) or []:
+            if isinstance(r, dict) and r.get("id") not in seen | set(existing):
+                errs.append(f"event {e.get('id')}: relates to unknown event '{r.get('id')}'")
+    if obs_file:
+        reg, reg_errs = kpi.load_registry(section)
+        errs += reg_errs
+        for r in load_obs(obs_file):
+            errs += check_obs_row(r, reg, staged=True)
+    return errs
+
+
+def merge(section: str, ev_file: str | None, obs_file: str | None,
+          allow_legacy: bool = False) -> tuple[list[str], dict]:
     """Admit verified/corrected/collector staged records; reject the rest to
     ledger/rejected/. All-or-nothing: any schema error aborts without writing."""
     import kpi
@@ -465,11 +502,13 @@ def merge(section: str, ev_file: str | None, obs_file: str | None) -> tuple[list
     admit_ev, reject_ev = [], []
     for e in staged_ev:
         es = check_event(e, section, topics, staged=True)
+        if allow_legacy and e.get("verification", {}).get("status") == "legacy":
+            es = [x for x in es if "verification.status" not in x]
         if es:
             errs += es
             continue
         st = e["verification"]["status"]
-        if st in ("verified", "corrected"):
+        if st in ("verified", "corrected") or (allow_legacy and st == "legacy"):
             if e["id"] in existing:
                 errs.append(f"event {e['id']}: id already in the ledger (to add a source or status change, stage a NEW event with relates)")
             admit_ev.append(e)
@@ -534,6 +573,9 @@ def main() -> int:
     r = sub.add_parser("recent"); r.add_argument("section", choices=SECTIONS); r.add_argument("--limit", type=int, default=150)
     m = sub.add_parser("merge"); m.add_argument("section", choices=SECTIONS)
     m.add_argument("--events"); m.add_argument("--obs")
+    m.add_argument("--legacy", action="store_true", help="admit verification=legacy (one-off report conversions)")
+    li = sub.add_parser("lint"); li.add_argument("section", choices=SECTIONS)
+    li.add_argument("--events"); li.add_argument("--obs"); li.add_argument("--legacy", action="store_true")
     cu = sub.add_parser("cutoff"); cu.add_argument("period")
     s = sub.add_parser("snapshot"); s.add_argument("period_dir"); s.add_argument("section", choices=SECTIONS)
     a = ap.parse_args()
@@ -558,10 +600,16 @@ def main() -> int:
             if not evs:
                 print(f"(no events yet for {a.section})")
         elif a.cmd == "merge":
-            errs, stats = merge(a.section, a.events, a.obs)
+            errs, stats = merge(a.section, a.events, a.obs, a.legacy)
             for e in errs:
                 print(f"  ERROR {e}")
             print(f"merge {a.section}: {'ABORTED' if errs else 'ok'} {stats}")
+            return 1 if errs else 0
+        elif a.cmd == "lint":
+            errs = lint(a.section, a.events, a.obs, a.legacy)
+            for e in errs:
+                print(f"  ERROR {e}")
+            print(f"lint {a.section}: {len(errs)} error(s)")
             return 1 if errs else 0
         elif a.cmd == "cutoff":
             print(f"cutoff {cutoff(a.period)} previous_cutoff {prev_cutoff(a.period)} "
