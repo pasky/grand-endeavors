@@ -45,6 +45,26 @@ product. `gather.sh` grows it on its own schedule, and bulletins (`bulletin.sh`,
       self-contained static dashboard with `--as-of`, visible gaps and overdue
       metrics, legacy badges and sparklines.
 - [x] **Retired** `generate.sh` and the per-period `kpis/` stores.
+- [x] **Deep-review fixes** (review of the re-architecture, commits 8905aba..HEAD of 2026-09-28): the
+      core fixes are:
+      - effective-observation precedence (legacy never shadows verified);
+      - dedup against the effective row;
+      - one validation path with atomic, locked, replay-idempotent merges;
+      - `supersedes` for corrections;
+      - self-contained snapshots (frozen series, README framework, typed
+        evidence, requirements judged at the period end);
+      - per-item overlapping gather windows;
+      - stateless assessment triggers (`ledger.py stale`);
+      - a parsed `lint --final`;
+      - a guard that also covers crashes, already-dirty files and the
+        append-only registry;
+      - structural (heading) coverage in the gate, and URLs with parentheses.
+
+      Side agents fixed collector revision dating (effective row) and METR's
+      metric basis (new `metr-*-horizon-by-release` ids), and brought the
+      explorer onto the same precedence, supersedes and comparability
+      semantics. Re-verified end to end: a narrow climate gather (8 events +
+      a KPI re-assessment) and the W38 bulletin + round-up, with gates green.
 - [x] Earlier harness work carried over: write-scope guard, per-section
       manifests, the fatal gate with the two-GET link probe, the round-up
       generator and its number-traceability check, and the pilot-2025
@@ -77,16 +97,26 @@ product. `gather.sh` grows it on its own schedule, and bulletins (`bulletin.sh`,
       items, and weak mailing-list-root sources. A verify pass per section can
       promote them to `verified` or correct/reject them. This needs a
       supersede mechanism, next item.
-- [ ] **Corrections of admitted records**: the ledger is append-only. A wrong
-      *verified* event can only be countered by a new event
-      (`relates: retraction`). Add an explicit correction record type (or a
-      `supersedes` field) that views honour, instead of hand-editing JSONL.
+- [x] Corrections of admitted events: `supersedes` (views use the effective
+      events). Still open: an observation **withdrawal** record (today a bad
+      value can only be outranked).
+- [ ] Assessments: rename `made_at` → `as_of` and add a creation/version time
+      (review suggestion; git history holds the creation time for now).
+- [ ] Snapshot size: a weekly climate snapshot is about 136 KB (8 sections × 52
+      weeks ≈ 55 MB/yr in git). Consider gzip, or pinning the ledger commit
+      and regenerating on demand (with a checksum).
 - [x] The verifier accepted one detail "from background knowledge" (first run: an
       "October 2025" date the source didn't state). The verify prompt now
       requires every field to be source-stated (not yet re-tested).
 - [ ] Dedup is an LLM job plus a heuristic (claim word overlap ≥ 0.6 within 7
       days, different figures ⇒ not a duplicate). Near-duplicates with
-      reworded claims can slip through.
+      reworded claims can slip through (fix later with `supersedes`).
+- [ ] The bulletin gate is lexical: a number must occur in the snapshot's typed
+      evidence, and a URL must be a snapshot source. It does not prove that the
+      cited record supports the sentence; the fidelity reviewer does. Next
+      step: tie each footnote to a record id.
+- [ ] The write-scope guard is cooperative, not isolation. Gitignored paths are
+      invisible to it (fine for staging, but also `.pi/`, `build/`).
 - [ ] `rule`-basis publication dates are estimates (obs end + registry lag).
       Source revisions made before our first retrieval are invisible.
 - [ ] Registry gaps: fusion's worldwide electricity-cost KPI is unregistered
