@@ -39,7 +39,7 @@ def write_jsonl(path, recs):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         for r in recs:
-            f.write(json.dumps(r) + "\n")
+            f.write(json.dumps({k: v for k, v in r.items() if not k.startswith("_")}) + "\n")
 
 
 def has(errs, needle):
@@ -182,6 +182,14 @@ def main():
     case("snapshot: seasonal caveat + same-month-last-year comparison",
          not k["change"]["comparable"] and k["year_ago"]["change"] == "+1.82")
     case("snapshot: retired metrics never required", all(x["metric"] != "co2-trend-old" for x in snap["kpi_headlines"]))
+    write_jsonl(ledger.path("events", "climate"), ledger.events("climate") + [
+        ev("2026-01-05-minor-evidence", "2026-01-05", "A minor but cited analysis says emissions have plateaued in 2025.", sig=1)])
+    write_jsonl(ledger.path("assessments", "climate"), [
+        {"id": "2026-07-14-milestone-the-bend", "target": "milestone:the-bend", "status": "yellow", "label": "x",
+         "made_at": "2026-07-14", "rationale": "r", "evidence": ["2026-01-05-minor-evidence"], "by": "t"}])
+    snap2 = ledger.snapshot(pdir, "climate")
+    case("snapshot: assessment evidence is always included",
+         "2026-01-05-minor-evidence" in {e["id"] for e in snap2["background_events"]})
 
     # --- charts from the ledger ------------------------------------------------------------
     chart = kpi.chart(pdir, "climate", ["co2-mlo-annual"], label="year", since="2021")

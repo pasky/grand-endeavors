@@ -462,6 +462,14 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
         for r in e.get("relates", []) or []:
             if r["id"] in by_id and r["id"] not in new_ids and by_id[r["id"]] not in background:
                 background.append(by_id[r["id"]])
+    # evidence cited by the current/previous assessments must be visible too
+    ass_now, ass_prev = assessment_as_of(section, cut), assessment_as_of(section, prev)
+    have = new_ids | {e["id"] for e in background}
+    for a in list(ass_now.values()) + list(ass_prev.values()):
+        for eid in a.get("evidence", []):
+            if eid in by_id and eid not in have:
+                background.append(by_id[eid])
+                have.add(eid)
     now_t, prev_t = obs_as_of(section, cut), obs_as_of(section, prev)
     end, prev_end = kpi.period_as_of(period), start - dt.timedelta(days=1)
     kpis = []
@@ -500,7 +508,6 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
             chartable.append({"metric": m, "n": len(obs), "first": obs[0], "last": obs[-1],
                               "granularities": sorted({kpi.obs_kind(o) for o in obs})})
     other_obs = sorted({m for (m, _) in now_t} - {k["metric"] for k in kpis})
-    ass_now, ass_prev = assessment_as_of(section, cut), assessment_as_of(section, prev)
     return {
         "section": section, "period": period, "period_start": str(start),
         "period_end": str(kpi.period_as_of(period)), "cutoff": str(cut), "previous_cutoff": str(prev),
