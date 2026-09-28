@@ -268,7 +268,7 @@ def check_section(section: str) -> tuple[list[str], list[str]]:
         for m in e.get("metrics", []) or []:
             if reg is not None and m.get("metric") not in reg:
                 errs.append(f"event {e['id']}: linked metric '{m.get('metric')}' not registered")
-    seen_claim, seen_src = {}, {}
+    seen_claim = {}
     for e in evs:
         for r in e.get("relates", []) or []:
             if r.get("id") not in ids:
@@ -279,12 +279,7 @@ def check_section(section: str) -> tuple[list[str], list[str]]:
         if c in seen_claim:
             errs.append(f"event {e['id']}: same claim as {seen_claim[c]} (duplicate)")
         seen_claim[c] = e.get("id")
-        prim = next((s.get("url") for s in e.get("sources", []) if isinstance(s, dict)), None)
-        key = (prim, e.get("date"))
-        linked = {r.get("id") for r in e.get("relates", []) or []}
-        if prim and key in seen_src and seen_src[key] not in linked:
-            warns.append(f"event {e['id']}: same first source and date as {seen_src[key]} — duplicate? (link with relates or merge)")
-        seen_src.setdefault(key, e.get("id"))
+    warns += near_duplicates(evs)
     keys = set()
     for r in obs:
         errs += check_obs_row(r, reg)
@@ -311,6 +306,32 @@ def check_section(section: str) -> tuple[list[str], list[str]]:
             if eid not in ids:
                 errs.append(f"{at}: evidence '{eid}' is not an event")
     return errs, warns
+
+
+def _words(text: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z0-9.]+", text.lower()) if len(w) > 2}
+
+
+def near_duplicates(evs: list[dict], threshold: float = 0.6, days: int = 7) -> list[str]:
+    """Warn on likely duplicate events: claim word-overlap (Jaccard) >= threshold
+    and dates within `days`, unless linked via relates."""
+    import kpi
+    out = []
+    items = sorted(((date_end(str(e["date"])), e) for e in evs if DATE_RE.match(str(e.get("date", "")))),
+                   key=lambda t: t[0])
+    words = {e["id"]: _words(str(e.get("claim", ""))) for _, e in items}
+    for i, (d1, a) in enumerate(items):
+        for d2, b in items[i + 1:]:
+            if (d2 - d1).days > days:
+                break
+            wa, wb = words[a["id"]], words[b["id"]]
+            linked = {r.get("id") for r in (a.get("relates") or []) + (b.get("relates") or [])}
+            na, nb = kpi.kpi_numbers(str(a.get("claim", ""))), kpi.kpi_numbers(str(b.get("claim", "")))
+            if na and nb and na != nb:
+                continue  # parallel claims with different figures (e.g. solar vs wind LCOE)
+            if wa and wb and len(wa & wb) / len(wa | wb) >= threshold and not linked & {a["id"], b["id"]}:
+                out.append(f"events {a['id']} / {b['id']}: near-identical claims — duplicate? (merge, or link with relates)")
+    return out
 
 
 # --- cutoffs --------------------------------------------------------------------------
