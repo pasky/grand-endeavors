@@ -185,7 +185,24 @@ write_manifest() {
 # === Pipeline ================================================================
 write_manifest
 commit "$OUT_DIR $SECTION: manifest + run setup"
-RUN_START="$(git rev-parse HEAD)"   # registry diff for the audit is taken from here
+# Audit baselines persist until an audit SUCCEEDS: a failed/interrupted run must
+# not let its already-committed review research skip the audit on rerun.
+AUDIT_STATE="$SESS_DIR/audit-pending-$SECTION"
+audit_base() {  # $1 = key (run_start|draft_head); prints the pending baseline or ""
+	[ -f "$AUDIT_STATE" ] || return 0
+	b="$(sed -n "s/^$1 //p" "$AUDIT_STATE")"
+	[ -n "$b" ] || return 0
+	git merge-base --is-ancestor "$b" HEAD 2>/dev/null \
+		|| { echo "ERROR: pending audit baseline $b ($1) is not in HEAD's history; inspect $AUDIT_STATE" >&2; exit 1; }
+	echo "$b"
+}
+RUN_START="$(audit_base run_start)"
+if [ -z "$RUN_START" ]; then
+	RUN_START="$(git rev-parse HEAD)"
+	echo "run_start $RUN_START" >> "$AUDIT_STATE"
+else
+	echo ">>> [$SECTION/$OUT_DIR] resuming un-audited changes since $RUN_START"
+fi
 
 # --- Stage 1: plan -----------------------------------------------------------
 # Emit the in-scope research items, one per line, as: "slug | description".
@@ -325,7 +342,8 @@ Rules:
   existing row's definition or unit, and never register a renamed duplicate. A
   basis change means a new id, plus retired_after=<last period> on the old one.
   Set required_from=$OUT_DIR only for KPI components defined in README.md that
-  have no registered metric yet. All registry edits are independently audited.
+  have no registered metric yet. When retiring a required metric, its
+  successor gets required_from. All registry edits are independently audited.
 - role=headline: this report's current reading of EVERY KPI component (e.g.
   latest concentration AND the multi-year trend), plus any numeric milestone
   tracker. At most one headline row per metric.
@@ -387,7 +405,9 @@ HARD REQUIREMENTS:
   a record") whenever another in-scope measure disagrees.
 
 KPI TIME SERIES (store: $KPI_FILE; check it and ./kpi.py):
-- Every headline value in $KPI_FILE MUST be reported in the KPI Dashboard.
+- Every headline value in $KPI_FILE MUST be reported in the KPI Dashboard. For
+  every role=unavailable component, say that the reading is unavailable, and
+  why (from its note).
 - Change since the previous report (deterministic, from the store):
 $(uv run kpi.py delta "$OUT_DIR" "$SECTION")
   Report a change only where it is comparable (same metric id; if a caveat is
@@ -406,7 +426,11 @@ scope. Write $OUT_FILE and give a brief summary of what you wrote.
 EOF
 )"
 commit "$OUT_DIR $SECTION: draft"
-DRAFT_HEAD="$(git rev-parse HEAD)"  # research added during review = notes diff from here
+DRAFT_HEAD="$(audit_base draft_head)"  # review-stage changes = diff from here
+if [ -z "$DRAFT_HEAD" ]; then
+	DRAFT_HEAD="$(git rev-parse HEAD)"
+	echo "draft_head $DRAFT_HEAD" >> "$AUDIT_STATE"
+fi
 
 # --- Stage 4: review + revise (offline subagent critique + web spot-check) ---
 pi_run review "$(cat <<EOF
@@ -446,36 +470,45 @@ EOF
 )"
 commit "$OUT_DIR $SECTION: review"
 
-# --- Stage 4b: independent audit of research added during review -------------
-# The review stage may research; nothing would check that research (the
-# validator only confirms the section matches the notes the reviewer itself
-# edited). A FRESH agent verifies every note change made during review, and
-# every registry change made in this run, against the sources. Runs only if
-# there is something to audit.
-AUDIT_DIFF="$SESS_DIR/audit-input.diff"
+# --- Stage 4b: independent audit of review-stage changes ---------------------
+# The review stage may research. Nothing else checks that research: the
+# validator only confirms that the section matches notes the reviewer itself
+# may have edited. A FRESH agent therefore verifies everything the review
+# changed (notes, section, KPI store) plus this run's registry changes, against
+# the sources. It is skipped only if there is nothing to audit. The baseline
+# persists (AUDIT_STATE) until the audit succeeds.
+AUDIT_DIFF="$SESS_DIR/audit-input-$SECTION.diff"
 {
-	git diff "$DRAFT_HEAD" HEAD -- "$RESEARCH_DIR"
+	git diff "$DRAFT_HEAD" HEAD -- "$RESEARCH_DIR" "$OUT_FILE" "$KPI_FILE"
 	git diff "$RUN_START" HEAD -- "$REGISTRY"
 } > "$AUDIT_DIFF"
 if [ -s "$AUDIT_DIFF" ]; then
 	pi_run audit "$(cat <<EOF
 You are an independent AUDITOR for the "$SECTION" section, period $PERIOD. You
-did not write any of this. During this run, the review stage added or changed
-research notes, and/or the metric registry $REGISTRY changed. Nothing has
-checked those changes yet. The diff is in $AUDIT_DIFF: read ALL of it.
+did not write any of this. The review stage changed the research notes, the
+section and/or the KPI store, and this run may have changed the metric
+registry $REGISTRY. Nothing has checked those changes yet. The diff is in
+$AUDIT_DIFF: read ALL of it.
 
-For every ADDED or CHANGED claim in the research-note diff:
+For every ADDED or CHANGED factual claim, in the notes OR in the section:
 - VISIT its cited URL and confirm that the source states it: numbers, dates,
-  and metric scope/basis.
+  and metric scope/basis. A claim in the section must also be backed by a
+  research note. If it is verified but missing from the notes, add it to the
+  right note with its URL (provenance only, not a new claim).
 - For a value computed from data (e.g. an average), recompute it from the
   cited data.
 - Check it falls within $PERIOD, or is clearly labelled as context published
   after the period.
+For every changed KPI-store row: the value must match its note and the
+metric's registry definition.
 For every registry change in $REGISTRY:
-- The definition must be precise (measure, basis/station/scope, window). It
-  must not duplicate or rename an already registered metric.
-- No existing id's definition or unit may have changed (a basis change must
-  be a new id plus retired_after on the old id).
+- The definition must be precise (measure, basis/station/scope, window) and
+  must match the source AND the rows already stored under that id in
+  */kpis/$SECTION.csv.
+- It must not duplicate or rename an already registered metric.
+- No existing id's definition or unit may change. A basis change means a new
+  id, plus retired_after on the old one; a successor of a required metric
+  carries required_from.
 - required_from may be set only for KPI components defined in README.md.
 
 Fix what fails. Correct it if the source supports a corrected version;
@@ -489,10 +522,11 @@ Report each audited item as verified / corrected / removed. Modify ONLY
 $OUT_FILE, $KPI_FILE, $REGISTRY and $RESEARCH_DIR/*.md.
 EOF
 )"
-	commit "$OUT_DIR $SECTION: audit of review-stage research"
+	commit "$OUT_DIR $SECTION: audit of review-stage changes"
 else
-	echo ">>> [$SECTION/$OUT_DIR] audit: nothing to audit (no note changes in review, no registry changes)"
+	echo ">>> [$SECTION/$OUT_DIR] audit: nothing to audit"
 fi
+rm -f "$AUDIT_STATE"   # audited (pi_run exits the script on failure, keeping it)
 
 # --- Stage 5: validation gate (deterministic, no-LLM) ------------------------
 # Mechanical checks the LLM review can't be talked out of: footnote/reference

@@ -1,6 +1,6 @@
 metric,unit,required_from,retired_after,definition
-elec-wholesale-eu,$/MWh,,,"Average EU wholesale electricity price over the obs period as reported by the IEA Electricity report (approximate, read from IEA)"
-elec-wholesale-us,$/MWh,,,"Average US wholesale electricity price over the obs period as reported by the IEA Electricity report (approximate, read from IEA)"
+elec-wholesale-eu,$/MWh,,,"IEA-reported average EU wholesale (day-ahead) electricity price over the obs period, in US$ per MWh as presented by the IEA (IEA's own regional aggregation; approximate values read from IEA text/charts); a regional proxy, not the worldwide KPI"
+elec-wholesale-us,$/MWh,,,"IEA-reported average US wholesale (day-ahead) electricity price over the obs period, in US$ per MWh as presented by the IEA (IEA's own regional aggregation; approximate values read from IEA text/charts); a regional proxy, not the worldwide KPI"
 lcoe-solar-pv-irena,$/MWh,,,IRENA global weighted-average levelized cost of electricity of newly commissioned utility-scale solar PV in the obs year
 lcoe-onshore-wind-irena,$/MWh,,,IRENA global weighted-average levelized cost of electricity of newly commissioned onshore wind in the obs year
 lcoe-offshore-wind-irena,$/MWh,,,IRENA global weighted-average levelized cost of electricity of newly commissioned offshore wind in the obs year

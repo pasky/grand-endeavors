@@ -1,3 +1,3 @@
 metric,unit,required_from,retired_after,definition
-cost-to-leo-best,$/kg,,,"Lowest launch price per kg to low Earth orbit of any operational vehicle in the obs year (list price / full-payload basis, as reported)"
+cost-to-leo-best,$/kg,pilot-26H1,,"Lowest launch price per kg to low Earth orbit of any operational vehicle in the obs year (list price / full-payload basis, as reported)"
 payload-mass-to-orbit,t,,,Total payload mass launched to Earth orbit worldwide in the obs year (Jonathan's Space Report msatannual)

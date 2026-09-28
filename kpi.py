@@ -122,7 +122,11 @@ def read_csv(path: str) -> list[dict]:
         r = csv.DictReader(f)
         if r.fieldnames != COLUMNS:
             raise ValueError(f"{path}: header must be exactly {','.join(COLUMNS)} (got {r.fieldnames})")
-        return [dict(row, _line=i) for i, row in enumerate(r, 2)]
+        rows = [dict(row, _line=i) for i, row in enumerate(r, 2)]
+    for row in rows:
+        if None in row or any(v is None for v in row.values()):
+            raise ValueError(f"{path}:{row['_line']}: wrong number of fields (quote values containing commas)")
+    return rows
 
 
 def vintages(section: str) -> list[tuple[dt.date, str, list[dict]]]:
@@ -167,15 +171,20 @@ def kpi_traceable(value: str, pool: set[float]) -> bool:
 
 
 # --- check --------------------------------------------------------------------
+def _period_date(name: str) -> dt.date:
+    return period_as_of(name.removeprefix("pilot-"))
+
+
 def registry_path(section: str) -> str:
     return os.path.join(ROOT, "metrics", f"{section}.csv")
 
 
-def load_registry(section: str) -> tuple[dict[str, dict], list[str]]:
-    """{metric: row} + errors. The registry is the continuity contract."""
+def load_registry(section: str) -> tuple[dict[str, dict] | None, list[str]]:
+    """({metric: row} or None if no registry file, errors). Rows get parsed
+    '_req'/'_ret' dates (None when unset or invalid)."""
     path = registry_path(section)
     if not os.path.exists(path):
-        return {}, [f"no metric registry {os.path.relpath(path, ROOT)} (create it: one row per metric, see kpi.py docstring)"]
+        return None, [f"no metric registry {os.path.relpath(path, ROOT)} (create it: one row per metric, see kpi.py docstring)"]
     errs, reg = [], {}
     with open(path, newline="", encoding="utf-8") as f:
         r = csv.DictReader(f)
@@ -183,6 +192,9 @@ def load_registry(section: str) -> tuple[dict[str, dict], list[str]]:
             return {}, [f"{path}: header must be exactly {','.join(REG_COLUMNS)}"]
         for i, row in enumerate(r, 2):
             at = f"metrics/{section}.csv:{i}"
+            if None in row or any(v is None for v in row.values()):
+                errs.append(f"{at}: wrong number of fields (quote values containing commas)")
+                continue
             m = row["metric"] or ""
             if not METRIC_RE.match(m):
                 errs.append(f"{at}: bad metric id '{m}'")
@@ -192,18 +204,23 @@ def load_registry(section: str) -> tuple[dict[str, dict], list[str]]:
                 errs.append(f"{at}: empty unit")
             if len((row["definition"] or "").split()) < 5:
                 errs.append(f"{at}: definition of '{m}' too thin — state the exact measure, basis/station/scope and window")
-            for col in ("required_from", "retired_after"):
+            for col, key in (("required_from", "_req"), ("retired_after", "_ret")):
+                row[key] = None
                 if row[col]:
                     try:
-                        period_as_of(row[col].removeprefix("pilot-"))
+                        row[key] = _period_date(row[col])
                     except ValueError:
                         errs.append(f"{at}: {col} '{row[col]}' is not a period name")
+            if row["_req"] and row["_ret"] and row["_ret"] < row["_req"]:
+                errs.append(f"{at}: retired_after precedes required_from")
             reg[m] = row
     return reg, errs
 
 
-def _period_date(name: str) -> dt.date:
-    return period_as_of(name.removeprefix("pilot-"))
+def required_active(row: dict, as_of: dt.date) -> bool:
+    """Required KPI component in the period ending as_of (inclusive from
+    required_from; not after retired_after)."""
+    return bool(row["_req"] and as_of >= row["_req"] and not (row["_ret"] and as_of > row["_ret"]))
 
 
 def check(path: str, evidence: list[str] | None = None) -> tuple[list[str], list[str]]:
@@ -222,6 +239,8 @@ def check(path: str, evidence: list[str] | None = None) -> tuple[list[str], list
         as_of = None
     reg, reg_errs = load_registry(section)
     errs += reg_errs
+    reg = reg or {}
+    registered = not any(e.startswith("no metric registry") for e in reg_errs)
     if evidence:
         pool: set[float] = set()
         for ev in evidence:
@@ -232,16 +251,23 @@ def check(path: str, evidence: list[str] | None = None) -> tuple[list[str], list
         m = r["metric"]
         if not METRIC_RE.match(m or ""):
             errs.append(f"{at}: bad metric id '{m}'")
-        elif reg and m not in reg:
+        elif registered and m not in reg:
             errs.append(f"{at}: metric '{m}' is not in metrics/{section}.csv — use the registered id for "
                         f"that measure, or register a genuinely new measure with a precise definition")
-        elif reg and reg[m]["unit"] != r["unit"]:
+        elif registered and reg[m]["unit"] != r["unit"]:
             errs.append(f"{at}: unit '{r['unit']}' differs from the registry's '{reg[m]['unit']}' for {m}")
         if r["role"] not in ROLES:
             errs.append(f"{at}: role '{r['role']}' not in {sorted(ROLES)}")
         if r["role"] == "unavailable":
             if r["value"] or not (r["note"] or "").strip():
                 errs.append(f"{at}: an 'unavailable' row needs an empty value and a note saying why")
+            if r["obs"]:
+                try:
+                    obs_range(r["obs"])
+                except ValueError:
+                    errs.append(f"{at}: malformed obs '{r['obs']}'")
+            if r["source"] and not re.match(r"https?://\S+$", r["source"]):
+                errs.append(f"{at}: source must be a single http(s) URL")
         else:
             try:
                 _, end = obs_range(r["obs"] or "")
@@ -265,15 +291,20 @@ def check(path: str, evidence: list[str] | None = None) -> tuple[list[str], list
             if m in seen_head:
                 errs.append(f"{at}: more than one headline/unavailable row for {m}")
             seen_head.add(m)
-            ret = reg.get(m, {}).get("retired_after")
-            if as_of and ret and as_of > _period_date(ret):
-                errs.append(f"{at}: {m} was retired after {ret}; record its successor instead")
+            ret = reg.get(m, {}).get("_ret")
+            if as_of and ret and as_of > ret:
+                errs.append(f"{at}: {m} was retired after {reg[m]['retired_after']}; record its successor instead")
     if as_of:
         for m, row in reg.items():
-            req, ret = row["required_from"], row["retired_after"]
-            if (req and as_of >= _period_date(req) and not (ret and as_of > _period_date(ret))
-                    and m not in seen_head):
+            if required_active(row, as_of) and m not in seen_head:
                 errs.append(f"required KPI component '{m}' has no headline row (or an 'unavailable' row with a reason)")
+        me = os.path.basename(pdir)
+        prior = [v for v in vintages(section) if (v[0], v[1]) < (as_of, me)]
+        if prior:  # non-required headlines that silently disappeared
+            ids_now = {r["metric"] for r in rows}
+            for m in sorted({r["metric"] for r in prior[-1][2] if r["role"] == "headline"} - ids_now):
+                if not (reg.get(m, {}).get("_ret") and as_of > reg[m]["_ret"]):
+                    warns.append(f"headline metric '{m}' of {prior[-1][1]} is not recorded in this run")
     if not seen_head:
         warns.append(f"{path}: no headline row — OK only if the KPI has no numeric reading this period (say why in the section)")
     return errs, warns
@@ -298,12 +329,12 @@ def context(period_dir: str, section: str) -> str:
         for m, r in by_metric.items():
             last[m] = (pname, r)
     reg, errs = load_registry(section)
-    if errs and not reg:
+    if reg is None:
         return f"(no metric registry yet for '{section}': create metrics/{section}.csv — you are defining its metrics)"
     lines = [f"Registered metrics for '{section}' (metrics/{section}.csv). Use these ids; the DEFINITION is binding:"]
     for m, row in reg.items():
         flags = []
-        if row["required_from"] and as_of >= _period_date(row["required_from"]):
+        if required_active(row, as_of):
             flags.append("REQUIRED headline")
         if row["retired_after"]:
             flags.append(f"retired after {row['retired_after']}")
@@ -401,7 +432,7 @@ def marker_args(section: str, metrics: list[str], match: str | None, label: str)
 def chart(period_dir: str, section: str, metrics: list[str], match: str | None = None,
           label: str = "obs", title: str | None = None) -> str:
     xs, data = chart_data(period_dir, section, metrics, match, label)
-    unit = load_registry(section)[0].get(metrics[0], {}).get("unit") or next(
+    unit = (load_registry(section)[0] or {}).get(metrics[0], {}).get("unit") or next(
         (r["unit"] for _, _, rs in _upto(section, period_dir) for r in rs if r["metric"] == metrics[0]), "")
     lo, hi = _nice_range([float(v) for vs in data for v in vs])
     title = title or f"{', '.join(metrics)} ({unit})"
@@ -457,9 +488,15 @@ def verify_charts(doc_text: str, period_dir: str) -> list[str]:
 def headline_errors(doc_text: str, csv_path: str) -> list[str]:
     """KPI consistency: every headline value of this run appears in the section."""
     # mermaid blocks don't count: a headline must be REPORTED, not just charted
-    pool = kpi_numbers(re.sub(r"```.*?```", "", doc_text, flags=re.DOTALL))
-    return [f"kpi headline {r['metric']}={r['value']} {r['unit']} ({r['obs']}) not reported in the section"
-            for r in read_csv(csv_path) if r["role"] == "headline" and not kpi_traceable(r["value"], pool)]
+    prose = re.sub(r"```.*?```", "", doc_text, flags=re.DOTALL)
+    pool = kpi_numbers(prose)
+    rows = read_csv(csv_path)
+    errs = [f"kpi headline {r['metric']}={r['value']} {r['unit']} ({r['obs']}) not reported in the section"
+            for r in rows if r["role"] == "headline" and not kpi_traceable(r["value"], pool)]
+    if any(r["role"] == "unavailable" for r in rows) and not re.search(
+            r"\b(unavailable|not available|no (new |current )?(reading|data|value))\b", prose, re.I):
+        errs.append("store marks a KPI component 'unavailable' but the section never says a reading is unavailable (and why)")
+    return errs
 
 
 # --- CLI ----------------------------------------------------------------------
