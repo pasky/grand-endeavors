@@ -4,3 +4,6 @@
 # per-stage pi sessions (large JSONL; provenance is in MANIFEST.txt + research notes)
 */.sessions/
 __pycache__/
+
+# pi-side-agents local runtime setup (never commit)
+.pi/
