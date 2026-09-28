@@ -91,6 +91,30 @@ def readme_topics(section: str) -> dict[str, list[str]]:
     return out
 
 
+def readme_items(section: str) -> list[tuple[str, str, str]]:
+    """Gather watch list: (topic, name, description) for the KPI, every milestone
+    and challenge in README, plus the open-ended 'beyond' sweep."""
+    text = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
+    lines = text.splitlines()
+    start = next(i for i, ln in enumerate(lines) if ln.strip() == _HEADINGS[section])
+    level = len(_HEADINGS[section].split()[0])
+    end = next((i for i in range(start + 1, len(lines)) if re.match(r"^#{1,%d} " % level, lines[i])), len(lines))
+    block = lines[start:end]
+    kpi_line = next((ln for ln in block if ln.startswith("**KPI:**")), "")
+    intro = " ".join(ln for ln in block[1:] if ln.strip() and not ln.startswith(("*", "#")))[:600]
+    items = [("kpi", "KPI", kpi_line.replace("**KPI:**", "").strip() or f"The section's key indicators. {intro}")]
+    for kind, topic in (("milestones", "milestone"), ("challenges", "challenge")):
+        for slug, name in readme_topics(section)[kind]:
+            desc = next((re.sub(r"^\*\s+\*\*.+?\*\*:?\s*", "", ln).strip()
+                         for ln in block if re.match(r"^\*\s+\*\*", ln) and slugify(
+                             re.match(r"^\*\s+\*\*(.+?)\*\*", ln)[1].rstrip(":").strip().strip('"“”')) == slug), "")
+            items.append((f"{topic}:{slug}", name, desc))
+    items.append(("beyond", "Beyond the Framework",
+                  "Significant developments for this endeavor that fit no milestone or challenge: "
+                  "surprising breakthroughs, setbacks, policy shifts, new players, important data releases."))
+    return items
+
+
 def valid_topics(section: str) -> set[str]:
     t = readme_topics(section)
     return ({"kpi", "beyond"} | {f"milestone:{s}" for s, _ in t["milestones"]}
@@ -665,6 +689,10 @@ def main() -> int:
     li.add_argument("--events"); li.add_argument("--obs"); li.add_argument("--legacy", action="store_true")
     li.add_argument("--assessments")
     cu = sub.add_parser("cutoff"); cu.add_argument("period")
+    it = sub.add_parser("items"); it.add_argument("section", choices=SECTIONS)
+    to = sub.add_parser("touched"); to.add_argument("section", choices=SECTIONS); to.add_argument("files", nargs="*")
+    stt = sub.add_parser("state"); stt.add_argument("section", choices=SECTIONS)
+    stt.add_argument("--get", choices=["last_until"]); stt.add_argument("--record", help="JSON object of a finished run")
     s = sub.add_parser("snapshot"); s.add_argument("period_dir"); s.add_argument("section", choices=SECTIONS)
     a = ap.parse_args()
     try:
@@ -699,6 +727,34 @@ def main() -> int:
                 print(f"  ERROR {e}")
             print(f"lint {a.section}: {len(errs)} error(s)")
             return 1 if errs else 0
+        elif a.cmd == "items":
+            for topic, name, desc in readme_items(a.section):
+                print(f"{topic}|{name}|{desc}")
+        elif a.cmd == "touched":
+            # assessment targets affected by admitted records in these staged files,
+            # plus targets that have never been assessed
+            targets = set()
+            for f in a.files:
+                for e in load_jsonl(f):
+                    if e.get("verification", {}).get("status") in ("verified", "corrected"):
+                        targets |= {t for t in e.get("topics", []) if t == "kpi" or t.startswith("milestone:")}
+            valid = {t for t in valid_topics(a.section) if t == "kpi" or t.startswith("milestone:")}
+            targets |= valid - {x["target"] for x in assessments(a.section)}
+            print(" ".join(sorted(targets & valid)))
+        elif a.cmd == "state":
+            p = path("state", a.section)
+            st = json.load(open(p)) if os.path.exists(p) else {"section": a.section, "last_until": None, "runs": []}
+            if a.get:
+                print(st.get(a.get) or "")
+            elif a.record:
+                run = json.loads(a.record)
+                st["runs"].append(run)
+                st["last_until"] = max(filter(None, [st.get("last_until"), run["until"]]))
+                os.makedirs(os.path.dirname(p), exist_ok=True)
+                with open(p, "w") as f:
+                    json.dump(st, f, indent=1, ensure_ascii=False)
+                    f.write("\n")
+                print(f"state {a.section}: last_until={st['last_until']} runs={len(st['runs'])}")
         elif a.cmd == "cutoff":
             print(f"cutoff {cutoff(a.period)} previous_cutoff {prev_cutoff(a.period)} "
                   f"period {period_start(a.period)}..{__import__('kpi').period_as_of(a.period)}")
