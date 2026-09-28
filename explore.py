@@ -40,10 +40,12 @@ CREATE TABLE events (section TEXT, id TEXT, date TEXT, date_end TEXT, published 
     published_basis TEXT, retrieved TEXT, known_at TEXT, kind TEXT, significance INTEGER,
     claim TEXT, verification_status TEXT, verified_by TEXT, verified_at TEXT, collector TEXT,
     note TEXT, primary_url TEXT, topics JSON, sources JSON, metrics JSON, relates JSON,
-    verification JSON, line INTEGER, PRIMARY KEY (section, id));
+    verification JSON, supersedes JSON, superseded_by TEXT, effective INTEGER, line INTEGER,
+    PRIMARY KEY (section, id));
 CREATE TABLE event_topics (section TEXT, event_id TEXT, topic TEXT);
 CREATE TABLE event_sources (section TEXT, event_id TEXT, ord INTEGER, url TEXT, title TEXT, is_primary INTEGER);
 CREATE TABLE event_relates (section TEXT, event_id TEXT, rel TEXT, related_id TEXT);
+CREATE TABLE event_supersedes (section TEXT, event_id TEXT, superseded_id TEXT);
 CREATE TABLE observations (section TEXT, metric TEXT, obs TEXT, obs_start TEXT, obs_end TEXT,
     obs_kind TEXT, value REAL, value_text TEXT, unit TEXT, source TEXT, published TEXT,
     published_basis TEXT, retrieved TEXT, known_at TEXT, collector TEXT, verification TEXT,
@@ -68,9 +70,13 @@ CREATE INDEX evt_topic ON event_topics (topic, section);
 CREATE INDEX evt_event ON event_topics (section, event_id);
 CREATE INDEX evs_url ON event_sources (url);
 CREATE INDEX evr_related ON event_relates (section, related_id);
+CREATE INDEX evsup_superseded ON event_supersedes (section, superseded_id);
 CREATE INDEX obs_metric ON observations (section, metric, obs_end);
 CREATE INDEX obs_known ON observations (known_at);
 CREATE INDEX ass_target ON assessments (section, target, made_at);
+
+-- events minus those superseded by a record known by as_of (ledger.effective_events)
+CREATE VIEW current_events AS SELECT * FROM events WHERE effective = 1;
 
 -- the effective row per (metric, obs), as chosen by ledger.obs_as_of (precedence
 -- (tier, known_at, retrieved): a non-legacy row outranks any legacy one)
@@ -90,16 +96,17 @@ SELECT t.section, t.topic AS target, t.kind, t.name, t.ord,
        (SELECT MIN(e.verification_status = 'legacy') FROM json_each(a.evidence) j
          JOIN events e ON e.section = a.section AND e.id = j.value) AS legacy_evidence,
        p.status AS prev_status, p.made_at AS prev_made_at,
-       (SELECT COUNT(*) FROM event_topics et
-         WHERE et.section = t.section AND et.topic = t.topic) AS n_events
+       (SELECT COUNT(*) FROM event_topics et JOIN current_events e ON e.section = et.section
+         AND e.id = et.event_id WHERE et.section = t.section AND et.topic = t.topic) AS n_events
 FROM topics t LEFT JOIN ranked a ON a.section = t.section AND a.target = t.topic AND a.k = 1
 LEFT JOIN ranked p ON p.section = t.section AND p.target = t.topic AND p.k = 2
 WHERE t.kind != 'beyond'
 ORDER BY t.section, t.ord;
 
 CREATE VIEW recent_events AS
-SELECT section, known_at, date, id, kind, significance, verification_status, claim, primary_url, topics
-FROM events ORDER BY known_at DESC, date_end DESC, id DESC;
+SELECT section, known_at, date, id, kind, significance, verification_status, claim, primary_url, topics,
+       supersedes
+FROM current_events ORDER BY known_at DESC, date_end DESC, id DESC;
 
 CREATE VIEW gaps AS
 SELECT section, metric, unit, required, cadence, latest_obs, next_expected, status,
@@ -112,16 +119,20 @@ TABLE_DOCS = {
     "build_info": "Build parameters (as_of: the known_at cutoff applied to every record).",
     "sections": "README endeavors (sections), in README order, with their KPI line.",
     "topics": "Topic tags per section from README: kpi, milestone:<slug>, challenge:<slug>, beyond.",
-    "events": "News/claims (ledger/events). known_at = published. JSON columns keep nested fields.",
+    "events": "News/claims (ledger/events), incl. superseded ones (effective=0, superseded_by = the "
+              "correcting record known by as_of). known_at = published. JSON columns keep nested fields.",
     "event_topics": "One row per (event, topic tag).",
     "event_sources": "One row per event source URL (ord 0 = first-listed).",
     "event_relates": "Event lifecycle links: event_id --rel--> related_id (update, retraction, ...).",
+    "event_supersedes": "Corrections / added sources: event_id supersedes superseded_id (which then "
+                        "drops out of every view once event_id is known).",
     "observations": "KPI datapoints incl. source revisions (ledger/observations); known_at = published. "
                     "tier: 0 legacy, 1 otherwise; effective=1 marks the row ledger.obs_as_of picks per "
                     "(metric, obs): highest (tier, known_at, retrieved).",
     "assessments": "Timestamped milestone/KPI status judgments; known_at = made_at.",
     "metrics": "Metric registry (metrics/*.csv) + derived: latest obs, next_expected "
                "(latest obs end + cadence + release_lag_days), overdue vs as_of.",
+    "current_events": "Effective events (ledger.effective_events): superseded ones removed.",
     "current_obs": "Effective row per (metric, obs) (ledger.obs_as_of: non-legacy beats legacy, "
                    "then the latest known revision).",
     "headline_obs": "current_obs restricted to periods that ended by as_of (headline/schedule basis).",
@@ -130,7 +141,7 @@ TABLE_DOCS = {
                   "month, same obs), and the like-for-like change vs the same month a year earlier.",
     "milestone_status": "Latest assessment per milestone/challenge/kpi target ('not yet assessed' if none), "
                         "with the previous status; legacy_evidence=1 if all evidence events are legacy.",
-    "recent_events": "Events, most recently known first.",
+    "recent_events": "Effective events, most recently known first.",
     "gaps": "Registered (non-retired) metrics that are overdue or were never observed.",
 }
 
@@ -143,18 +154,23 @@ QUERIES = {
         "next_expected, status FROM latest_kpi WHERE NOT retired ORDER BY section, required DESC, metric"),
     "events_by_milestone": ("Events by milestone", "Events tagged with a topic, e.g. milestone:the-bend.",
         "SELECT e.section, e.date, e.known_at, e.kind, e.significance, e.verification_status, e.claim, "
-        "e.primary_url FROM event_topics t JOIN events e ON e.section = t.section AND e.id = t.event_id "
+        "e.primary_url FROM event_topics t JOIN current_events e ON e.section = t.section AND e.id = t.event_id "
         "WHERE t.topic = :topic ORDER BY e.date_end DESC, e.id DESC"),
-    "lifecycle_threads": ("Lifecycle threads", "Event pairs linked via relates (later event -> earlier one).",
+    "lifecycle_threads": ("Lifecycle threads", "Event pairs linked via relates or supersedes "
+        "(later effective event -> earlier one; earlier_superseded_by if the earlier one was corrected).",
         "SELECT r.section, r.related_id AS earlier_id, b.date AS earlier_date, b.claim AS earlier_claim, "
+        "b.superseded_by AS earlier_superseded_by, "
         "r.rel, r.event_id AS later_id, a.date AS later_date, a.claim AS later_claim "
-        "FROM event_relates r JOIN events a ON a.section = r.section AND a.id = r.event_id "
+        "FROM (SELECT section, event_id, rel, related_id FROM event_relates UNION ALL "
+        "SELECT section, event_id, 'supersedes', superseded_id FROM event_supersedes) r "
+        "JOIN current_events a ON a.section = r.section AND a.id = r.event_id "
         "LEFT JOIN events b ON b.section = r.section AND b.id = r.related_id "
-        "ORDER BY r.section, r.related_id, a.date_end"),
-    "legacy_vs_verified": ("Legacy vs verified", "Record counts by verification status.",
+        "ORDER BY r.section, r.related_id, a.date_end, r.rel"),
+    "legacy_vs_verified": ("Legacy vs verified", "Effective record counts by verification status "
+        "(superseded events and overridden observation rows excluded).",
         "SELECT section, 'events' AS records, verification_status AS verification, COUNT(*) AS n "
-        "FROM events GROUP BY 1, 2, 3 UNION ALL "
-        "SELECT section, 'observations', verification, COUNT(*) FROM observations GROUP BY 1, 2, 3 "
+        "FROM current_events GROUP BY 1, 2, 3 UNION ALL "
+        "SELECT section, 'observations', verification, COUNT(*) FROM current_obs GROUP BY 1, 2, 3 "
         "ORDER BY 1, 2, 3"),
     "overdue_metrics": ("Overdue metrics", "Metrics whose next release is past due, or never observed.",
         "SELECT * FROM gaps"),
@@ -287,7 +303,11 @@ def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
         for i, (topic, kind, slug, name, d) in enumerate(tops):
             ins("topics", (sec, topic, kind, slug, name, d, i))
 
-        for e, known in _known(ledger.events(sec), as_of, f"events/{sec}"):
+        known_evs = _known(ledger.events(sec), as_of, f"events/{sec}")
+        # ONE supersedes implementation: a superseded event drops out once its successor is known
+        live = {id(e) for e in ledger.effective_events([e for e, _ in known_evs], as_of)}
+        superseded_by = {s: e.get("id") for e, _ in known_evs for s in e.get("supersedes") or []}
+        for e, known in known_evs:
             v = e.get("verification") or {}
             srcs = [s for s in e.get("sources") or [] if isinstance(s, dict)]
             ins("events", (sec, e.get("id"), e.get("date"), _date_end(e.get("date", "")), e.get("published"),
@@ -295,7 +315,10 @@ def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
                            e.get("significance"), e.get("claim"), v.get("status"), v.get("by"), v.get("at"),
                            e.get("collector"), e.get("note"), srcs[0].get("url") if srcs else None,
                            _j(e.get("topics")), _j(e.get("sources")), _j(e.get("metrics")),
-                           _j(e.get("relates")), _j(v), e.get("_line")))
+                           _j(e.get("relates")), _j(v), _j(e.get("supersedes")), superseded_by.get(e.get("id")),
+                           int(id(e) in live), e.get("_line")))
+            for sid in e.get("supersedes") or []:
+                ins("event_supersedes", (sec, e.get("id"), sid))
             for tp in e.get("topics") or []:
                 ins("event_topics", (sec, e.get("id"), tp))
             for i, s in enumerate(srcs):
@@ -508,15 +531,24 @@ def spark_points(db: sqlite3.Connection, k: sqlite3.Row) -> tuple[list[tuple[dt.
     return pts, KIND_NAMES.get(kind, kind)
 
 
-def event_li(e: sqlite3.Row, names: dict[str, str]) -> str:
+def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None = None) -> str:
     sig = int(e["significance"] or 0)
     chips = "".join(f'<span class="chip">{esc(names.get(t, t))}</span>' for t in json.loads(e["topics"] or "[]"))
     srcs = json.loads(e["sources"] or "[]")
     links = " ".join(link(s.get("url"), f"[{i}] {s.get('title') or 'source'}")
                      for i, s in enumerate(srcs, 1) if isinstance(s, dict))
-    rels = "".join(f'<div class="rel">↳ {esc(r.get("rel"))} of '
-                   f'<a href="#ev-{esc(e["section"])}-{esc(r.get("id"))}">{esc(r.get("id"))}</a></div>'
+    succ = succ or {}
+
+    def target(eid) -> str:  # a superseded event is not shown: link to its effective successor
+        seen, t = set(), eid
+        while t in succ and t not in seen:
+            seen.add(t); t = succ[t]
+        label = esc(eid) + (f" (superseded by {esc(t)})" if t != eid else "")
+        return f'<a href="#ev-{esc(e["section"])}-{esc(t)}">{label}</a>'
+    rels = "".join(f'<div class="rel">↳ {esc(r.get("rel"))} of {target(r.get("id"))}</div>'
                    for r in json.loads(e["relates"] or "[]") if isinstance(r, dict))
+    rels += "".join(f'<div class="rel">↳ supersedes (corrects / adds sources to) {esc(s)}</div>'
+                    for s in json.loads(e["supersedes"] or "[]"))
     return (f'<li class="ev sig{sig}" id="ev-{esc(e["section"])}-{esc(e["id"])}">'
             f'<div class="meta">{esc(e["date"])} · {esc(e["kind"])} · '
             f'<span title="significance {sig}/3">{"●" * sig}{"○" * (3 - sig)}</span> · '
@@ -577,13 +609,15 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, n_recent: int = 8) -> s
 
     # latest = most recently known; older ones fold away by significance, newest first
     names = {r["topic"]: r["name"] for r in db.execute("SELECT topic, name FROM topics WHERE section=?", (sec,))}
-    evs = db.execute("SELECT * FROM events WHERE section=? "
+    # superseded id -> its effective successor (follow chains), so links always land on a shown event
+    succ = dict(db.execute("SELECT id, superseded_by FROM events WHERE section=? AND NOT effective", (sec,)).fetchall())
+    evs = db.execute("SELECT * FROM current_events WHERE section=? "
                      "ORDER BY known_at DESC, date_end DESC, significance DESC, id DESC",
                      (sec,)).fetchall()
     out.append(f"</div><div><h3>Latest events ({len(evs)})</h3>")
     if not evs:
         out.append('<div class="gap">no events in the ledger yet</div>')
-    out.append("<ul>" + "".join(event_li(e, names) for e in evs[:n_recent]) + "</ul>")
+    out.append("<ul>" + "".join(event_li(e, names, succ) for e in evs[:n_recent]) + "</ul>")
     older = sorted(evs[n_recent:], key=lambda e: (e["date_end"] or "", e["known_at"], e["id"]), reverse=True)
     for sig, label in ((3, "major"), (2, "notable"), (1, "minor")):
         group = [e for e in older if (e["significance"] or 1) == sig]
@@ -591,7 +625,7 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, n_recent: int = 8) -> s
             n_leg = sum(e["verification_status"] == "legacy" for e in group)
             out.append(f"<details><summary>{len(group)} earlier {label} event(s)"
                        f"{f' ({n_leg} legacy)' if n_leg else ''}</summary><ul>"
-                       + "".join(event_li(e, names) for e in group) + "</ul></details>")
+                       + "".join(event_li(e, names, succ) for e in group) + "</ul></details>")
     return "".join(out) + "</div></div></section>"
 
 
@@ -608,7 +642,9 @@ def dashboard(as_of: dt.date) -> str:
 def _dashboard_html(db: sqlite3.Connection, as_of: dt.date) -> str:
     secs = db.execute("SELECT * FROM sections ORDER BY ord").fetchall()
     one = lambda q: db.execute(q).fetchone()[0]
-    n_ev, n_leg = one("SELECT COUNT(*) FROM events"), one("SELECT COUNT(*) FROM events WHERE verification_status='legacy'")
+    n_ev, n_leg = one("SELECT COUNT(*) FROM current_events"), \
+        one("SELECT COUNT(*) FROM current_events WHERE verification_status='legacy'")
+    n_sup = one("SELECT COUNT(*) FROM events WHERE NOT effective")
     n_obs = one("SELECT COUNT(*) FROM observations")
     gaps = db.execute("SELECT * FROM gaps").fetchall()
     gap_li = "".join(f'<li><a href="#{esc(g["section"])}">{esc(g["section"])}</a>: {esc(g["metric"])}'
@@ -620,7 +656,7 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date) -> str:
             f"<title>Grand Endeavors — dashboard as of {esc(as_of)}</title><style>{CSS}</style></head><body>"
             f"<header><h1>Grand Endeavors — ledger dashboard</h1>"
             f'<div class="mute">As of <b>{esc(as_of)}</b> (records with known_at ≤ as-of) · {n_ev} events '
-            f"({n_ev - n_leg} verified, {n_leg} legacy) · {n_obs} observations · {len(gaps)} metric gap(s)</div>"
+            f"({n_ev - n_leg} verified, {n_leg} legacy{f'; {n_sup} superseded not shown' if n_sup else ''}) · {n_obs} observations · {len(gaps)} metric gap(s)</div>"
             f"<nav>{nav}</nav>"
             + (f"<h3>Gaps</h3><ul>{gap_li}</ul>" if gaps else "")
             + "</header><main>" + "".join(section_html(db, s) for s in secs)
@@ -643,7 +679,8 @@ def main() -> int:
             p = build(a.out, a.as_of)
             db = sqlite3.connect(p)
             counts = {t: db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
-                      for t in ("events", "observations", "assessments", "metrics", "gaps")}
+                      for t in ("current_events", "observations", "current_obs", "assessments", "metrics", "gaps")}
+            counts["superseded_events"] = db.execute("SELECT COUNT(*) FROM events WHERE NOT effective").fetchone()[0]
             db.close()
             print(f"wrote {p} (+ metadata.json) as of {a.as_of}: {counts}")
         else:

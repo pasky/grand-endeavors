@@ -93,6 +93,27 @@ EVENTS = [
      "sources": [{"url": "https://example.org/c", "title": "C", "primary": True}],
      "significance": 1, "verification": {"status": "verified", "by": "v", "at": "2026-10-06"},
      "collector": "gather:test"},
+    # supersedes: a correction replaces the original once it is known (2026-08-15)
+    {"id": "2026-05-01-pledge-coverage", "date": "2026-05-01", "published": "2026-05-02",
+     "published_basis": "source", "retrieved": "2026-05-02", "kind": "analysis",
+     "topics": ["milestone:the-balance"], "claim": "A tracker found net-zero pledges cover 90% of global emissions.",
+     "sources": [{"url": "https://example.org/d", "title": "D", "primary": True}],
+     "significance": 2, "verification": {"status": "verified", "by": "v", "at": "2026-05-02"},
+     "collector": "gather:test"},
+    {"id": "2026-06-01-pledge-followup", "date": "2026-06-01", "published": "2026-06-02",
+     "published_basis": "source", "retrieved": "2026-06-02", "kind": "analysis",
+     "topics": ["milestone:the-balance"], "claim": "A follow-up study examined how many of those pledges are legally binding.",
+     "sources": [{"url": "https://example.org/e", "title": "E", "primary": True}],
+     "relates": [{"id": "2026-05-01-pledge-coverage", "rel": "followup"}],
+     "significance": 1, "verification": {"status": "verified", "by": "v", "at": "2026-06-02"},
+     "collector": "gather:test"},
+    {"id": "2026-05-01-pledge-coverage-corrected", "date": "2026-05-01", "published": "2026-08-15",
+     "published_basis": "source", "retrieved": "2026-08-15", "kind": "analysis",
+     "topics": ["milestone:the-balance"], "claim": "A tracker found net-zero pledges cover 88% of global emissions (corrected).",
+     "sources": [{"url": "https://example.org/d2", "title": "D corrected", "primary": True}],
+     "supersedes": ["2026-05-01-pledge-coverage"],
+     "significance": 2, "verification": {"status": "corrected", "by": "v", "at": "2026-08-15"},
+     "collector": "gather:test"},
 ]
 
 ASSESSMENTS = [
@@ -156,9 +177,19 @@ def main():
         case("all tables and views exist", want <= names)
         case("indexes exist", len(q(db, "SELECT name FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'")) >= 5)
         n = lambda t: q(db, f"SELECT COUNT(*) FROM {t}")[0][0]
-        case("as-of filters events (late news excluded)", n("events") == 2)
-        case("event_topics / sources / relates flattened",
-             (n("event_topics"), n("event_sources"), n("event_relates")) == (3, 3, 1))
+        case("as-of filters events (late news excluded)", n("events") == 5)
+        case("event_topics / sources / relates / supersedes flattened",
+             (n("event_topics"), n("event_sources"), n("event_relates"), n("event_supersedes")) == (6, 6, 2, 1))
+        case("superseded event kept for audit, not effective",
+             q(db, "SELECT effective, superseded_by, supersedes FROM events WHERE id='2026-05-01-pledge-coverage'")
+             == [(0, "2026-05-01-pledge-coverage-corrected", None)]
+             and q(db, "SELECT supersedes FROM events WHERE id='2026-05-01-pledge-coverage-corrected'")
+             == [('["2026-05-01-pledge-coverage"]',)])
+        case("current_events == ledger.effective_events",
+             sorted(r[0] for r in q(db, "SELECT id FROM current_events")) ==
+             sorted(e["id"] for e in ledger.effective_events(ledger.events("climate"), D("2026-09-28"))))
+        case("recent_events: effective only", "2026-05-01-pledge-coverage" not in
+             {r[0] for r in q(db, "SELECT id FROM recent_events")} and n("recent_events") == 4)
         case("observations incl. revisions", n("observations") == 15)
         case("assessments as-of (later one excluded)", n("assessments") == 2)
         case("sections: all SECTIONS, README-less ones included", n("sections") == len(ledger.SECTIONS))
@@ -238,7 +269,10 @@ def main():
         leg = dict(q(db, "SELECT target, legacy_evidence FROM milestone_status WHERE assessment_id IS NOT NULL"))
         case("milestone_status flags all-legacy evidence",
              leg == {"milestone:the-bend": 0, "milestone:the-balance": 1})
-        case("recent_events newest known first", q(db, "SELECT id FROM recent_events")[0][0] == "2026-07-01-peak-update")
+        case("recent_events newest known first",
+             q(db, "SELECT id FROM recent_events")[0][0] == "2026-05-01-pledge-coverage-corrected")
+        case("milestone_status n_events counts effective events only",
+             q(db, "SELECT n_events FROM milestone_status WHERE target='milestone:the-balance'")[0][0] == 2)
 
         meta = json.load(open(os.path.join(out, "metadata.json")))
         queries = meta["databases"]["ledger"]["queries"]
@@ -253,9 +287,18 @@ def main():
                 ok = False
         case("canned queries execute", ok)
         thread = q(db, queries["lifecycle_threads"]["sql"])
-        case("lifecycle thread via relates", len(thread) == 1 and thread[0][1] == "2026-03-01-first-peak-claim")
+        case("lifecycle threads via relates + supersedes",
+             sorted((r[1], r[4], r[5]) for r in thread) == [
+                 ("2026-03-01-first-peak-claim", None, "update"),
+                 ("2026-05-01-pledge-coverage", "2026-05-01-pledge-coverage-corrected", "followup"),
+                 ("2026-05-01-pledge-coverage", "2026-05-01-pledge-coverage-corrected", "supersedes")])
+        by_ms = q(db, queries["events_by_milestone"]["sql"].replace(":topic", "'milestone:the-balance'"))
+        case("events_by_milestone: effective only", len(by_ms) == 2 and not any("90%" in r[6] for r in by_ms))
         legacy = {(r[1], r[2]): r[3] for r in q(db, queries["legacy_vs_verified"]["sql"])}
-        case("legacy vs verified counts", legacy[("events", "legacy")] == 1 and legacy[("observations", "legacy")] == 3)
+        case("legacy vs verified counts (effective records)",
+             legacy[("events", "legacy")] == 1 and legacy[("events", "verified")] == 2
+             and legacy[("events", "corrected")] == 1
+             and legacy[("observations", "legacy")] == 2)
         db.close()
 
         # earlier / later as-of: revision not yet known; later assessment + event visible
@@ -263,10 +306,13 @@ def main():
         explore.build_db(db, D("2026-07-10"))
         case("as-of before revision -> original value",
              q(db, "SELECT value_text FROM latest_kpi WHERE metric='co2-monthly'")[0][0] == "429.00")
+        case("as-of before the correction is known -> original event effective",
+             q(db, "SELECT id FROM current_events WHERE id LIKE '2026-05-01-pledge%'")
+             == [("2026-05-01-pledge-coverage",)] and q(db, "SELECT COUNT(*) FROM event_supersedes")[0][0] == 0)
         db = sqlite3.connect(":memory:")
         explore.build_db(db, D("2026-10-10"))
         case("later as-of sees late event + newer assessment",
-             q(db, "SELECT COUNT(*) FROM events")[0][0] == 3 and
+             q(db, "SELECT COUNT(*) FROM current_events")[0][0] == 5 and
              q(db, "SELECT status, prev_status FROM milestone_status WHERE target='milestone:the-bend'")[0]
              == ("red", "green"))
 
@@ -294,13 +340,20 @@ def main():
         case("dashboard sparkline names its granularity", "<title>3 daily obs 2026-01-10..2026-04-02" in page)
         case("dashboard lifecycle link", 'href="#ev-climate-2026-03-01-first-peak-claim"' in page)
         case("dashboard as-of excludes late event", "late announcement" not in page)
+        case("dashboard hides superseded event, shows the correction",
+             "cover 90%" not in page and "cover 88%" in page and "1 superseded not shown" in page
+             and "4 events (3 verified, 1 legacy" in page)
+        case("dashboard: supersedes line + relates link redirected to the successor",
+             "supersedes (corrects / adds sources to) 2026-05-01-pledge-coverage" in page
+             and 'href="#ev-climate-2026-05-01-pledge-coverage-corrected">2026-05-01-pledge-coverage '
+                 '(superseded by 2026-05-01-pledge-coverage-corrected)</a>' in page)
         case("dashboard shows required + gap tiles, folds the rest",
              page.index("co2-never") < page.index("more registered metric") < page.index("co2-nolag"))
         db = sqlite3.connect(":memory:")
         explore.build_db(db, D("2026-10-10"))
         db.row_factory = sqlite3.Row
         sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), 1)
-        case("older events fold by significance", "1 earlier notable event(s) (1 legacy)" in sec
+        case("older events fold by significance", "2 earlier notable event(s) (1 legacy)" in sec
              and "1 earlier major event(s)" in sec and "was green on 2026-07-02" in sec)
         case("dashboard deterministic", page == explore.dashboard(D("2026-09-28")))
 
