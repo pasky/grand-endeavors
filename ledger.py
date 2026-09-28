@@ -562,7 +562,8 @@ def merge(section: str, ev_file: str | None, obs_file: str | None,
             if r["id"] not in ids:
                 errs.append(f"event {e['id']}: relates to unknown event '{r['id']}'")
     admit_obs, reject_obs = [], []
-    have = {(r["metric"], r["obs"], r["value"]) for r in observations(section)}
+    # numeric identity: "572.0" re-states "572" (not a revision)
+    have = {(r["metric"], r["obs"], float(r["value"])) for r in observations(section)}
     if staged_obs:
         errs += reg_errs
     for r in staged_obs:
@@ -571,10 +572,11 @@ def merge(section: str, ev_file: str | None, obs_file: str | None,
             errs += es
             continue
         if r["verification"] in ("verified", "corrected", "collector"):
-            if (r["metric"], r["obs"], r["value"]) in have:
+            key = (r["metric"], r["obs"], float(r["value"]))
+            if key in have:
                 stats["obs_dup"] += 1  # unchanged re-observation: nothing new to record
                 continue
-            have.add((r["metric"], r["obs"], r["value"]))
+            have.add(key)
             admit_obs.append(r)
         else:
             reject_obs.append(r)
