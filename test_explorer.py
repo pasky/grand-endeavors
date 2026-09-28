@@ -46,6 +46,7 @@ co2-monthly,ppm,monthly,7,pilot-26H1,,Monthly mean CO2 at a fixture station for 
 co2-trend,ppm/yr,annual,10,pilot-26H1,,Ten-year mean CO2 growth for the fixture tests
 co2-never,ppm,monthly,7,pilot-26H1,,A required metric that was never observed at all
 co2-old,ppm/yr,annual,,,pilot-2025,Retired decadal growth series kept only for history
+co2-nolag,ppm,annual,,,,"Annual series with no regular release (empty lag) "" onmouseover=""x"
 """
 
 OBS = [
@@ -56,6 +57,8 @@ OBS = [
     ("co2-trend", "2025", "2.56", "ppm/yr", "2026-01-10", "verified"),
     ("co2-trend", "2024", "2.64", "ppm/yr", "2025-01-10", "legacy"),
     ("co2-old", "2020", "2.4", "ppm/yr", "2025-01-03", "legacy"),
+    ("co2-monthly", "2026-09", "430.00", "ppm", "2026-09-05", "verified"),  # period still in progress
+    ("co2-nolag", "2023", "1.0", "ppm", "2024-02-01", "verified"),
 ]
 
 EVENTS = [
@@ -84,7 +87,7 @@ EVENTS = [
 
 ASSESSMENTS = [
     {"id": "climate-the-bend-2026-07-02", "target": "milestone:the-bend", "status": "green",
-     "label": "Peak in sight", "made_at": "2026-07-02", "rationale": "Emissions fell.",
+     "label": "Peak in sight", "made_at": "2026-07-02", "rationale": "Emissions fell \"><b onclick=alert(3)>.",
      "evidence": ["2026-07-01-peak-update"], "by": "assess-agent"},
     {"id": "climate-the-bend-2026-10-01", "target": "milestone:the-bend", "status": "red",
      "label": "Rebound", "made_at": "2026-10-01", "rationale": "Later judgment.",
@@ -108,6 +111,8 @@ def make_fixture(root):
     write(root, "ledger/observations/climate.csv", "\n".join(rows) + "\n")
     write(root, "ledger/events/climate.jsonl", "".join(json.dumps(e) + "\n" for e in EVENTS))
     write(root, "ledger/assessments/climate.jsonl", "".join(json.dumps(a) + "\n" for a in ASSESSMENTS))
+    write(root, "ledger/events/fusion.jsonl", "\n  \n")  # empty files must work like missing ones
+    write(root, "ledger/assessments/fusion.jsonl", "")
 
 
 def q(db, sql, *args):
@@ -118,10 +123,13 @@ def main():
     # pure date math
     ne = explore.next_expected
     case("next_expected monthly: month end + 1 month + lag", ne("monthly", "7", D("2026-01-31")) == D("2026-03-07"))
-    case("next_expected quarterly", ne("quarterly", "", D("2026-03-31")) == D("2026-06-30"))
+    case("next_expected quarterly", ne("quarterly", "0", D("2026-03-31")) == D("2026-06-30"))
     case("next_expected annual + lag", ne("annual", "10", D("2025-12-31")) == D("2027-01-10"))
     case("next_expected daily", ne("daily", "2", D("2026-05-10")) == D("2026-05-13"))
+    case("next_expected weekly, zero lag", ne("weekly", "0", D("2026-05-10")) == D("2026-05-17"))
+    case("next_expected leap year month end", ne("monthly", "0", D("2028-01-31")) == D("2028-02-29"))
     case("next_expected irregular -> None", ne("irregular", "5", D("2026-05-10")) is None)
+    case("next_expected empty lag = no regular release -> None", ne("annual", "", D("2025-12-31")) is None)
 
     with tempfile.TemporaryDirectory() as root, \
             mock.patch.object(ledger, "ROOT", root), mock.patch.object(kpi, "ROOT", root):
@@ -138,7 +146,7 @@ def main():
         case("as-of filters events (late news excluded)", n("events") == 2)
         case("event_topics / sources / relates flattened",
              (n("event_topics"), n("event_sources"), n("event_relates")) == (3, 3, 1))
-        case("observations incl. revisions", n("observations") == 6)
+        case("observations incl. revisions", n("observations") == 8)
         case("assessments as-of (later one excluded)", n("assessments") == 1)
         case("sections: all SECTIONS, README-less ones included", n("sections") == len(ledger.SECTIONS))
         case("topics from README", {r[0] for r in q(db, "SELECT topic FROM topics WHERE section='climate'")}
@@ -152,11 +160,23 @@ def main():
         case("annual metric on schedule", m["co2-trend"][:3] == ("2027-01-10", 0, "ok"))
         case("never-observed required metric", m["co2-never"] == (None, 0, "no data", 1, 0, 0))
         case("retired metric", m["co2-old"][2:5] == ("retired", 0, 1))
+        case("empty lag: no schedule, not overdue", m["co2-nolag"][:3] == (None, 0, "ok"))
         gaps = {r[0]: r[1] for r in q(db, "SELECT metric, gap FROM gaps")}
         case("gaps view", gaps == {"co2-monthly": "overdue since 2026-08-07", "co2-never": "never observed"})
 
         k = q(db, "SELECT value_text, prev_value_text, change, obs, prev_obs FROM latest_kpi WHERE metric='co2-monthly'")[0]
-        case("latest_kpi uses revised value + previous obs", k == ("429.25", "428.10", 1.15, "2026-06", "2026-05"))
+        case("latest_kpi uses revised value + previous obs, skips in-progress period",
+             k == ("429.25", "428.10", 1.15, "2026-06", "2026-05"))
+        when = D("2026-09-28")
+        table = ledger.obs_as_of("climate", when)
+        same = all((ledger.latest_obs(table, mm, when) or {}).get("obs") == obs and
+                   (ledger.latest_obs(table, mm, when) or {}).get("value") == val
+                   for mm, obs, val in q(db, "SELECT metric, obs, value_text FROM latest_kpi"))
+        case("latest_kpi agrees with ledger.latest_obs(obs_as_of)", same)
+        ass = ledger.assessment_as_of("climate", when)
+        case("milestone_status agrees with ledger.assessment_as_of",
+             {t: a["id"] for t, a in ass.items()} ==
+             dict(q(db, "SELECT target, assessment_id FROM milestone_status WHERE assessment_id IS NOT NULL")))
         ms = {r[0]: r[1] for r in q(db, "SELECT target, status FROM milestone_status WHERE section='climate'")}
         case("milestone_status latest + not yet assessed",
              ms.get("milestone:the-bend") == "green" and ms.get("milestone:the-balance") == "not yet assessed"
@@ -202,7 +222,10 @@ def main():
              not any(s in page for s in ("<script", "<link", " src=", "@import")))
         case("dashboard gap markers", all(s in page for s in ("OVERDUE", "no data yet", "not yet assessed",
                                                              "no events in the ledger yet", "no metrics registered yet")))
-        case("dashboard legacy/verified badges", "b-legacy" in page and "b-verified" in page)
+        case("dashboard legacy/verified badges", '<span class="badge b-legacy">legacy</span></div>'
+             '<div>An agency' in page and '<span class="badge b-verified">verified</span>' in page)
+        case("dashboard escapes attributes", "<b onclick" not in page and '" onmouseover="' not in page
+             and "&quot;&gt;&lt;b onclick" in page)
         case("dashboard sparkline", "<svg" in page and "<polyline" in page)
         case("dashboard change vs previous", "+1.15" in page)
         case("dashboard lifecycle link", 'href="#ev-climate-2026-03-01-first-peak-claim"' in page)

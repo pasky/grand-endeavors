@@ -70,9 +70,13 @@ SELECT * FROM (SELECT o.*, ROW_NUMBER() OVER (PARTITION BY section, metric, obs
                 ORDER BY known_at DESC, retrieved DESC, line DESC) AS rn FROM observations o)
 WHERE rn = 1;
 
+-- headline candidates: only periods that have ended by as_of (as ledger.latest_obs(..., when))
+CREATE VIEW headline_obs AS
+SELECT * FROM current_obs WHERE obs_end <= (SELECT value FROM build_info WHERE key = 'as_of');
+
 CREATE VIEW latest_kpi AS
-WITH ranked AS (SELECT c.*, ROW_NUMBER() OVER (PARTITION BY section, metric
-                ORDER BY obs_end DESC, obs_start DESC) AS k FROM current_obs c)
+WITH ranked AS (SELECT h.*, ROW_NUMBER() OVER (PARTITION BY section, metric
+                ORDER BY obs_end DESC, obs_start DESC) AS k FROM headline_obs h)
 SELECT m.section, m.metric, m.unit, m.required, m.retired, m.cadence,
        cur.obs, cur.value, cur.value_text, cur.known_at, cur.verification, cur.source,
        prev.obs AS prev_obs, prev.value AS prev_value, prev.value_text AS prev_value_text,
@@ -118,6 +122,7 @@ TABLE_DOCS = {
     "metrics": "Metric registry (metrics/*.csv) + derived: latest obs, next_expected "
                "(latest obs end + cadence + release_lag_days), overdue vs as_of.",
     "current_obs": "Latest-known row per (metric, obs) (revisions resolved).",
+    "headline_obs": "current_obs restricted to periods that ended by as_of (headline/schedule basis).",
     "latest_kpi": "Latest value per registered metric, with the previous obs and the change.",
     "milestone_status": "Latest assessment per milestone/challenge/kpi target ('not yet assessed' if none).",
     "recent_events": "Events, most recently known first.",
@@ -148,6 +153,7 @@ QUERIES = {
         "SELECT * FROM gaps"),
 }
 
+D = dt.date.fromisoformat
 MONTHS = {"monthly": 1, "quarterly": 3, "annual": 12}
 DAYS = {"daily": 1, "weekly": 7}
 
@@ -166,14 +172,16 @@ def add_months(d: dt.date, n: int) -> dt.date:
 
 def next_expected(cadence: str, lag: str, obs_end: dt.date) -> dt.date | None:
     """When the next obs should be published: end of the next period + release lag.
-    None for irregular cadence (no schedule to be late against)."""
+    None for irregular cadence or empty lag (= no regular release, see kpi.py)."""
+    if lag is None or not str(lag).strip():
+        return None
     if cadence in DAYS:
         nxt = obs_end + dt.timedelta(days=DAYS[cadence])
     elif cadence in MONTHS:
         nxt = add_months(obs_end, MONTHS[cadence])
     else:
         return None
-    return nxt + dt.timedelta(days=int(lag or 0))
+    return nxt + dt.timedelta(days=int(lag))
 
 
 def readme_meta(section: str) -> tuple[str, str, str, dict[str, str]]:
@@ -258,7 +266,6 @@ def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
             for r in e.get("relates") or []:
                 ins("event_relates", (sec, e.get("id"), r.get("rel"), r.get("id")))
 
-        obs = []
         for r, known in _known(ledger.observations(sec), as_of, f"observations/{sec}"):
             try:
                 start, end = kpi.obs_range(r["obs"])
@@ -266,7 +273,6 @@ def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
             except ValueError:
                 warn(f"observations/{sec}:{r['_line']}: skipping malformed obs/value")
                 continue
-            obs.append(dict(r, known_at=known, _start=start, _end=end))
             ins("observations", (sec, r["metric"], r["obs"], str(start), str(end), value, r["value"],
                                  r["unit"], r["source"], r["published"], r["published_basis"],
                                  r["retrieved"], known, r["collector"], r["verification"], r["note"], r["_line"]))
@@ -277,23 +283,19 @@ def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
                                 a.get("by"), a.get("_line")))
 
         reg, _ = kpi.load_registry(sec)
-        cur: dict[tuple[str, str], dict] = {}  # same revision rule as ledger.obs_as_of
-        for r in obs:
-            k = (r["metric"], r["obs"])
-            if k not in cur or (r["known_at"], r["retrieved"]) >= (cur[k]["known_at"], cur[k]["retrieved"]):
-                cur[k] = r
         for m, row in (reg or {}).items():
-            rows = [r for (mm, _), r in cur.items() if mm == m]
-            last = max(rows, key=lambda r: (r["_end"], r["_start"])) if rows else None
+            rows = db.execute("SELECT obs, obs_end, known_at FROM headline_obs WHERE section=? AND metric=? "
+                              "ORDER BY obs_end DESC, obs_start DESC", (sec, m)).fetchall()
+            last = rows[0] if rows else None
             retired = bool(row["_ret"] and as_of > row["_ret"])
-            nxt = next_expected(row["cadence"], row["release_lag_days"], last["_end"]) if last else None
+            nxt = next_expected(row["cadence"], row["release_lag_days"], D(last[1])) if last else None
             overdue = bool(nxt and nxt < as_of and not retired)
             status = ("retired" if retired else "no data" if not last else "overdue" if overdue else "ok")
             ins("metrics", (sec, m, row["unit"], row["cadence"],
                             int(row["release_lag_days"]) if row["release_lag_days"].isdigit() else None,
                             row["required_from"], row["retired_after"], row["definition"],
                             int(kpi.required_active(row, as_of)), int(retired), len(rows),
-                            last and last["obs"], last and str(last["_end"]), last and last["known_at"],
+                            *(last or (None, None, None)),
                             nxt and str(nxt), int(overdue), status))
     db.commit()
 
@@ -314,13 +316,15 @@ def metadata(as_of: dt.date) -> dict:
 def build(out_dir: str, as_of: dt.date) -> str:
     os.makedirs(out_dir, exist_ok=True)
     p = os.path.join(out_dir, "ledger.sqlite")
-    if os.path.exists(p):
-        os.remove(p)
-    db = sqlite3.connect(p)
+    tmp = p + ".tmp"
+    if os.path.exists(tmp):
+        os.remove(tmp)
+    db = sqlite3.connect(tmp)
     try:
         build_db(db, as_of)
     finally:
         db.close()
+    os.replace(tmp, p)  # a failed build leaves the previous artifact intact
     with open(os.path.join(out_dir, "metadata.json"), "w", encoding="utf-8") as f:
         json.dump(metadata(as_of), f, ensure_ascii=False, indent=1)
         f.write("\n")
@@ -406,7 +410,7 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
         body += (f'<div class="c"><span class="{cls}">{arrow} {ch:+.{dec}f}</span> vs '
                  f'{esc(k["prev_value_text"])} ({esc(k["prev_obs"])})</div>')
     pts = [(dt.date.fromisoformat(r["obs_end"]), r["value"]) for r in db.execute(
-        "SELECT obs_end, value FROM current_obs WHERE section=? AND metric=? ORDER BY obs_end, obs_start",
+        "SELECT obs_end, value FROM headline_obs WHERE section=? AND metric=? ORDER BY obs_end, obs_start",
         (k["section"], k["metric"]))]
     body += sparkline(pts)
     if k["overdue"]:
@@ -482,8 +486,15 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, n_recent: int = 8) -> s
 
 def dashboard(as_of: dt.date) -> str:
     db = sqlite3.connect(":memory:")
-    build_db(db, as_of)
-    db.row_factory = sqlite3.Row
+    try:
+        build_db(db, as_of)
+        db.row_factory = sqlite3.Row
+        return _dashboard_html(db, as_of)
+    finally:
+        db.close()
+
+
+def _dashboard_html(db: sqlite3.Connection, as_of: dt.date) -> str:
     secs = db.execute("SELECT * FROM sections ORDER BY ord").fetchall()
     one = lambda q: db.execute(q).fetchone()[0]
     n_ev, n_leg = one("SELECT COUNT(*) FROM events"), one("SELECT COUNT(*) FROM events WHERE verification_status='legacy'")
