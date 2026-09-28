@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Regression tests for the deterministic harness checks (kpi.py, validate.py).
+"""Regression tests for the deterministic checks (ledger.py, kpi.py, validate.py).
 
-Run:  uv run test_harness.py      (no network; builds throwaway period dirs)
+Run:  uv run test_harness.py      (no network; builds a throwaway ledger)
 Each case pins a behavior that a review found broken or easy to regress.
+Collector and explorer tests live in test_collectors.py / test_explorer.py.
 """
 import csv
+import json
 import os
 import sys
 import tempfile
@@ -12,9 +14,11 @@ import urllib.error
 from unittest import mock
 
 import kpi
+import ledger
 import validate
 
 FAILS = []
+REAL_ROOT = ledger.ROOT
 
 
 def case(name, cond):
@@ -31,34 +35,55 @@ def write_csv(path, header, rows):
         w.writerows(rows)
 
 
-def store_env():
-    """Temp ROOT with a climate registry + pilot-2025/pilot-26H1 vintages."""
-    root = tempfile.mkdtemp()
-    kpi.ROOT = root
-    write_csv(f"{root}/metrics/climate.csv", kpi.REG_COLUMNS, [
-        ["co2-mlo-monthly", "ppm", "annual", "10", "pilot-26H1", "", "NOAA Mauna Loa monthly mean CO2 dry-air mole fraction"],
-        ["co2-trend-old", "ppm/yr", "annual", "10", "", "pilot-2025", "Old basis decadal trend of global annual means (retired)"],
-        ["co2-mlo-annual", "ppm", "annual", "10", "", "", "NOAA Mauna Loa calendar-year annual mean CO2"],
-    ])
-    write_csv(f"{root}/pilot-2025/kpis/climate.csv", kpi.COLUMNS, [
-        ["co2-mlo-monthly", "2025-11", "426.5", "ppm", "headline", "https://x.org/a", ""],
-        ["co2-trend-old", "2020", "2.4", "ppm/yr", "headline", "https://x.org/a", ""],
-        ["co2-mlo-annual", "2024", "424.6", "ppm", "series", "https://x.org/a", ""],
-    ])
-    return root
-
-
-def check26(rows, evidence_text="432.34 427.35 424.61 426.46"):
-    root = kpi.ROOT
-    path = f"{root}/pilot-26H1/kpis/climate.csv"
-    write_csv(path, kpi.COLUMNS, rows)
-    ev = f"{root}/note.md"
-    open(ev, "w").write(evidence_text)
-    return kpi.check(path, [ev])
+def write_jsonl(path, recs):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        for r in recs:
+            f.write(json.dumps(r) + "\n")
 
 
 def has(errs, needle):
     return any(needle in e for e in errs)
+
+
+def ev(id_, published, claim, topics=("milestone:the-bend",), status="verified", sig=2, **kw):
+    return {"id": id_, "date": id_[:10], "published": published, "published_basis": "source",
+            "retrieved": "2026-09-28", "kind": "data", "topics": list(topics), "claim": claim,
+            "sources": [{"url": f"https://x.org/{id_}", "title": "t", "primary": True}],
+            "significance": sig, "collector": "test",
+            "verification": {"status": status, "by": "t", "at": "2026-09-28"}, **kw}
+
+
+def obs(metric, o, value, published, basis="source", unit="ppm", verification="verified", retrieved="2026-09-28"):
+    return [metric, o, value, unit, "https://x.org/data", published, basis, retrieved, "test", verification, ""]
+
+
+def fixture():
+    """Temp ROOT: README (climate), registry, observations, events, assessments."""
+    root = tempfile.mkdtemp()
+    ledger.ROOT = kpi.ROOT = root
+    import shutil
+    shutil.copy(os.path.join(REAL_ROOT, "README.md"), root)
+    write_csv(f"{root}/metrics/climate.csv", kpi.REG_COLUMNS, [
+        ["co2-mlo-monthly", "ppm", "monthly", "7", "pilot-26H1", "", "NOAA Mauna Loa monthly mean CO2 dry-air mole fraction"],
+        ["co2-mlo-annual", "ppm", "annual", "10", "", "", "NOAA Mauna Loa calendar-year annual mean CO2"],
+        ["co2-trend-old", "ppm/yr", "annual", "", "", "pilot-2025", "Old basis decadal trend of global annual means (retired)"],
+    ])
+    write_csv(ledger.path("observations", "climate"), ledger.OBS_COLUMNS, [
+        obs("co2-mlo-monthly", "2025-11", "426.5", "2026-01-03", "seen", verification="legacy", retrieved="2026-01-03"),
+        obs("co2-mlo-monthly", "2025-06", "429.61", "2025-07-07", "rule"),
+        obs("co2-mlo-monthly", "2026-06", "431.43", "2026-07-07", "rule"),
+        obs("co2-mlo-monthly", "2026-07", "429.13", "2026-08-07", "rule"),   # after the 26H1 cutoff
+        *[obs("co2-mlo-annual", str(y), v, f"{y + 1}-01-10", "rule")
+          for y, v in [(2021, "416.41"), (2022, "418.53"), (2023, "421.08"), (2024, "424.61"), (2025, "427.35")]],
+    ])
+    write_jsonl(ledger.path("events", "climate"), [
+        ev("2025-11-13-gcb-projection", "2025-11-13", "Global Carbon Budget projects 2025 fossil CO2 at 38.1 GtCO2, up 1.1%.", status="legacy"),
+        ev("2026-05-13-gcb-final", "2026-05-13", "Global Carbon Budget final paper puts 2025 fossil CO2 at 38.1 GtCO2, up 1.0%.",
+           relates=[{"id": "2025-11-13-gcb-projection", "rel": "update"}]),
+        ev("2026-08-27-climate-trace-h1", "2026-08-27", "Climate TRACE: total GHG in H1 2026 was 29.7 GtCO2e, up 0.2% on H1 2025."),
+    ])
+    return root
 
 
 def main():
@@ -70,49 +95,126 @@ def main():
     case("roundup numbers(): unit suffix + no partial decimals",
          validate.numbers("9% $8.99B 12.5GW in 2025 the") == {"9", "8.99", "12.5"})
 
-    # --- kpi check -----------------------------------------------------------
-    store_env()
-    ok = [["co2-mlo-monthly", "2026-05", "432.34", "ppm", "headline", "https://x.org/a", ""]]
-    errs, _ = check26(ok)
-    case("clean 26H1 store passes", errs == [])
-    errs, _ = check26([["co2-renamed", "2026-05", "432.34", "ppm", "headline", "https://x.org/a", ""]])
-    case("unregistered id is an error", has(errs, "not in metrics/climate.csv"))
-    case("missing required component is an error", has(errs, "required KPI component 'co2-mlo-monthly'"))
-    errs, _ = check26(ok + [["co2-mlo-annual", "2025", "427.35", "ppb", "series", "https://x.org/a", ""]])
-    case("unit drift vs registry is an error", has(errs, "differs from the registry"))
-    errs, _ = check26(ok + [["co2-trend-old", "2025", "2.4", "ppm/yr", "headline", "https://x.org/a", ""]])
-    case("retired id as headline is an error", has(errs, "was retired after"))
-    errs, _ = check26(ok + [["co2-mlo-annual", "2026", "427.35", "ppm", "series", "https://x.org/a", ""]])
-    case("full-year obs inside a half-year period is an error", has(errs, "ends after the period"))
-    errs, _ = check26(ok + [["co2-mlo-annual", "2025", "999.99", "ppm", "series", "https://x.org/a", ""]])
-    case("untraceable value is an error", has(errs, "not found in the evidence"))
-    errs, _ = check26([["co2-mlo-monthly", "", "", "ppm", "unavailable", "", "NOAA file not updated"]])
-    case("'unavailable' with a reason satisfies a required component", errs == [])
-    errs, _ = check26([["co2-mlo-monthly", "", "", "ppm", "unavailable", "", ""]])
-    case("'unavailable' without a reason is an error", has(errs, "needs an empty value and a note"))
-    with open(f"{kpi.ROOT}/metrics/climate.csv", "w") as f:
-        f.write(",".join(kpi.REG_COLUMNS) + "\n")
-    errs, _ = check26(ok)
-    case("header-only registry still enforces registration", has(errs, "not in metrics/climate.csv"))
+    # --- periods / cutoffs ------------------------------------------------------
+    case("26H1 cutoff = period end + 14d", str(ledger.cutoff("26H1")) == "2026-07-14")
+    case("26H1 previous cutoff = 25H2 cutoff", str(ledger.prev_cutoff("26H1")) == "2026-01-14")
+    case("weekly cutoff = Sunday + 2d", str(ledger.cutoff("2026-W39")) == "2026-09-29")
+    case("weekly previous cutoff is one week earlier", str(ledger.prev_cutoff("2026-W39")) == "2026-09-22")
+
+    # --- registry ---------------------------------------------------------------
+    fixture()
+    reg, errs = ledger.kpi.load_registry("climate") if hasattr(ledger, "kpi") else kpi.load_registry("climate")
+    case("fixture registry loads clean", errs == [] and len(reg) == 3)
     with open(f"{kpi.ROOT}/metrics/climate.csv", "a") as f:
-        f.write("co2-mlo-monthly,ppm,monthly,7,,,NOAA monthly mean, unquoted comma here\n")
+        f.write("co2-x,ppm,monthly,7,,,NOAA monthly mean, unquoted comma here\n")
     case("registry row with an unquoted comma is rejected",
          any("wrong number of fields" in e for e in kpi.load_registry("climate")[1]))
+    fixture()
+    write_csv(f"{kpi.ROOT}/metrics/climate.csv", kpi.REG_COLUMNS, [])
+    case("header-only registry still enforces registration",
+         has(ledger.check_obs_row(dict(zip(ledger.OBS_COLUMNS, obs("co2-mlo-monthly", "2026-06", "431.43", "2026-07-07"))) | {"_line": 2},
+                                  kpi.load_registry("climate")[0]), "not in the registry"))
 
-    # --- delta + charts --------------------------------------------------------
-    store_env()
-    check26(ok + [["co2-mlo-annual", "2025", "427.35", "ppm", "series", "https://x.org/a", ""]])
-    d = kpi.delta(f"{kpi.ROOT}/pilot-26H1", "climate")
-    case("delta flags a seasonal (different-month) comparison", "+5.84" in d and "seasonal" in d)
-    chart = kpi.chart(f"{kpi.ROOT}/pilot-26H1", "climate", ["co2-mlo-annual"], label="year")
-    case("store-rendered chart verifies clean", kpi.verify_charts(chart, f"{kpi.ROOT}/pilot-26H1") == [])
-    case("tampered chart value is caught",
-         kpi.verify_charts(chart.replace("427.35", "427.36"), f"{kpi.ROOT}/pilot-26H1") != [])
+    # --- ledger check -------------------------------------------------------------
+    fixture()
+    errs, warns = ledger.check_section("climate")
+    case("clean fixture ledger passes", errs == [] and warns == [])
+    reg = kpi.load_registry("climate")[0]
+    row = lambda *a, **k: dict(zip(ledger.OBS_COLUMNS, obs(*a, **k))) | {"_line": 9}
+    case("unregistered metric is an error", has(ledger.check_obs_row(row("co2-renamed", "2026-06", "1", "2026-07-07"), reg), "not in the registry"))
+    case("unit drift vs registry is an error", has(ledger.check_obs_row(row("co2-mlo-annual", "2025", "1", "2026-01-10", unit="ppb"), reg), "!= registry"))
+    case("rule-basis date must equal obs end + lag", has(ledger.check_obs_row(row("co2-mlo-monthly", "2026-06", "1", "2026-07-01", "rule"), reg), "rule-basis published must be"))
+    case("published after retrieved is an error", has(ledger.check_obs_row(row("co2-mlo-monthly", "2026-06", "1", "2026-10-01"), reg), "published after retrieved"))
+    case("published before the observed period is an error", has(ledger.check_obs_row(row("co2-mlo-annual", "2026", "1", "2025-12-01"), reg), "before the observed period"))
+    topics = ledger.valid_topics("climate")
+    bad = ev("2026-05-13-x", "2026-05-13", "short", topics=("nope",), sig=5)
+    es = ledger.check_event(bad, "climate", topics)
+    case("event schema: unknown topic, short claim, bad significance",
+         has(es, "unknown topic") and has(es, "claim too short") and has(es, "significance"))
+    case("README topics include fusion tech-tree branches as challenges",
+         "challenge:d-t-fusion" in ledger.valid_topics("fusion") and "milestone:d-t-fusion" not in ledger.valid_topics("fusion"))
+    dup = [ev("2026-05-13-a", "2026-05-13", "Global Carbon Budget final paper puts 2025 fossil CO2 at 38.1 GtCO2 up 1.0 percent."),
+           ev("2026-05-14-b", "2026-05-14", "Global Carbon Budget final paper puts 2025 fossil CO2 at 38.1 GtCO2, up 1.0%, a record.")]
+    case("near-duplicate claims are flagged", len(ledger.near_duplicates(dup)) == 1)
+    par = [ev("2024-01-01-a", "2024-06-30", "IRENA global weighted-average LCOE of solar PV in 2024 was 43 USD/MWh."),
+           ev("2024-01-01-b", "2024-06-30", "IRENA global weighted-average LCOE of onshore wind in 2024 was 34 USD/MWh.")]
+    case("parallel claims with different figures are not duplicates", ledger.near_duplicates(par) == [])
+
+    # --- assessments ---------------------------------------------------------------
+    evs = {e["id"]: e for e in ledger.events("climate")}
+    a = {"id": "2026-07-14-milestone-the-bend", "target": "milestone:the-bend", "status": "yellow", "label": "x",
+         "made_at": "2026-07-14", "rationale": "r", "evidence": ["2026-08-27-climate-trace-h1"], "by": "t"}
+    case("hindsight evidence (published after made_at) is rejected", has(ledger.check_assessment(a, topics, evs), "hindsight"))
+    a["evidence"] = ["2026-05-13-gcb-final"]
+    case("assessment with timely evidence passes", ledger.check_assessment(a, topics, evs) == [])
+
+    # --- merge ------------------------------------------------------------------------
+    st = f"{kpi.ROOT}/staged.jsonl"
+    write_jsonl(st, [ev("2026-06-04-good", "2026-06-04", "CREA: China CO2 rose 2% year on year in Q1 2026, per Carbon Brief."),
+                     ev("2026-06-05-bad", "2026-06-05", "Rejected by the verifier because the source does not say this.", status="rejected")])
+    n0 = len(ledger.events("climate"))
+    errs, stats = ledger.merge("climate", st, None)
+    case("merge admits verified, rejects the rest to ledger/rejected",
+         errs == [] and stats["events_in"] == 1 and stats["events_rejected"] == 1
+         and len(ledger.events("climate")) == n0 + 1 and os.path.exists(ledger.path("rejected", "climate")))
+    write_jsonl(st, [ev("2026-06-06-ok", "2026-06-06", "A perfectly fine verified claim about emissions in 2026."),
+                     ev("2026-06-07-broken", "2026-06-07", "x", topics=("nope",))])
+    n1 = len(ledger.events("climate"))
+    errs, _ = ledger.merge("climate", st, None)
+    case("merge is all-or-nothing on schema errors", errs != [] and len(ledger.events("climate")) == n1)
+    so = f"{kpi.ROOT}/staged.csv"
+    write_csv(so, ledger.OBS_COLUMNS, [obs("co2-mlo-annual", "2024", "424.610", "2025-01-10", "rule", verification="collector")])
+    errs, stats = ledger.merge("climate", None, so)
+    case("numerically equal re-observation is not a revision", errs == [] and stats["obs_dup"] == 1 and stats["obs_in"] == 0)
+
+    # --- snapshot ---------------------------------------------------------------------
+    fixture()
+    pdir = f"{kpi.ROOT}/pilot-26H1"
+    snap = ledger.snapshot(pdir, "climate")
+    new = {e["id"] for e in snap["new_events"]}
+    case("snapshot: new = published in (prev cutoff, cutoff]", new == {"2026-05-13-gcb-final"})
+    case("snapshot: post-cutoff events excluded", "2026-08-27-climate-trace-h1" not in new | {e["id"] for e in snap["background_events"]})
+    case("snapshot: legacy events are background, never news",
+         "2025-11-13-gcb-projection" in {e["id"] for e in snap["background_events"]})
+    k = snap["kpi_headlines"][0]
+    case("snapshot: KPI headline = latest obs in period known by cutoff (not the July value)",
+         k["current"]["obs"] == "2026-06" and k["previous"]["obs"] == "2025-11")
+    case("snapshot: seasonal caveat + same-month-last-year comparison",
+         not k["change"]["comparable"] and k["year_ago"]["change"] == "+1.82")
+    case("snapshot: retired metrics never required", all(x["metric"] != "co2-trend-old" for x in snap["kpi_headlines"]))
+
+    # --- charts from the ledger ------------------------------------------------------------
+    chart = kpi.chart(pdir, "climate", ["co2-mlo-annual"], label="year", since="2021")
+    case("ledger-rendered chart verifies clean", kpi.verify_charts(chart, pdir) == [])
+    case("tampered chart value is caught", kpi.verify_charts(chart.replace("427.35", "427.36"), pdir) != [])
     y_line = next(ln for ln in chart.splitlines() if "y-axis" in ln)
-    clipped = chart.replace(y_line, '    y-axis "ppm" 425 --> 426')
-    case("clipping y-axis is caught", has(kpi.verify_charts(clipped, f"{kpi.ROOT}/pilot-26H1"), "clips"))
+    case("clipping y-axis is caught",
+         has(kpi.verify_charts(chart.replace(y_line, '    y-axis "ppm" 425 --> 426'), pdir), "clips"))
+    case("chart excludes obs after the period end",
+         "429.13" not in kpi.chart(pdir, "climate", ["co2-mlo-monthly"], match="*-0[67]"))
 
-    # --- link probe (mocked, no network) ---------------------------------------
+    # --- bulletin gate (validate --snapshot) --------------------------------------------------
+    sp = f"{pdir}/snapshot/climate.json"
+    os.makedirs(os.path.dirname(sp), exist_ok=True)
+    json.dump(snap, open(sp, "w"))
+    names = [n for items in ledger.readme_topics("climate").values() for _, n in items]
+    doc = (f"# Climate\n\nCO2 was 431.43 ppm in June 2026[^a].\n\n{chart}\n\n"
+           + "\n".join(f"- {n}: no significant developments." for n in names)
+           + "\n\n[^a]: [GCB](https://x.org/2026-05-13-gcb-final)\n")
+    dp = f"{pdir}/climate.md"
+
+    def gate(text):
+        open(dp, "w").write(text)
+        validate.ERRORS.clear(); validate.WARNS.clear()
+        validate.check_snapshot(dp, text, sp)
+        return list(validate.ERRORS)
+    case("bulletin gate: faithful bulletin passes", gate(doc) == [])
+    case("bulletin gate: number not in snapshot is caught", has(gate(doc.replace("431.43 ppm", "431.43 ppm (about 432)")), "number 432"))
+    case("bulletin gate: URL outside the snapshot is caught", has(gate(doc.replace("https://x.org/2026-05-13-gcb-final", "https://evil.org/x")), "not a source"))
+    case("bulletin gate: unreported KPI headline is caught", has(gate(doc.replace("431.43 ppm", "high")), "not reported"))
+    case("bulletin gate: uncovered milestone is caught", has(gate(doc.replace("- The Bend:", "- Something:")), "The Bend"))
+
+    # --- link probe (mocked, no network) -----------------------------------------------------
     def seq(*codes):
         it = iter(codes)
 

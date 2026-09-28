@@ -439,15 +439,42 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
             if r["id"] in by_id and r["id"] not in new_ids and by_id[r["id"]] not in background:
                 background.append(by_id[r["id"]])
     now_t, prev_t = obs_as_of(section, cut), obs_as_of(section, prev)
+    end, prev_end = kpi.period_as_of(period), start - dt.timedelta(days=1)
     kpis = []
     for m, row in reg.items():
         if not kpi.required_active(row, cut):
             continue
-        cur = latest_obs(now_t, m, cut)
-        before = latest_obs(prev_t, m, prev)
+        cur = latest_obs(now_t, m, end)        # obs within the period, known by the cutoff
+        before = latest_obs(prev_t, m, prev_end)
+        change = None
+        if cur and before:
+            nd = max(len(v.split(".")[1]) if "." in v else 0 for v in (cur["value"], before["value"]))
+            change = {"value": f"{float(cur['value']) - float(before['value']):+.{nd}f}",
+                      "from_obs": before["obs"], "to_obs": cur["obs"],
+                      "comparable": kpi.obs_kind(cur["obs"]) == kpi.obs_kind(before["obs"])
+                      and not (len(cur["obs"]) == 7 and cur["obs"][5:] != before["obs"][5:]),
+                      "caveat": ("same observation, unchanged: no new data" if cur["obs"] == before["obs"]
+                                 and float(cur["value"]) == float(before["value"]) else
+                                 "same observation revised by the source" if cur["obs"] == before["obs"] else
+                                 "different calendar month: seasonal cycle not removed"
+                                 if len(cur["obs"]) == 7 and cur["obs"][5:] != before["obs"][5:] else "")}
+        year_ago = None
+        if cur and len(cur["obs"]) == 7:  # monthly: the like-for-like comparison
+            ya = now_t.get((m, f"{int(cur['obs'][:4]) - 1}{cur['obs'][4:]}"))
+            if ya:
+                nd = max(len(v.split(".")[1]) if "." in v else 0 for v in (cur["value"], ya["value"]))
+                year_ago = {"obs": ya["obs"], "value": ya["value"],
+                            "change": f"{float(cur['value']) - float(ya['value']):+.{nd}f}"}
         kpis.append({"metric": m, "unit": row["unit"], "definition": row["definition"],
                      "current": clean(cur) if cur else None,
-                     "previous": clean(before) if before else None})
+                     "previous": clean(before) if before else None, "change": change,
+                     "year_ago": year_ago})
+    chartable = []
+    for m in sorted({m for (m, _) in now_t}):
+        obs = sorted(o for (mm, o) in now_t if mm == m and kpi.obs_range(o)[1] <= end)
+        if len(obs) >= 5:
+            chartable.append({"metric": m, "n": len(obs), "first": obs[0], "last": obs[-1],
+                              "granularities": sorted({kpi.obs_kind(o) for o in obs})})
     other_obs = sorted({m for (m, _) in now_t} - {k["metric"] for k in kpis})
     ass_now, ass_prev = assessment_as_of(section, cut), assessment_as_of(section, prev)
     return {
@@ -459,7 +486,8 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
         "kpi_headlines": kpis,
         "other_metrics": [{"metric": m, "unit": reg.get(m, {}).get("unit", ""),
                            "definition": reg.get(m, {}).get("definition", ""),
-                           "latest": clean(latest_obs(now_t, m, cut) or {})} for m in other_obs],
+                           "latest": clean(latest_obs(now_t, m, end) or {})} for m in other_obs],
+        "chartable_metrics": chartable,
         "assessments": {t: {"current": clean(a), "previous": clean(ass_prev[t]) if t in ass_prev else None}
                         for t, a in sorted(ass_now.items())},
     }

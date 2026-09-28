@@ -7,7 +7,8 @@ axis/series length mismatches, dead citation URLs, and (optional) coverage of
 the run's PLAN slugs.
 
 Usage:
-    uv run validate.py <section.md> [--plan PLAN.txt] [--research DIR]
+    uv run validate.py <bulletin.md> --snapshot <period-dir>/snapshot/<section>.json
+    uv run validate.py <period-dir>/README.md --roundup
 
 Exit status: 0 if no ERRORs (WARNs allowed), 1 otherwise.
 Env:
@@ -143,30 +144,6 @@ def probe(url: str) -> str:
     return "neterr" if last in ("404", "410") else last
 
 
-# --- coverage: every PLAN slug's note is cited in the output -----------------
-def check_coverage(text: str, plan_path: str | None, research_dir: str | None) -> None:
-    if not plan_path or not os.path.exists(plan_path):
-        return
-    urls_in_doc = set(extract_urls(text))
-    with open(plan_path) as f:
-        slugs = [
-            ln.split("|", 1)[0].strip()
-            for ln in f
-            if ln.strip() and not ln.lstrip().startswith("#") and "|" in ln
-        ]
-    for slug in slugs:
-        note = os.path.join(research_dir or "", f"{slug}.md") if research_dir else None
-        if not note or not os.path.exists(note):
-            warn(f"coverage: no research note found for plan slug '{slug}'")
-            continue
-        note_urls = set(extract_urls(open(note).read()))
-        if note_urls and not (note_urls & urls_in_doc):
-            warn(
-                f"coverage: none of the {len(note_urls)} source URLs from note "
-                f"'{slug}' appear in the output (item may be uncited/dropped)"
-            )
-
-
 # --- round-up (period README.md) checks --------------------------------------
 # A number token: not preceded by a letter/digit/dot (so "CO2", "v2.1" and the
 # "1" of "26H1" are skipped), never a partial decimal, and unit suffixes
@@ -253,42 +230,54 @@ def check_roundup(doc_path: str, text: str) -> None:
             err(f"roundup: number '{n}' (outside any section block) not found in any section of this period")
 
 
-# --- KPI store consistency ------------------------------------------------------
-def check_kpis(doc_path: str, text: str, research_dir: str | None) -> None:
-    import kpi  # lazy: kpi imports numbers()/traceable() from here
-    pdir = os.path.dirname(os.path.abspath(doc_path))
-    section = os.path.splitext(os.path.basename(doc_path))[0]
-    csv_path = os.path.join(pdir, "kpis", f"{section}.csv")
-    if not os.path.exists(csv_path):
-        err(f"kpis: no KPI store file {csv_path}")
-        return
-    # Evidence = the research notes ONLY (the section is generated output, so
-    # using it as evidence would be circular). Legacy runs without notes
-    # (pilot-2025 backfill) fall back to the section text.
-    evidence = []
-    if research_dir and os.path.isdir(research_dir):
-        evidence = sorted(os.path.join(research_dir, f) for f in os.listdir(research_dir) if f.endswith(".md"))
-    if not evidence:
-        evidence = [doc_path]
-        warn("kpis: no research notes given — store values traced to the section itself (legacy mode)")
-    errs, warns = kpi.check(csv_path, evidence)
-    for e in errs + kpi.headline_errors(text, csv_path) + kpi.verify_charts(text, pdir):
-        err(f"kpis: {e}")
-    for w in warns:
-        warn(f"kpis: {w}")
-    has_series = any(r["role"] == "series" for r in kpi.read_csv(csv_path))
-    if has_series and not kpi.MARKER_RE.search(text):
-        err("kpis: store has series data but the section has no store-rendered ('%% kpi:') chart")
+# --- bulletin vs ledger snapshot -------------------------------------------------
+DEF_LINE_RE = re.compile(r"^\[\^?[^\]]+\]:.*$", re.M)  # footnote / reference definitions
+
+
+def check_snapshot(doc_path: str, text: str, snap_path: str) -> None:
+    """A bulletin may only state what its ledger snapshot contains (DESIGN.md §5)."""
+    import json
+    import kpi
+    import ledger
+    snap = json.load(open(snap_path, encoding="utf-8"))
+    prose = strip_code(text)
+    # 1. citations: every URL must be a source of a snapshot record
+    allowed = ledger.snapshot_urls(snap)
+    for url in extract_urls(prose):
+        if url not in allowed:
+            err(f"snapshot: cited URL is not a source of any snapshot record: {url}")
+    # 2. numbers in prose (not footnote/reference definitions: titles, page numbers)
+    body = re.sub(r"https?://\S+", " ", DEF_LINE_RE.sub(" ", prose))
+    pool = kpi.kpi_numbers(ledger.snapshot_text(snap))
+    missing = sorted(n for n in kpi.kpi_numbers(body) if not (n in pool or (n < 0 and -n in pool)))
+    for n in missing:
+        err(f"snapshot: number {n:g} in the prose does not occur in the snapshot (use snapshot values verbatim)")
+    # 3. KPI headlines reported (or explicitly unavailable)
+    nums = kpi.kpi_numbers(body)
+    for k in snap["kpi_headlines"]:
+        cur = k["current"]
+        if cur and not kpi.kpi_traceable(cur["value"], nums):
+            err(f"snapshot: KPI headline {k['metric']} = {cur['value']} {k['unit']} ({cur['obs']}) not reported")
+        if not cur and not re.search(r"\b(no (new |current )?(reading|data|value)|not (yet )?available|unavailable)\b", body, re.I):
+            err(f"snapshot: KPI {k['metric']} has no reading as of the cutoff, and the bulletin never says so")
+    # 4. charts match the ledger as of the cutoff; KPI charts required when chartable
+    for e in kpi.verify_charts(text, os.path.dirname(os.path.abspath(doc_path))):
+        err(f"snapshot: {e}")
+    req = {k["metric"] for k in snap["kpi_headlines"]}
+    if any(c["metric"] in req for c in snap["chartable_metrics"]) and not kpi.MARKER_RE.search(text):
+        err("snapshot: a required KPI has a chartable series but the bulletin has no ledger-rendered ('%% kpi:') chart")
+    # 5. coverage: every README milestone and challenge is addressed by name
+    low = prose.lower()
+    for kind, items in ledger.readme_topics(snap["section"]).items():
+        for slug, name in items:
+            if name.lower() not in low:
+                err(f"snapshot: {kind[:-1]} '{name}' is not covered (say 'no significant developments' if none)")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("doc")
-    ap.add_argument("--plan")
-    ap.add_argument("--research")
-    ap.add_argument("--kpis", action="store_true",
-                    help="check the run's KPI store <dir>/kpis/<section>.csv: schema, traceability, "
-                         "headline values reported, '%%%% kpi:' charts match the store")
+    ap.add_argument("--snapshot", help="bulletin gate: the ledger snapshot JSON the bulletin was written from")
     ap.add_argument("--roundup", action="store_true",
                     help="doc is a period round-up README: check section links + number traceability")
     args = ap.parse_args()
@@ -298,11 +287,10 @@ def main() -> int:
     check_footnotes(prose)
     check_reference_links(prose)
     check_mermaid(text)
-    check_coverage(text, args.plan, args.research)
     if args.roundup:
         check_roundup(args.doc, prose)
-    if args.kpis:
-        check_kpis(args.doc, text, args.research)
+    if args.snapshot:
+        check_snapshot(args.doc, text, args.snapshot)
     check_links(text)  # network last (slowest)
 
     for w in WARNS:
