@@ -408,3 +408,5 @@ Youth-led anti-corruption protests swept 70+ countries in 2025, using the *One P
 [^guardian-characterai]: [The Guardian: Character.AI bans users under 18 after suicide lawsuits](https://www.theguardian.com/technology/2025/oct/29/character-ai-suicide-children-ban)
 [^guardian-cyberattack]: [The Guardian: First AI-orchestrated cyber-espionage campaign detected](https://www.theguardian.com/technology/ng-interactive/2025/dec/30/the-office-block-where-ai-doomers-gather-to-predict-the-apocalypse)
 [^adp-displacement]: [ADP Research: Yes, AI is affecting employment](https://www.adpresearch.com/yes-ai-is-affecting-employment-heres-the-data/)
+[^electroiq]: [ElectroIQ: AI companions statistics](https://electroiq.com/stats/ai-companions-statistics/)
+[^guardian-openai]: [The Guardian: ChatGPT users showing suicidal intent (27 Oct 2025)](https://www.theguardian.com/technology/2025/oct/27/chatgpt-suicide-self-harm-openai)

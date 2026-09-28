@@ -466,3 +466,5 @@ GLP-1 agonists (semaglutide, tirzepatide) are revolutionizing metabolic health b
 [^lancet-dementia]: [Lancet Commission on Dementia 2024](https://www.thelancet.com/commissions-do/dementia-prevention-intervention-and-care)
 [^bp-dementia]: [Nature Medicine 2025](https://www.nature.com/articles/s41591-025-03616-8)
 [^retro-openai]: [OpenAI/Retro Biosciences: Accelerating Life Sciences Research](https://openai.com/index/accelerating-life-sciences-research-with-retro-biosciences/) — August 22, 2025 publication describing >50× reprogramming efficiency with AI-designed Yamanaka factor variants
+[^alz-sema]: [Alzheimer's Association: statement on oral semaglutide Phase 3 topline data](https://www.alz.org/news/2025/alzheimers-association-statement-oral-semaglutide-phase-3-topline-data-release)
+[^sema-clocks]: [DDW-Online: Turning back the epigenetic clock (Nov 2025)](https://www.ddw-online.com/turning-back-the-epigenetic-clock-can-we-reverse-ageing-38601-202511/)

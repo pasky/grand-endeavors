@@ -447,7 +447,7 @@ No large-scale experiments have been conducted. The tension between commercial a
 
 ---
 
-*Data sources: [NOAA GML][noaa-trends], [Scripps][scripps-430], [WMO][wmo-ghg], [Global Carbon Project][gcb-2025], [IEA][iea-ren], [BloombergNEF][bnef], [Climate Action Tracker][cat-emissions], [CDR.fyi][cdr-fyi], [Copernicus][copernicus-2024], [NASA][nasa-2024]*
+*Data sources: [NOAA GML][noaa-trends], [Scripps][scripps-430], [WMO][wmo-ghg], [Global Carbon Project][gcb-2025], [IEA][iea-ren], [BloombergNEF][bnef], [Climate Action Tracker](https://climateactiontracker.org/global/emissions-pathways/), [CDR.fyi][cdr-fyi], [Copernicus][copernicus-2024], [NASA][nasa-2024]*
 
 ---
 
