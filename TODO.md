@@ -1,176 +1,127 @@
 # TODO — Grand Endeavors
 
-Working backlog for the report-generation project. Newest context: the harness
-(`generate.sh`) is a pi-based, OpenProse-free pipeline validated on a narrow toy
-run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
+Working backlog. Architecture: **DESIGN.md**. The ledger (`ledger/`) is the
+product. `gather.sh` grows it on its own schedule, and bulletins (`bulletin.sh`,
+`roundup.sh`) and the explorer (`explore.py`) are views of it. Regression tests:
+`uv run test_harness.py`, `test_collectors.py`, `test_explorer.py`.
 
-## Harness / infrastructure
+## Done (2026-09 re-architecture; details in git log)
 
-- [x] **Harness guardrails** (done — commit a53e679, from deep code review):
-      OUT_DIR/period split, clean-worktree preflight, scoped+safe stage commits,
-      surgical anti-contamination prune (+ note reuse / `FRESH=1`), slug
-      validation, empty-note abort, and hardened draft/review prompts (KPI
-      completeness, no cross-metric causal bridges, precise deep-link citations).
-- [x] **Validation gate** (done — validate.py, commit dc25d34 + hardening): footnote/
-      reference-link integrity, mermaid xychart axis/series lengths, dead-URL
-      (404/410 hard-fail; 403/timeout/neterr warn), PLAN-slug coverage; wired as
-      review-stage self-check + Stage-5 backstop (fatal by default; STRICT=0 = report-only). Known
-      limitations to harden later:
-  - [ ] coverage is a soft heuristic (any-URL-overlap, warn-only) — won't catch
-        missing KPI sub-components, dropped slugs sharing a URL, or redirected
-        URLs; not a real coverage proof
-  - [ ] footnote/ref regexes ignore duplicate definitions, indented defs,
-        shortcut refs, and case-insensitive label equivalence
-  - [ ] mermaid check only length-checks unnamed line/bar arrays (no real parse,
-        named series, or missing-series detection)
-  - [ ] (future) snapshot each cited URL locally for permanence (link-rot proofing)
-  - [ ] (future) KPI consistency: headline value matches research note + round-up
-        README; every KPI sub-clause from README present in output
-- [x] **Round-up generator** (done — `roundup.sh <period-dir>`, run after all
-      sections; first output: pilot-26H1/README.md). It is a single pi summarize
-      stage (format ref: pilot-2025/README.md) plus `validate.py --roundup`: .md
-      links resolve, every section is linked, and every number in an endeavor
-      block traces to that section. Provenance is in MANIFEST-roundup.txt (input
-      blob hashes). Known limits:
-  - [ ] the number check is lexical only: it doesn't catch a right number on the
-        wrong metric, or status/verdict drift (e.g. pilot-2025's Fusion quick-ref
-        "Q=4.13" under a $/MWh KPI)
-  - [ ] no LLM review subagent pass (unlike sections). Add one if round-ups
-        drift in tone/structure
-  - [ ] found by the new check: pilot-2025/README.md says "41% of code is
-        AI-generated", which is absent from robots-software.md (legacy, not
-        fixed)
-- [x] Per-section manifests `<period>/MANIFEST-<section>.txt` (commit 8af634c;
-      pilot-26H1 migrated). `<section>` is validated against the canonical list,
-      so it can't collide with MANIFEST-roundup.txt.
-- [x] Review-stage research is allowed but now **audited** (Stage 4b, commits
-      14b7dda + e0bb721). The audit covers the review's changes to the notes,
-      section and store, plus the run's registry changes; the pending baseline
-      survives failed or interrupted runs. A fresh agent re-verifies the review's note diff and the run's
-      registry diff against the sources, and may only correct or remove. First
-      run (0716892..81a3ba2): all 20 review additions verified, no edits. The
-      write-scope guard blocks edits outside the run's artifacts.
-- [ ] **Data vintage / publication cutoff** (under discussion with owner; also
-      settles post-period context). Proposal: cutoff = period end + X
-      (weekly: 1-2 days; longer periods: ~2 weeks), filtered on PUBLICATION
-      date. Material published after the cutoff goes into the NEXT report as
-      news instead of back-filling this one. Needs a `published` date on note
-      claims and store rows, plus a check.
-- [x] **KPI time-series store** (done — `kpi.py`, schema in its docstring).
-      Each run writes its own vintage file `<period>/kpis/<section>.csv` (tidy
-      CSV). Stable metric ids make deltas a lookup (`kpi.py delta`), and charts
-      are rendered from the store (`kpi.py chart`, `%% kpi:` marker). Wired into
-      generate.sh: a recording stage after research, a store-driven draft, and
-      `validate.py --kpis`, which errors on chart drift or clipping, unmarked
-      charts, headlines not reported in prose, values not traceable to the
-      notes, and post/partial-period obs. The Stage-5 gate is fatal by default
-      (STRICT=0 = report-only). Every pi stage now has a mechanical write-scope guard.
-      Backfill: pilot-2025 (6 sections, clear-basis data only; skipped items are
-      listed in commit 90eedf5). pilot-26H1 climate was backfilled by the
-      pipeline itself in an end-to-end re-run (07cf80c..96a4142, 0 errors). Its
-      delta to pilot-2025 works and carries a seasonality caveat. Known limits:
-  - [ ] no `published` date column: a value observed inside the period but
-        published after it (e.g. the June 2026 monthly mean) is only flagged in
-        `note`, so "what was known on the as-of date" can't be reconstructed
-        exactly
-  - [ ] legacy pilot-2025 approximations stay in charts for obs that no later
-        vintage re-records (e.g. 2015 annual CO₂; the "~" wholesale prices)
-  - [ ] round-up doesn't read the store yet (the Quick Reference could be
-        rendered deterministically from headline rows + deltas)
-  - [x] **metric registry** `metrics/<section>.csv` (commit 14b7dda): a written
-        definition + unit per id, `required_from` KPI components (else an
-        explicit `unavailable` row with a reason), and `retired_after` for
-        basis changes. Unknown ids, unit drift and missing required components
-        are errors. Registry edits are audited (Stage 4b)
-  - [ ] **vintage semantics** (from design review, foundational): the period
-        as-of date is not the data vintage. Decide between strict "known as of"
-        and retrospective reporting, then add published/retrieved dates (see
-        the `published` item above). Equal-as-of periods (26H2 vs 2026, pilot vs
-        prod) are ordered by name. A rerun overwrites its period's snapshot, so
-        reproducing a chart needs a pinned repo commit
-  - [ ] no withdrawal mechanism: a bad point stays in stitched charts until a
-        later vintage re-records that obs. Legacy (report-extracted, approx.)
-        rows have no visible quality tier
-  - [ ] weekly cost/churn: the record stage re-transcribes full histories via an
-        LLM every run. Carry verified observations forward and record only new
-        or revised ones
-  - [ ] chart overlays (extra series) are unchecked, and the y-axis label is
-        free text (unit could be mislabeled)
-- [ ] Decide on the **regressions vs the old OpenProse RECIPE** (from deep review):
-  - [ ] per-stage **model specialization** (e.g. opus research/write, cheaper
-        compile) instead of one default model everywhere
-  - [ ] **parallel** research instead of the serial `while read` loop (tradeoff:
-        lose per-item independent retry/commit)
-  - [ ] **"Beyond the Framework"** is under-resourced — plan stage emits only
-        KPI+milestones+challenges, nothing researches the "beyond" section
-  - [ ] thinner **formatting guidance** (we lean on the reference template;
-        likely why the per-milestone emissions chart got dropped)
+- [x] **DESIGN.md**: gather → ledger → views. Time semantics are obs/event date,
+      published (+ basis `source|rule|seen`) and retrieved, with
+      known_at = published. Bulletin cutoff = period end + 2d (weekly) / 7d
+      (monthly) / 14d (longer). Nothing published after a cutoff back-fills a
+      bulletin; it becomes the next one's news. (This settles the old "data
+      vintage" and "post-period context" questions.)
+- [x] **ledger.py**:
+  - event / observation / assessment schemas, with README-derived topic tags;
+  - check, lint (staged files), atomic merge (rejected records kept in
+    `ledger/rejected/`), similarity-based dedup warnings, lifecycle `relates`;
+  - assessments whose `made_at` is the evidence as-of date (hindsight
+    rejected);
+  - snapshot at cutoff (new vs background events, KPI headlines with change,
+    comparability and year-ago values, and a chartable index).
+- [x] **Metric registry** `metrics/<section>.csv`: definition, unit, cadence,
+      release lag, required_from and retired_after.
+- [x] **Migration** into the ledger:
+  - 577 legacy events and legacy assessments converted from the 8 pilot-2025
+    reports;
+  - 40 verified 26H1 climate events and assessments from the audited notes;
+  - KPI observations from the per-period stores.
+- [x] **Deterministic collectors** (side agent): NOAA CO₂ (with derived
+      5/10-yr trends), METR frontier, and JSR payload mass. `collectors/run.sh`
+      runs them.
+- [x] **gather.sh**: collect → one intake agent per README watch item (KPI,
+      milestones, challenges and a "beyond" sweep) → fresh verifier → merge →
+      assess → state. Agents may only write staging files; the write-scope
+      guard enforces it.
+- [x] **bulletin.sh**: committed snapshot → draft from the snapshot only →
+      editorial and fidelity review (gaps are logged, not researched) → fatal
+      gate `validate.py --snapshot`. The gate checks that every cited URL is a
+      snapshot source, every prose number occurs in the snapshot, KPI headlines
+      are reported, charts match the ledger, and every milestone and challenge
+      is covered.
+- [x] **explore.py** (side agent): SQLite + Datasette metadata, and a
+      self-contained static dashboard with `--as-of`, visible gaps and overdue
+      metrics, legacy badges and sparklines.
+- [x] **Retired** `generate.sh` and the per-period `kpis/` stores.
+- [x] Earlier harness work carried over: write-scope guard, per-section
+      manifests, the fatal gate with the two-GET link probe, the round-up
+      generator and its number-traceability check, and the pilot-2025
+      citation-syntax fixes.
 
-## Output quality (from deep reviews of pilot-26H1/climate.md)
+## Next: operations
 
-The harness prompts were hardened against all of these (commit a53e679). **Verified
-by a FRESH regen** (`FRESH=1`, original toy-run scope, run 2026-09-25, spec 768de6a,
-commits a58ac87..8b7bd74; the scope is now recorded in the manifest). No hand-patching.
-Key numbers were spot-checked against live sources (NOAA co2_gr_mlo 2016–25 mean =
-2.564; IEA GER 2026 PDF 38 082 Mt / +0.4%; ESSD GCB total CO₂ 42.2 Gt, "marginally
-below" 2024). The gate reports 0 errors and 0 warnings.
+- [ ] **Scheduling**: cron or a systemd timer for `gather.sh <section>`, with a
+      per-section cadence (e.g. climate weekly, collectors daily), and for
+      `bulletin.sh` + `roundup.sh` after each cutoff. Also decide the weekly
+      bulletin day (cutoff = Sunday + 2d = Tuesday).
+- [ ] **Cost profile**: a full climate gather (8 watch items + verify + assess)
+      took about 75 min wall time for a 2-week window (36 events admitted, 4 corrected by the verifier). Measure tokens,
+      then decide on (a) per-item cadence (e.g. milestones weekly, slow
+      challenges monthly), (b) parallel intake agents, and (c) per-stage model
+      choice (e.g. a cheaper intake model with the verifier kept strong).
+- [ ] **Gaps loop**: gather.sh already feeds `*/gaps/<section>.md` bullets to the
+      intake agents. Next, close items that were answered (mark them done in
+      the file).
+- [ ] Gather the remaining sections (only climate has had a real gather run).
+      The legacy-only sections have no verified events yet.
+- [ ] Publish the explorer (static dashboard and/or Datasette) and point the
+      round-up README to it.
 
-- [x] **Reservation A:** the 10-yr trend is now in the exec summary and the dashboard:
-      2.56 ppm/yr MLO / 2.53 global (2016–25), plus a half-decade split (2.51→2.61),
-      *alongside* the single-year +2.23. The chart has a 10-yr mean line. The plan
-      stage picked up "10-year" from README even though the scope only said "recent
-      ppm/year trend".
-- [x] **Reservation B:** ppm growth is attributed to La Niña/sinks (Met Office), with an
-      explicit "concentration growth is not an emissions measure" note. The Bend is
-      assessed separately, from inventories.
-- [x] IEA is cited as the PDF deep link (iea.blob…/GlobalEnergyReview2026.pdf, pp. 13,
-      36, 45).
-- [x] Growth bases: each emissions estimate has its own row and scope label (GCB
-      fossil, IEA energy, Carbon Monitor fossil+industry, GCB total). The two ppm
-      growth definitions (NOAA Jan→Dec vs annual-mean) are also reconciled
-      explicitly.
-- [x] GHG vs CO₂: an explicit "Metric caveat" says no 2025 CO₂e total was published
-      within 26H1, so CO₂ is used as a proxy.
-- [x] Records contradiction: the report now says "every fossil and energy CO₂
-      estimate" hit a record and "only total CO₂, which includes land use, dipped",
-      which matches the note.
-  - [x] residual nit (unscoped "emissions … record level") is fixed by the draft
-        prompt hardening. Verified in the 26H1 KPI re-run: "Fossil CO₂ emissions
-        reached a record in 2025".
+## Next: data quality
 
-Other observations from the regen:
-- [ ] Per-milestone multi-year **emissions chart** is still missing. The notes have
-      no year-by-year emissions series, so the research prompt must ask for one
-      for milestones too, not only for the KPI. (Related: "thinner formatting
-      guidance" above.)
-- Retrospective runs work: the research ran in Sep 2026 and picked up post-period
-  sources (EDGAR, Climate TRACE, CREA Q2). The notes quarantined these as "published
-  after 30 June", and the draft correctly left them out.
+- [ ] **Legacy re-verification**: the 577 legacy events were converted from
+      reports, not verified at ingest. The conversion logs flagged report
+      defects: source URL/date mismatches, placeholder "2025" dates for undated
+      items, and weak mailing-list-root sources. A verify pass per section can
+      promote them to `verified` or correct/reject them. This needs a
+      supersede mechanism, next item.
+- [ ] **Corrections of admitted records**: the ledger is append-only. A wrong
+      *verified* event can only be countered by a new event
+      (`relates: retraction`). Add an explicit correction record type (or a
+      `supersedes` field) that views honour, instead of hand-editing JSONL.
+- [x] The verifier accepted one detail "from background knowledge" (first run: an
+      "October 2025" date the source didn't state). The verify prompt now
+      requires every field to be source-stated (not yet re-tested).
+- [ ] Dedup is an LLM job plus a heuristic (claim word overlap ≥ 0.6 within 7
+      days, different figures ⇒ not a duplicate). Near-duplicates with
+      reworded claims can slip through.
+- [ ] `rule`-basis publication dates are estimates (obs end + registry lag).
+      Source revisions made before our first retrieval are invisible.
+- [ ] Registry gaps: fusion's worldwide electricity-cost KPI is unregistered
+      (README basis is ambiguous, wholesale vs retail), and the health
+      `hale-median-country` KPI has never been observed. The OECD trust
+      category is unconfirmed.
+- [ ] Per-milestone multi-year series (e.g. an emissions chart for The Bend):
+      register the metrics and let the intake record observations, or write
+      a collector (GCB/EDGAR publish CSVs).
+- [ ] Collectors for more KPIs: IRENA LCOE, WHO GHE HALE, IEA (where
+      machine-readable).
+- [ ] (future) snapshot each cited URL locally (link-rot proofing).
 
-- [x] Regression tests: `uv run test_harness.py` (23 cases, no network). Extend
-      it whenever a check changes.
-- [ ] Link liveness is a heuristic (two-GET 404 rule). Cached or bot 404s can
-      still false-positive now that the gate is fatal (STRICT=0 overrides), and
-      HEAD-200 is trusted without a GET.
-- [ ] fusion KPI ("worldwide average electricity cost") is not registered yet:
-      README doesn't say wholesale or retail, so its first real run must register
-      the basis (audited). The OECD trust registry definition awaits
-      confirmation of the trust category at the source.
+## Next: views / checks
 
-## Validation at scale
+- [ ] Round-up doesn't read the ledger yet: its Quick Reference could be
+      rendered from snapshot KPI headlines and assessments.
+- [ ] Round-up number check is lexical only (it doesn't catch a right number
+      on the wrong metric). The pilot-2025 README's "41% of code AI-generated"
+      is untraceable (legacy, not fixed).
+- [ ] validate.py: footnote/ref regexes ignore duplicate or indented
+      definitions and shortcut refs. The mermaid check only length-checks
+      arrays. Chart overlays (extra series) are unchecked, and the y-axis label
+      is free text.
+- [ ] Link liveness is a heuristic: two GET 404s = dead (cached or bot 404s can
+      false-positive; STRICT=0 overrides), and HEAD-200 is trusted.
+- [ ] Dashboard: the HTML grows with the ledger (older events are collapsed but
+      all included). Paginate or split per section at some size.
 
-- [ ] **Full (non-narrow) Climate run** — validate full coverage of all
-      milestones+challenges and get a real cost/time profile.
+## Content / roadmap
 
-## Content / housekeeping
-
-- [ ] Finish `TEMPLATE.md` (newsletter intro still ends in `..todo..`).
-- [x] (low priority) clean `~/.pi/agent` so manifests stop reporting
-      `agent_dirty: YES` (the 2026-09-25 run reports `agent_dirty: no`).
-
-## Roadmap (from top-level README status)
-
-- [ ] weekly report cadence running
-- [ ] reference source list per endeavor
+- [ ] Finish `TEMPLATE.md` (the newsletter intro still ends in `..todo..`).
+- [ ] weekly report cadence running (README status)
+- [ ] reference source list per endeavor (it would also seed the intake
+      agents' watch lists)
 - [ ] publishing infra (Substack + automated Twitter)
-- [ ] drafting/feedback infra for early expert review + errata
+- [ ] drafting/feedback infra for early expert review + errata (this maps
+      naturally onto ledger corrections)

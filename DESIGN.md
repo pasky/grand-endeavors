@@ -157,8 +157,9 @@ checks themselves).
 - Per-period research notes: pilot-26H1 notes become verified events (they
   passed review and audit); pilot-2025 sections become `legacy` events.
   Research notes stop being canonical.
-- `generate.sh` stays as the legacy period pipeline until `gather.sh` +
-  `bulletin.sh` are proven end to end, then is retired.
+- `generate.sh` and the per-period `kpis/` stores were retired once `gather.sh`
+  and `bulletin.sh` were proven end to end (first gather run: climate,
+  2026-09-15..28). Both remain in git history.
 
 ## 8. Known limits / open questions
 

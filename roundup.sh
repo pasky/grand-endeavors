@@ -1,5 +1,5 @@
 #!/bin/sh
-# Grand Endeavors — period round-up generator (final stage after generate.sh)
+# Grand Endeavors — period round-up generator (after the period's bulletins)
 # =============================================================================
 #
 # Compiles the per-endeavor section files of one reporting period into the
@@ -10,7 +10,7 @@
 # USAGE:
 #   ./roundup.sh <out-dir>          e.g.  ./roundup.sh pilot-26H1
 #
-# Run AFTER all the period's sections have been generated (./generate.sh ...).
+# Run AFTER the period's bulletins exist (./bulletin.sh <period-dir> <section>).
 # Only sections present as <out-dir>/<section>.md are compiled; endeavors
 # without a section file are listed as "not covered in this edition".
 #
@@ -19,7 +19,7 @@
 # block must appear in the section file it links to, every section is linked,
 # and every link resolves.
 #
-# Same conventions as generate.sh: clean-worktree preflight (ALLOW_DIRTY=1 to
+# Same conventions as bulletin.sh: clean-worktree preflight (ALLOW_DIRTY=1 to
 # override), scoped commit of this stage's own artifacts only, saved pi session
 # under <out-dir>/.sessions/, fatal gate (STRICT=0 for report-only).
 # Provenance: <out-dir>/MANIFEST-roundup.txt (separate from the per-section
@@ -63,7 +63,7 @@ present=""; missing=""
 for s in $ALL_SECTIONS; do
 	if [ -s "$OUT_DIR/$s.md" ]; then present="$present $s"; else missing="$missing $s"; fi
 done
-[ -n "$present" ] || { echo "ERROR: no section files in $OUT_DIR (run generate.sh first)" >&2; exit 1; }
+[ -n "$present" ] || { echo "ERROR: no section files in $OUT_DIR (run bulletin.sh first)" >&2; exit 1; }
 present="${present# }"; missing="${missing# }"
 section_files="$(for s in $present; do printf '%s ' "$OUT_DIR/$s.md"; done)"
 

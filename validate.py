@@ -16,7 +16,7 @@ Env:
 
 Link liveness is a heuristic, not proof: a URL is "dead" (error) only if two
 GETs 3 s apart both return 404/410; HEAD-404 alone never is. Known limits: a
-cached/bot-served 404 can still false-positive (use STRICT=0 in generate.sh /
+cached/bot-served 404 can still false-positive (use STRICT=0 in bulletin.sh /
 roundup.sh to proceed report-only), and HEAD-200 is trusted without a GET.
 Regression tests: uv run test_harness.py
 """

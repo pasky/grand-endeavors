@@ -1,5 +1,0 @@
-metric,obs,value,unit,role,source,note
-metr-80-horizon-frontier,2025-11,32.3,min,headline,https://metr.org/assets/benchmark_results.yaml,best model 80% time horizon (GPT-5.1-Codex-Max)
-metr-50-horizon-frontier,2025-11,288.9,min,headline,https://metr.org/assets/benchmark_results.yaml,best model 50% time horizon (Claude Opus 4.5)
-metr-80-horizon-frontier,2025-08,26.6,min,series,https://metr.org/assets/benchmark_results.yaml,GPT-5 (new frontier at release)
-metr-80-horizon-frontier,2025-04,21.4,min,series,https://metr.org/assets/benchmark_results.yaml,o3 (new frontier at release)

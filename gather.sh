@@ -65,6 +65,8 @@ fi
 # --- 2. intake (one agent per watch item) ------------------------------------------
 RECENT="$(uv run ledger.py recent "$SECTION" --limit 250)"
 REG_TEXT="$(uv run kpi.py registry "$SECTION")"
+# Open questions logged by bulletins' edit stage (DESIGN.md §5): input for intake.
+GAPS_TEXT="$(cat */gaps/"$SECTION".md 2>/dev/null | grep -E '^[-*] ' | tail -40 || true)"
 uv run ledger.py items "$SECTION" > "$STAGE/items.txt"
 while IFS='|' read -r topic name desc <&3; do
 	if [ -n "${ITEMS:-}" ]; then case " $ITEMS " in *" $topic "*) : ;; *) continue ;; esac; fi
@@ -91,6 +93,10 @@ with "relates": [{"id": <existing id>, "rel": update|retraction|confirmation|del
 
 Metric registry (for optional "metrics" links and observations):
 $REG_TEXT
+
+OPEN GAPS reported by recent bulletins (fill them if they concern this item and
+the window; otherwise ignore):
+${GAPS_TEXT:-(none)}
 
 OUTPUT (write only these files):
 1. $ev: one JSON object per line (write via a small python script with
@@ -143,7 +149,10 @@ verification to {"status": "verified"|"corrected"|"rejected", "by":
 "verify:$RUN_ID", "at": "$TODAY", "note": what you checked, what you corrected,
 or why you rejected it}. For observation CSV rows, set the verification column
 to verified|corrected|rejected. Corrections must be supported by the source;
-otherwise reject. Do not add new records.
+otherwise reject. Do not add new records. Every field (numbers, dates, names,
+kind) must be stated by a cited source. Background knowledge never counts: an
+unsupported detail must be removed or corrected from the source, or the record
+rejected.
 For registry changes: the definition must be precise and must not duplicate or
 rename an existing metric. Existing rows must be unchanged. Revert invalid
 additions and reject the rows that use them.
