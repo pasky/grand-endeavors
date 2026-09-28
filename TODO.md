@@ -65,6 +65,13 @@ product. `gather.sh` grows it on its own schedule, and bulletins (`bulletin.sh`,
       explorer onto the same precedence, supersedes and comparability
       semantics. Re-verified end to end: a narrow climate gather (8 events +
       a KPI re-assessment) and the W38 bulletin + round-up, with gates green.
+- [x] **Verification-review fixes** (commit d43304d): exact-replay observation
+      merges, evidence-digest staleness (same-day and late-discovered
+      evidence), guard coverage of restores/deletions of dirty files, a
+      run-start registry baseline, lineage-aware `supersedes` with cycle
+      checks, `flock`, all series frozen, and pre-freeze snapshots failing
+      explicitly. `tests/test_guard.sh` was added. pilot-26H1 was regenerated
+      under the final code.
 - [x] Earlier harness work carried over: write-scope guard, per-section
       manifests, the fatal gate with the two-GET link probe, the round-up
       generator and its number-traceability check, and the pilot-2025
@@ -88,6 +95,17 @@ product. `gather.sh` grows it on its own schedule, and bulletins (`bulletin.sh`,
       The legacy-only sections have no verified events yet.
 - [ ] Publish the explorer (static dashboard and/or Datasette) and point the
       round-up README to it.
+
+## Decisions for the owner
+
+- [ ] **Status rubric**: green/yellow/red have no written definition. For the
+      climate KPI, is 🔴 about the *level* (concentration keeps setting records,
+      growth far above a 1.5°C pace) or the *direction* (growth rates eased in
+      26H1)? The 26H1 edit stage flagged that the 🟡→🔴 downgrade isn't
+      supported by the growth-rate evidence. That backfilled assessment was
+      derived from the old period report, so it isn't independent. Write a
+      short rubric per target type (KPI / milestone) into DESIGN.md or README,
+      and have `gather.sh` assess against it.
 
 ## Next: data quality
 

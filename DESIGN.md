@@ -184,6 +184,13 @@ before.
 
 ## 6. Verification model
 
+Regression tests pin every mechanical guarantee above:
+- `test_harness.py`: ledger, snapshot and gate, including replay idempotency,
+  precedence, supersedes lineage and cycles, staleness digests, and frozen
+  snapshots;
+- `tests/test_guard.sh`: the write-scope guard;
+- `test_collectors.py` and `test_explorer.py`.
+
 Verification happens at ingest (step 4), so it is done once per fact rather
 than once per report. Bulletins re-use verified facts, and their review becomes
 editorial. The deterministic gates are `ledger.py check` (the ledger itself),
