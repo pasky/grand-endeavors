@@ -43,14 +43,17 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
 - [x] Per-section manifests `<period>/MANIFEST-<section>.txt` (commit 8af634c;
       pilot-26H1 migrated). `<section>` is validated against the canonical list,
       so it can't collide with MANIFEST-roundup.txt.
-- [ ] Review-stage **scope creep** (seen in the 26H1 KPI re-run). It edited the
-      round-up README (now blocked mechanically by generate.sh's write-scope
-      guard). It also did new analysis: computed rolling 10-yr means and
-      added post-period items plus new figures to the notes. The additions were
-      verified, but review is meant to be critique plus spot-check.
-- [ ] Decide the **post-period context policy**: the review added clearly
-      labelled "published after 30 June" context to 26H1 (the draft had
-      excluded it). Either allow it, labelled, or forbid it in the prompts.
+- [x] Review-stage research is allowed but now **audited** (Stage 4b, commit
+      14b7dda). A fresh agent re-verifies the review's note diff and the run's
+      registry diff against the sources, and may only correct or remove. First
+      run (0716892..81a3ba2): all 20 review additions verified, no edits. The
+      write-scope guard blocks edits outside the run's artifacts.
+- [ ] **Data vintage / publication cutoff** (under discussion with owner; also
+      settles post-period context). Proposal: cutoff = period end + X
+      (weekly: 1-2 days; longer periods: ~2 weeks), filtered on PUBLICATION
+      date. Material published after the cutoff goes into the NEXT report as
+      news instead of back-filling this one. Needs a `published` date on note
+      claims and store rows, plus a check.
 - [x] **KPI time-series store** (done — `kpi.py`, schema in its docstring).
       Each run writes its own vintage file `<period>/kpis/<section>.csv` (tidy
       CSV). Stable metric ids make deltas a lookup (`kpi.py delta`), and charts
@@ -72,11 +75,11 @@ run (`pilot-26H1/climate.md`). See git log for the rationale behind each piece.
         vintage re-records (e.g. 2015 annual CO₂; the "~" wholesale prices)
   - [ ] round-up doesn't read the store yet (the Quick Reference could be
         rendered deterministically from headline rows + deltas)
-  - [ ] continuity warnings are warn-only (new or dropped headline ids). An id
-        rename silently breaks deltas unless a human reads them. Consider a small
-        reviewed **metric contract** per section (definition, unit, expected KPI
-        components, explicit retirements/basis changes) instead of only
-        "reuse ids"
+  - [x] **metric registry** `metrics/<section>.csv` (commit 14b7dda): a written
+        definition + unit per id, `required_from` KPI components (else an
+        explicit `unavailable` row with a reason), and `retired_after` for
+        basis changes. Unknown ids, unit drift and missing required components
+        are errors. Registry edits are audited (Stage 4b)
   - [ ] **vintage semantics** (from design review, foundational): the period
         as-of date is not the data vintage. Decide between strict "known as of"
         and retrospective reporting, then add published/retrieved dates (see
