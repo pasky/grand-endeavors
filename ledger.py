@@ -581,7 +581,14 @@ def year_ago(table: dict, cur: dict) -> dict | None:
 
 
 # --- snapshot -----------------------------------------------------------------------------
-def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
+SERIES_YEARS = 15  # frozen chart history per snapshot (bounds weekly snapshot size in git)
+
+# background context per bulletin kind: (years back, minimum significance); lifecycle
+# predecessors and assessment evidence are always included on top
+BACKGROUND = {"week": (1, 3), "month": (1, 2), "quarter": (2, 2), "half": (2, 2), "year": (2, 2)}
+
+
+def snapshot(period_dir: str, section: str) -> dict:
     """Deterministic, SELF-CONTAINED bulletin input: the ledger as of the period's
     cutoff, including chart series and the README framework, so drafting and
     validation need no live state."""
@@ -596,8 +603,9 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
     by_id = {e["id"]: e for e in evs}
     new = [e for e in evs if known_at(e) > prev and e["verification"]["status"] != "legacy"]
     new_ids = {e["id"] for e in new}
-    bg_from = dt.date(start.year - background_years, start.month, 1)
-    background = [e for e in evs if e["id"] not in new_ids and e["significance"] >= 2
+    years, min_sig = BACKGROUND[period_kind(period)]
+    bg_from = dt.date(start.year - years, start.month, 1)
+    background = [e for e in evs if e["id"] not in new_ids and e["significance"] >= min_sig
                   and date_end(e["date"]) >= bg_from]
     have = new_ids | {e["id"] for e in background}
     # lifecycle: earlier events that new ones update/retract
@@ -627,7 +635,9 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
     series, chartable = {}, []
     for m in sorted({m for (m, _) in now_t}):
         pts = sorted(([o, r["value"]] for (mm, o), r in now_t.items()
-                      if mm == m and kpi.obs_range(o)[1] <= end), key=lambda p: kpi.obs_range(p[0])[0])
+                      if mm == m and kpi.obs_range(o)[1] <= end
+                      and kpi.obs_range(o)[0].year >= end.year - SERIES_YEARS),
+                     key=lambda p: kpi.obs_range(p[0])[0])
         if len(pts) >= 5:
             series[m] = pts
             chartable.append({"metric": m, "n": len(pts), "first": pts[0][0], "last": pts[-1][0],
@@ -649,6 +659,13 @@ def snapshot(period_dir: str, section: str, background_years: int = 2) -> dict:
         "assessments": {t: {"current": clean(a), "previous": clean(ass_prev[t]) if t in ass_prev else None}
                         for t, a in sorted(ass_now.items())},
     }
+
+
+def dump_snapshot(snap: dict) -> str:
+    """Readable JSON (indent=1), but each frozen series on one line (size)."""
+    body = json.dumps({k: v for k, v in snap.items() if k != "series"}, ensure_ascii=False, indent=1)
+    series = ",\n".join(f"  {json.dumps(m)}: {json.dumps(pts, ensure_ascii=False)}" for m, pts in snap["series"].items())
+    return body[:-2] + ',\n "series": {\n' + series + "\n }\n}\n"
 
 
 def snapshot_evidence_text(snap: dict) -> str:
@@ -957,8 +974,7 @@ def main() -> int:
             out = os.path.join(a.period_dir, "snapshot", f"{a.section}.json")
             os.makedirs(os.path.dirname(out), exist_ok=True)
             with open(out, "w", encoding="utf-8") as f:
-                json.dump(snap, f, ensure_ascii=False, indent=1)
-                f.write("\n")
+                f.write(dump_snapshot(snap))
             print(f"wrote {out}: {len(snap['new_events'])} new, {len(snap['background_events'])} background events, "
                   f"{len(snap['kpi_headlines'])} KPI headlines, cutoff {snap['cutoff']}")
     except (ValueError, RuntimeError) as e:
