@@ -1,0 +1,15 @@
+{
+ "section": "climate",
+ "last_until": "2026-09-28",
+ "runs": [
+  {
+   "run": "20260928T171544Z",
+   "since": "2026-09-15",
+   "until": "2026-09-28",
+   "items": "all",
+   "staged_events": 36,
+   "spec_commit": "1476c0499c0314e7ab2d8c8d45a598f24f06bc06",
+   "pi": "0.87.1"
+  }
+ ]
+}
