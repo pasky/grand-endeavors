@@ -11,6 +11,16 @@ minus a leading "pilot-" is the period, which fixes its as-of date:
 Each period's file is a VINTAGE: what that report knew as of its as-of date
 (data gets revised, e.g. NOAA recalibration, so vintages are kept, not merged).
 
+METRIC REGISTRY (the continuity contract; one per section, across periods)
+    metrics/<section>.csv   columns: metric,unit,required_from,retired_after,definition
+    Every metric id used in a store file MUST be registered, with the registry's
+    unit. definition = the exact measure, basis/station/scope and window, so
+    "same id" provably means "same measure". required_from=<period>: from then on
+    every run must record a headline (or 'unavailable') row for it — the KPI's
+    components. retired_after=<period>: no headline rows after that period (a
+    basis change = new id + retire the old one; NEVER redefine an existing id).
+    Registry edits are part of the section run and are audited (generate.sh).
+
 CSV COLUMNS (header required, in this order)
     metric  stable id, ^[a-z0-9][a-z0-9-]*$, encodes the exact measure+basis
             (e.g. co2-mlo-monthly, co2-growth-mlo-jan-dec). SAME measure =>
@@ -23,6 +33,8 @@ CSV COLUMNS (header required, in this order)
     role    headline = this report's current reading of a KPI component
                        (at most one per metric per file; >=1 per file)
             series   = historical/context datapoint (e.g. for trend charts)
+            unavailable = a required component with no reading this period:
+                       empty value, note says why (obs/source may be empty)
     source  deep-link URL
     note    free text: qualifiers (approx., preliminary), window, basis
 
@@ -51,7 +63,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 COLUMNS = ["metric", "obs", "value", "unit", "role", "source", "note"]
-ROLES = {"headline", "series"}
+REG_COLUMNS = ["metric", "unit", "required_from", "retired_after", "definition"]
+ROLES = {"headline", "series", "unavailable"}
 METRIC_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 VALUE_RE = re.compile(r"^-?\d+(?:\.\d+)?$")
 MARKER_RE = re.compile(r"^\s*%%\s*kpi:\s*(.+)$", re.M)
@@ -154,6 +167,45 @@ def kpi_traceable(value: str, pool: set[float]) -> bool:
 
 
 # --- check --------------------------------------------------------------------
+def registry_path(section: str) -> str:
+    return os.path.join(ROOT, "metrics", f"{section}.csv")
+
+
+def load_registry(section: str) -> tuple[dict[str, dict], list[str]]:
+    """{metric: row} + errors. The registry is the continuity contract."""
+    path = registry_path(section)
+    if not os.path.exists(path):
+        return {}, [f"no metric registry {os.path.relpath(path, ROOT)} (create it: one row per metric, see kpi.py docstring)"]
+    errs, reg = [], {}
+    with open(path, newline="", encoding="utf-8") as f:
+        r = csv.DictReader(f)
+        if r.fieldnames != REG_COLUMNS:
+            return {}, [f"{path}: header must be exactly {','.join(REG_COLUMNS)}"]
+        for i, row in enumerate(r, 2):
+            at = f"metrics/{section}.csv:{i}"
+            m = row["metric"] or ""
+            if not METRIC_RE.match(m):
+                errs.append(f"{at}: bad metric id '{m}'")
+            if m in reg:
+                errs.append(f"{at}: duplicate metric '{m}'")
+            if not (row["unit"] or "").strip():
+                errs.append(f"{at}: empty unit")
+            if len((row["definition"] or "").split()) < 5:
+                errs.append(f"{at}: definition of '{m}' too thin — state the exact measure, basis/station/scope and window")
+            for col in ("required_from", "retired_after"):
+                if row[col]:
+                    try:
+                        period_as_of(row[col].removeprefix("pilot-"))
+                    except ValueError:
+                        errs.append(f"{at}: {col} '{row[col]}' is not a period name")
+            reg[m] = row
+    return reg, errs
+
+
+def _period_date(name: str) -> dt.date:
+    return period_as_of(name.removeprefix("pilot-"))
+
+
 def check(path: str, evidence: list[str] | None = None) -> tuple[list[str], list[str]]:
     errs: list[str] = []
     warns: list[str] = []
@@ -168,84 +220,95 @@ def check(path: str, evidence: list[str] | None = None) -> tuple[list[str], list
     except ValueError as e:
         errs.append(f"{path}: {e} (file must live at <period-dir>/kpis/<section>.csv)")
         as_of = None
+    reg, reg_errs = load_registry(section)
+    errs += reg_errs
     if evidence:
         pool: set[float] = set()
         for ev in evidence:
             pool |= kpi_numbers(open(ev, encoding="utf-8").read())
-    seen_head, seen_key, units = set(), set(), {}
+    seen_head, seen_key = set(), set()
     for r in rows:
         at = f"{os.path.basename(path)}:{r['_line']}"
-        if not METRIC_RE.match(r["metric"] or ""):
-            errs.append(f"{at}: bad metric id '{r['metric']}'")
-        try:
-            _, end = obs_range(r["obs"] or "")
-            if as_of and end > as_of:
-                errs.append(f"{at}: obs {r['obs']} ends after the period's as-of date {as_of} (post-period or partial-period data; use a finer obs, e.g. YYYY-H1)")
-        except ValueError:
-            errs.append(f"{at}: malformed obs '{r['obs']}'")
-        if not VALUE_RE.match(r["value"] or ""):
-            errs.append(f"{at}: value '{r['value']}' is not a plain decimal")
-        elif evidence and not kpi_traceable(r["value"], pool):
-            errs.append(f"{at}: value {r['value']} ({r['metric']} {r['obs']}) not found in the evidence files")
-        if not (r["unit"] or "").strip():
-            errs.append(f"{at}: empty unit")
+        m = r["metric"]
+        if not METRIC_RE.match(m or ""):
+            errs.append(f"{at}: bad metric id '{m}'")
+        elif reg and m not in reg:
+            errs.append(f"{at}: metric '{m}' is not in metrics/{section}.csv — use the registered id for "
+                        f"that measure, or register a genuinely new measure with a precise definition")
+        elif reg and reg[m]["unit"] != r["unit"]:
+            errs.append(f"{at}: unit '{r['unit']}' differs from the registry's '{reg[m]['unit']}' for {m}")
         if r["role"] not in ROLES:
             errs.append(f"{at}: role '{r['role']}' not in {sorted(ROLES)}")
-        if not re.match(r"https?://\S+$", r["source"] or ""):
-            errs.append(f"{at}: source must be a single http(s) URL")
-        if units.setdefault(r["metric"], r["unit"]) != r["unit"]:
-            errs.append(f"{at}: metric {r['metric']} has mixed units ({units[r['metric']]} vs {r['unit']})")
-        key = (r["metric"], r["obs"])
+        if r["role"] == "unavailable":
+            if r["value"] or not (r["note"] or "").strip():
+                errs.append(f"{at}: an 'unavailable' row needs an empty value and a note saying why")
+        else:
+            try:
+                _, end = obs_range(r["obs"] or "")
+                if as_of and end > as_of:
+                    errs.append(f"{at}: obs {r['obs']} ends after the period's as-of date {as_of} (post-period or partial-period data; use a finer obs, e.g. YYYY-H1)")
+            except ValueError:
+                errs.append(f"{at}: malformed obs '{r['obs']}'")
+            if not VALUE_RE.match(r["value"] or ""):
+                errs.append(f"{at}: value '{r['value']}' is not a plain decimal")
+            elif evidence and not kpi_traceable(r["value"], pool):
+                errs.append(f"{at}: value {r['value']} ({m} {r['obs']}) not found in the evidence files")
+            if not (r["unit"] or "").strip():
+                errs.append(f"{at}: empty unit")
+            if not re.match(r"https?://\S+$", r["source"] or ""):
+                errs.append(f"{at}: source must be a single http(s) URL")
+        key = (m, r["obs"])
         if key in seen_key:
-            errs.append(f"{at}: duplicate row for {r['metric']} {r['obs']}")
+            errs.append(f"{at}: duplicate row for {m} {r['obs']}")
         seen_key.add(key)
-        if r["role"] == "headline":
-            if r["metric"] in seen_head:
-                errs.append(f"{at}: more than one headline row for {r['metric']}")
-            seen_head.add(r["metric"])
+        if r["role"] in ("headline", "unavailable"):
+            if m in seen_head:
+                errs.append(f"{at}: more than one headline/unavailable row for {m}")
+            seen_head.add(m)
+            ret = reg.get(m, {}).get("retired_after")
+            if as_of and ret and as_of > _period_date(ret):
+                errs.append(f"{at}: {m} was retired after {ret}; record its successor instead")
+    if as_of:
+        for m, row in reg.items():
+            req, ret = row["required_from"], row["retired_after"]
+            if (req and as_of >= _period_date(req) and not (ret and as_of > _period_date(ret))
+                    and m not in seen_head):
+                errs.append(f"required KPI component '{m}' has no headline row (or an 'unavailable' row with a reason)")
     if not seen_head:
         warns.append(f"{path}: no headline row — OK only if the KPI has no numeric reading this period (say why in the section)")
-    # Continuity: earlier vintages exist but none shares a headline metric id.
-    if as_of:
-        me = os.path.basename(pdir)
-        prior = [v for v in vintages(section) if (v[0], v[1]) < (as_of, me)]
-        prior_ids = {r["metric"] for _, _, rs in prior for r in rs}
-        if prior:  # dropped components: last period's headlines missing now
-            ids_now = {r["metric"] for r in rows}
-            for m in sorted({r["metric"] for r in prior[-1][2] if r["role"] == "headline"} - ids_now):
-                warns.append(f"headline metric '{m}' of {prior[-1][1]} is not recorded in this run (dropped KPI component, or renamed id?)")
-        for m in sorted(seen_head - prior_ids):
-            if prior:
-                warns.append(f"headline metric '{m}' is new (not in any earlier period) — no delta possible; reuse an existing id if it is the same measure")
-        for _, _, rs in prior:
-            for r in rs:
-                if r["metric"] in units and units[r["metric"]] != r["unit"]:
-                    errs.append(f"metric {r['metric']}: unit {units[r['metric']]} differs from earlier period's {r['unit']} (same id must mean same measure)")
-                    units[r["metric"]] = r["unit"]  # report once
     return errs, warns
 
 
 # --- context / delta ----------------------------------------------------------
 def context(period_dir: str, section: str) -> str:
+    """Registry (definitions!) + each metric's latest reading, for the record stage."""
     as_of = period_as_of(period_of_dir(period_dir))
     me = os.path.basename(os.path.normpath(period_dir))
     prior = [v for v in vintages(section) if (v[0], v[1]) < (as_of, me)]
-    if not prior:
-        return f"(no earlier KPI records for section '{section}' — you are defining its metric ids)"
     last: dict[str, tuple[str, dict]] = {}
     for _, pname, rs in prior:  # ascending: a later vintage replaces an earlier one
         by_metric: dict[str, dict] = {}
         for r in rs:
             cur = by_metric.get(r["metric"])
+            if r["role"] == "unavailable":
+                continue
             if (cur is None or r["role"] == "headline"
                     or (cur["role"] != "headline" and obs_range(r["obs"])[1] > obs_range(cur["obs"])[1])):
                 by_metric[r["metric"]] = r
         for m, r in by_metric.items():
             last[m] = (pname, r)
-    lines = [f"Metric ids already used for '{section}' (reuse the SAME id for the SAME measure/basis):"]
-    for m, (pname, r) in sorted(last.items()):
-        note = f" — {r['note']}" if r["note"] else ""
-        lines.append(f"  {m} [{r['unit']}] last: {r['value']} @ {r['obs']} ({r['role']}, {pname}){note}")
+    reg, errs = load_registry(section)
+    if errs and not reg:
+        return f"(no metric registry yet for '{section}': create metrics/{section}.csv — you are defining its metrics)"
+    lines = [f"Registered metrics for '{section}' (metrics/{section}.csv). Use these ids; the DEFINITION is binding:"]
+    for m, row in reg.items():
+        flags = []
+        if row["required_from"] and as_of >= _period_date(row["required_from"]):
+            flags.append("REQUIRED headline")
+        if row["retired_after"]:
+            flags.append(f"retired after {row['retired_after']}")
+        seen = f" | last: {last[m][1]['value']} @ {last[m][1]['obs']} ({last[m][1]['role']}, {last[m][0]})" if m in last else ""
+        lines.append(f"  {m} [{row['unit']}]{' (' + ', '.join(flags) + ')' if flags else ''}: {row['definition']}{seen}")
     return "\n".join(lines)
 
 
@@ -256,6 +319,8 @@ def delta(period_dir: str, section: str) -> str:
     if not cur:
         return f"(no KPI record for {section} in {me})"
     out = []
+    for r in (r for r in cur[0][2] if r["role"] == "unavailable"):
+        out.append(f"{r['metric']}: UNAVAILABLE this period — {r['note']}")
     for r in (r for r in cur[0][2] if r["role"] == "headline"):
         prev = None
         for _, pname, rs in vs:
@@ -295,7 +360,8 @@ def chart_data(period_dir: str, section: str, metrics: list[str], match: str | N
         pts: dict[str, str] = {}
         for _, _, rs in _upto(section, period_dir):  # ascending: later vintage overwrites
             for r in rs:
-                if r["metric"] == m and (not match or fnmatch.fnmatchcase(r["obs"], match)):
+                if (r["metric"] == m and r["role"] != "unavailable"
+                        and (not match or fnmatch.fnmatchcase(r["obs"], match))):
                     pts[r["obs"]] = r["value"]
         if not pts:
             raise ValueError(f"no stored points for {section}/{m} (match={match})")
@@ -335,7 +401,8 @@ def marker_args(section: str, metrics: list[str], match: str | None, label: str)
 def chart(period_dir: str, section: str, metrics: list[str], match: str | None = None,
           label: str = "obs", title: str | None = None) -> str:
     xs, data = chart_data(period_dir, section, metrics, match, label)
-    unit = next((r["unit"] for _, _, rs in _upto(section, period_dir) for r in rs if r["metric"] == metrics[0]), "")
+    unit = load_registry(section)[0].get(metrics[0], {}).get("unit") or next(
+        (r["unit"] for _, _, rs in _upto(section, period_dir) for r in rs if r["metric"] == metrics[0]), "")
     lo, hi = _nice_range([float(v) for vs in data for v in vs])
     title = title or f"{', '.join(metrics)} ({unit})"
     lines = ["```mermaid", "xychart-beta",

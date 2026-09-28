@@ -1,0 +1,24 @@
+metric,unit,required_from,retired_after,definition
+co2-mlo-monthly,ppm,pilot-26H1,,"NOAA GML Mauna Loa (MLO) monthly mean CO2 dry-air mole fraction, NOAA series (co2_mm_mlo.txt); the KPI concentration headline is the latest published month"
+co2-trend-10yr-mlo-jan-dec,ppm/yr,pilot-26H1,,"Mean of the last 10 NOAA MLO annual growth rates (Jan 1 -> Dec 31 change, co2_gr_mlo.txt); obs = final year of the 10-year window; the KPI trend headline"
+co2-trend-10yr-global-jan-dec,ppm/yr,,,"Mean of the last 10 NOAA global marine-surface annual growth rates (Jan 1 -> Dec 31 change, co2_gr_gl.txt); obs = final year of the window"
+co2-trend-10yr-global-wmo,ppm/yr,,pilot-2025,WMO Greenhouse Gas Bulletin decadal mean growth of global annual-mean CO2 (2011-2020); superseded by the NOAA Jan->Dec 10-year trend
+co2-trend-5yr-mlo-jan-dec,ppm/yr,,,Mean of 5 consecutive NOAA MLO annual growth rates (Jan 1 -> Dec 31 change); obs = final year of the 5-year window
+co2-trend-5yr-global-jan-dec,ppm/yr,,,Mean of 5 consecutive NOAA global marine-surface annual growth rates (Jan 1 -> Dec 31 change); obs = final year of the window
+co2-trend-10yr-mlo-scripps,ppm/yr,,,"Met Office-reported decadal average growth of Scripps Mauna Loa annual-mean CO2 (calendar decade, e.g. 2000-2009); obs = final year of the decade"
+co2-trend-2020s-mlo-scripps,ppm/yr,,,Met Office-reported average growth of Scripps Mauna Loa annual-mean CO2 over the 2020s so far (from 2020 to the obs year)
+co2-mlo-annual,ppm,,,NOAA GML Mauna Loa calendar-year annual mean CO2 (co2_annmean_mlo.txt)
+co2-global-annual,ppm,,,NOAA GML global marine-surface calendar-year annual mean CO2 (co2_annmean_gl.txt)
+co2-global-monthly,ppm,,,NOAA GML global marine-surface monthly mean CO2 (co2_mm_gl.txt)
+co2-mlo-daily,ppm,,,NOAA GML Mauna Loa daily mean CO2 (co2_daily_mlo.txt)
+co2-mlo-monthly-scripps,ppm,,,"Scripps (UCSD) Mauna Loa monthly mean CO2, Scripps program series (distinct from NOAA's MLO series)"
+co2-growth-mlo-jan-dec,ppm/yr,,,NOAA MLO annual CO2 growth rate: Jan 1 -> Dec 31 change of that year (co2_gr_mlo.txt)
+co2-growth-global-jan-dec,ppm/yr,,,NOAA global marine-surface annual CO2 growth rate: Jan 1 -> Dec 31 change of that year (co2_gr_gl.txt)
+co2-growth-mlo-annual-mean,ppm/yr,,,NOAA MLO annual-mean increment: that year's annual mean minus the previous year's annual mean
+co2-growth-mlo-annual-mean-scripps,ppm/yr,,,Scripps MLO annual-mean increment (as reported by the Met Office): that year's annual mean minus the previous year's
+co2-growth-global-wmo,ppm/yr,,,WMO-reported increase of global annual-mean CO2 over the previous year
+co2-growth-mlo-yoy-monthly,ppm,,,NOAA MLO monthly mean minus the same month one year earlier (year-on-year change for that month)
+co2-emissions-fossil-gcb,GtCO2,,,"Global Carbon Budget global fossil CO2 emissions (fossil fuels + cement, net of cement carbonation) for the calendar year; The Bend tracker"
+co2-emissions-total-gcb,GtCO2,,,Global Carbon Budget total anthropogenic CO2 emissions (fossil + net land-use change) for the calendar year
+co2-emissions-energy-iea,MtCO2,,,"IEA Global Energy Review energy-related CO2 (fuel combustion + industrial processes, excluding flaring) for the calendar year"
+co2-emissions-fossil-industry-carbon-monitor,GtCO2,,,Carbon Monitor near-real-time fossil + industry CO2 emissions for the calendar year

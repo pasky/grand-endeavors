@@ -46,6 +46,10 @@
 #   flag) + settings hash. Per-stage sessions are saved under <out-dir>/.sessions/
 #   (gitignored) for after-the-fact audit.
 #
+# REVIEW-STAGE RESEARCH is allowed but AUDITED: if the review changed research
+#   notes (or this run changed the metric registry), a fresh audit stage
+#   re-verifies exactly that diff against the sources.
+#
 # KPI TIME SERIES:
 #   After research, a recording stage writes this run's KPI readings to
 #   <out-dir>/kpis/<section>.csv (schema + semantics: kpi.py docstring), reusing
@@ -87,6 +91,7 @@ PLAN_FILE="$RESEARCH_DIR/PLAN.txt"
 OUT_FILE="$OUT_DIR/$SECTION.md"
 KPI_FILE="$OUT_DIR/kpis/$SECTION.csv"   # this run's KPI vintage (see kpi.py)
 MANIFEST="$OUT_DIR/MANIFEST-$SECTION.txt"  # per SECTION: sibling runs keep theirs
+REGISTRY="metrics/$SECTION.csv"          # the section's metric registry (cross-period)
 REF_TEMPLATE="pilot-2025/climate.md"   # structural reference (format, not content)
 
 AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
@@ -129,7 +134,7 @@ guard_paths() {
 	bad=""
 	for f in $changed; do  # our paths never contain whitespace
 		case "$f" in
-			"$MANIFEST"|"$KPI_FILE"|"$OUT_FILE"|"$RESEARCH_DIR"/*) : ;;
+			"$MANIFEST"|"$KPI_FILE"|"$REGISTRY"|"$OUT_FILE"|"$RESEARCH_DIR"/*) : ;;
 			*) printf '%s\n' "$2" | grep -qxF -- "$f" || bad="$bad $f" ;;
 		esac
 	done
@@ -146,7 +151,7 @@ guard_paths() {
 commit() {
 	msg="$1"
 	paths=""
-	for p in "$MANIFEST" "$RESEARCH_DIR" "$KPI_FILE" "$OUT_FILE"; do
+	for p in "$MANIFEST" "$RESEARCH_DIR" "$KPI_FILE" "$REGISTRY" "$OUT_FILE"; do
 		[ -e "$p" ] && paths="$paths $p"
 	done
 	[ -n "$paths" ] || { echo "    (nothing to stage for: $msg)"; return 0; }
@@ -180,6 +185,7 @@ write_manifest() {
 # === Pipeline ================================================================
 write_manifest
 commit "$OUT_DIR $SECTION: manifest + run setup"
+RUN_START="$(git rev-parse HEAD)"   # registry diff for the audit is taken from here
 
 # --- Stage 1: plan -----------------------------------------------------------
 # Emit the in-scope research items, one per line, as: "slug | description".
@@ -304,16 +310,22 @@ numeric tracker) and the research notes $RESEARCH_DIR/*.md. The notes are the
 ONLY source of values. Read the schema in the docstring of ./kpi.py
 (\`uv run kpi.py --help\`).
 
-Existing metric ids from earlier periods (the store's continuity):
+The section's METRIC REGISTRY ($REGISTRY) — the binding continuity contract
+(definitions, units, required KPI components) — with each metric's latest reading:
 $(uv run kpi.py context "$OUT_DIR" "$SECTION")
 
 Rules:
 - Header exactly: metric,obs,value,unit,role,source,note
-- REUSE an existing metric id whenever the measure AND basis are the same (same
-  station/series, same growth definition, same emissions scope). Create a new
-  id ONLY for a genuinely different measure or basis, and never reuse an id for
-  a different basis. Ids should name the basis (e.g. co2-mlo-monthly vs
-  co2-global-monthly; co2-growth-mlo-jan-dec vs co2-growth-mlo-annual-mean).
+- Every metric id MUST be registered in $REGISTRY, and a row may use an id only
+  if the value matches that id's DEFINITION exactly (same station/series, growth
+  definition, window, emissions scope) and its unit.
+- A genuinely new measure or basis: append a registry row (metric,unit,
+  required_from,retired_after,definition) with a precise definition. Ids name
+  the basis (e.g. co2-mlo-monthly vs co2-global-monthly). NEVER change an
+  existing row's definition or unit, and never register a renamed duplicate. A
+  basis change means a new id, plus retired_after=<last period> on the old one.
+  Set required_from=$OUT_DIR only for KPI components defined in README.md that
+  have no registered metric yet. All registry edits are independently audited.
 - role=headline: this report's current reading of EVERY KPI component (e.g.
   latest concentration AND the multi-year trend), plus any numeric milestone
   tracker. At most one headline row per metric.
@@ -322,19 +334,20 @@ Rules:
   complete series so charts can be rendered from the store.
 - value: copy it VERBATIM from a note as a plain decimal (no ~, units or
   commas). No values you computed yourself unless the note states them.
-- If the KPI has NO numeric reading this period (e.g. undisclosed, or no KPI
-  defined), write no headline row rather than inventing a substitute. Say
-  why in your final message.
+- A REQUIRED metric with no reading this period gets a role=unavailable row:
+  empty value, and a note saying why. Never invent a substitute. If the section
+  has no numeric KPI at all, write no headline row and say why in your final
+  message.
 - obs must END within $PERIOD (a full-year obs only once the year is over;
   use YYYY-H1/YYYY-Qn/YYYY-MM for partial-year values). Skip projections and forecasts: the
   store holds observed/reported values only.
 - source: the note's deep-link URL for that value. note: the basis, window
   and qualifiers (preliminary, approx.).
 
-Then run this and fix EVERY error until it reports 0 errors (also act on
-continuity warnings):
+Then run this and fix EVERY error until it reports 0 errors:
     uv run kpi.py check $KPI_FILE --evidence $RESEARCH_DIR/*.md
-Write ONLY $KPI_FILE.
+Write ONLY $KPI_FILE and (if needed) $REGISTRY. List any registry changes in
+your final message.
 EOF
 )"
 [ -s "$KPI_FILE" ] || { echo "ERROR: KPI stage wrote no $KPI_FILE" >&2; exit 1; }
@@ -393,6 +406,7 @@ scope. Write $OUT_FILE and give a brief summary of what you wrote.
 EOF
 )"
 commit "$OUT_DIR $SECTION: draft"
+DRAFT_HEAD="$(git rev-parse HEAD)"  # research added during review = notes diff from here
 
 # --- Stage 4: review + revise (offline subagent critique + web spot-check) ---
 pi_run review "$(cat <<EOF
@@ -420,12 +434,65 @@ Review and finalize $OUT_FILE (the "$SECTION" section for $PERIOD).
    Section and store must agree.
    Re-run it until it reports 0 errors. Then report the changes you made.
 
-Modify ONLY $OUT_FILE, $KPI_FILE and $RESEARCH_DIR/*.md. Do NOT touch any other
-file, in particular not the period round-up README.md (roundup.sh regenerates
-it from the sections).
+You MAY do new research to fix a gap or error. Record every new or corrected
+fact in the research notes with its verified deep-link URL (computed values:
+say what they are computed from). All note changes made in this stage are
+audited independently afterwards.
+
+Modify ONLY $OUT_FILE, $KPI_FILE, $REGISTRY and $RESEARCH_DIR/*.md. Do NOT
+touch any other file, in particular not the period round-up README.md
+(roundup.sh regenerates it from the sections).
 EOF
 )"
 commit "$OUT_DIR $SECTION: review"
+
+# --- Stage 4b: independent audit of research added during review -------------
+# The review stage may research; nothing would check that research (the
+# validator only confirms the section matches the notes the reviewer itself
+# edited). A FRESH agent verifies every note change made during review, and
+# every registry change made in this run, against the sources. Runs only if
+# there is something to audit.
+AUDIT_DIFF="$SESS_DIR/audit-input.diff"
+{
+	git diff "$DRAFT_HEAD" HEAD -- "$RESEARCH_DIR"
+	git diff "$RUN_START" HEAD -- "$REGISTRY"
+} > "$AUDIT_DIFF"
+if [ -s "$AUDIT_DIFF" ]; then
+	pi_run audit "$(cat <<EOF
+You are an independent AUDITOR for the "$SECTION" section, period $PERIOD. You
+did not write any of this. During this run, the review stage added or changed
+research notes, and/or the metric registry $REGISTRY changed. Nothing has
+checked those changes yet. The diff is in $AUDIT_DIFF: read ALL of it.
+
+For every ADDED or CHANGED claim in the research-note diff:
+- VISIT its cited URL and confirm that the source states it: numbers, dates,
+  and metric scope/basis.
+- For a value computed from data (e.g. an average), recompute it from the
+  cited data.
+- Check it falls within $PERIOD, or is clearly labelled as context published
+  after the period.
+For every registry change in $REGISTRY:
+- The definition must be precise (measure, basis/station/scope, window). It
+  must not duplicate or rename an already registered metric.
+- No existing id's definition or unit may have changed (a basis change must
+  be a new id plus retired_after on the old id).
+- required_from may be set only for KPI components defined in README.md.
+
+Fix what fails. Correct it if the source supports a corrected version;
+otherwise REMOVE it, from the notes AND from everything derived from it in
+$OUT_FILE and $KPI_FILE. Revert invalid registry edits and re-point affected
+rows. Do NOT add new claims, sources or metrics.
+
+Then run until 0 errors:
+    uv run validate.py $OUT_FILE --plan $PLAN_FILE --research $RESEARCH_DIR --kpis
+Report each audited item as verified / corrected / removed. Modify ONLY
+$OUT_FILE, $KPI_FILE, $REGISTRY and $RESEARCH_DIR/*.md.
+EOF
+)"
+	commit "$OUT_DIR $SECTION: audit of review-stage research"
+else
+	echo ">>> [$SECTION/$OUT_DIR] audit: nothing to audit (no note changes in review, no registry changes)"
+fi
 
 # --- Stage 5: validation gate (deterministic, no-LLM) ------------------------
 # Mechanical checks the LLM review can't be talked out of: footnote/reference

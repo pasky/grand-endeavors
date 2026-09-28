@@ -1,0 +1,2 @@
+metric,unit,required_from,retired_after,definition
+hale-global,years,,,WHO Global Health Estimates population-weighted global healthy life expectancy (HALE) at birth for the obs year
