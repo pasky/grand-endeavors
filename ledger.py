@@ -492,7 +492,8 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
                 errs.append(f"assessment {a['id']}: status change {prev['status']}->{a['status']} without evidence "
                             f"published after {prev['made_at']} (STATUS.md hysteresis rule 1; a pre-rubric prev "
                             "may be re-judged with rubric_correction v1)")
-        if target == "kpi" and any(a.get("rubric") == "v1" for a in recs) and not kpi_assessment_spec(section):
+        if target == "kpi" and any(a.get("rubric") == "v1" and a["status"] != "unknown" for a in recs) \
+                and not kpi_assessment_spec(section):
             errs.append(f"assessment of {section} kpi under rubric v1, but metrics/kpi-assessment.csv has no row for it")
     return errs
 
