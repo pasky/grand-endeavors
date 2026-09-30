@@ -181,6 +181,16 @@ def main():
     eff = {e["id"] for e in ledger.effective_events(ledger.events("climate"))}
     case("supersedes: correction with the same claim merges; views drop the superseded record",
          errs == [] and "2026-06-06-ok-r2" in eff and "2026-06-06-ok" not in eff)
+    tomb = ev("2026-06-06-ok-r2-wd", "2026-06-06", "Withdrawn after re-verification: the source contradicts the emissions claim.",
+              supersedes=["2026-06-06-ok-r2"], withdrawn=True)
+    tomb["kind"] = "retraction"
+    write_jsonl(st, [tomb])
+    errs, _ = ledger.merge("climate", [st])
+    eff = {e["id"] for e in ledger.effective_events(ledger.events("climate"))}
+    case("withdrawal tombstone removes the record from views and is not itself shown",
+         errs == [] and "2026-06-06-ok-r2" not in eff and "2026-06-06-ok-r2-wd" not in eff)
+    case("withdrawal tombstone must be kind retraction",
+         has(ledger.check_event(dict(tomb, kind="data"), "climate", topics), "tombstone"))
     bad_date = ev("2026-99-99-x", "2026-06-06", "A claim with an impossible date prefix in its id.")
     bad_date["date"] = "2026-99-99"
     case("impossible dates are rejected", has(ledger.check_event(bad_date, "climate", topics), "bad date"))

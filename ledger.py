@@ -221,7 +221,7 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
     errs += [f"{at}: missing '{k}'" for k in need if k not in e]
     if errs:
         return errs
-    extra = set(e) - set(need) - {"metrics", "relates", "supersedes", "note", "_line"}
+    extra = set(e) - set(need) - {"metrics", "relates", "supersedes", "withdrawn", "note", "_line"}
     if extra:
         errs.append(f"{at}: unknown field(s) {sorted(extra)}")
     if not EVENT_ID_RE.match(str(e["id"])):
@@ -272,6 +272,8 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
     sup = e.get("supersedes", [])
     if not isinstance(sup, list) or not all(isinstance(x, str) for x in sup):
         errs.append(f"{at}: supersedes must be a list of event ids")
+    if "withdrawn" in e and (e["withdrawn"] is not True or e["kind"] != "retraction" or not sup):
+        errs.append(f"{at}: a withdrawal tombstone needs withdrawn=true, kind 'retraction' and supersedes")
     for m in e.get("metrics", []) or []:
         if not isinstance(m, dict) or not {"metric", "obs", "value"} <= set(m):
             errs.append(f"{at}: metrics entries need metric, obs, value")
@@ -597,10 +599,11 @@ def latest_obs(table: dict, metric: str, when: dt.date | None = None) -> dict | 
 
 
 def effective_events(evs: list[dict], when: dt.date | None = None) -> list[dict]:
-    """Events known by `when`, minus those superseded by a record also known by then."""
+    """Events known by `when`, minus those superseded by a record also known by then,
+    minus withdrawal tombstones (withdrawn=true: the superseded record is simply gone)."""
     known = [e for e in evs if when is None or known_at(e) <= when]
     gone = {s for e in known for s in (e.get("supersedes") or [])}
-    return [e for e in known if e["id"] not in gone]
+    return [e for e in known if e["id"] not in gone and not e.get("withdrawn")]
 
 
 def assessment_as_of(section: str, when: dt.date) -> dict[str, dict]:

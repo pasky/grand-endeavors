@@ -83,6 +83,7 @@ metrics/<section>.csv                metric registry = schema/contract for obser
 | `metrics` | optional `[{metric, obs, value}]` links to registered observations |
 | `significance` | 1 minor · 2 notable · 3 major |
 | `relates` | optional `[{id, rel}]`, rel ∈ `update` `retraction` `confirmation` `delay` `followup` (event lifecycle) |
+| `withdrawn` | optional `true`: a withdrawal tombstone (kind `retraction`, with `supersedes`). The superseded record disappears from views and the tombstone is not shown; the claim says why |
 | `supersedes` | optional `[ids]`: this record replaces them (a correction, or an added/better source). Views use the effective events: a superseded record disappears once its replacement is known. The ledger itself stays append-only |
 | `verification` | `{status, by, at, note}`, status ∈ `verified` `corrected` `legacy` |
 | `collector` | provenance, e.g. `gather:climate/milestone-the-bend@2026-09-29` |
