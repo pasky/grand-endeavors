@@ -166,7 +166,8 @@ def main():
     case("next_expected empty lag = no regular release -> None", ne("annual", "", D("2025-12-31")) is None)
 
     with tempfile.TemporaryDirectory() as root, \
-            mock.patch.object(ledger, "ROOT", root), mock.patch.object(kpi, "ROOT", root):
+            mock.patch.object(ledger, "ROOT", root), mock.patch.object(kpi, "ROOT", root), \
+            mock.patch.object(ledger, "DATA", root):
         make_fixture(root)
         out = os.path.join(root, "build")
         explore.build(out, D("2026-09-28"))

@@ -29,7 +29,10 @@ import os
 import re
 import sys
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.abspath(__file__))   # the mechanism (code, README, STATUS)
+# The data (ledger, registry, period bulletins) is a SEPARATE git repository:
+# $GE_DATA, default <mechanism>/data (gitignored here). See DESIGN.md §7.
+DATA = os.environ.get("GE_DATA") or os.path.join(ROOT, "data")
 SECTIONS = ["robots-software", "robots-hardware", "rockets", "fusion", "health",
             "climate", "knowledge-beyond", "society-cohesion"]
 EVENT_KINDS = {"achievement", "announcement", "projection", "setback", "data",
@@ -52,7 +55,7 @@ BASIS_MILESTONE = {"rule", "eta", "path", "blockers", "prev", "change_note"}
 
 def kpi_assessment_spec(section: str) -> dict | None:
     """metrics/kpi-assessment.csv row for a section (STATUS.md: fixed per KPI)."""
-    p = os.path.join(ROOT, "metrics", "kpi-assessment.csv")
+    p = os.path.join(DATA, "metrics", "kpi-assessment.csv")
     if not os.path.exists(p):
         return None
     with open(p, newline="", encoding="utf-8") as f:
@@ -65,7 +68,7 @@ URL_RE = re.compile(r"^https?://\S+$")
 
 def path(kind: str, section: str) -> str:
     ext = "csv" if kind == "observations" else ("json" if kind == "state" else "jsonl")
-    return os.path.join(ROOT, "ledger", kind, f"{section}.{ext}")
+    return os.path.join(DATA, "ledger", kind, f"{section}.{ext}")
 
 
 def day(s: str) -> dt.date:
@@ -153,7 +156,7 @@ def load_jsonl(p: str) -> list[dict]:
                 try:
                     rec = json.loads(ln)
                 except json.JSONDecodeError as e:
-                    raise ValueError(f"{os.path.relpath(p, ROOT)}:{i}: bad JSON ({e})")
+                    raise ValueError(f"{os.path.relpath(p, DATA)}:{i}: bad JSON ({e})")
                 rec["_line"] = i
                 out.append(rec)
     return out
@@ -165,11 +168,11 @@ def load_obs(p: str) -> list[dict]:
     with open(p, newline="", encoding="utf-8") as f:
         r = csv.DictReader(f)
         if r.fieldnames != OBS_COLUMNS:
-            raise ValueError(f"{os.path.relpath(p, ROOT)}: header must be exactly {','.join(OBS_COLUMNS)}")
+            raise ValueError(f"{os.path.relpath(p, DATA)}: header must be exactly {','.join(OBS_COLUMNS)}")
         rows = [dict(row, _line=i) for i, row in enumerate(r, 2)]
     for row in rows:
         if None in row or any(v is None for v in row.values()):
-            raise ValueError(f"{os.path.relpath(p, ROOT)}:{row['_line']}: wrong number of fields")
+            raise ValueError(f"{os.path.relpath(p, DATA)}:{row['_line']}: wrong number of fields")
     return rows
 
 
@@ -941,7 +944,7 @@ class _Lock:
     """Exclusive per-section merge lock: an OS-held flock on ledger/.lock-<section>
     (released by the kernel if the process dies; no stale PID files)."""
     def __init__(self, section: str):
-        self.p = os.path.join(ROOT, "ledger", f".lock-{section}")
+        self.p = os.path.join(DATA, "ledger", f".lock-{section}")
 
     def __enter__(self):
         import fcntl

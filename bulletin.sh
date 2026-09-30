@@ -1,6 +1,6 @@
 #!/bin/sh
 # Grand Endeavors — BULLETIN: one section's report for one period, as a view of
-# the ledger at a deterministic cutoff (DESIGN.md §2, §5).
+# the ledger at a deterministic cutoff ($ROOT/DESIGN.md §2, §5).
 # =============================================================================
 #   1. snapshot  ledger.py snapshot: the ledger as of cutoff = period end + lag
 #                (weekly 2d, monthly 7d, longer 14d); committed = reproducible input
@@ -27,7 +27,7 @@ case "$OUT_DIR" in ""|*/*|.*|*[!A-Za-z0-9-]*)
 	echo "ERROR: period-dir must be a plain top-level name, e.g. pilot-26H1" >&2; exit 1 ;;
 esac
 PERIOD="${OUT_DIR#pilot-}"
-CUT_LINE="$(uv run ledger.py cutoff "$PERIOD")" || { echo "ERROR: '$PERIOD' is not a period" >&2; exit 1; }
+CUT_LINE="$(uv run $ROOT/ledger.py cutoff "$PERIOD")" || { echo "ERROR: '$PERIOD' is not a period" >&2; exit 1; }
 CUTOFF="$(echo "$CUT_LINE" | awk '{print $2}')"
 PREV_CUTOFF="$(echo "$CUT_LINE" | awk '{print $4}')"
 TODAY="$(date -u +%Y-%m-%d)"
@@ -45,7 +45,7 @@ MANIFEST="$OUT_DIR/MANIFEST-$SECTION.txt"
 REF_TEMPLATE="pilot-2025/$SECTION.md"; [ -f "$REF_TEMPLATE" ] || REF_TEMPLATE="pilot-2025/climate.md"
 ALLOWED="$OUT_FILE $GAPS"
 mkdir -p "$OUT_DIR" "$SESS_DIR"
-GATE="uv run validate.py $OUT_FILE --snapshot $SNAP"
+GATE="uv run $ROOT/validate.py $OUT_FILE --snapshot $SNAP"
 
 # --- 1. snapshot ----------------------------------------------------------------
 {
@@ -55,7 +55,7 @@ GATE="uv run validate.py $OUT_FILE --snapshot $SNAP"
 	echo "ledger_commit: $(git rev-parse HEAD)  (the snapshot is the ledger at this commit, as of the cutoff)"
 	tool_versions
 } > "$MANIFEST"
-uv run ledger.py snapshot "$OUT_DIR" "$SECTION"
+uv run $ROOT/ledger.py snapshot "$OUT_DIR" "$SECTION"
 commit "$OUT_DIR $SECTION: bulletin snapshot (cutoff $CUTOFF)" "$MANIFEST" "$SNAP"
 
 # --- 2. draft -------------------------------------------------------------------------
@@ -66,9 +66,9 @@ $OUT_FILE.
 SOURCE OF FACTS: ONLY the ledger snapshot $SNAP (read ALL of it). It is the
 ledger as of the cutoff $CUTOFF. Do no web research, and add nothing from
 memory. Also read:
-- ./README.md: the "$SECTION" endeavor, i.e. KPI, milestones and challenges;
+- $ROOT/README.md: the "$SECTION" endeavor, i.e. KPI, milestones and challenges;
 - $REF_TEMPLATE: the reference FORMAT (not content);
-- DESIGN.md §2 and §5.
+- $ROOT/DESIGN.md §2 and §5.
 Snapshot parts:
 - new_events: this period's news (published after $PREV_CUTOFF).
 - background_events: earlier context, including verification=legacy records from
@@ -87,12 +87,12 @@ STRUCTURE (follow the reference format):
     flagged, never presented as a trend). Give year_ago where provided.
   - Include 1-2 trend charts rendered FROM THE LEDGER, pasted verbatim, keeping
     their "%% kpi:" line. You may edit only the title and y-axis label. E.g.:
-        uv run kpi.py chart $OUT_DIR $SECTION <metric> --since <YYYY> --label year [--match '*-05']
+        uv run $ROOT/kpi.py chart $OUT_DIR $SECTION <metric> --since <YYYY> --label year [--match '*-05']
     Choose metrics from chartable_metrics. Use a single granularity (--match for
     one month per year) and about 10-15 points.
 - Milestone Status: one subsection per README milestone, using the assessment
   status (green 🟢, yellow 🟡, red 🔴, achieved ✅), its label (the verdict word
-  first, e.g. "Off track", as defined in ./STATUS.md) and rationale, and what
+  first, e.g. "Off track", as defined in $ROOT/STATUS.md) and rationale, and what
   changed since the previous assessment. Mark it "Not yet assessed" if it has
   none. Add the relevant new events. Show the KPI assessment the same way in
   the KPI Dashboard, and add a one-line status legend from STATUS.md: KPI

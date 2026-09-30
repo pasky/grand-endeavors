@@ -1,5 +1,5 @@
 #!/bin/sh
-# Grand Endeavors — GATHER: grow the ledger for one section (DESIGN.md §4).
+# Grand Endeavors — GATHER: grow the ledger for one section ($ROOT/DESIGN.md §4).
 # =============================================================================
 # Data gathering runs on its own schedule, independent of bulletins. Each run
 # covers a publication window [SINCE, UNTIL] and:
@@ -42,7 +42,7 @@ case "${SINCE:-}$UNTIL$OVERLAP_DAYS" in *[!0-9-]*) echo "ERROR: SINCE/UNTIL must
 if [ -n "${SINCE:-}" ] && [ "$UNTIL" \< "$SINCE" ]; then echo "ERROR: SINCE $SINCE after UNTIL $UNTIL" >&2; exit 1; fi
 item_since() {  # window start for one watch item
 	if [ -n "${SINCE:-}" ]; then echo "$SINCE"; return; fi
-	last="$(uv run ledger.py state "$SECTION" --get-item "$1")"
+	last="$(uv run $ROOT/ledger.py state "$SECTION" --get-item "$1")"
 	if [ -n "$last" ]; then date -u -d "$last - $OVERLAP_DAYS days" +%Y-%m-%d
 	else date -u -d "$UNTIL - 7 days" +%Y-%m-%d; fi
 }
@@ -63,19 +63,19 @@ echo ">>> [$RUN_NAME] until $UNTIL, staging $STAGE"
 RUN_START="$(git rev-parse HEAD)"
 
 # --- 1. collect (deterministic) -------------------------------------------------
-collector="collectors/$(echo "$SECTION" | tr - _).py"
+collector="$ROOT/collectors/$(echo "$SECTION" | tr - _).py"
 if [ -f "$collector" ] && [ -z "${SKIP_COLLECT:-}" ]; then
 	echo ">>> [$RUN_NAME] collect ($collector)"
-	sh collectors/run.sh "$SECTION"
+	sh "$ROOT/collectors/run.sh" "$SECTION"
 	commit "gather $SECTION: collect ($collector, $TODAY)" $LEDGER_PATHS
 fi
 
 # --- 2. intake (one agent per watch item) ------------------------------------------
-RECENT="$(uv run ledger.py recent "$SECTION" --limit 250)"
-REG_TEXT="$(uv run kpi.py registry "$SECTION")"
-# Open questions logged by bulletins' edit stage (DESIGN.md §5): input for intake.
+RECENT="$(uv run $ROOT/ledger.py recent "$SECTION" --limit 250)"
+REG_TEXT="$(uv run $ROOT/kpi.py registry "$SECTION")"
+# Open questions logged by bulletins' edit stage ($ROOT/DESIGN.md §5): input for intake.
 GAPS_TEXT="$(cat */gaps/"$SECTION".md 2>/dev/null | grep -E '^[-*] ' | tail -40 || true)"
-uv run ledger.py items "$SECTION" > "$STAGE/items.txt"
+uv run $ROOT/ledger.py items "$SECTION" > "$STAGE/items.txt"
 DONE_ITEMS=""
 while IFS='|' read -r topic name desc <&3; do
 	if [ -n "${ITEMS:-}" ]; then case " $ITEMS " in *" $topic "*) : ;; *) continue ;; esac; fi
@@ -90,7 +90,7 @@ while IFS='|' read -r topic name desc <&3; do
 You are a news-intake researcher for "Grand Endeavors", a live tracker of
 humanity's progress. Section "$SECTION", watch item "$topic" ($name):
   $desc
-Read ./README.md (the "$SECTION" endeavor) and DESIGN.md §2-3 (ledger time
+Read $ROOT/README.md (the "$SECTION" endeavor) and $ROOT/DESIGN.md §2-3 (ledger time
 semantics and the event schema; ledger.py check_event is the validator).
 
 WINDOW: developments whose source was PUBLISHED between $ISINCE and $UNTIL
@@ -121,7 +121,7 @@ OUTPUT (write only these files):
    ("YYYY-MM-DD-slug", date prefix = event date), date, published (YYYY-MM-DD),
    published_basis ("source" if the source states its date, else "seen" =
    today), retrieved ("$TODAY"), kind (achievement|announcement|projection|setback|
-   data|analysis|policy|retraction), topics (valid tags: \`uv run ledger.py topics $SECTION\`;
+   data|analysis|policy|retraction), topics (valid tags: \`uv run $ROOT/ledger.py topics $SECTION\`;
    include "$topic"), claim (ONE self-contained sentence, numbers WITH their exact
    metric scope; distinguish achieved vs announced vs projected), sources
    [{url,title,primary}], significance (1 minor, 2 notable, 3 major; skip trivia),
@@ -129,19 +129,19 @@ OUTPUT (write only these files):
    {"status":"unverified","by":"intake:$RUN_ID","at":"$TODAY"},
    collector "gather:$SECTION/$slug@$RUN_ID".
 2. OPTIONAL $ob: observations of REGISTERED metrics that the sources report
-   (header exactly: $(uv run python -c 'import ledger; print(",".join(ledger.OBS_COLUMNS))')),
+   (header exactly: $(cd "$ROOT" && uv run python -c 'import ledger; print(",".join(ledger.OBS_COLUMNS))')),
    verification "unverified", collector as above, published_basis
-   source|rule|seen per DESIGN.md §2. A genuinely new measure needs a new
+   source|rule|seen per $ROOT/DESIGN.md §2. A genuinely new measure needs a new
    row in $REGISTRY with a precise definition (never edit existing rows).
 Validate until 0 errors:
-    uv run ledger.py lint $SECTION --events $ev $( [ -f "$ob" ] && echo "--obs $ob" )
+    uv run $ROOT/ledger.py lint $SECTION --events $ev $( [ -f "$ob" ] && echo "--obs $ob" )
 (if you wrote $ob, add --obs $ob). Finally list what you recorded, and anything
 important you saw that was published OUTSIDE the window.
 EOF
 )"
 	[ -f "$ev" ] || : > "$ev"
 	lint_obs=""; [ -f "$ob" ] && lint_obs="--obs $ob"   # (lint validates as if merged)
-	uv run ledger.py lint "$SECTION" --events "$ev" $lint_obs \
+	uv run $ROOT/ledger.py lint "$SECTION" --events "$ev" $lint_obs \
 		|| { echo "ERROR: intake $topic staged invalid records ($ev)" >&2; exit 1; }
 done 3< "$STAGE/items.txt"
 
@@ -161,7 +161,7 @@ For EVERY staged record: VISIT its source URL(s) and check that the source reall
 states the claim: the numbers, the metric scope, the event date, the published
 date (and basis), the kind (achieved vs announced vs projected), and that it
 falls in its item's window (published <= $UNTIL). Check it is not a duplicate of an existing ledger event
-(\`uv run ledger.py recent $SECTION\`). Then edit the staged file in place and set
+(\`uv run $ROOT/ledger.py recent $SECTION\`). Then edit the staged file in place and set
 verification to {"status": "verified"|"corrected"|"rejected", "by":
 "verify:$RUN_ID", "at": "$TODAY", "note": what you checked, what you corrected,
 or why you rejected it}. For observation CSV rows, set the verification column
@@ -174,12 +174,12 @@ For registry changes: the definition must be precise and must not duplicate or
 rename an existing metric. Existing rows must be unchanged. Revert invalid
 additions and reject the rows that use them.
 Validate until 0 errors (no "unverified" may remain):
-    uv run ledger.py lint $SECTION --final --events $staged_ev $( [ -n "$staged_ob" ] && echo "--obs $staged_ob" )
+    uv run $ROOT/ledger.py lint $SECTION --final --events $staged_ev $( [ -n "$staged_ob" ] && echo "--obs $staged_ob" )
 Report counts: verified / corrected / rejected (with reasons).
 EOF
 )"
 	# parsed check (not grep): every staged record must now be verified/corrected/rejected
-	uv run ledger.py lint "$SECTION" --final --events $staged_ev $( [ -n "$staged_ob" ] && echo "--obs $staged_ob" ) \
+	uv run $ROOT/ledger.py lint "$SECTION" --final --events $staged_ev $( [ -n "$staged_ob" ] && echo "--obs $staged_ob" ) \
 		|| { echo "ERROR: verify left unverified or invalid records in $STAGE" >&2; exit 1; }
 fi
 
@@ -187,20 +187,20 @@ fi
 # ONE merge of all staged files: the whole proposed state is validated first,
 # nothing is written on error, and a re-run after a crash is a no-op replay.
 if [ -n "$staged_ev$staged_ob" ]; then
-	uv run ledger.py merge "$SECTION" --events $staged_ev $( [ -n "$staged_ob" ] && echo "--obs $staged_ob" )
+	uv run $ROOT/ledger.py merge "$SECTION" --events $staged_ev $( [ -n "$staged_ob" ] && echo "--obs $staged_ob" )
 fi
-uv run ledger.py check "$SECTION"
+uv run $ROOT/ledger.py check "$SECTION"
 commit "gather $SECTION: merge verified intake (until $UNTIL)" $LEDGER_PATHS
 
 # --- 5. assess (stateless trigger: evidence newer than the latest assessment) -------
 # assess.sh applies STATUS.md (rubric v1) to targets that `ledger.py stale` reports.
-UNTIL="$UNTIL" ALLOW_DIRTY=1 sh ./assess.sh "$SECTION"
+UNTIL="$UNTIL" ALLOW_DIRTY=1 sh "$ROOT/assess.sh" "$SECTION"
 
 # --- 6. state ------------------------------------------------------------------------------------
 n_ev="$(cat $staged_ev /dev/null | grep -c . || true)"
 items_json="$(printf '%s\n' $DONE_ITEMS | sed 's/.*/"&"/' | paste -sd, -)"
-uv run ledger.py state "$SECTION" --record "$(printf '{"run": "%s", "since": "%s", "until": "%s", "items": [%s], "staged_events": %s, "spec_commit": "%s", "pi": "%s"}' \
+uv run $ROOT/ledger.py state "$SECTION" --record "$(printf '{"run": "%s", "since": "%s", "until": "%s", "items": [%s], "staged_events": %s, "spec_commit": "%s", "pi": "%s"}' \
 	"$RUN_ID" "${SINCE:-per-item}" "$UNTIL" "$items_json" "$n_ev" "$RUN_START" "$(pi --version 2>&1 | head -1)")"
-uv run ledger.py check "$SECTION"
+uv run $ROOT/ledger.py check "$SECTION"
 commit "gather $SECTION: state (until $UNTIL, run $RUN_ID)" $LEDGER_PATHS
 echo ">>> done: gather $SECTION until $UNTIL"

@@ -61,7 +61,7 @@ def obs(metric, o, value, published, basis="source", unit="ppm", verification="v
 def fixture():
     """Temp ROOT: README (climate), registry, observations, events, assessments."""
     root = tempfile.mkdtemp()
-    ledger.ROOT = kpi.ROOT = root
+    ledger.ROOT = kpi.ROOT = ledger.DATA = root
     import shutil
     shutil.copy(os.path.join(REAL_ROOT, "README.md"), root)
     write_csv(f"{root}/metrics/climate.csv", kpi.REG_COLUMNS, [

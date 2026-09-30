@@ -11,7 +11,9 @@ section=$1; shift
 cd "$(dirname "$0")/.."
 script="collectors/$(echo "$section" | tr - _).py"
 [ -f "$script" ] || { echo "no collector $script for section '$section'" >&2; exit 2; }
-staged="ledger/staging/$section-collector.csv"
-mkdir -p ledger/staging
+data="${GE_DATA:-$PWD/data}"   # the data repo (DESIGN.md §7); ledger.py reads GE_DATA too
+export GE_DATA="$(cd "$data" && pwd)"
+staged="$GE_DATA/ledger/staging/$section-collector.csv"
+mkdir -p "$GE_DATA/ledger/staging"
 uv run "$script" --out "$staged" "$@"
 uv run ledger.py merge "$section" --obs "$staged"

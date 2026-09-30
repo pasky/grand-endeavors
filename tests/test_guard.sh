@@ -4,7 +4,9 @@
 set -u
 LIB="$(cd "$(dirname "$0")/.." && pwd)/lib.sh"
 FAILS=0
-d=$(mktemp -d)
+m=$(mktemp -d)   # scratch "mechanism" repo: agents may change NOTHING there
+git -C "$m" init -q && echo code > "$m/code.py" && git -C "$m" add . && git -C "$m" commit -qm init
+d=$(mktemp -d)   # scratch data repo (cwd of the stages)
 cd "$d" && git init -q && mkdir -p metrics && printf 'a\nb\n' > metrics/r.csv && echo x > prot.txt \
 	&& echo keep > untracked-before.txt && git add metrics prot.txt && git commit -qm init
 
@@ -20,7 +22,7 @@ t() {
 		cd "$d"
 		sed -n '/^_dirty_hashes()/,$p' "$LIB" > "$d/.lib"
 		. "$d/.lib"
-		RUN_NAME=t; SESS_DIR="$d/.s"; ALLOWED="stage/ metrics/r.csv"; APPEND_ONLY="metrics/r.csv"
+		ROOT="$m"; RUN_NAME=t; SESS_DIR="$d/.s"; ALLOWED="stage/ metrics/r.csv"; APPEND_ONLY="metrics/r.csv"
 		if [ -n "${4:-}" ]; then eval "$4"; fi
 		pi() { eval "$FAKE"; }
 		FAKE="$3"; pi_run st p
@@ -40,7 +42,9 @@ t "pi fails without writes still fails"    block 'return 3'
 BASE='mkdir -p "$d/base"; printf "a\nb\n" > "$d/base/metrics_r.csv"; APPEND_ONLY_BASE="$d/base"; printf "c\n" >> metrics/r.csv'
 t "verifier removes intake's registry addition" pass 'printf "a\nb\n" > metrics/r.csv' "$BASE"
 t "verifier cannot edit a baseline row"          block 'printf "a\n" > metrics/r.csv' "$BASE"
+t "agent edits the mechanism repo (code)"        block 'echo hacked >> "$ROOT/code.py"'
+git -C "$m" checkout -q -- code.py
 
-rm -rf "$d"
+rm -rf "$d" "$m"
 echo "$FAILS failure(s)"
 [ "$FAILS" = 0 ]

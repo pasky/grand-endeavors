@@ -120,7 +120,8 @@ def _period_date(name: str) -> dt.date:
 
 
 def registry_path(section: str) -> str:
-    return os.path.join(ROOT, "metrics", f"{section}.csv")
+    import ledger  # ledger.DATA is the single source of truth for the data repo location
+    return os.path.join(ledger.DATA, "metrics", f"{section}.csv")
 
 
 def load_registry(section: str) -> tuple[dict[str, dict] | None, list[str]]:
@@ -128,7 +129,7 @@ def load_registry(section: str) -> tuple[dict[str, dict] | None, list[str]]:
     '_req'/'_ret' dates (None when unset or invalid)."""
     path = registry_path(section)
     if not os.path.exists(path):
-        return None, [f"no metric registry {os.path.relpath(path, ROOT)} (create it: one row per metric, see kpi.py docstring)"]
+        return None, [f"no metric registry {os.path.relpath(path, __import__('ledger').DATA)} (create it: one row per metric, see kpi.py docstring)"]
     errs, reg = [], {}
     with open(path, newline="", encoding="utf-8") as f:
         r = csv.DictReader(f)

@@ -32,8 +32,11 @@ set -eu
 OUT_DIR="${1:?usage: roundup.sh <out-dir>}"
 OUT_DIR="${OUT_DIR%/}"
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
-cd "$ROOT"
+ROOT="$(cd "$(dirname "$0")" && pwd)"   # mechanism repo (code, README)
+D="$(cd "${GE_DATA:-$ROOT/data}" 2>/dev/null && pwd)" \
+	|| { echo "ERROR: data repo not found at ${GE_DATA:-$ROOT/data} (set GE_DATA)" >&2; exit 1; }
+export GE_DATA="$D"
+cd "$D"                                  # period dirs live in the data repo (DESIGN.md §7)
 
 PERIOD="${OUT_DIR#pilot-}"
 OUT_FILE="$OUT_DIR/README.md"
@@ -79,7 +82,8 @@ mkdir -p "$SESS_DIR"
 		&& echo "agent_dirty:   no" \
 		|| echo "agent_dirty:   YES (config not pinned — capture settings/extensions to reproduce)"
 	echo "settings_sha:  $(sha256sum "$AGENT_DIR/settings.json" 2>/dev/null | cut -c1-16)"
-	echo "spec_commit:   $(git rev-parse HEAD)  (HEAD at run START; output committed AFTER)"
+	echo "mechanism_commit: $(git -C "$ROOT" rev-parse HEAD)"
+	echo "data_commit:   $(git rev-parse HEAD)  (at run START; output committed AFTER)"
 	echo "inputs (git blob hash of each compiled section):"
 	for s in $present; do
 		# separate assignment so a hashing failure trips set -e (fail closed)
@@ -100,7 +104,7 @@ reporting period "$PERIOD", into $OUT_FILE.
 Inputs:
 - The section reports for this period (the ONLY source of facts): $section_files
   Read each one in full.
-- ./README.md: endeavor definitions, their order, and the short intro text for
+- $ROOT/README.md: endeavor definitions, their order, and the short intro text for
   each endeavor.
 - $REF_TEMPLATE: the structural/formatting reference (the 2025 round-up).
   Follow its format, NOT its content. Its numbers are from a different period.
@@ -145,7 +149,7 @@ HARD RULES:
 Then run the mechanical validator and fix EVERY error it reports. It checks
 that every number in an endeavor block appears in the section file that block
 links to, that every section file is linked, and that the links resolve:
-    uv run validate.py $OUT_FILE --roundup
+    uv run $ROOT/validate.py $OUT_FILE --roundup
 Re-run until it reports 0 errors. Then give a brief summary.
 EOF
 )" </dev/null
@@ -162,7 +166,7 @@ else
 fi
 
 echo ">>> [roundup/$OUT_DIR] validate"
-if ! uv run validate.py "$OUT_FILE" --roundup; then
+if ! uv run $ROOT/validate.py "$OUT_FILE" --roundup; then
 	echo "!!! validation gate reported errors in $OUT_FILE"
 	[ "${STRICT:-1}" = 0 ] || exit 1
 fi

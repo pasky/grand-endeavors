@@ -12,3 +12,6 @@ ledger/staging/
 # derived views (explore.py build/dashboard); rebuilt from the ledger, never committed
 build/
 ledger/.lock-*
+
+# the data repository (separate git repo; see DESIGN.md §7). Override location with GE_DATA.
+data/

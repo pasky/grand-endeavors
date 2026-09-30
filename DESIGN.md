@@ -206,18 +206,29 @@ editorial. The deterministic gates are `ledger.py check` (the ledger itself),
 `kpi.py`/`validate.py` (views), and `test_harness.py` (regression tests of the
 checks themselves).
 
-## 7. Migration from the period pipeline
+## 7. Two repositories: mechanism and data
 
-- Per-period `kpis/<section>.csv` vintages become `ledger/observations`.
-  pilot-2025 rows become `legacy` rows known at the pilot-2025 commit date;
-  pilot-26H1 rows are `verified`, and their publication dates come from the
-  notes or from the `rule` basis.
-- Per-period research notes: pilot-26H1 notes become verified events (they
-  passed review and audit); pilot-2025 sections become `legacy` events.
-  Research notes stop being canonical.
-- `generate.sh` and the per-period `kpis/` stores were retired once `gather.sh`
-  and `bulletin.sh` were proven end to end (first gather run: climate,
-  2026-09-15..28). Both remain in git history.
+- **Mechanism** (this repo): code (`ledger.py`, `kpi.py`, `validate.py`,
+  `explore.py`, collectors), the pipeline scripts and their prompts, the endeavor
+  framework (README.md), the schemas (this file) and the status rubric
+  (STATUS.md). It is reviewed like code.
+- **Data** (`$GE_DATA`, default `./data`, gitignored here; its own git repo):
+  `ledger/`, `metrics/` (registry + KPI assessment specs) and the period
+  directories (bulletins, frozen snapshots, gaps, manifests). The pipeline
+  commits here, one commit per stage. Its history before 2026-09-30 was
+  extracted from this repo with git filter-repo.
+- Scripts run with cwd = the data repo and call the code as `$ROOT/<tool>`. The
+  write-scope guard watches BOTH repos: agents may change only their allowed
+  data paths, and nothing in the mechanism repo. Every manifest and state record
+  stores `mechanism_commit` and `data_commit`, so any output can be traced to
+  the exact code and prompts that produced it.
+- Tests use temporary fixture ledgers (`ledger.DATA` is monkeypatched) and never
+  touch the data repo.
+
+Migration history (2026-09): the per-period `kpis/` vintages became
+`ledger/observations`; the pilot-26H1 notes became verified events; the
+pilot-2025 sections became `legacy` events and assessments; `generate.sh` was
+retired.
 
 ## 8. Known limits / open questions
 

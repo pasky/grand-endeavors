@@ -24,7 +24,7 @@ SESS_DIR="ledger/.sessions"
 ALLOWED="$STAGE/"
 mkdir -p "$STAGE"
 
-TARGETS="$(uv run ledger.py stale "$SECTION" --until "$UNTIL" $( [ "${FORCE:-}" = 1 ] && echo --force ))"
+TARGETS="$(uv run $ROOT/ledger.py stale "$SECTION" --until "$UNTIL" $( [ "${FORCE:-}" = 1 ] && echo --force ))"
 [ -n "$TARGETS" ] || { echo ">>> [$RUN_NAME] nothing to assess"; exit 0; }
 SPEC="$(awk -F, -v s="$SECTION" 'NR==1 || $1==s' metrics/kpi-assessment.csv)"
 case "$SPEC" in *"
@@ -37,17 +37,17 @@ AS="$STAGE/assessments.jsonl"
 
 pi_run assess "$(cat <<EOF
 Assess the status of these "$SECTION" targets as of $UNTIL under the status rubric
-in ./STATUS.md (read it fully; it is binding). Targets (target|assessment id to use):
+in $ROOT/STATUS.md (read it fully; it is binding). Targets (target|assessment id to use):
 $TARGETS
 
 Inputs:
-- README.md: the "$SECTION" KPI and milestone definitions (their literal wording).
+- $ROOT/README.md: the "$SECTION" KPI and milestone definitions (their literal wording).
 - KPI spec (fixed; do not choose your own metric, window or benchmark):
 $SPEC
 - Evidence: the effective events in ledger/events/$SECTION.jsonl with published <= $UNTIL.
   Records superseded via "supersedes" do not count. Legacy (unverified) records may
   inform context but cannot establish 'achieved'. Observations: use
-      uv run ledger.py series $SECTION <metric> --as-of $UNTIL
+      uv run $ROOT/ledger.py series $SECTION <metric> --as-of $UNTIL
   to compute window statistics exactly (show the numbers in basis.window).
 - Previous assessments: ledger/assessments/$SECTION.jsonl (the latest per target
   with made_at <= $UNTIL is "prev").
@@ -60,12 +60,12 @@ target, status (green|yellow|red, or achieved for milestones), label
 "assess:$RUN_ID", rubric "v1", basis (the object STATUS.md specifies for KPI or
 milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ', rubric_correction "v1"' ).
 Validate until 0 errors:
-    uv run ledger.py lint $SECTION --assessments $AS
+    uv run $ROOT/ledger.py lint $SECTION --assessments $AS
 EOF
 )"
 [ -s "$AS" ] || { echo "ERROR: assess wrote no $AS" >&2; exit 1; }
-uv run ledger.py merge "$SECTION" --assessments "$AS"
-uv run ledger.py check "$SECTION"
+uv run $ROOT/ledger.py merge "$SECTION" --assessments "$AS"
+uv run $ROOT/ledger.py check "$SECTION"
 commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo ' (rubric v1 correction)'): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')" \
 	"ledger/assessments/$SECTION.jsonl"
 echo ">>> done: assess $SECTION as of $UNTIL"
