@@ -96,9 +96,42 @@ product. `gather.sh` grows it on its own schedule, and bulletins (`bulletin.sh`,
 - [ ] Publish the explorer (static dashboard and/or Datasette) and point the
       round-up README to it.
 
+## Done (2026-09-30)
+
+- [x] **Status rubric v1** (STATUS.md, co-designed with best mode):
+  - KPI = pace versus need (the level is never scored); milestone = ETA on
+    evidence;
+  - `achieved` and `unknown` statuses, verdict-bound labels, structured basis;
+  - hysteresis enforced by `ledger.py check`; per-KPI specs in
+    `data/metrics/kpi-assessment.csv`;
+  - `assess.sh` (FORCE / CORRECTION).
+
+  All sections were re-assessed under v1 as of 2026-09-30. KPIs that can't be
+  judged now show "Unassessed: <reason>" instead of stale colours.
+- [x] **Data/mechanism split**: `./data` is its own git repo (history kept via
+      filter-repo). Scripts run in it, the guard watches both repos, and
+      manifests record both commits. No GitHub remote exists yet (owner decision
+      below).
+- [x] **Legacy re-verification** of all 577 legacy events (research-mode
+      subagents): 167 verified + 83 corrected (replacements), 5 refuted
+      (withdrawal tombstones), 322 unverifiable (stay legacy). A mechanical
+      figure audit plus a strict quote-per-figure pass removed 17
+      over-verifications. Logs are in `data/ledger/reverify/`.
+
 ## Decisions for the owner
 
-- [ ] **Status rubric**: green/yellow/red have no written definition. For the
+- [ ] **Create the data repo remote** (e.g. `gh repo create pasky/grand-endeavors-data`)
+      and decide public/private. Nothing has been pushed anywhere.
+- [ ] **Blue Collar Shift = achieved?** Under the rubric's literal-wording test,
+      Figure 02's 10-hour shifts at BMW (with support staff) meet README's text.
+      If the intent is an *autonomous* shift, tighten the README wording and
+      reassess.
+- [ ] **Fusion KPI basis**: README's intent ("if all electricity bills go to
+      zero") points to the end-user price. The recommendation is to register a
+      population- or consumption-weighted global household retail price, in
+      real USD/MWh, and keep the wholesale and LCOE series as supporting
+      context. The KPI is unassessed until it is registered.
+- [ ] (superseded by rubric v1; kept for history) **Status rubric**: green/yellow/red have no written definition. For the
       climate KPI, is 🔴 about the *level* (concentration keeps setting records,
       growth far above a 1.5°C pace) or the *direction* (growth rates eased in
       26H1)? The 26H1 edit stage flagged that the 🟡→🔴 downgrade isn't
@@ -109,7 +142,10 @@ product. `gather.sh` grows it on its own schedule, and bulletins (`bulletin.sh`,
 
 ## Next: data quality
 
-- [ ] **Legacy re-verification**: the 577 legacy events were converted from
+- [x] **Legacy re-verification** of events (2026-09-30, see Done). Still open: the
+      322 unverifiable events need retries (archive.org snapshots, alternative
+      sources), and the legacy **observations** (pilot-2025 KPI values) were not
+      re-verified. Earlier note: the 577 legacy events were converted from
       reports, not verified at ingest. The conversion logs flagged report
       defects: source URL/date mismatches, placeholder "2025" dates for undated
       items, and weak mailing-list-root sources. A verify pass per section can
