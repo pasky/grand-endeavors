@@ -464,19 +464,20 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict]) -> lis
     for a in sorted((a for a in ass if _valid_day(a.get("made_at", ""))), key=lambda a: a["made_at"]):  # stable: file order on ties
         by_target.setdefault(a.get("target"), []).append(a)
     for target, recs in by_target.items():
-        corrected = False
         for prev, a in zip(recs, recs[1:]):
             if a.get("rubric") != "v1":
                 continue
             if a.get("rubric_correction") == "v1":
-                if corrected:
-                    errs.append(f"assessment {a['id']}: second rubric_correction v1 for {target}")
-                corrected = True
+                # a correction re-judges a PRE-rubric record; a v1 record is never "corrected"
+                if prev.get("rubric") == "v1":
+                    errs.append(f"assessment {a['id']}: rubric_correction of a record already under rubric v1 "
+                                "(needs newer evidence instead; STATUS.md rule 4)")
                 continue
             if a["status"] != prev["status"] and not any(
                     e in evs and known_at(evs[e]) > day(prev["made_at"]) for e in a.get("evidence") or []):
                 errs.append(f"assessment {a['id']}: status change {prev['status']}->{a['status']} without evidence "
-                            f"published after {prev['made_at']} (STATUS.md hysteresis rule 1)")
+                            f"published after {prev['made_at']} (STATUS.md hysteresis rule 1; a pre-rubric prev "
+                            "may be re-judged with rubric_correction v1)")
         if target == "kpi" and any(a.get("rubric") == "v1" for a in recs) and not kpi_assessment_spec(section):
             errs.append(f"assessment of {section} kpi under rubric v1, but metrics/kpi-assessment.csv has no row for it")
     return errs

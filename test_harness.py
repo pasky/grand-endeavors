@@ -273,9 +273,10 @@ def main():
     case("hysteresis: status change backed by newer evidence passes",
          ledger.check_hysteresis("climate", [prev, dict(flip, evidence=["2026-08-01-late"])], evs2) == [])
     corr = dict(flip, rubric_correction="v1")
-    case("hysteresis: one rubric correction per target is allowed, a second is not",
-         ledger.check_hysteresis("climate", [prev, corr], evs2) == []
-         and has(ledger.check_hysteresis("climate", [prev, corr, dict(corr, id="g", made_at="2026-09-29")], evs2), "second"))
+    pre = {k: v for k, v in prev.items() if k not in ("rubric", "basis")}
+    case("hysteresis: a rubric correction may re-judge a pre-rubric record, never a v1 record",
+         ledger.check_hysteresis("climate", [pre, corr], evs2) == []
+         and has(ledger.check_hysteresis("climate", [prev, corr], evs2), "already under rubric v1"))
     kpi_a = dict(A(id="k", target="kpi", label="Off track: x"), basis={k: "x" for k in ledger.BASIS_KPI})
     case("rubric: KPI assessment needs the section's spec in metrics/kpi-assessment.csv",
          has(ledger.check_hysteresis("climate", [kpi_a], evs2), "kpi-assessment.csv"))

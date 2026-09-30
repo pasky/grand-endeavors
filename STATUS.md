@@ -70,9 +70,11 @@ not choose these; changing one is a reviewed registry edit.
    (milestone). One observation never flips a status.
 3. Reverting to the previous status within 12 months requires naming the
    observation that reversed and why the earlier change was not a transient.
-4. \* Reinterpretation under a new rubric version is allowed once per target and
-   version: `"rubric_correction": "v1"`, with no claim of new evidence, and it
-   must say what the old assessment got wrong.
+4. \* Reinterpretation under a new rubric version: a record whose previous
+   assessment predates this rubric version may re-judge it with
+   `"rubric_correction": "v1"`, with no claim of new evidence; it must say what
+   the old assessment got wrong. A record that is already under v1 is never
+   "corrected": changing it needs newer evidence (rule 1).
 5. Projections alone never change a status; they may inform the label.
 
 ## Label and basis
