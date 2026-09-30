@@ -287,6 +287,17 @@ def main():
     case("hysteresis: a rubric correction may re-judge a pre-rubric record, never a v1 record",
          ledger.check_hysteresis("climate", [pre, corr], evs2) == []
          and has(ledger.check_hysteresis("climate", [prev, corr], evs2), "already under rubric v1"))
+    unk = dict(A(id="u", target="kpi", status="unknown", label="Unassessed: no series"), evidence=[],
+               basis={k: "x" for k in ledger.BASIS_UNKNOWN})
+    case("rubric: 'unknown' needs no evidence and its own basis", ledger.check_assessment(unk, topics, evs) == [])
+    write_csv(f"{kpi.ROOT}/metrics/kpi-assessment.csv", ["section", "assessed_metric", "goal_direction", "trend_window",
+              "pace_benchmark", "benchmark_tier", "benchmark_source"], [["climate", "co2-mlo-annual", "down", "x", "x", "1", "x"]])
+    kb = {k: "x" for k in ledger.BASIS_KPI}
+    kp = dict(A(id="kp", target="kpi", status="yellow", label="Progressing: x", made_at="2025-06-01"), basis=kb)
+    kf = dict(A(id="kf", target="kpi", status="red", label="Regressing: x", made_at="2026-02-01"), basis=kb)
+    case("hysteresis: a KPI status change may rest on a newer observation of its assessed metric",
+         ledger.check_hysteresis("climate", [kp, kf], evs2, ledger.observations("climate")) == [])
+    os.remove(f"{kpi.ROOT}/metrics/kpi-assessment.csv")
     kpi_a = dict(A(id="k", target="kpi", label="Off track: x"), basis={k: "x" for k in ledger.BASIS_KPI})
     case("rubric: KPI assessment needs the section's spec in metrics/kpi-assessment.csv",
          has(ledger.check_hysteresis("climate", [kpi_a], evs2), "kpi-assessment.csv"))

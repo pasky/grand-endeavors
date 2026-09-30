@@ -9,8 +9,10 @@ The status answers one Board question per target type:
 - **Milestone**: on today's evidence, when do we get there?
 
 The absolute level, and the distance to the goal, are REPORTED in the label but
-never SCORED. Values: `green` | `yellow` | `red` for both types, and `achieved`
-for milestones only. No assessment means unknown: never encode ignorance or
+never SCORED. Values: `green` | `yellow` | `red` for both types, `achieved`
+for milestones only, and `unknown` ("Unassessed: <reason>", no evidence needed)
+when the rubric cannot judge a target (no KPI spec, or no series covering the
+window). `unknown` replaces a stale pre-rubric colour; never encode ignorance or
 "mixed" as yellow.
 
 ## KPI (pace vs need)
@@ -65,7 +67,9 @@ not choose these; changing one is a reviewed registry edit.
 ## Hysteresis (\* = enforced by `ledger.py check`)
 
 1. \* A status change needs at least one evidence record with known_at after the
-   previous assessment's made_at, unless it is a rubric correction (rule 4).
+   previous assessment's made_at (for a KPI, a newer observation of its
+   assessed metric also counts), unless it is a rubric correction (rule 4).
+   Moves to or from `unknown` are exempt.
 2. The trigger must hold for a full window (KPI) or be a verified event
    (milestone). One observation never flips a status.
 3. Reverting to the previous status within 12 months requires naming the
@@ -88,6 +92,7 @@ not choose these; changing one is a reviewed registry edit.
   | yellow | Behind pace, Progressing |
   | red | Off track, Stalled, Regressing, Distant, Blocked |
   | achieved | Achieved |
+  | unknown | Unassessed |
 
   The verdict must match the window trend (no "Worsening" when nothing worsened).
 - \* **`rubric`**: "v1".

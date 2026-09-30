@@ -44,10 +44,12 @@ STAGED_VERIF = {"verified", "corrected", "collector", "rejected", "unverified"}
 BASES = {"source", "rule", "seen"}
 OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
                "published_basis", "retrieved", "collector", "verification", "note"]
-ASSESS_STATUS = {"green", "yellow", "red", "achieved"}
+ASSESS_STATUS = {"green", "yellow", "red", "achieved", "unknown"}
 # STATUS.md (rubric v1): verdict words bound to each status
 VERDICTS = {"green": ("Ahead", "On track"), "yellow": ("Behind pace", "Progressing"),
-            "red": ("Off track", "Stalled", "Regressing", "Distant", "Blocked"), "achieved": ("Achieved",)}
+            "red": ("Off track", "Stalled", "Regressing", "Distant", "Blocked"), "achieved": ("Achieved",),
+            "unknown": ("Unassessed",)}
+BASIS_UNKNOWN = {"rule", "reason", "prev", "change_note"}
 BASIS_KPI = {"rule", "assessed_quantity", "window", "benchmark", "benchmark_source",
              "transients_discounted", "data_as_of", "prev", "change_note"}
 BASIS_MILESTONE = {"rule", "eta", "path", "blockers", "prev", "change_note"}
@@ -310,7 +312,7 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
                             + ", ".join(f"'{w}:'" for w in words))
             if len(str(a["label"])) > 100:
                 errs.append(f"{at}: label longer than 100 chars")
-            want = BASIS_KPI if a["target"] == "kpi" else BASIS_MILESTONE
+            want = BASIS_UNKNOWN if a["status"] == "unknown" else BASIS_KPI if a["target"] == "kpi" else BASIS_MILESTONE
             basis = a.get("basis")
             if not isinstance(basis, dict) or want - set(basis):
                 errs.append(f"{at}: basis must be an object with {sorted(want)}"
@@ -321,7 +323,7 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
         errs.append(f"{at}: unknown target '{a['target']}'")
     if not _valid_day(a["made_at"]):
         return errs + [f"{at}: made_at must be a real YYYY-MM-DD date"]
-    if not a["evidence"]:
+    if not a["evidence"] and a["status"] != "unknown":
         errs.append(f"{at}: needs evidence (event ids)")
     for eid in a["evidence"]:
         if eid not in evs:
@@ -456,11 +458,11 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
         if a.get("id") in aids:
             errs.append(f"assessment {a.get('id')}: duplicate id")
         aids.add(a.get("id"))
-    errs += check_hysteresis(section, ass, ids)
+    errs += check_hysteresis(section, ass, ids, obs)
     return errs, warns
 
 
-def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict]) -> list[str]:
+def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: list[dict] | None = None) -> list[str]:
     """STATUS.md rules 1 and 4 for rubric-v1 records: a status change needs evidence
     published after the previous assessment, or a once-per-target rubric correction.
     KPI assessments need the section's fixed spec in metrics/kpi-assessment.csv."""
@@ -478,7 +480,14 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict]) -> lis
                     errs.append(f"assessment {a['id']}: rubric_correction of a record already under rubric v1 "
                                 "(needs newer evidence instead; STATUS.md rule 4)")
                 continue
-            if a["status"] != prev["status"] and not any(
+            if "unknown" in (a["status"], prev["status"]):
+                continue  # 'unknown' is the absence of a judgment, not a status flip
+            newer_obs = False
+            if target == "kpi" and obs:  # a KPI moves on observations of its assessed metric
+                spec = kpi_assessment_spec(section) or {}
+                newer_obs = any(r["metric"] == spec.get("assessed_metric") and tier(r)
+                                and day(prev["made_at"]) < known_at(r) <= day(a["made_at"]) for r in obs)
+            if a["status"] != prev["status"] and not newer_obs and not any(
                     e in evs and known_at(evs[e]) > day(prev["made_at"]) for e in a.get("evidence") or []):
                 errs.append(f"assessment {a['id']}: status change {prev['status']}->{a['status']} without evidence "
                             f"published after {prev['made_at']} (STATUS.md hysteresis rule 1; a pre-rubric prev "
