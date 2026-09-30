@@ -1,0 +1,5 @@
+section,assessed_metric,goal_direction,trend_window,pace_benchmark,benchmark_tier,benchmark_source
+climate,co2-trend-10yr-mlo-jan-dec,down,10 years (ENSO cycle); compare current 10-yr mean vs previous non-overlapping window and half-decade means,2020s mean growth <= 1.79 ppm/yr (upper end of 1.33-1.79 for IPCC C1 1.5C pathways),1,UK Met Office CO2 forecast page citing IPCC AR6 C1 pathways
+robots-software,metr-80-horizon-by-release,up,2 years / >= 4 frontier points,sustain the long-run doubling time (~7 months),3,METR (Kwa et al. 2025) long-run doubling time
+rockets,cost-to-leo-best,down,5 years,long-run decline of the best $/kg (own trend),3,own series (CSIS/JSR-based cost history)
+health,hale-median-country,up,5 years,own pre-2019 long-run trend (compute from the series; for reference WHO global pop-weighted HALE rose ~+0.28 yr/yr 2000-2019),3,WHO Global Health Estimates

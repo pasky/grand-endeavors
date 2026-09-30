@@ -250,6 +250,36 @@ def main():
          (write_jsonl(ledger.path("assessments", "climate"), [dict(a, id="x-9", label="old"), dict(a, id="x-10", label="new")]) or True)
          and ledger.assessment_as_of("climate", until)["milestone:the-bend"]["label"] == "new")
 
+    # --- status rubric v1 (STATUS.md) ----------------------------------------------------------
+    fixture()
+    evs = {e["id"]: e for e in ledger.events("climate")}
+    topics = ledger.valid_topics("climate")
+    base = {"target": "milestone:the-bend", "made_at": "2026-07-14", "rationale": "r", "by": "t",
+            "evidence": ["2026-05-13-gcb-final"], "rubric": "v1",
+            "basis": {"rule": "x", "eta": "x", "path": "x", "blockers": "x", "prev": None, "change_note": "x"}}
+    A = lambda **k: dict(base, id=k.pop("id", "a1"), status=k.pop("status", "red"), label=k.pop("label", "Distant: x"), **k)
+    case("rubric: verdict word must match the status", has(ledger.check_assessment(A(label="Worsening: x"), topics, evs), "verdict"))
+    case("rubric: milestone basis fields are required",
+         has(ledger.check_assessment(A(basis={"rule": "x"}), topics, evs), "basis"))
+    case("rubric: 'achieved' needs a verified achievement event",
+         has(ledger.check_assessment(A(status="achieved", label="Achieved: x"), topics, evs), "achievement"))
+    case("rubric: 'achieved' is for milestones only",
+         has(ledger.check_assessment(A(target="kpi", status="achieved", label="Achieved: x"), topics, evs), "milestones only"))
+    evs2 = dict(evs, **{"2026-08-01-late": ev("2026-08-01-late", "2026-08-01", "A later verified event about emissions peaking globally.")})
+    prev = A(id="p", status="yellow", label="Progressing: x", made_at="2026-07-14")
+    flip = A(id="f", made_at="2026-09-28")
+    case("hysteresis: status change without newer evidence is rejected",
+         has(ledger.check_hysteresis("climate", [prev, flip], evs2), "hysteresis"))
+    case("hysteresis: status change backed by newer evidence passes",
+         ledger.check_hysteresis("climate", [prev, dict(flip, evidence=["2026-08-01-late"])], evs2) == [])
+    corr = dict(flip, rubric_correction="v1")
+    case("hysteresis: one rubric correction per target is allowed, a second is not",
+         ledger.check_hysteresis("climate", [prev, corr], evs2) == []
+         and has(ledger.check_hysteresis("climate", [prev, corr, dict(corr, id="g", made_at="2026-09-29")], evs2), "second"))
+    kpi_a = dict(A(id="k", target="kpi", label="Off track: x"), basis={k: "x" for k in ledger.BASIS_KPI})
+    case("rubric: KPI assessment needs the section's spec in metrics/kpi-assessment.csv",
+         has(ledger.check_hysteresis("climate", [kpi_a], evs2), "kpi-assessment.csv"))
+
     # --- snapshot ---------------------------------------------------------------------
     fixture()
     pdir = f"{kpi.ROOT}/pilot-26H1"

@@ -103,6 +103,15 @@ evidence event must be known by `made_at` (checked), so a retrospective
 assessment ("status as of 14 Jul given what was public then") is honest and
 reproducible. Its `known_at` is `made_at`.
 
+Statuses follow the rubric in **STATUS.md** (v1). KPI status = pace
+toward the goal versus what the goal needs (never the level). Milestone status =
+ETA on evidence, with `achieved` as a terminal status. Records carry `rubric`,
+a structured `basis` and verdict-bound labels. Hysteresis (a status change needs
+newer evidence, or a once-per-target `rubric_correction`) is enforced by
+`ledger.py check`. Each KPI's assessed metric, window and benchmark are fixed in
+`metrics/kpi-assessment.csv`. `assess.sh` runs the assessment stage (called by
+gather.sh; standalone with FORCE=1 / CORRECTION=1 after a rubric change).
+
 `legacy` records were converted from the pilot-2025 reports. They are useful
 history, but they were not verified at ingest. Views flag them, and bulletins
 may use them only as background context, never as this period's news.

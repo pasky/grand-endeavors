@@ -41,7 +41,22 @@ STAGED_VERIF = {"verified", "corrected", "collector", "rejected", "unverified"}
 BASES = {"source", "rule", "seen"}
 OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
                "published_basis", "retrieved", "collector", "verification", "note"]
-ASSESS_STATUS = {"green", "yellow", "red"}
+ASSESS_STATUS = {"green", "yellow", "red", "achieved"}
+# STATUS.md (rubric v1): verdict words bound to each status
+VERDICTS = {"green": ("Ahead", "On track"), "yellow": ("Behind pace", "Progressing"),
+            "red": ("Off track", "Stalled", "Regressing", "Distant", "Blocked"), "achieved": ("Achieved",)}
+BASIS_KPI = {"rule", "assessed_quantity", "window", "benchmark", "benchmark_source",
+             "transients_discounted", "data_as_of", "prev", "change_note"}
+BASIS_MILESTONE = {"rule", "eta", "path", "blockers", "prev", "change_note"}
+
+
+def kpi_assessment_spec(section: str) -> dict | None:
+    """metrics/kpi-assessment.csv row for a section (STATUS.md: fixed per KPI)."""
+    p = os.path.join(ROOT, "metrics", "kpi-assessment.csv")
+    if not os.path.exists(p):
+        return None
+    with open(p, newline="", encoding="utf-8") as f:
+        return next((r for r in csv.DictReader(f) if r["section"] == section), None)
 EVENT_ID_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*$")
 DATE_RE = re.compile(r"^\d{4}(-\d{2}(-\d{2})?)?$")
 DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -268,11 +283,35 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
     errs = [f"{at}: missing '{k}'" for k in need if k not in a]
     if errs:
         return errs
-    extra = set(a) - set(need) - {"evidence_digest", "_line"}
+    extra = set(a) - set(need) - {"evidence_digest", "rubric", "basis", "rubric_correction", "_line"}
     if extra:
         errs.append(f"{at}: unknown field(s) {sorted(extra)}")
     if a["status"] not in ASSESS_STATUS:
-        errs.append(f"{at}: status must be green/yellow/red")
+        errs.append(f"{at}: status must be one of {sorted(ASSESS_STATUS)}")
+    if a["status"] == "achieved":
+        if not str(a["target"]).startswith("milestone:"):
+            errs.append(f"{at}: 'achieved' is for milestones only")
+        elif not any(evs.get(e, {}).get("kind") == "achievement"
+                     and evs.get(e, {}).get("verification", {}).get("status") in ("verified", "corrected")
+                     for e in a.get("evidence") or []):
+            errs.append(f"{at}: 'achieved' needs a verified evidence event of kind 'achievement'")
+    if "rubric" in a:  # STATUS.md rubric v1 (older records have no rubric field)
+        if a["rubric"] != "v1":
+            errs.append(f"{at}: unknown rubric '{a['rubric']}'")
+        else:
+            words = VERDICTS.get(a["status"], ())
+            if not any(str(a["label"]).startswith(w + ":") for w in words):
+                errs.append(f"{at}: label must start with a verdict bound to '{a['status']}': "
+                            + ", ".join(f"'{w}:'" for w in words))
+            if len(str(a["label"])) > 100:
+                errs.append(f"{at}: label longer than 100 chars")
+            want = BASIS_KPI if a["target"] == "kpi" else BASIS_MILESTONE
+            basis = a.get("basis")
+            if not isinstance(basis, dict) or want - set(basis):
+                errs.append(f"{at}: basis must be an object with {sorted(want)}"
+                            + (f" (missing {sorted(want - set(basis))})" if isinstance(basis, dict) else ""))
+            if a.get("rubric_correction") not in (None, "v1"):
+                errs.append(f"{at}: rubric_correction must be 'v1'")
     if a["target"] not in topics - {"beyond"}:
         errs.append(f"{at}: unknown target '{a['target']}'")
     if not _valid_day(a["made_at"]):
@@ -412,7 +451,35 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
         if a.get("id") in aids:
             errs.append(f"assessment {a.get('id')}: duplicate id")
         aids.add(a.get("id"))
+    errs += check_hysteresis(section, ass, ids)
     return errs, warns
+
+
+def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict]) -> list[str]:
+    """STATUS.md rules 1 and 4 for rubric-v1 records: a status change needs evidence
+    published after the previous assessment, or a once-per-target rubric correction.
+    KPI assessments need the section's fixed spec in metrics/kpi-assessment.csv."""
+    errs = []
+    by_target: dict[str, list[dict]] = {}
+    for a in sorted((a for a in ass if _valid_day(a.get("made_at", ""))), key=lambda a: a["made_at"]):  # stable: file order on ties
+        by_target.setdefault(a.get("target"), []).append(a)
+    for target, recs in by_target.items():
+        corrected = False
+        for prev, a in zip(recs, recs[1:]):
+            if a.get("rubric") != "v1":
+                continue
+            if a.get("rubric_correction") == "v1":
+                if corrected:
+                    errs.append(f"assessment {a['id']}: second rubric_correction v1 for {target}")
+                corrected = True
+                continue
+            if a["status"] != prev["status"] and not any(
+                    e in evs and known_at(evs[e]) > day(prev["made_at"]) for e in a.get("evidence") or []):
+                errs.append(f"assessment {a['id']}: status change {prev['status']}->{a['status']} without evidence "
+                            f"published after {prev['made_at']} (STATUS.md hysteresis rule 1)")
+        if target == "kpi" and any(a.get("rubric") == "v1" for a in recs) and not kpi_assessment_spec(section):
+            errs.append(f"assessment of {section} kpi under rubric v1, but metrics/kpi-assessment.csv has no row for it")
+    return errs
 
 
 def check_section(section: str) -> tuple[list[str], list[str]]:
@@ -559,7 +626,7 @@ def evidence_digest(section: str, target: str, when: dt.date) -> str:
     return hashlib.sha1("\n".join(items).encode()).hexdigest()[:16]
 
 
-def stale_targets(section: str, until: dt.date) -> list[tuple[str, str]]:
+def stale_targets(section: str, until: dt.date, force: bool = False) -> list[tuple[str, str]]:
     """Assessment targets (kpi + milestones) needing a (re)assessment as of `until`:
     never assessed, or their evidence digest changed since the latest assessment
     (assessments without a digest: evidence published after made_at). Returns
@@ -583,7 +650,7 @@ def stale_targets(section: str, until: dt.date) -> list[tuple[str, str]]:
                 reg = kpi.load_registry(section)[0] or {}
                 req = {m for m, row in reg.items() if kpi.required_active(row, until)}
                 newer = any(r["metric"] in req and tier(r) and since < known_at(r) <= until for r in observations(section))
-        if newer:
+        if newer or force:
             base = f"{until}-{t.replace(':', '-')}"
             aid, n = base, 1
             while aid in ids:
@@ -957,6 +1024,9 @@ def main() -> int:
     cu = sub.add_parser("cutoff"); cu.add_argument("period")
     it = sub.add_parser("items"); it.add_argument("section", choices=SECTIONS)
     sta = sub.add_parser("stale"); sta.add_argument("section", choices=SECTIONS); sta.add_argument("--until", required=True)
+    sta.add_argument("--force", action="store_true", help="all targets (e.g. after a rubric change)")
+    se = sub.add_parser("series"); se.add_argument("section", choices=SECTIONS); se.add_argument("metric")
+    se.add_argument("--as-of", required=True)
     stt = sub.add_parser("state"); stt.add_argument("section", choices=SECTIONS)
     stt.add_argument("--get-item", help="last_until of one watch item"); stt.add_argument("--record", help="JSON object of a finished run")
     s = sub.add_parser("snapshot"); s.add_argument("period_dir"); s.add_argument("section", choices=SECTIONS)
@@ -997,8 +1067,14 @@ def main() -> int:
             for topic, name, desc in readme_items(a.section):
                 print(f"{topic}|{name}|{desc}")
         elif a.cmd == "stale":
-            for target, aid in stale_targets(a.section, day(a.until)):
+            for target, aid in stale_targets(a.section, day(a.until), a.force):
                 print(f"{target}|{aid}")
+        elif a.cmd == "series":
+            import kpi
+            t = obs_as_of(a.section, day(a.as_of))
+            for (m, o), r in sorted(t.items(), key=lambda kv: kpi.obs_range(kv[0][1])[0]):
+                if m == a.metric:
+                    print(f"{o},{r['value']},{r['verification']},{r['published']}")
         elif a.cmd == "state":
             p = path("state", a.section)
             st = json.load(open(p)) if os.path.exists(p) else {"section": a.section, "items": {}, "runs": []}

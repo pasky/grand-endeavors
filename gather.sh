@@ -193,33 +193,8 @@ uv run ledger.py check "$SECTION"
 commit "gather $SECTION: merge verified intake (until $UNTIL)" $LEDGER_PATHS
 
 # --- 5. assess (stateless trigger: evidence newer than the latest assessment) -------
-STALE="$(uv run ledger.py stale "$SECTION" --until "$UNTIL")"
-if [ -n "$STALE" ]; then
-	AS="$STAGE/assessments.jsonl"
-	pi_run assess "$(cat <<EOF
-Re-assess the status of these "$SECTION" targets as of $UNTIL. They have
-evidence that is newer than their latest assessment, or they have never been
-assessed. Format per line: target|assessment id to use:
-$STALE
-(README.md defines the KPI and milestones.) Evidence = the effective ledger
-events in ledger/events/$SECTION.jsonl (records superseded via "supersedes" do
-not count; legacy records may be used as context) with published <= $UNTIL. For
-the KPI, the observations in ledger/observations/$SECTION.csv also count.
-Current assessments are in ledger/assessments/$SECTION.jsonl. Keep the status
-unless the evidence justifies a change, and say what changed.
-Write $AS: one JSON per line, fields exactly: id (EXACTLY as given above),
-target, status green|yellow|red, label (short wording), made_at "$UNTIL",
-rationale (2-4 sentences, evidence-grounded, metric scopes exact), evidence
-[event ids], by "assess:$RUN_ID".
-Validate until 0 errors:
-    uv run ledger.py lint $SECTION --assessments $AS
-EOF
-)"
-	if [ -s "$AS" ]; then
-		uv run ledger.py merge "$SECTION" --assessments "$AS"
-		commit "gather $SECTION: assess (as of $UNTIL): $(echo "$STALE" | cut -d'|' -f1 | tr '\n' ' ')" $LEDGER_PATHS
-	fi
-fi
+# assess.sh applies STATUS.md (rubric v1) to targets that `ledger.py stale` reports.
+UNTIL="$UNTIL" ALLOW_DIRTY=1 sh ./assess.sh "$SECTION"
 
 # --- 6. state ------------------------------------------------------------------------------------
 n_ev="$(cat $staged_ev /dev/null | grep -c . || true)"

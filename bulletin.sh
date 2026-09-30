@@ -91,9 +91,13 @@ STRUCTURE (follow the reference format):
     Choose metrics from chartable_metrics. Use a single granularity (--match for
     one month per year) and about 10-15 points.
 - Milestone Status: one subsection per README milestone, using the assessment
-  status (green 🟢, yellow 🟡, red 🔴), its label and rationale, and what changed
-  since the previous assessment. Mark it "Not yet assessed" if it has none. Add
-  the relevant new events.
+  status (green 🟢, yellow 🟡, red 🔴, achieved ✅), its label (the verdict word
+  first, e.g. "Off track", as defined in ./STATUS.md) and rationale, and what
+  changed since the previous assessment. Mark it "Not yet assessed" if it has
+  none. Add the relevant new events. Show the KPI assessment the same way in
+  the KPI Dashboard, and add a one-line status legend from STATUS.md: KPI
+  status = pace versus what the goal needs, not the level; milestone status =
+  ETA on evidence.
 - Open Challenges: one subsection per README challenge, covering its new events.
   If there are none, write "No significant developments this period." (Name every
   challenge and milestone exactly as README does.)
