@@ -103,7 +103,7 @@ Energy is the key limiting factor of the material world. It does not have to be.
 
 Some people long for immortality, others would just prefer not to die (or live a low-quality life) *yet*. The biggest symbol for fixing this is our journey to cure cancer, but the fight against other diseases such as Alzheimer's (or potential pandemics), as well as perfected early diagnostics, are just as important. And to achieve not just plain longevity, but long healthy lifespan, eventually we need to move further — to evolve our biology, not just fight off diseases.
 
-**KPI:** Median country Healthy Life Expectancy (HALE) at birth (years) — currently ~72y (WHO 2021)
+**KPI:** Median country Healthy Life Expectancy (HALE) at birth (years) — currently ~63y (WHO GHE 2021; ~72y is median *life expectancy*, not HALE)
 
 **Milestone Countdown:**
 *   **Taming Cancer:** 80% of all solid tumor cases reach 10-year survival — metastatic cancer becomes a chronic, manageable condition.
