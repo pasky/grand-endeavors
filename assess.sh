@@ -9,6 +9,8 @@
 #         FORCE=1            assess ALL targets (kpi + milestones), not just stale ones
 #         CORRECTION=1       records are rubric corrections (STATUS.md rule 4:
 #                            once per target per rubric version, no new-evidence claim)
+#         DEFCHANGE=<commit> the README definition of the targets changed in that
+#                            mechanism commit (STATUS.md rule 6)
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
@@ -30,6 +32,9 @@ SPEC="$(awk -F, -v s="$SECTION" 'NR==1 || $1==s' metrics/kpi-assessment.csv)"
 case "$SPEC" in *"
 $SECTION,"*) : ;; *) SPEC="(no KPI spec for $SECTION: do NOT assess its 'kpi' target; skip it)" ;; esac
 CORR=""
+[ -n "${DEFCHANGE:-}" ] && CORR="The README definition of these targets changed in mechanism commit $DEFCHANGE
+(see: git -C $ROOT show $DEFCHANGE -- README.md). Set \"definition_change\": \"$DEFCHANGE\"
+on every record and judge the evidence against the NEW wording only (STATUS.md rule 6)."
 [ "${CORRECTION:-}" = 1 ] && CORR='Set "rubric_correction": "v1" on every record: these re-judge the existing
 evidence under the new rubric (no new-evidence claim). The change_note must
 say what the previous assessment got wrong under STATUS.md.'

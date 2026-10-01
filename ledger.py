@@ -290,7 +290,7 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
     errs = [f"{at}: missing '{k}'" for k in need if k not in a]
     if errs:
         return errs
-    extra = set(a) - set(need) - {"evidence_digest", "rubric", "basis", "rubric_correction", "_line"}
+    extra = set(a) - set(need) - {"evidence_digest", "rubric", "basis", "rubric_correction", "definition_change", "_line"}
     if extra:
         errs.append(f"{at}: unknown field(s) {sorted(extra)}")
     if a["status"] not in ASSESS_STATUS:
@@ -474,6 +474,8 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
         for prev, a in zip(recs, recs[1:]):
             if a.get("rubric") != "v1":
                 continue
+            if a.get("definition_change"):
+                continue  # STATUS.md rule 6: README wording changed -> fresh judgment
             if a.get("rubric_correction") == "v1":
                 # a correction re-judges a PRE-rubric record; a v1 record is never "corrected"
                 if prev.get("rubric") == "v1":

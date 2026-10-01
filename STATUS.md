@@ -80,6 +80,10 @@ not choose these; changing one is a reviewed registry edit.
    the old assessment got wrong. A record that is already under v1 is never
    "corrected": changing it needs newer evidence (rule 1).
 5. Projections alone never change a status; they may inform the label.
+6. \* A change of a target's README definition permits one re-assessment of that
+   target that ignores rules 1-4 and the terminality of `achieved`. It sets
+   `"definition_change": "<mechanism commit of the README change>"` and
+   judges the evidence against the new wording.
 
 ## Label and basis
 
