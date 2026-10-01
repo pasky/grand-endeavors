@@ -269,6 +269,8 @@ def main():
             "basis": {"rule": "x", "eta": "x", "path": "x", "blockers": "x", "prev": None, "change_note": "x"}}
     A = lambda **k: dict(base, id=k.pop("id", "a1"), status=k.pop("status", "red"), label=k.pop("label", "Distant: x"), **k)
     case("rubric: verdict word must match the status", has(ledger.check_assessment(A(label="Worsening: x"), topics, evs), "verdict"))
+    case("rubric: a 'Stale (data to YYYY): ' prefix before the verdict is allowed",
+         ledger.check_assessment(A(label="Stale (data to 2021): Distant: x"), topics, evs) == [])
     case("rubric: milestone basis fields are required",
          has(ledger.check_assessment(A(basis={"rule": "x"}), topics, evs), "basis"))
     case("rubric: 'achieved' needs a verified achievement event",

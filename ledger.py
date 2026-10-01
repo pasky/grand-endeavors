@@ -307,7 +307,8 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
             errs.append(f"{at}: unknown rubric '{a['rubric']}'")
         else:
             words = VERDICTS.get(a["status"], ())
-            if not any(str(a["label"]).startswith(w + ":") for w in words):
+            verdict_part = re.sub(r"^Stale \(data to \d{4}(-\d{2})?\): ", "", str(a["label"]))  # STATUS.md stale prefix
+            if not any(verdict_part.startswith(w + ":") for w in words):
                 errs.append(f"{at}: label must start with a verdict bound to '{a['status']}': "
                             + ", ".join(f"'{w}:'" for w in words))
             if len(str(a["label"])) > 100:

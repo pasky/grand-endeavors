@@ -44,8 +44,9 @@ not choose these; changing one is a reviewed registry edit.
   scheduled observation confirms it, or when that observation is overdue by more
   than one cadence plus the release lag.
 - **Stale or missing data**: data_as_of = the latest effective observation. If
-  made_at − data_as_of > 2 cadences + lag, the label starts "Stale (data to
-  YYYY):" and the status is carried. With no registered series covering the
+  made_at − data_as_of > 2 cadences + lag (for irregular series: more than 3
+  years), the label starts "Stale (data to YYYY): " followed by the verdict,
+  and the status is carried. With no registered series covering the
   window there is no KPI assessment; narrative cannot substitute for numbers.
 
 ## Milestone (ETA on evidence)
