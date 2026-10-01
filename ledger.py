@@ -648,7 +648,8 @@ def stale_targets(section: str, until: dt.date, force: bool = False) -> list[tup
     never assessed, or their evidence digest changed since the latest assessment
     (assessments without a digest: evidence published after made_at). Returns
     [(target, next free assessment id)]."""
-    valid = sorted(t for t in valid_topics(section) if t == "kpi" or t.startswith("milestone:"))
+    valid = sorted(t for t in valid_topics(section) if t.startswith("milestone:")
+                   or (t == "kpi" and kpi_assessment_spec(section)))  # no KPI spec => not assessable (STATUS.md)
     current = assessment_as_of(section, until)
     ids = {a["id"] for a in assessments(section)}
     out = []

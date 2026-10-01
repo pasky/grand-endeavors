@@ -52,6 +52,10 @@ $SPEC
 - Previous assessments: ledger/assessments/$SECTION.jsonl (the latest per target
   with made_at <= $UNTIL is "prev").
 $CORR
+If the rubric cannot judge a target (e.g. its KPI series does not cover the
+window), write status "unknown" with the label "Unassessed: <reason>" and the
+basis keys rule, reason, prev and change_note (evidence may be empty). Never
+leave a listed target out.
 
 Write $AS: one JSON object per line with fields exactly: id (EXACTLY as given),
 target, status (green|yellow|red, or achieved for milestones), label
