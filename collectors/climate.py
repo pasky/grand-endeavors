@@ -28,6 +28,9 @@ Choices:
   - Notes flag Scripps-era months (before May 1974), NOAA-interpolated months
     (negative stdev), Maunakea substitute site months (Dec 2022 - Jul 2023) and
     preliminary values (last 12 months / last year of a file; all daily values).
+
+The CLI run (`collectors/run.sh climate`) also stages the Global Carbon Budget emissions
+series (collectors/climate_emissions.py, collector id climate_emissions.py) via collect_all().
 """
 from __future__ import annotations
 
@@ -35,6 +38,7 @@ import datetime as dt
 import sys
 from decimal import Decimal
 
+import climate_emissions
 import common
 
 SECTION = "climate"
@@ -161,5 +165,11 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
     return rows
 
 
+def collect_all(fixture: str | None, today: dt.date, collector: str, existing=()) -> list[dict]:
+    """NOAA CO2 rows + the GCB emissions rows (each with its own collector id)."""
+    return (collect(fixture, today, collector, existing)
+            + climate_emissions.collect(fixture, today, f"collectors/climate_emissions.py@{today}", existing))
+
+
 if __name__ == "__main__":
-    sys.exit(common.main(SECTION, __file__, collect))
+    sys.exit(common.main(SECTION, __file__, collect_all))
