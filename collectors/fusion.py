@@ -25,7 +25,11 @@ country's average household consumption, converted to USD at market rates by GPP
         capture per month; united with the already-cached captures), fetched raw
         (id_), validated, and cached under the cache dir
         (default $GE_DATA/ledger/staging/fusion-cache/; immutable, never refetched).
-  World Bank API: SP.POP.TOTL (all countries, 2014-<run year>) and FP.CPI.TOTL (USA).
+  World Bank API: SP.POP.TOTL (all countries, 2014-<run year>).
+  BLS CPI-U, all items, US city average, not seasonally adjusted (series
+  CUUR0000SA0), official annual averages (period M13) from the BLS flat file
+  https://download.bls.gov/pub/time.series/cu/cu.data.1.AllItems (BLS asks for a
+  User-Agent with a contact address).
 
 Choices:
   - obs = the GPP data quarter (YYYY-Qn): GPP collects quarterly; a month label
@@ -44,8 +48,8 @@ Choices:
     states, or a capture with < MIN_COVERAGE_RATIO of the countries of earlier
     captures, is not used for country prices (truncation).  Country prices above
     PLAUSIBLE_MAX (1 USD/kWh) and documented GPP_ERRATA are excluded and noted.
-  - Real values: x CPI(base) / CPI(obs year), US CPI annual average (World Bank
-    FP.CPI.TOTL), base year 2025; while a year is missing the latest available CPI
+  - Real values: x CPI(base) / CPI(obs year), BLS CPI-U annual average
+    (CUUR0000SA0, M13), base year 2025; while a year is missing the latest available CPI
     year stands in (for the base and/or the obs year) and the note says so.
   - Values in $/MWh (USD/kWh x 1000), rounded half-up to 1 decimal.
   - GPP converts local prices to USD at the exchange rate current when the page is
@@ -81,7 +85,9 @@ CDX = ("http://web.archive.org/cdx/search/cdx?url={}&output=json&fl=timestamp,st
        "&filter=statuscode:200&collapse=timestamp:6")
 WAYBACK = "https://web.archive.org/web/{}id_/{}"
 WB_POP = "https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json&per_page=20000&date=2014:{}"
-WB_CPI = "https://api.worldbank.org/v2/country/USA/indicator/FP.CPI.TOTL?format=json&per_page=200&date=2000:{}"
+BLS_CPI = "https://download.bls.gov/pub/time.series/cu/cu.data.1.AllItems"
+CPI_SERIES = "CUUR0000SA0"  # CPI-U, all items, US city average, NSA
+BLS_USER_AGENT = "grand-endeavors-collector/1 (python-urllib; contact: pasky@ucw.cz)"
 BASE_YEAR = 2025
 # Highest genuine GPP household price seen 2018-2026: Italy 0.783 USD/kWh (Dec 2022).  Larger
 # values are GPP currency-conversion errors (Syria 2.220 in 2025 Q2, Croatia 1.227 in 2022 Q2)
@@ -200,7 +206,8 @@ class Sources:
             if archive:
                 time.sleep(max(0.0, self._last_archive + ARCHIVE_SLEEP - time.time()))
             try:
-                req = urllib.request.Request(url, headers={"User-Agent": common.USER_AGENT})
+                ua = BLS_USER_AGENT if "bls.gov" in url else common.USER_AGENT
+                req = urllib.request.Request(url, headers={"User-Agent": ua})
                 with urllib.request.urlopen(req, timeout=120) as r:
                     raw, final = r.read(), r.geturl()
                 if raw[:2] == b"\x1f\x8b":  # Wayback id_ serves the stored (gzipped) bytes
@@ -305,8 +312,17 @@ def population(records: list[dict]) -> tuple[dict, dict]:
     return pop, names
 
 
-def cpi(records: list[dict]) -> dict[int, Decimal]:
-    return {int(r["date"]): Decimal(str(r["value"])) for r in records if r["value"] is not None}
+def parse_bls_cpi(text: str) -> dict[int, Decimal]:
+    """{year: annual average} of CPI_SERIES from a BLS cu.data.* flat file (tab-separated
+    series_id, year, period, value, footnotes; M13 = BLS's official annual average)."""
+    out = {}
+    for ln in text.splitlines()[1:]:
+        f = [x.strip() for x in ln.split("\t")]
+        if len(f) >= 4 and f[0] == CPI_SERIES and f[2] == "M13":
+            out[int(f[1])] = Decimal(f[3])
+    if not out:
+        raise ValueError(f"no {CPI_SERIES} annual averages (M13) in the BLS file")
+    return out
 
 
 def norm(name: str) -> str:
@@ -352,7 +368,7 @@ def deflate(nominal: Decimal, year: int, cpis: dict[int, Decimal], base: int = B
     last = max(cpis)
     by = base if base in cpis else last
     oy = year if year in cpis else latest_year(cpis, year)
-    note = f"deflated with US CPI annual averages (World Bank FP.CPI.TOTL) {oy} -> {by}"
+    note = f"deflated with BLS CPI-U annual averages ({CPI_SERIES}) {oy} -> {by}"
     flags = []
     if by != base:
         flags.append(f"{base} CPI not yet published, base = {by} CPI (provisional)")
@@ -464,11 +480,11 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=(), ca
         cache = os.path.join(ledger.DATA, "ledger", "staging", "fusion-cache")
     src = Sources(fixture, cache)
     pop_text = src.get("wb-pop.json", WB_POP.format(today.year), fresh=True, validate=parse_wb)
-    cpi_text = src.get("wb-cpi.json", WB_CPI.format(today.year), fresh=True, validate=parse_wb)
+    cpi_text = src.get("bls-cpi.txt", BLS_CPI, fresh=True, validate=parse_bls_cpi)
     if pop_text is None or cpi_text is None:
-        raise SystemExit("fusion: World Bank population/CPI unavailable: " + "; ".join(src.warnings))
+        raise SystemExit("fusion: World Bank population / BLS CPI unavailable: " + "; ".join(src.warnings))
     pop, wb_names = population(parse_wb(pop_text))
-    cpis = cpi(parse_wb(cpi_text))
+    cpis = parse_bls_cpi(cpi_text)
     snaps = snapshots(src, today)
     rows: list[dict] = []
 
@@ -507,11 +523,13 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=(), ca
             cov += "; excluded as GPP data errors: " + ", ".join(rejected)
         nominal = w["mean"] * 1000
         add(M_NOM, obs, common.round_half_up(nominal, 1), s,
-            f"Derived: population-weighted mean of {what}) country prices, USD at GPP market rates; {cov}")
+            f"Derived: population-weighted mean of {what}) country prices, USD at GPP market rates; {cov}; "
+            f"population weights as retrieved on {today} (not as of the capture date)")
         real, dnote = deflate(nominal, year, cpis)
         add(M_REAL, obs, common.round_half_up(real, 1), s,
             f"Derived: population-weighted mean of {what}) country prices, USD at GPP market rates, "
-            f"constant {BASE_YEAR} USD; {dnote}; {cov}")
+            f"constant {BASE_YEAR} USD; {dnote}; {cov}; population weights and CPI as retrieved on {today} "
+            "(not as of the capture date)")
 
     for wmsg in src.warnings + ([f"unmapped/unweighted GPP countries: {', '.join(sorted(unmapped_all))}"]
                                 if unmapped_all else []):

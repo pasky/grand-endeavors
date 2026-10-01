@@ -243,11 +243,19 @@ w = fusion.weighted({"AAA": common.Decimal("0.1"), "BBB": common.Decimal("0.3"),
 case("fusion: weighting = sum(p*pop)/sum(pop), pop of the latest year <= obs year, no-pop countries excluded",
      (w["mean"], w["n"], w["covered"], w["world"], w["pop_years"], w["excluded"])
      == (common.Decimal("0.15"), 2, 4, 8, [2018, 2020], ["ZZZ"]))
-cpi = fusion.cpi(fusion.parse_wb(ffix("wb-cpi.json")))
+cpi = fusion.parse_bls_cpi(ffix("bls-cpi.txt"))
+case("fusion: BLS flat file -> CPI-U CUUR0000SA0 official annual averages (M13 only; monthly/SA series ignored)",
+     (cpi[2019], cpi[2024], cpi[2025], min(cpi), max(cpi))
+     == (common.Decimal("255.657"), common.Decimal("313.689"), common.Decimal("321.943"), 2014, 2025))
+case("fusion: a BLS file without the series' annual averages fails loudly (block page, format change)",
+     _raises(fusion.parse_bls_cpi, "series_id\tyear\tperiod\tvalue\n<html>Access Denied</html>\n"))
 real, dnote = fusion.deflate(common.Decimal(100), 2019, cpi)
-case("fusion: deflation x CPI(base)/CPI(obs year); missing 2025 CPI -> latest year as base, flagged provisional",
-     2025 not in cpi and abs(real - common.Decimal(100) * cpi[2024] / cpi[2019]) < common.Decimal("1e-20")
-     and "base = 2024 CPI (provisional)" in dnote and "2019 -> 2024" in dnote)
+case("fusion: deflation = x CPI2025/CPI(obs year) (BLS CPI-U), no provisional flag when both exist",
+     abs(real - common.Decimal(100) * cpi[2025] / cpi[2019]) < common.Decimal("1e-20")
+     and "2019 -> 2025" in dnote and "CUUR0000SA0" in dnote and "provisional" not in dnote)
+real, dnote = fusion.deflate(common.Decimal(100), 2019, {2019: common.Decimal(100), 2024: common.Decimal(120)})
+case("fusion: missing base-year CPI -> latest year as base, flagged provisional",
+     real == 120 and "base = 2024 CPI (provisional)" in dnote)
 real, dnote = fusion.deflate(common.Decimal(100), 2026, {2019: common.Decimal(100), 2025: common.Decimal(125)})
 case("fusion: obs year without CPI uses the latest earlier CPI year (flagged); base 2025 when present",
      real == 100 and "2026 CPI not yet published, 2025 CPI used" in dnote and "base =" not in dnote)
@@ -294,8 +302,10 @@ hand = popw_by_hand({"IND": 0.074, "CHN": 0.076, "MKD": 0.099, "USA": 0.162, "GB
 case(f"fusion: 2022-Q1 weighted nominal = hand computation ({hand:.2f}); DEU uses its 2021 population (2022 null)",
      fk[(fusion.M_NOM, "2022-Q1")]["value"] == f"{hand:.1f}"
      and "6 countries" in fk[(fusion.M_NOM, "2022-Q1")]["note"] and "2021/2022" in fk[(fusion.M_NOM, "2022-Q1")]["note"])
-case("fusion: real = nominal x CPI2024/CPI2022 (base fallback), rounded to 0.1",
-     abs(float(fk[(fusion.M_REAL, "2022-Q1")]["value"]) - hand * float(cpi[2024] / cpi[2022])) < 0.051)
+case("fusion: real = nominal x CPI2025/CPI2022 (BLS CPI-U), rounded to 0.1; notes say inputs are as retrieved",
+     abs(float(fk[(fusion.M_REAL, "2022-Q1")]["value"]) - hand * float(cpi[2025] / cpi[2022])) < 0.051
+     and "population weights and CPI as retrieved on 2026-09-28" in fk[(fusion.M_REAL, "2022-Q1")]["note"]
+     and "population weights as retrieved on 2026-09-28" in fk[(fusion.M_NOM, "2022-Q1")]["note"])
 case("fusion: coverage note (n, % of world pop) and excluded Taiwan (no WB population)",
      "% of world population" in fk[(fusion.M_REAL, "2022-Q1")]["note"] and "excluded" in fk[(fusion.M_REAL, "2022-Q1")]["note"]
      and "TWN" in fk[(fusion.M_REAL, "2022-Q1")]["note"])
@@ -351,7 +361,9 @@ def fake_net(overrides=None, seen_urls=None):
         if "/cdx/" in url:
             name = "cdx-main.json" if "electricity_prices" in url else "cdx-map.json"
         elif "api.worldbank.org" in url:
-            name = "wb-pop.json" if "SP.POP" in url else "wb-cpi.json"
+            name = "wb-pop.json"
+        elif "download.bls.gov" in url:
+            name = "bls-cpi.txt"
         elif m := _re.search(r"/web/(\d+)id_/", url):
             name = f"wayback-{'map' if '/map/' in url else 'main'}-{m[1]}.html"
         else:
@@ -408,13 +420,13 @@ with tempfile.TemporaryDirectory() as cache:
          and not os.path.exists(os.path.join(cache, "wayback-main-20230106031622.html"))
          and "20221203030135" in c3[(fusion.M_NOM, "2022-Q1")]["source"]       # falls to the next capture (map)
          and "20230205071214" in c3[(fusion.M_NOM, "2022-Q2")]["source"])
-    good_wb = ffix("wb-cpi.json")
+    good_wb = ffix("wb-pop.json")
     s = fusion.Sources(None, cache)
-    s._write("wb-cpi.json", good_wb)
+    s._write("wb-pop.json", good_wb)
     s._download = lambda url, tries=3: ("[{\"message\": \"error\"}]", url)
     case("fusion: a malformed fresh World Bank answer does not overwrite the last good copy",
-         s.get("wb-cpi.json", "https://x.invalid/", fresh=True, validate=fusion.parse_wb) == good_wb
-         and open(os.path.join(cache, "wb-cpi.json")).read() == good_wb)
+         s.get("wb-pop.json", "https://x.invalid/", fresh=True, validate=fusion.parse_wb) == good_wb
+         and open(os.path.join(cache, "wb-pop.json")).read() == good_wb)
 
 case("fusion: a map listing fewer countries than it states is rejected (truncated capture)",
      _raises(fusion.parse_map, ffix("live-map.html").replace("for 8 countries", "for 143 countries")))
