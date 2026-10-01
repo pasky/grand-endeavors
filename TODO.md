@@ -120,8 +120,9 @@ product. `gather.sh` grows it on its own schedule, and bulletins (`bulletin.sh`,
 
 ## Decisions for the owner
 
-- [ ] **Create the data repo remote** (e.g. `gh repo create pasky/grand-endeavors-data`)
-      and decide public/private. Nothing has been pushed anywhere.
+- [x] Data repo published (public): github.com/pasky/grand-endeavors-data
+      (2026-10-01). Pipeline runs don't push yet; scheduling should add
+      `git -C data push` after each run.
 - [ ] **Blue Collar Shift = achieved?** Under the rubric's literal-wording test,
       Figure 02's 10-hour shifts at BMW (with support staff) meet README's text.
       If the intent is an *autonomous* shift, tighten the README wording and

@@ -213,7 +213,9 @@ checks themselves).
   `explore.py`, collectors), the pipeline scripts and their prompts, the endeavor
   framework (README.md), the schemas (this file) and the status rubric
   (STATUS.md). It is reviewed like code.
-- **Data** (`$GE_DATA`, default `./data`, gitignored here; its own git repo):
+- **Data** (`$GE_DATA`, default `./data`, gitignored here; its own git repo,
+  public at github.com/pasky/grand-endeavors-data; set up with
+  `git clone https://github.com/pasky/grand-endeavors-data.git data`):
   `ledger/`, `metrics/` (registry + KPI assessment specs) and the period
   directories (bulletins, frozen snapshots, gaps, manifests). The pipeline
   commits here, one commit per stage. Its history before 2026-09-30 was
@@ -230,6 +232,8 @@ Migration history (2026-09): the per-period `kpis/` vintages became
 `ledger/observations`; the pilot-26H1 notes became verified events; the
 pilot-2025 sections became `legacy` events and assessments; `generate.sh` was
 retired.
+
+Views of the ledger are described in **EXPLORER.md** (the dashboard vs Datasette).
 
 ## 8. Known limits / open questions
 
