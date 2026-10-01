@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.join(ROOT, "collectors"))
 
 import climate  # noqa: E402
 import common  # noqa: E402
+import fusion  # noqa: E402
 import ledger  # noqa: E402
 import robots_software  # noqa: E402
 import rockets  # noqa: E402
@@ -34,6 +35,14 @@ def raises_exit(fn, *a):
     try:
         fn(*a)
     except SystemExit:
+        return True
+    return False
+
+
+def _raises(fn, *a):
+    try:
+        fn(*a)
+    except ValueError:
         return True
     return False
 
@@ -187,6 +196,141 @@ case("jsr: 2025 = 3194.0 t, rule-published 2026-01-15",
 case("jsr: unexpected column layout fails loudly",
      raises_exit(rockets.parse, "# Bin YDate USA Total\n 1 2020 1.0\n"))
 
+# --- fusion (GPP household electricity prices x WB population, US CPI) ------------------------
+FFIX = os.path.join(FIX, "fusion")
+fsrc = fusion.Sources(FFIX, None)
+
+
+def ffix(name):
+    return fsrc.get(name, "https://example.invalid/", fresh=False)
+
+
+img = fusion.parse_main(ffix("wayback-main-20190330190208.html"))
+case("fusion: 2019 image chart parsed (June 2018 -> 2018-Q2, 2-decimal values, names in chart order)",
+     (img["obs"], img["label"], img["fmt"].startswith("graph-img"))
+     == ("2018-Q2", "June 2018", True) and img["prices"][:2] == [("China", "0.08"), ("India", "0.08")]
+     and ("Germany", "0.33") in img["prices"])
+case("fusion: a world average inside an HTML comment is NOT read", img["avg"] is None)
+div = fusion.parse_main(ffix("wayback-main-20221201055133.html"))
+case("fusion: HTML-bar chart parsed (March 2022 -> 2022-Q1, stated world average 0.143, UK row)",
+     (div["obs"], div["avg"], div["fmt"], len(div["prices"])) == ("2022-Q1", "0.143", "graph-div", 7)
+     and dict(div["prices"])["UK"] == "0.333" and dict(div["prices"])["Northern Macedonia"] == "0.099")
+new = fusion.parse_main(ffix("wayback-main-20250706075208.html"))
+case("fusion: 2025+ page: 'Q2 2025 update' average read, multi-year country table ignored",
+     (new["obs"], new["avg"], new["prices"]) == ("2025-Q2", "0.167", []))
+case("fusion: live main page (Q2 2026, world average 0.176)",
+     (lambda p: (p["obs"], p["avg"]))(fusion.parse_main(ffix("live-main.html"))) == ("2026-Q2", "0.176"))
+mp = fusion.parse_map(ffix("wayback-map-20250916083542.html"))
+case("fusion: map page parsed (collected in 2024 Q4, 144 countries stated, ISO3 codes and prices)",
+     (mp["obs"], mp["n_stated"]) == ("2024-Q4", 144) and ("Germany", "DEU", "0.448") in mp["prices"])
+case("fusion: month labels map to their quarter",
+     [fusion.month_obs(m, "2024") for m in ("January", "March", "April", "June", "September", "December")]
+     == ["2024-Q1", "2024-Q1", "2024-Q2", "2024-Q2", "2024-Q3", "2024-Q4"])
+bad = ffix("wayback-main-20221201055133.html").replace("'graph_outside_link'>India</a>", "'graph_outside_link'>India</a><a class='graph_outside_link'>Extra</a>")
+case("fusion: a chart whose names and values do not pair up fails loudly", _raises(fusion.parse_main, bad))
+case("fusion: CDX parse keeps status-200 captures, sorted",
+     fusion.parse_cdx('[["timestamp","statuscode"],["20230101000000","200"],["20220101000000","200"],["20220601000000","404"]]')
+     == ["20220101000000", "20230101000000"])
+
+pop, wbn = fusion.population(fusion.parse_wb(ffix("wb-pop.json")))
+case("fusion: GPP names -> ISO3 (explicit table for mismatches, WB names otherwise; unknown -> None)",
+     [fusion.iso3(n, wbn) for n in ("UK", "N. Macedonia", "Czech Rep.", "UAE", "Germany", "united  states", "Taiwan", "Atlantis")]
+     == ["GBR", "MKD", "CZE", "ARE", "DEU", "USA", "TWN", None])
+case("fusion: name normalisation folds accents/punctuation ('Côte d'Ivoire' = 'cote d ivoire')",
+     fusion.norm("Côte d'Ivoire") == "cote d ivoire" and fusion.norm("Bosnia & Herz.") == "bosnia and herz")
+P = {"AAA": {2020: 3}, "BBB": {2018: 1, 2022: 5}, "WLD": {2018: 10, 2020: 8}}
+w = fusion.weighted({"AAA": common.Decimal("0.1"), "BBB": common.Decimal("0.3"), "ZZZ": common.Decimal("9")}, P, 2020)
+case("fusion: weighting = sum(p*pop)/sum(pop), pop of the latest year <= obs year, no-pop countries excluded",
+     (w["mean"], w["n"], w["covered"], w["world"], w["pop_years"], w["excluded"])
+     == (common.Decimal("0.15"), 2, 4, 8, [2018, 2020], ["ZZZ"]))
+cpi = fusion.cpi(fusion.parse_wb(ffix("wb-cpi.json")))
+real, dnote = fusion.deflate(common.Decimal(100), 2019, cpi)
+case("fusion: deflation x CPI(base)/CPI(obs year); missing 2025 CPI -> latest year as base, flagged provisional",
+     2025 not in cpi and abs(real - common.Decimal(100) * cpi[2024] / cpi[2019]) < common.Decimal("1e-20")
+     and "base = 2024 CPI (provisional)" in dnote and "2019 -> 2024" in dnote)
+real, dnote = fusion.deflate(common.Decimal(100), 2026, {2019: common.Decimal(100), 2025: common.Decimal(125)})
+case("fusion: obs year without CPI uses the latest earlier CPI year (flagged); base 2025 when present",
+     real == 100 and "2026 CPI not yet published, 2025 CPI used" in dnote and "base =" not in dnote)
+real, _ = fusion.deflate(common.Decimal(100), 2020, {2020: common.Decimal(100), 2025: common.Decimal(125)})
+case("fusion: 100 nominal in 2020 = 125 constant-2025 USD at CPI 100 -> 125", real == 125)
+
+frows = fusion.collect(FFIX, TODAY, "collectors/fusion.py@2026-09-28")
+fk = by_key(frows)
+case("fusion: all rows pass ledger.check_obs_row against metrics/fusion.csv", registry_ok("fusion", frows))
+case("fusion: one row per metric and GPP period (earliest capture per period, across both pages)",
+     sorted(o for m, o in fk if m == fusion.M_REAL) == ["2018-Q2", "2022-Q1", "2022-Q2", "2024-Q4", "2025-Q4"]
+     and sorted(o for m, o in fk if m == fusion.M_AVG) == ["2022-Q1", "2022-Q2", "2025-Q2", "2026-Q2"]
+     and len(frows) == len(fk))
+case("fusion: period dedupe picks the EARLIEST capture (June 2022: 2023-01-06, not 2023-02-05 or the 2023-03-23 map)",
+     fk[(fusion.M_NOM, "2022-Q2")]["published"] == "2023-01-06" and "20230106031622" in fk[(fusion.M_NOM, "2022-Q2")]["source"]
+     and fk[(fusion.M_AVG, "2022-Q2")]["value"] == "160.0"
+     and "20221201055133" in fk[(fusion.M_NOM, "2022-Q1")]["source"]
+     and "/map/" in fk[(fusion.M_NOM, "2024-Q4")]["source"])
+r = fk[(fusion.M_REAL, "2022-Q1")]
+case("fusion: archived capture -> published = capture date, basis source, note says first archived",
+     (r["published"], r["published_basis"], r["retrieved"]) == ("2022-12-01", "source", "2026-09-28")
+     and "first archived" in r["note"] and r["source"].startswith("https://web.archive.org/web/20221201055133id_/"))
+r = fk[(fusion.M_REAL, "2025-Q4")]
+case("fusion: live-only period -> basis seen, published = retrieved, live URL",
+     (r["published"], r["published_basis"], r["source"]) == ("2026-09-28", "seen", fusion.MAP)
+     and fk[(fusion.M_AVG, "2026-Q2")]["published_basis"] == "seen")
+
+
+def popw_by_hand(prices, year):
+    """Independent float re-implementation over the fixture population JSON."""
+    import json
+    recs = json.loads(ffix("wb-pop.json"))[1]
+    num = den = 0.0
+    for iso, p in prices.items():
+        ys = [int(x["date"]) for x in recs if x["countryiso3code"] == iso and x["value"] and int(x["date"]) <= year]
+        if ys:
+            v = next(x["value"] for x in recs if x["countryiso3code"] == iso and int(x["date"]) == max(ys))
+            num, den = num + p * v, den + v
+    return num / den * 1000
+
+
+hand = popw_by_hand({"IND": 0.074, "CHN": 0.076, "MKD": 0.099, "USA": 0.162, "GBR": 0.333, "DEU": 0.457}, 2022)
+case(f"fusion: 2022-Q1 weighted nominal = hand computation ({hand:.2f}); DEU uses its 2021 population (2022 null)",
+     fk[(fusion.M_NOM, "2022-Q1")]["value"] == f"{hand:.1f}"
+     and "6 countries" in fk[(fusion.M_NOM, "2022-Q1")]["note"] and "2021/2022" in fk[(fusion.M_NOM, "2022-Q1")]["note"])
+case("fusion: real = nominal x CPI2024/CPI2022 (base fallback), rounded to 0.1",
+     abs(float(fk[(fusion.M_REAL, "2022-Q1")]["value"]) - hand * float(cpi[2024] / cpi[2022])) < 0.051)
+case("fusion: coverage note (n, % of world pop) and excluded Taiwan (no WB population)",
+     "% of world population" in fk[(fusion.M_REAL, "2022-Q1")]["note"] and "excluded" in fk[(fusion.M_REAL, "2022-Q1")]["note"]
+     and "TWN" in fk[(fusion.M_REAL, "2022-Q1")]["note"])
+hand_map = popw_by_hand({c if c != "CRC" else "CRI": float(v) for _, c, v in mp["prices"]}, 2024)
+case(f"fusion: map page Costa Rica code CRC is fixed to ISO3 CRI and weighted ({hand_map:.2f})",
+     fk[(fusion.M_NOM, "2024-Q4")]["value"] == f"{hand_map:.1f}" and "CRC" not in fk[(fusion.M_NOM, "2024-Q4")]["note"])
+case("fusion: gpp-avg = stated USD/kWh x 1000 (0.143 -> 143.0)", fk[(fusion.M_AVG, "2022-Q1")]["value"] == "143.0")
+
+old = [dict(fk[(fusion.M_REAL, "2022-Q1")], value="1.0", retrieved="2026-01-01"),
+       dict(fk[(fusion.M_REAL, "2025-Q4")], value="2.0", published="2026-08-01", retrieved="2026-08-01")]
+rv = by_key(fusion.collect(FFIX, TODAY, "x", old))
+r = rv[(fusion.M_REAL, "2022-Q1")]
+case("fusion: a changed derived value (e.g. population/CPI revision) is a revision dated first seen",
+     (r["published"], r["published_basis"]) == ("2026-09-28", "seen") and "revises effective ledger value 1.0" in r["note"]
+     and "first archived" not in r["note"])
+case("fusion: a live-page-only value is not re-stated while the ledger has the period (no FX churn)",
+     (fusion.M_REAL, "2025-Q4") not in rv and (fusion.M_NOM, "2025-Q4") in rv)
+case("fusion: a re-run against its own output is a no-op (all rows dedup)",
+     all(common.Decimal(a["value"]) == common.Decimal(fk[k]["value"]) and a["published"] == fk[k]["published"]
+         for k, a in by_key(fusion.collect(FFIX, TODAY, "x", frows)).items())
+     and len(fusion.collect(FFIX, TODAY, "x", frows)) == len(frows) - 3)  # the 3 live-only rows are held back
+
+
+class _Down(fusion.Sources):
+    def _download(self, url, tries=3):
+        raise OSError("network down")
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    with open(os.path.join(tmp, "cdx-main.json"), "w") as f:
+        f.write("cached")
+    s = _Down(None, tmp)
+    got = (s.get("cdx-main.json", "https://x.invalid/", fresh=True), s.get("wb-cpi.json", "https://x.invalid/", fresh=True))
+case("fusion: network failure falls back to the cached copy (warned), else None (warned)",
+     got == ("cached", None) and len(s.warnings) == 2 and "cached copy" in s.warnings[0])
+
 # --- revisions (common.mark_revisions) -------------------------------------------------------
 def lrow(obs, value, published, verification="collector", basis="rule", retrieved=None, metric="payload-mass-to-orbit"):
     """A ledger row (only the fields mark_revisions / obs_as_of look at matter)."""
@@ -262,9 +406,10 @@ case("revisions: a re-run against its own output is a no-op (all rows dedup)",
 # --- CLI: staged file loads with the exact ledger header ------------------------------------
 with tempfile.TemporaryDirectory() as tmp:
     ok = True
-    for script, section in (("climate.py", "climate"), ("robots_software.py", "robots-software"), ("rockets.py", "rockets")):
+    for script, section, fix in (("climate.py", "climate", FIX), ("robots_software.py", "robots-software", FIX),
+                                 ("rockets.py", "rockets", FIX), ("fusion.py", "fusion", FFIX)):
         out = os.path.join(tmp, f"{section}.csv")
-        p = subprocess.run([sys.executable, os.path.join(ROOT, "collectors", script), "--fixture", FIX,
+        p = subprocess.run([sys.executable, os.path.join(ROOT, "collectors", script), "--fixture", fix,
                             "--out", out, "--today", "2026-09-28"], capture_output=True, text=True)
         try:
             rows = ledger.load_obs(out)  # raises unless the header is exactly OBS_COLUMNS
