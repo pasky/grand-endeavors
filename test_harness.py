@@ -388,6 +388,36 @@ def main():
     case("pre-freeze snapshots fail explicitly (no silent live-ledger fallback)",
          has(gate(doc), "predates"))
     json.dump(snap, open(sp, "w"))
+
+    # --- footnote / reference-link integrity (CommonMark label semantics) ---------------------
+    def refs(text):
+        validate.ERRORS.clear(); validate.WARNS.clear()
+        prose = validate.strip_code(text)
+        validate.check_footnotes(prose)
+        validate.check_reference_links(prose)
+        return list(validate.ERRORS), list(validate.WARNS)
+    case("refs: duplicate footnote definition is an error",
+         has(refs("A[^a].\n\n[^a]: one\n[^A]: two\n")[0], "[^a] defined 2 times"))
+    case("refs: duplicate reference definition is an error",
+         has(refs("See [x][gcb].\n\n[gcb]: https://a.org\n  [GCB]: https://b.org\n")[0], "defined 2 times"))
+    case("refs: definitions indented up to 3 spaces count",
+         refs("A[^a] and [x][r].\n\n   [^a]: note\n   [r]: https://a.org\n") == ([], []))
+    case("refs: 4-space indent is a code block, not a definition",
+         has(refs("A[^a].\n\n    [^a]: note\n")[0], "[^a] used but never defined"))
+    case("refs: labels match case-insensitively with collapsed whitespace",
+         refs("A[^Note] and [x][Global  Carbon\nBudget].\n\n[^note]: n\n[global carbon budget]: https://a.org\n") == ([], []))
+    case("refs: shortcut [label] counts as a use when defined",
+         refs("Per the [GCB] data.\n\n[gcb]: https://a.org\n") == ([], []))
+    case("refs: unused definition still warns",
+         has(refs("Nothing.\n\n[gcb]: https://a.org\n")[1], "[gcb] never used"))
+    case("refs: footnotes inside inline code are ignored",
+         refs("Write `[^x]` or ``a ` [^y]`` to cite.\n") == ([], []))
+    case("refs: a definition in inline code is not a definition",
+         has(refs("A[^a].\n\n`[^a]: x`\n")[0], "[^a] used but never defined"))
+    case("refs: realistic paragraph has no false positives",
+         refs("CO2 [ppm] rose ([NOAA](https://x.org/a)) in [June 2026], see [chart] below[^1][^2]. "
+              "- [ ] todo, [x] done, ![img](i.png), `[^z]` and arr[0].\n\n"
+              "```\n[^q]\n[a][b]\n```\n\n[^1]: [GCB](https://x.org/g)\n[^2]: Ibid.\n") == ([], []))
     case("URLs with balanced parentheses are extracted whole",
          validate.extract_urls("[x](https://a.org/S0092-8674(25)00284-3).") == ["https://a.org/S0092-8674(25)00284-3"])
 

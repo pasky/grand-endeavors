@@ -37,6 +37,34 @@ def strip_code(text: str) -> str:
     return re.sub(r"```.*?```", "", text, flags=re.DOTALL)
 
 
+def strip_code_spans(text: str) -> str:
+    """Blank inline code spans (CommonMark: a backtick run closed by an equal-length
+    run, within one paragraph). Newlines are kept so line starts stay put."""
+    out, pos = [], 0
+    runs = list(re.finditer(r"`+", text))
+    i = 0
+    while i < len(runs):
+        m = runs[i]
+        if m.start() < pos:
+            i += 1
+            continue
+        close = next((r for r in runs[i + 1:] if len(r.group()) == len(m.group())), None)
+        if close is None or "\n\n" in text[m.end():close.start()]:
+            i += 1  # unmatched run is literal text
+            continue
+        out.append(text[pos:m.start()])
+        out.append(re.sub(r"[^\n]", " ", text[m.start():close.end()]))
+        pos = close.end()
+        i += 1
+    out.append(text[pos:])
+    return "".join(out)
+
+
+def norm_label(label: str) -> str:
+    """CommonMark label matching: case-insensitive, internal whitespace collapsed."""
+    return " ".join(label.split()).casefold()
+
+
 def err(msg: str) -> None:
     ERRORS.append(msg)
 
@@ -46,30 +74,61 @@ def warn(msg: str) -> None:
 
 
 # --- footnote + reference-link integrity ------------------------------------
+# Definitions start a line, indented at most 3 spaces (4+ is an indented code block).
+FN_DEF_RE = re.compile(r"(?m)^ {0,3}(\[\^([^\[\]]*\S[^\[\]]*)\]):")
+FN_USE_RE = re.compile(r"\[\^([^\[\]]*\S[^\[\]]*)\]")
+REF_DEF_RE = re.compile(r"(?m)^ {0,3}(\[([^\[\]^][^\[\]]*)\]):[ \t]*\n?[ \t]*\S")
+REF_LABEL = r"[^\[\]^][^\[\]]*"
+
+
+def _defs(regex: re.Pattern, text: str, kind: str, fmt: str) -> tuple[dict, set]:
+    """-> ({normalized label: display label}, {start offsets of the definitions' brackets})."""
+    seen: dict[str, str] = {}
+    count: dict[str, int] = {}
+    starts = set()
+    for m in regex.finditer(text):
+        if not m.group(2).strip():
+            continue
+        key = norm_label(m.group(2))
+        seen.setdefault(key, m.group(2))
+        count[key] = count.get(key, 0) + 1
+        starts.add(m.start(1))
+    for key, n in count.items():
+        if n > 1:
+            err(f"{kind} {fmt.format(seen[key])} defined {n} times")
+    return seen, starts
+
+
 def check_footnotes(text: str) -> None:
-    # Definitions like:  [^id]: ....   (at line start)
-    defs = set(re.findall(r"(?m)^\[\^([^\]]+)\]:", text))
-    # Any [^id] occurrence; the ones immediately followed by ':' are defs.
-    all_refs = re.findall(r"\[\^([^\]]+)\](:?)", text)
-    used = {rid for rid, colon in all_refs if colon != ":"}
-    for rid in sorted(used - defs):
-        err(f"footnote [^{rid}] used but never defined")
-    for rid in sorted(defs - used):
-        warn(f"footnote [^{rid}] defined but never used")
+    text = strip_code_spans(text)
+    defs, starts = _defs(FN_DEF_RE, text, "footnote", "[^{}]")
+    used = {norm_label(m.group(1)): m.group(1) for m in FN_USE_RE.finditer(text)
+            if m.start() not in starts}
+    for key in sorted(used.keys() - defs.keys()):
+        err(f"footnote [^{used[key]}] used but never defined")
+    for key in sorted(defs.keys() - used.keys()):
+        warn(f"footnote [^{defs[key]}] defined but never used")
 
 
 def check_reference_links(text: str) -> None:
-    # Reference-style definitions:  [label]: url    (label not a footnote ^id)
-    defs = set(re.findall(r"(?m)^\[([^\]^][^\]]*)\]:\s*\S+", text))
-    # Reference-style usages:  [text][label]  and collapsed  [label][].
-    # Require neither bracket to start with '^' so adjacent footnotes like
-    # [^a][^b] are NOT misread as a reference link.
-    used = set(re.findall(r"\[[^\]^][^\]]*\]\[([^\]^][^\]]*)\]", text))
-    used |= set(re.findall(r"\[([^\]^][^\]]*)\]\[\]", text))
-    for label in sorted(used - defs):
-        err(f"reference link [{label}] used but never defined")
-    for label in sorted(defs - used):
-        warn(f"reference link definition [{label}] never used")
+    text = strip_code_spans(text)
+    defs, starts = _defs(REF_DEF_RE, text, "reference link", "[{}]")
+    used: dict[str, str] = {}
+    # Full [text][label] and collapsed [label][] must resolve. Neither bracket may
+    # start with '^', so adjacent footnotes like [^a][^b] are not a reference link.
+    for m in re.finditer(rf"\[({REF_LABEL})\]\[({REF_LABEL})?\]", text):
+        label = m.group(2) if m.group(2) is not None else m.group(1)
+        if label.strip():
+            used.setdefault(norm_label(label), label)
+    for key in sorted(used.keys() - defs.keys()):
+        err(f"reference link [{used[key]}] used but never defined")
+    # Shortcut [label]: only a link when such a definition exists (else plain text).
+    for m in re.finditer(rf"(?<!\])\[({REF_LABEL})\](?![\[(])", text):
+        key = norm_label(m.group(1))
+        if m.start() not in starts and key in defs:
+            used.setdefault(key, m.group(1))
+    for key in sorted(defs.keys() - used.keys()):
+        warn(f"reference link definition [{defs[key]}] never used")
 
 
 # --- mermaid xychart axis/series consistency --------------------------------
@@ -233,7 +292,7 @@ def check_roundup(doc_path: str, text: str) -> None:
 
 
 # --- bulletin vs ledger snapshot -------------------------------------------------
-DEF_LINE_RE = re.compile(r"^\[\^?[^\]]+\]:.*$", re.M)  # footnote / reference definitions
+DEF_LINE_RE = re.compile(r"^ {0,3}\[\^?[^\]]+\]:.*$", re.M)  # footnote / reference definitions
 
 
 def check_snapshot(doc_path: str, text: str, snap_path: str) -> None:
