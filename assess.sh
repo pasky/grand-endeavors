@@ -11,6 +11,7 @@
 #                            once per target per rubric version, no new-evidence claim)
 #         DEFCHANGE=<commit> the README definition of the targets changed in that
 #                            mechanism commit (STATUS.md rule 6)
+#         ONLY="milestone:x kpi"   restrict to these targets
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
@@ -27,6 +28,10 @@ ALLOWED="$STAGE/"
 mkdir -p "$STAGE"
 
 TARGETS="$(uv run $ROOT/ledger.py stale "$SECTION" --until "$UNTIL" $( [ "${FORCE:-}" = 1 ] && echo --force ))"
+if [ -n "${ONLY:-}" ]; then  # restrict to the given targets (space-separated)
+	TARGETS="$(printf '%s\n' "$TARGETS" | while IFS='|' read -r t id; do
+		case " $ONLY " in *" $t "*) echo "$t|$id" ;; esac; done)"
+fi
 [ -n "$TARGETS" ] || { echo ">>> [$RUN_NAME] nothing to assess"; exit 0; }
 SPEC="$(awk -F, -v s="$SECTION" 'NR==1 || $1==s' metrics/kpi-assessment.csv)"
 case "$SPEC" in *"
