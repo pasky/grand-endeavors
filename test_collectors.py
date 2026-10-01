@@ -301,6 +301,15 @@ case("fusion: coverage note (n, % of world pop) and excluded Taiwan (no WB popul
 hand_map = popw_by_hand({c if c != "CRC" else "CRI": float(v) for _, c, v in mp["prices"]}, 2024)
 case(f"fusion: map page Costa Rica code CRC is fixed to ISO3 CRI and weighted ({hand_map:.2f})",
      fk[(fusion.M_NOM, "2024-Q4")]["value"] == f"{hand_map:.1f}" and "CRC" not in fk[(fusion.M_NOM, "2024-Q4")]["note"])
+with tempfile.TemporaryDirectory() as tmp:
+    for f in os.listdir(FFIX):
+        with open(os.path.join(FFIX, f), encoding="utf-8") as a, open(os.path.join(tmp, f), "w", encoding="utf-8") as b:
+            b.write(a.read().replace('"code2":"DEU","price":"0.448"', '"code2":"DEU","price":"2.220"'))
+    gk = by_key(fusion.collect(tmp, TODAY, "x"))
+r = gk[(fusion.M_NOM, "2024-Q4")]
+hand_ok = popw_by_hand({c if c != "CRC" else "CRI": float(v) for _, c, v in mp["prices"] if c != "DEU"}, 2024)
+case("fusion: a price > 1 USD/kWh (GPP conversion error, e.g. Syria 2.220) is excluded and noted",
+     r["value"] == f"{hand_ok:.1f}" and "implausible" in r["note"] and "DEU 2.220" in r["note"])
 case("fusion: gpp-avg = stated USD/kWh x 1000 (0.143 -> 143.0)", fk[(fusion.M_AVG, "2022-Q1")]["value"] == "143.0")
 
 old = [dict(fk[(fusion.M_REAL, "2022-Q1")], value="1.0", retrieved="2026-01-01"),

@@ -36,6 +36,7 @@ Choices:
   - Population weights: World Bank SP.POP.TOTL of the latest year <= obs year.
     Countries without an ISO3 mapping or WB population are excluded and reported;
     the note gives n countries and the share of world (WLD) population covered.
+    Prices above PLAUSIBLE_MAX (1 USD/kWh) are GPP conversion errors: excluded, noted.
   - Real values: x CPI(base) / CPI(obs year), US CPI annual average (World Bank
     FP.CPI.TOTL), base year 2025; while a year is missing the latest available CPI
     year stands in (for the base and/or the obs year) and the note says so.
@@ -76,6 +77,10 @@ WAYBACK = "https://web.archive.org/web/{}id_/{}"
 WB_POP = "https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json&per_page=20000&date=2014:2026"
 WB_CPI = "https://api.worldbank.org/v2/country/USA/indicator/FP.CPI.TOTL?format=json&per_page=200&date=2000:2026"
 BASE_YEAR = 2025
+# Highest genuine GPP household price seen 2018-2026: Italy 0.783 USD/kWh (Dec 2022).  Larger
+# values are GPP currency-conversion errors (Syria 2.220 in 2025 Q2, Croatia 1.227 in 2022 Q2)
+# and would dominate a population-weighted mean; they are excluded and listed in the note.
+PLAUSIBLE_MAX = Decimal("1.0")
 M_REAL = "elec-price-household-world-popw-real"
 M_NOM = "elec-price-household-world-popw-nominal"
 M_AVG = "elec-price-household-gpp-avg"
@@ -358,9 +363,9 @@ def first_by_period(snaps: list[dict], usable) -> dict[str, dict]:
     return out
 
 
-def country_prices(s: dict, wb_names: dict[str, str]) -> tuple[dict[str, Decimal], list[str]]:
-    """({iso3: USD/kWh}, unmapped GPP names) for one capture."""
-    prices, unmapped = {}, []
+def country_prices(s: dict, wb_names: dict[str, str]) -> tuple[dict[str, Decimal], list[str], list[str]]:
+    """({iso3: USD/kWh}, unmapped GPP names, implausible 'ISO3 price' entries) for one capture."""
+    prices, unmapped, implausible = {}, [], []
     for item in s["parsed"]["prices"]:
         if s["page"] == "map":
             name, code, value = item
@@ -371,9 +376,11 @@ def country_prices(s: dict, wb_names: dict[str, str]) -> tuple[dict[str, Decimal
             unmapped.append(name)
         elif code in prices:
             raise ValueError(f"{s['url']}: two prices for {code}")
+        elif Decimal(value) > PLAUSIBLE_MAX:
+            implausible.append(f"{code} {value}")
         else:
             prices[code] = Decimal(value)
-    return prices, unmapped
+    return prices, unmapped, implausible
 
 
 def collect(fixture: str | None, today: dt.date, collector: str, existing=(), cache: str | None = None) -> list[dict]:
@@ -404,8 +411,10 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=(), ca
 
     unmapped_all: set[str] = set()
     for obs, s in sorted(first_by_period(snaps, lambda s: bool(s["parsed"]["prices"])).items()):
-        prices, unmapped = country_prices(s, wb_names)
+        prices, unmapped, implausible = country_prices(s, wb_names)
         unmapped_all.update(unmapped)
+        if implausible:
+            src.warnings.append(f"{s['url']}: implausible prices excluded: {', '.join(implausible)}")
         year = int(obs[:4])
         w = weighted(prices, pop, year)
         unmapped_all.update(w["excluded"])
@@ -418,6 +427,9 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=(), ca
                f"{'/'.join(map(str, w['pop_years']))})")
         if unmapped or w["excluded"]:
             cov += f"; excluded (no ISO3 or WB population): {', '.join(sorted(unmapped + w['excluded']))}"
+        if implausible:
+            cov += (f"; excluded as implausible (> {PLAUSIBLE_MAX} USD/kWh, a GPP conversion error): "
+                    + ", ".join(implausible))
         nominal = w["mean"] * 1000
         add(M_NOM, obs, common.round_half_up(nominal, 1), s,
             f"Derived: population-weighted mean of {what}) country prices, USD at GPP market rates; {cov}")
