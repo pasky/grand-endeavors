@@ -82,7 +82,7 @@ What child hasn't looked at the starry sky in wonder? The universe promises many
 
 Energy is the key limiting factor of the material world. It does not have to be. If all electricity bills go to zero, how does that change our lives, from heating (homes, iron or saltwater) to food, to travel, to compute? There are many short-term fixes, but the long-term approach is unlikely to be anything but nuclear fusion (and superconductors make everything easier).
 
-**KPI:** Worldwide average electricity cost ($/MWh)
+**KPI:** Worldwide average household (retail) electricity price ($/MWh): what people actually pay, population- or consumption-weighted where available, inflation-adjusted (real $)
 
 **Milestone Countdown:**
 *   **"The First Watt":** First commercial fusion plant delivers sustained electricity to a public grid.
