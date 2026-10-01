@@ -221,8 +221,8 @@ case("fusion: 2025+ page: 'Q2 2025 update' average read, multi-year country tabl
 case("fusion: live main page (Q2 2026, world average 0.176)",
      (lambda p: (p["obs"], p["avg"]))(fusion.parse_main(ffix("live-main.html"))) == ("2026-Q2", "0.176"))
 mp = fusion.parse_map(ffix("wayback-map-20250916083542.html"))
-case("fusion: map page parsed (collected in 2024 Q4, 144 countries stated, ISO3 codes and prices)",
-     (mp["obs"], mp["n_stated"]) == ("2024-Q4", 144) and ("Germany", "DEU", "0.448") in mp["prices"])
+case("fusion: map page parsed (collected in 2024 Q4, stated count = listed count, ISO3 codes and prices)",
+     (mp["obs"], mp["n_stated"], len(mp["prices"])) == ("2024-Q4", 8, 8) and ("Germany", "DEU", "0.448") in mp["prices"])
 case("fusion: month labels map to their quarter",
      [fusion.month_obs(m, "2024") for m in ("January", "March", "April", "June", "September", "December")]
      == ["2024-Q1", "2024-Q1", "2024-Q2", "2024-Q2", "2024-Q3", "2024-Q4"])
@@ -267,12 +267,13 @@ case("fusion: period dedupe picks the EARLIEST capture (June 2022: 2023-01-06, n
      and "20221201055133" in fk[(fusion.M_NOM, "2022-Q1")]["source"]
      and "/map/" in fk[(fusion.M_NOM, "2024-Q4")]["source"])
 r = fk[(fusion.M_REAL, "2022-Q1")]
-case("fusion: archived capture -> published = capture date, basis source, note says first archived",
+case("fusion: archived capture -> published = capture date, basis source, note says earliest Wayback capture",
      (r["published"], r["published_basis"], r["retrieved"]) == ("2022-12-01", "source", "2026-09-28")
-     and "first archived" in r["note"] and r["source"].startswith("https://web.archive.org/web/20221201055133id_/"))
+     and "earliest Wayback capture" in r["note"] and r["source"].startswith("https://web.archive.org/web/20221201055133id_/"))
 r = fk[(fusion.M_REAL, "2025-Q4")]
 case("fusion: live-only period -> basis seen, published = retrieved, live URL",
-     (r["published"], r["published_basis"], r["source"]) == ("2026-09-28", "seen", fusion.MAP)
+     (r["published"], r["retrieved"], r["published_basis"], r["source"]) == ("2026-09-28", "2026-09-28", "seen", fusion.MAP)
+     and "first seen on the live page" in r["note"]
      and fk[(fusion.M_AVG, "2026-Q2")]["published_basis"] == "seen")
 
 
@@ -317,14 +318,13 @@ old = [dict(fk[(fusion.M_REAL, "2022-Q1")], value="1.0", retrieved="2026-01-01")
 rv = by_key(fusion.collect(FFIX, TODAY, "x", old))
 r = rv[(fusion.M_REAL, "2022-Q1")]
 case("fusion: a changed derived value (e.g. population/CPI revision) is a revision dated first seen",
-     (r["published"], r["published_basis"]) == ("2026-09-28", "seen") and "revises effective ledger value 1.0" in r["note"]
-     and "first archived" not in r["note"])
-case("fusion: a live-page-only value is not re-stated while the ledger has the period (no FX churn)",
-     (fusion.M_REAL, "2025-Q4") not in rv and (fusion.M_NOM, "2025-Q4") in rv)
-case("fusion: a re-run against its own output is a no-op (all rows dedup)",
-     all(common.Decimal(a["value"]) == common.Decimal(fk[k]["value"]) and a["published"] == fk[k]["published"]
-         for k, a in by_key(fusion.collect(FFIX, TODAY, "x", frows)).items())
-     and len(fusion.collect(FFIX, TODAY, "x", frows)) == len(frows) - 3)  # the 3 live-only rows are held back
+     (r["published"], r["retrieved"], r["published_basis"]) == ("2026-09-28", "2026-09-28", "seen")
+     and "revises effective ledger value 1.0" in r["note"] and "earliest Wayback capture" not in r["note"])
+r = rv[(fusion.M_REAL, "2025-Q4")]
+case("fusion: a changed live-derived value (e.g. CPI arrived) is re-stated too, dated today",
+     (r["published"], r["published_basis"]) == ("2026-09-28", "seen") and "revises effective ledger value 2.0" in r["note"])
+case("fusion: a re-run against its own output is a no-op (identical rows)",
+     fusion.collect(FFIX, TODAY, "collectors/fusion.py@2026-09-28", frows) == frows)
 
 
 class _Down(fusion.Sources):
@@ -339,6 +339,95 @@ with tempfile.TemporaryDirectory() as tmp:
     got = (s.get("cdx-main.json", "https://x.invalid/", fresh=True), s.get("wb-cpi.json", "https://x.invalid/", fresh=True))
 case("fusion: network failure falls back to the cached copy (warned), else None (warned)",
      got == ("cached", None) and len(s.warnings) == 2 and "cached copy" in s.warnings[0])
+
+
+def fake_net(overrides=None, seen_urls=None):
+    """A Sources._download serving the fixture files by URL (cache-mode runs, no network);
+    overrides: {fixture name: text | (text, final url)}."""
+    import re as _re
+
+    def download(self, url, tries=3):
+        (seen_urls if seen_urls is not None else []).append(url)
+        if "/cdx/" in url:
+            name = "cdx-main.json" if "electricity_prices" in url else "cdx-map.json"
+        elif "api.worldbank.org" in url:
+            name = "wb-pop.json" if "SP.POP" in url else "wb-cpi.json"
+        elif m := _re.search(r"/web/(\d+)id_/", url):
+            name = f"wayback-{'map' if '/map/' in url else 'main'}-{m[1]}.html"
+        else:
+            name = "live-map.html" if "/map/" in url else "live-main.html"
+        got = (overrides or {}).get(name)
+        if got is None:
+            got = ffix(name)
+        if got is None:
+            raise OSError(f"404 {url}")
+        return got if isinstance(got, tuple) else (got, url)
+    return download
+
+
+def cache_run(cache, today, overrides=None, existing=(), seen_urls=None):
+    saved = fusion.Sources._download
+    fusion.Sources._download = fake_net(overrides, seen_urls)
+    try:
+        return by_key(fusion.collect(None, today, "x", list(existing), cache=cache))
+    finally:
+        fusion.Sources._download = saved
+
+
+with tempfile.TemporaryDirectory() as cache:
+    urls = []
+    c1 = cache_run(cache, TODAY, seen_urls=urls)
+    case("fusion: cache-mode run = fixture-mode run (same values and dates for archived captures)",
+         all(c1[k]["value"] == fk[k]["value"] for k in fk) and c1[(fusion.M_NOM, "2022-Q2")]["published"] == "2023-01-06")
+    case("fusion: World Bank query range ends at the run year",
+         any("SP.POP.TOTL" in u and "date=2014:2026" in u for u in urls))
+    case("fusion: captures are cached, the live page is frozen per period (seen-map-2025-Q4-<date>)",
+         os.path.exists(os.path.join(cache, "wayback-main-20230106031622.html"))
+         and os.path.exists(os.path.join(cache, "seen-map-2025-Q4-2026-09-28.html")))
+    # an incomplete CDX index (20230106 missing) must not hide the cached earlier capture
+    import json as _json
+    cdx = _json.loads(ffix("cdx-main.json"))
+    short = _json.dumps([x for x in cdx if x[0] != "20230106031622"])
+    # ... and the live map now renders 2025 Q4 at drifted FX: the frozen first-seen copy is used
+    drift = ffix("live-map.html").replace('"code2":"USA","price":"0.', '"code2":"USA","price":"0.9')
+    c2 = cache_run(cache, dt.date(2026, 10, 5), {"cdx-main.json": short, "live-map.html": drift}, existing=c1.values())
+    case("fusion: an incomplete CDX index does not hide an already-cached earlier capture",
+         c2[(fusion.M_NOM, "2022-Q2")]["published"] == "2023-01-06"
+         and c2[(fusion.M_NOM, "2022-Q2")]["value"] == c1[(fusion.M_NOM, "2022-Q2")]["value"])
+    case("fusion: a live-only period is re-derived from its frozen first-seen copy (no FX churn, same dates)",
+         {k: (r["value"], r["published"], r["retrieved"]) for k, r in c2.items() if k[1] == "2025-Q4"}
+         == {k: (r["value"], r["published"], r["retrieved"]) for k, r in c1.items() if k[1] == "2025-Q4"})
+
+with tempfile.TemporaryDirectory() as cache:
+    junk = "<html><title>Wayback Machine</title>Please wait...</html>"
+    redirected = (ffix("wayback-main-20230106031622.html"),
+                  "https://web.archive.org/web/20230107000000id_/https://www.globalpetrolprices.com/electricity_prices/")
+    c3 = cache_run(cache, TODAY, {"wayback-main-20221201055133.html": junk, "wayback-main-20230106031622.html": redirected})
+    case("fusion: an HTTP-200 non-GPP capture or a redirected capture is neither used nor cached (retried next run)",
+         not os.path.exists(os.path.join(cache, "wayback-main-20221201055133.html"))
+         and not os.path.exists(os.path.join(cache, "wayback-main-20230106031622.html"))
+         and "20221203030135" in c3[(fusion.M_NOM, "2022-Q1")]["source"]       # falls to the next capture (map)
+         and "20230205071214" in c3[(fusion.M_NOM, "2022-Q2")]["source"])
+    good_wb = ffix("wb-cpi.json")
+    s = fusion.Sources(None, cache)
+    s._write("wb-cpi.json", good_wb)
+    s._download = lambda url, tries=3: ("[{\"message\": \"error\"}]", url)
+    case("fusion: a malformed fresh World Bank answer does not overwrite the last good copy",
+         s.get("wb-cpi.json", "https://x.invalid/", fresh=True, validate=fusion.parse_wb) == good_wb
+         and open(os.path.join(cache, "wb-cpi.json")).read() == good_wb)
+
+case("fusion: a map listing fewer countries than it states is rejected (truncated capture)",
+     _raises(fusion.parse_map, ffix("live-map.html").replace("for 8 countries", "for 143 countries")))
+sn = [{"date": d, "ts": d.replace("-", ""), "url": d, "parsed": {"prices": [("x", "0.1")] * n, "avg": "0.2"}}
+      for d, n in (("2020-01-01", 100), ("2020-02-01", 140), ("2020-03-01", 104), ("2020-04-01", 105))]
+warn = []
+kept = [len(x["parsed"]["prices"]) for x in fusion.drop_collapsed(sn, warn)]
+case("fusion: a capture with < 75% of the countries of earlier captures loses its prices (avg kept)",
+     kept == [100, 140, 0, 105] and len(warn) == 1 and "104" in warn[0])
+pr, _, rej = fusion.country_prices({"page": "map", "url": "u", "parsed": {"obs": "2020-Q1", "prices": [
+    ("South Korea", "KOR", "0.000"), ("Germany", "DEU", "0.300")]}}, {})
+case("fusion: documented GPP errata are excluded with their evidence (KOR 0.00 in 2020-Q1)",
+     list(pr) == ["DEU"] and "erratum" in rej[0] and "KOR" in rej[0])
 
 # --- revisions (common.mark_revisions) -------------------------------------------------------
 def lrow(obs, value, published, verification="collector", basis="rule", retrieved=None, metric="payload-mass-to-orbit"):

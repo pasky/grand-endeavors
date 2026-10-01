@@ -21,34 +21,40 @@ country's average household consumption, converted to USD at market rates by GPP
         "The data on the map are for N countries and were collected in YYYY Qn",
         per-country USD prices with ISO3 codes (JS array cData).  It lags the paid
         data by ~2 quarters but is the only free per-country per-period table today.
-  history: Wayback Machine snapshots of both pages (CDX API, one capture per
-        month), fetched raw (id_) and cached under the cache dir
+  history: Wayback Machine captures of both pages (CDX API, collapsed to the first
+        capture per month; united with the already-cached captures), fetched raw
+        (id_), validated, and cached under the cache dir
         (default $GE_DATA/ledger/staging/fusion-cache/; immutable, never refetched).
-  World Bank API: SP.POP.TOTL (all countries, 2014-2026) and FP.CPI.TOTL (USA).
+  World Bank API: SP.POP.TOTL (all countries, 2014-<run year>) and FP.CPI.TOTL (USA).
 
 Choices:
   - obs = the GPP data quarter (YYYY-Qn): GPP collects quarterly; a month label
     ('December 2022') maps to its quarter (2022-Q4); the label is kept in the note.
-  - One snapshot per (period, metric): the earliest archived capture stating that
-    period (across the main and map page for the country-based metrics);
-    published = its capture date, basis 'source' ("first archived").  A period seen
-    only on the live page gets basis 'seen' (published = retrieved).
+  - One capture per (period, metric): the earliest capture stating that period
+    (across the main and map page for the country-based metrics), by capture date.
+    Wayback: published = capture date, basis 'source' (the earliest capture in the
+    month-sampled CDX index: an upper bound of GPP's release).  Live page: the
+    first live copy seen for a period is frozen in the cache and dated then (basis
+    'seen', published = retrieved = first-seen date), so a live-only period does
+    not churn with FX on every run.
   - Population weights: World Bank SP.POP.TOTL of the latest year <= obs year.
     Countries without an ISO3 mapping or WB population are excluded and reported;
     the note gives n countries and the share of world (WLD) population covered.
-    Prices above PLAUSIBLE_MAX (1 USD/kWh) are GPP conversion errors: excluded, noted.
+  - Data-error guards: a map listing a different number of countries than it
+    states, or a capture with < MIN_COVERAGE_RATIO of the countries of earlier
+    captures, is not used for country prices (truncation).  Country prices above
+    PLAUSIBLE_MAX (1 USD/kWh) and documented GPP_ERRATA are excluded and noted.
   - Real values: x CPI(base) / CPI(obs year), US CPI annual average (World Bank
     FP.CPI.TOTL), base year 2025; while a year is missing the latest available CPI
     year stands in (for the base and/or the obs year) and the note says so.
   - Values in $/MWh (USD/kWh x 1000), rounded half-up to 1 decimal.
   - GPP converts local prices to USD at the exchange rate current when the page is
     rendered, so later captures of the same quarter drift with FX (typically a
-    few $/MWh); the first archived capture is the closest to the quarter's own rate.
+    few $/MWh; hyperinflation currencies much more); the earliest capture is the
+    closest to the quarter's own rate.
   - A value that differs from the effective ledger value (population or CPI
-    revision, provisional deflator replaced, a live-page value replaced by the
-    first archived capture) is a revision dated first seen.  A live-page-only
-    value is not re-stated while the ledger already has the quarter (it would
-    churn with FX on every run); the first archived capture supersedes it.
+    revision, provisional deflator replaced, a different capture selected) is a
+    revision dated first seen (published = retrieved = today).
 """
 from __future__ import annotations
 
@@ -74,13 +80,19 @@ PAGES = {"main": MAIN, "map": MAP}
 CDX = ("http://web.archive.org/cdx/search/cdx?url={}&output=json&fl=timestamp,statuscode"
        "&filter=statuscode:200&collapse=timestamp:6")
 WAYBACK = "https://web.archive.org/web/{}id_/{}"
-WB_POP = "https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json&per_page=20000&date=2014:2026"
-WB_CPI = "https://api.worldbank.org/v2/country/USA/indicator/FP.CPI.TOTL?format=json&per_page=200&date=2000:2026"
+WB_POP = "https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json&per_page=20000&date=2014:{}"
+WB_CPI = "https://api.worldbank.org/v2/country/USA/indicator/FP.CPI.TOTL?format=json&per_page=200&date=2000:{}"
 BASE_YEAR = 2025
 # Highest genuine GPP household price seen 2018-2026: Italy 0.783 USD/kWh (Dec 2022).  Larger
 # values are GPP currency-conversion errors (Syria 2.220 in 2025 Q2, Croatia 1.227 in 2022 Q2)
 # and would dominate a population-weighted mean; they are excluded and listed in the note.
 PLAUSIBLE_MAX = Decimal("1.0")
+# Documented single-capture GPP errors (obs, ISO3) -> evidence; the price is excluded, not replaced.
+GPP_ERRATA = {
+    ("2020-Q1", "KOR"): "0.00 in the first capture (2020-10-21), 0.11 in both later captures of March 2020",
+}
+MIN_COVERAGE_RATIO = 0.75  # a capture with < 75% of the countries of earlier captures is truncated
+ARCHIVED = "published = earliest Wayback capture showing this period (CDX index sampled monthly)"
 M_REAL = "elec-price-household-world-popw-real"
 M_NOM = "elec-price-household-world-popw-nominal"
 M_AVG = "elec-price-household-gpp-avg"
@@ -122,7 +134,11 @@ class Sources:
         self.warnings: list[str] = []
         self._last_archive = 0.0
 
-    def get(self, name: str, url: str, fresh: bool) -> str | None:
+    def get(self, name: str, url: str, fresh: bool, validate=None, final_has: str | None = None) -> str | None:
+        """validate(text) must not raise for a download to be used and cached (a
+        Wayback HTTP-200 interstitial must not poison the immutable cache, a broken
+        WB answer must not overwrite the last good copy); final_has: required
+        substring of the final (post-redirect) URL."""
         if self.fixture:
             path = os.path.join(self.fixture, name)
             if not os.path.exists(path):
@@ -134,8 +150,12 @@ class Sources:
             with open(cached, encoding="utf-8") as f:
                 return f.read()
         try:
-            text = self._download(url)
-        except Exception as e:  # network/HTTP failure: degrade, never invent data
+            text, final = self._download(url)
+            if final_has and final_has not in final:
+                raise ValueError(f"redirected to {final}")
+            if validate:
+                validate(text)
+        except Exception as e:  # network/HTTP/content failure: degrade, never invent data
             if cached and os.path.exists(cached):
                 self.warnings.append(f"{url}: {e}; using cached copy {name}")
                 with open(cached, encoding="utf-8") as f:
@@ -143,13 +163,38 @@ class Sources:
             self.warnings.append(f"{url}: {e}; skipped")
             return None
         if cached:
-            os.makedirs(self.cache, exist_ok=True)
-            with open(cached + ".tmp", "w", encoding="utf-8") as f:
-                f.write(text)
-            os.replace(cached + ".tmp", cached)
+            self._write(name, text)
         return text
 
-    def _download(self, url: str, tries: int = 3) -> str:
+    def _write(self, name: str, text: str) -> None:
+        os.makedirs(self.cache, exist_ok=True)
+        path = os.path.join(self.cache, name)
+        with open(path + ".tmp", "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(path + ".tmp", path)
+
+    def cached_stamps(self, page: str) -> set[str]:
+        pre = f"wayback-{page}-"
+        if self.fixture or not self.cache or not os.path.isdir(self.cache):
+            return set()
+        return {f[len(pre):-5] for f in os.listdir(self.cache) if f.startswith(pre) and f.endswith(".html")}
+
+    def freeze(self, page: str, obs: str, today: dt.date, text: str) -> tuple[str, str]:
+        """(first-seen date, text) of the live page for period `obs`: the first live
+        copy we saw is kept in the cache, so a live-only period is not re-derived
+        from FX-drifted later renderings on every run."""
+        if self.fixture or not self.cache:
+            return str(today), text
+        pre = f"seen-{page}-{obs}-"
+        seen = sorted(f for f in os.listdir(self.cache) if f.startswith(pre) and f.endswith(".html")) \
+            if os.path.isdir(self.cache) else []
+        if seen:
+            with open(os.path.join(self.cache, seen[0]), encoding="utf-8") as f:
+                return seen[0][len(pre):-5], f.read()
+        self._write(f"{pre}{today}.html", text)
+        return str(today), text
+
+    def _download(self, url: str, tries: int = 3) -> tuple[str, str]:
         archive = "web.archive.org" in url
         for attempt in range(tries):
             if archive:
@@ -157,13 +202,13 @@ class Sources:
             try:
                 req = urllib.request.Request(url, headers={"User-Agent": common.USER_AGENT})
                 with urllib.request.urlopen(req, timeout=120) as r:
-                    raw = r.read()
+                    raw, final = r.read(), r.geturl()
                 if raw[:2] == b"\x1f\x8b":  # Wayback id_ serves the stored (gzipped) bytes
                     raw = gzip.decompress(raw)
                 text = raw.decode("utf-8", errors="replace")
                 if archive and url.startswith("http://web.archive.org/cdx") and not text.lstrip().startswith("["):
                     raise ValueError("CDX answered non-JSON (archive outage?)")
-                return text
+                return text, final
             except Exception:
                 if attempt == tries - 1:
                     raise
@@ -229,6 +274,8 @@ def parse_map(text: str) -> dict:
     if not d:
         raise ValueError("map page without cData")
     out["prices"] = [(c["country_name"], c["code2"], c["price"]) for c in json.loads(d[1])]
+    if len(out["prices"]) != out["n_stated"]:
+        raise ValueError(f"map lists {len(out['prices'])} countries but states {out['n_stated']}")
     return out
 
 
@@ -319,30 +366,40 @@ def mwh(usd_kwh: Decimal | str) -> str:
 
 
 # --- snapshots -----------------------------------------------------------------------
-def snapshots(src: Sources) -> list[dict]:
-    """Every parsed capture: Wayback (per CDX) + live pages, as
-    {page, ts (YYYYMMDDhhmmss|None), date, url, parsed}."""
+def _check_capture(page: str):
+    """Validator for a downloaded capture: parses, states a period (else not cached)."""
+    def check(text: str) -> None:
+        if not (parse_main if page == "main" else parse_map)(text)["obs"]:
+            raise ValueError("no GPP period statement (not a GPP page?)")
+    return check
+
+
+def snapshots(src: Sources, today: dt.date) -> list[dict]:
+    """Every usable capture: Wayback (CDX index UNION already-cached captures, so an
+    incomplete index never hides an earlier capture) + the live pages (frozen at first
+    sight per period), as {page, ts (YYYYMMDDhhmmss|None), date, url, parsed, seen}."""
     out = []
     for page, url in PAGES.items():
-        cdx_text = src.get(f"cdx-{page}.json", CDX.format(url.split("//", 1)[1]), fresh=True)
-        stamps = []
+        stamps = src.cached_stamps(page)
+        cdx_text = src.get(f"cdx-{page}.json", CDX.format(url.split("//", 1)[1]), fresh=True, validate=parse_cdx)
         if cdx_text is not None:
             try:
-                stamps = parse_cdx(cdx_text)
+                stamps |= set(parse_cdx(cdx_text))
             except ValueError as e:
                 src.warnings.append(f"CDX {page}: unparseable ({e})")
-        if not stamps and src.cache and os.path.isdir(src.cache):  # archive outage: use what we have
-            stamps = sorted(f[len(f"wayback-{page}-"):-5] for f in os.listdir(src.cache)
-                            if f.startswith(f"wayback-{page}-") and f.endswith(".html"))
-        for ts in stamps:
-            text = src.get(f"wayback-{page}-{ts}.html", WAYBACK.format(ts, url), fresh=False)
-            if text is None:
-                continue
-            out.append(_parsed(src, page, ts, f"{ts[:4]}-{ts[4:6]}-{ts[6:8]}", WAYBACK.format(ts, url), text))
+        for ts in sorted(stamps):
+            wurl = WAYBACK.format(ts, url)
+            text = src.get(f"wayback-{page}-{ts}.html", wurl, fresh=False,
+                           validate=_check_capture(page), final_has=f"/web/{ts}")
+            if text is not None:
+                out.append(_parsed(src, page, ts, f"{ts[:4]}-{ts[4:6]}-{ts[6:8]}", wurl, text))
         live = src.get(f"live-{page}.html", url, fresh=True)
         if live is not None:
-            out.append(_parsed(src, page, None, None, url, live))
-    return [s for s in out if s["parsed"] and s["parsed"]["obs"]]
+            s = _parsed(src, page, None, str(today), url, live)
+            if s["parsed"] and s["parsed"]["obs"]:
+                s["date"], text = src.freeze(page, s["parsed"]["obs"], today, live)
+                out.append(_parsed(src, page, None, s["date"], url, text))
+    return drop_collapsed([s for s in out if s["parsed"] and s["parsed"]["obs"]], src.warnings)
 
 
 def _parsed(src, page, ts, date, url, text) -> dict:
@@ -351,21 +408,37 @@ def _parsed(src, page, ts, date, url, text) -> dict:
     except ValueError as e:
         src.warnings.append(f"{url}: {e}; capture skipped")
         parsed = None
-    return {"page": page, "ts": ts, "date": date, "url": url, "parsed": parsed}
+    return {"page": page, "ts": ts, "date": date, "url": url, "parsed": parsed, "seen": ts is None}
+
+
+def drop_collapsed(snaps: list[dict], warnings: list[str]) -> list[dict]:
+    """Drop the country prices of a capture listing fewer than MIN_COVERAGE_RATIO x the
+    most countries of any earlier capture (a truncated chart/page would otherwise
+    become 'the world'); its stated average, if any, is kept."""
+    out, most = [], 0
+    for s in sorted(snaps, key=lambda s: (s["date"], s["ts"] or "")):
+        n = len(s["parsed"]["prices"])
+        if n and n < MIN_COVERAGE_RATIO * most:
+            warnings.append(f"{s['url']}: only {n} country prices (earlier captures: {most}); prices not used")
+            s = dict(s, parsed=dict(s["parsed"], prices=[]))
+        most = max(most, n)
+        out.append(s)
+    return out
 
 
 def first_by_period(snaps: list[dict], usable) -> dict[str, dict]:
-    """{obs: earliest capture with usable(capture)}; live pages (no ts) come last."""
+    """{obs: earliest capture (by capture / first-seen date) with usable(capture)}."""
     out: dict[str, dict] = {}
-    for s in sorted(snaps, key=lambda s: (s["ts"] is None, s["ts"] or "", s["page"] != "map")):
+    for s in sorted(snaps, key=lambda s: (s["date"], s["seen"], s["ts"] or "", s["page"] != "map")):
         if usable(s):
             out.setdefault(s["parsed"]["obs"], s)
     return out
 
 
 def country_prices(s: dict, wb_names: dict[str, str]) -> tuple[dict[str, Decimal], list[str], list[str]]:
-    """({iso3: USD/kWh}, unmapped GPP names, implausible 'ISO3 price' entries) for one capture."""
-    prices, unmapped, implausible = {}, [], []
+    """({iso3: USD/kWh}, unmapped GPP names, rejected 'ISO3 price (why)' entries) for one capture."""
+    prices, unmapped, rejected = {}, [], []
+    obs = s["parsed"]["obs"]
     for item in s["parsed"]["prices"]:
         if s["page"] == "map":
             name, code, value = item
@@ -376,11 +449,13 @@ def country_prices(s: dict, wb_names: dict[str, str]) -> tuple[dict[str, Decimal
             unmapped.append(name)
         elif code in prices:
             raise ValueError(f"{s['url']}: two prices for {code}")
+        elif (obs, code) in GPP_ERRATA:
+            rejected.append(f"{code} {value} (erratum: {GPP_ERRATA[(obs, code)]})")
         elif Decimal(value) > PLAUSIBLE_MAX:
-            implausible.append(f"{code} {value}")
+            rejected.append(f"{code} {value} (> {PLAUSIBLE_MAX} USD/kWh, implausible: a GPP conversion error)")
         else:
             prices[code] = Decimal(value)
-    return prices, unmapped, implausible
+    return prices, unmapped, rejected
 
 
 def collect(fixture: str | None, today: dt.date, collector: str, existing=(), cache: str | None = None) -> list[dict]:
@@ -388,21 +463,22 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=(), ca
     if cache is None and not fixture:
         cache = os.path.join(ledger.DATA, "ledger", "staging", "fusion-cache")
     src = Sources(fixture, cache)
-    pop_text, cpi_text = src.get("wb-pop.json", WB_POP, fresh=True), src.get("wb-cpi.json", WB_CPI, fresh=True)
+    pop_text = src.get("wb-pop.json", WB_POP.format(today.year), fresh=True, validate=parse_wb)
+    cpi_text = src.get("wb-cpi.json", WB_CPI.format(today.year), fresh=True, validate=parse_wb)
     if pop_text is None or cpi_text is None:
         raise SystemExit("fusion: World Bank population/CPI unavailable: " + "; ".join(src.warnings))
     pop, wb_names = population(parse_wb(pop_text))
     cpis = cpi(parse_wb(cpi_text))
-    snaps = snapshots(src)
+    snaps = snapshots(src, today)
     rows: list[dict] = []
-    retrieved = str(today)
 
     def add(metric, obs, value, s, note):
-        if s["ts"]:
-            rows.append(common.row(reg, metric, obs, value, s["url"], f"{note}; published = first archived capture",
-                                   collector, retrieved, published=s["date"]))
+        if s["seen"]:  # live page: dated when we first saw (and froze) it
+            rows.append(common.row(reg, metric, obs, value, s["url"], note + "; published = first seen on the live page",
+                                   collector, s["date"]))
         else:
-            rows.append(common.row(reg, metric, obs, value, s["url"], note, collector, retrieved))
+            rows.append(common.row(reg, metric, obs, value, s["url"], note + "; " + ARCHIVED, collector, str(today),
+                                   published=s["date"]))
 
     for obs, s in sorted(first_by_period(snaps, lambda s: s["page"] == "main" and s["parsed"]["avg"]).items()):
         add(M_AVG, obs, mwh(s["parsed"]["avg"]), s,
@@ -411,10 +487,10 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=(), ca
 
     unmapped_all: set[str] = set()
     for obs, s in sorted(first_by_period(snaps, lambda s: bool(s["parsed"]["prices"])).items()):
-        prices, unmapped, implausible = country_prices(s, wb_names)
+        prices, unmapped, rejected = country_prices(s, wb_names)
         unmapped_all.update(unmapped)
-        if implausible:
-            src.warnings.append(f"{s['url']}: implausible prices excluded: {', '.join(implausible)}")
+        if rejected:
+            src.warnings.append(f"{s['url']}: country prices excluded: {', '.join(rejected)}")
         year = int(obs[:4])
         w = weighted(prices, pop, year)
         unmapped_all.update(w["excluded"])
@@ -427,9 +503,8 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=(), ca
                f"{'/'.join(map(str, w['pop_years']))})")
         if unmapped or w["excluded"]:
             cov += f"; excluded (no ISO3 or WB population): {', '.join(sorted(unmapped + w['excluded']))}"
-        if implausible:
-            cov += (f"; excluded as implausible (> {PLAUSIBLE_MAX} USD/kWh, a GPP conversion error): "
-                    + ", ".join(implausible))
+        if rejected:
+            cov += "; excluded as GPP data errors: " + ", ".join(rejected)
         nominal = w["mean"] * 1000
         add(M_NOM, obs, common.round_half_up(nominal, 1), s,
             f"Derived: population-weighted mean of {what}) country prices, USD at GPP market rates; {cov}")
@@ -441,24 +516,23 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=(), ca
     for wmsg in src.warnings + ([f"unmapped/unweighted GPP countries: {', '.join(sorted(unmapped_all))}"]
                                 if unmapped_all else []):
         print(f"  WARNING {wmsg}", file=sys.stderr)
-    return revise_derived(rows, existing)
+    return revise_derived(rows, existing, today)
 
 
-def revise_derived(rows: list[dict], existing) -> list[dict]:
+def revise_derived(rows: list[dict], existing, today: dt.date) -> list[dict]:
     """A value that differs from the effective non-legacy ledger value (WB population
-    or CPI revision, provisional deflator replaced) became known when we computed it:
-    re-date it to first seen (common.mark_revisions only re-dates rule-basis rows)."""
+    or CPI revision, provisional deflator replaced, a live-page value replaced by an
+    earlier archived capture) became known when we computed it: re-date it to first
+    seen = today (common.mark_revisions only re-dates rule-basis rows)."""
     effective = ledger.obs_as_of("", rows=list(existing))
     out = []
     for r in rows:
         eff = effective.get((r["metric"], r["obs"]))
-        if r["published_basis"] == "seen" and eff is not None and ledger.tier(eff) > 0:
-            continue  # live-page value: keep the first-seen one until an archived capture exists
-        if common.is_revision(r, eff) and r["published_basis"] == "source":
-            r = dict(r, published=r["retrieved"], published_basis="seen",
-                     note=r["note"].replace("; published = first archived capture", "")
-                     + f"; revises effective ledger value {eff['value']} (published {eff['published']})"
-                       " (published = first seen)")
+        if common.is_revision(r, eff):
+            note = r["note"].replace("; " + ARCHIVED, "").replace("; published = first seen on the live page", "")
+            r = dict(r, published=str(today), retrieved=str(today), published_basis="seen",
+                     note=note + f"; revises effective ledger value {eff['value']} (published {eff['published']})"
+                                 " (published = first seen)")
         out.append(r)
     return out
 
