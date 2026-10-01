@@ -34,14 +34,23 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 
 ## Data quality
 
-- [ ] 🤖 Retry the legacy events that could not be verified (dead, paywalled or
-      JS-only pages) via Wayback snapshots.
+- [ ] 🤖 Retry the legacy events that are still unverifiable, **sequentially with
+      backoff**. The 2026-10-01 Wayback pass recovered 45 (21 verified, 22
+      corrected, 2 refuted), but 8 parallel agents hit archive.org rate limits;
+      rockets got none.
 - [ ] 🤖 Re-verify the legacy KPI **observations** (pilot-2025 values); only events
       were re-verified.
-- [ ] 🤖 Health KPI data: a collector for WHO GHE HALE (median-country +
-      global). The health KPI is "Unassessed" until then.
-- [ ] 🤖 The Bend: a GCB global fossil CO₂ annual series (for charts + KPI-like
-      tracking of the milestone).
+- [ ] Yearly upkeep: when GCB 2026 is released (around November), update
+      `DATA_URL` in `collectors/climate_emissions.py`. Watch for WHO's next GHE
+      round; health data ends in 2021, so its KPI is labelled "Stale".
+- [ ] Fusion KPI caveats (independent spot-check of 2025-Q4 matched exactly;
+      2021-Q4 couldn't be independently parsed):
+      - exchange-rate swings move the series;
+      - it is deflated with US CPI only;
+      - it is weighted by population, not by consumption;
+      - coverage is about 94%.
+
+      Consider adding a local-currency or PPP variant.
 - [ ] Rockets KPI: a `cost-to-leo-best` history (only one point). Needs a
       sourcing decision: list prices are sparse and inconsistent.
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
@@ -53,8 +62,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 
 ## Views / checks
 
-- [ ] 🤖 validate.py: footnote/ref checks ignore duplicate or indented
-      definitions and shortcut refs.
 - [ ] Round-up Quick Reference from snapshot KPI headlines and assessments
       (today the round-up only summarizes bulletin prose).
 - [ ] Bulletin gate is lexical (a number must occur in the snapshot, a URL
@@ -62,6 +69,12 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       record id.
 - [ ] Snapshot size (~136 KB per weekly section): gzip, or pin + regenerate.
 - [ ] Dashboard size grows with the ledger; split per section at some point.
+
+## Tooling
+
+- [ ] pi-side-agents: when several agents are started at once, two can be
+      given the SAME worktree (seen 2026-10-01: health and validate both got
+      worktree-0001). Start agents one at a time, or report it upstream.
 
 ## Roadmap
 
