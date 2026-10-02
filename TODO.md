@@ -70,12 +70,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] Snapshot size (~136 KB per weekly section): gzip, or pin + regenerate.
 - [ ] Dashboard size grows with the ledger; split per section at some point.
 
-## Tooling
-
-- [ ] pi-side-agents: when several agents are started at once, two can be
-      given the SAME worktree (seen 2026-10-01: health and validate both got
-      worktree-0001). Start agents one at a time, or report it upstream.
-
 ## Roadmap
 
 - [ ] weekly cadence running · [ ] reference source list per endeavor (it
