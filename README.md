@@ -55,7 +55,13 @@ Humans have been looking to automate their lives in one way or another for most 
 *   **Robotaxi Saturation:** Autonomous robotaxis outnumber human-driven taxis in a major metropolitan area (L5 Transport Solved).
 *   **The "Wozniak" Test:** Robot enters a random, previously unseen home and successfully makes a cup of coffee.
 *   **The "Fukushima" Test:** Robot autonomously navigates a disaster zone and performs a critical repair (valve/switch) within human time limits.
-*   **The "Blue Collar" Shift:** General-purpose robots do a human job, not a demo: in a real workplace (Construction, Factory, Logistics), working alongside humans, a general-purpose robot works full shifts (8h+) for 30 consecutive working days without teleoperation, with a disclosed average of at most 1 human intervention per shift and at least 90% of the job's required throughput.
+*   **The "Blue Collar" Shift:** A general-purpose robot works full shifts in a real workplace (construction, factory, logistics) alongside humans for a month.
+    *   8h+ shifts on 30 consecutive working days, at ≥90% of the job's required throughput.
+    *   No teleoperation; a disclosed average of ≤1 human intervention per shift.
+*   **The Dark Line:** A production line staffed only by general-purpose robots runs a full week, 24/7, with no humans on the floor.
+    *   A real line of 5+ stations; robots also do material moves and routine maintenance, including their own (charging, battery swaps).
+    *   ≥90% of the line's required throughput, with one product changeover by software alone during the run.
+    *   Purpose-built lights-out automation ("dark factories") does not count; it is reported under Beyond.
 
 **Major Open Challenges:**
 *   **Dexterous Manipulation:** Human-level hands requiring dense tactile sensing, compliant actuators, and real-time control across 10,000+ object types including deformables.

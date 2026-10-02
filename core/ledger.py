@@ -117,6 +117,25 @@ def readme_topics(section: str) -> dict[str, list[str]]:
     return out
 
 
+def bullet_descriptions(lines: list[str]) -> dict[str, str]:
+    """{name: description} for every top-level '*   **Name:** text' bullet. Indented
+    sub-bullets (precise criteria) are appended as '\n- <text>' lines. First wins."""
+    out: dict[str, str] = {}
+    name = None
+    for ln in lines:
+        if m := re.match(r"^\*\s+\*\*(.+?)\*\*:?\s*(.*)$", ln):
+            name = m[1].rstrip(":").strip().strip('"“”')
+            if name in out:
+                name = None  # duplicate heading: keep the first description only
+            else:
+                out[name] = m[2].strip()
+        elif name and (m := re.match(r"^\s+[*-]\s+(.*)$", ln)):
+            out[name] += "\n- " + m[1].strip()
+        else:
+            name = None
+    return out
+
+
 def readme_items(section: str) -> list[tuple[str, str, str]]:
     """Gather watch list: (topic, name, description) for the KPI, every milestone
     and challenge in README, plus the open-ended 'beyond' sweep."""
@@ -129,12 +148,12 @@ def readme_items(section: str) -> list[tuple[str, str, str]]:
     kpi_line = next((ln for ln in block if ln.startswith("**KPI:**")), "")
     intro = " ".join(ln for ln in block[1:] if ln.strip() and not ln.startswith(("*", "#")))[:600]
     items = [("kpi", "KPI", kpi_line.replace("**KPI:**", "").strip() or f"The section's key indicators. {intro}")]
+    descs: dict[str, str] = {}
+    for n, d in bullet_descriptions(block).items():
+        descs.setdefault(slugify(n), d)
     for kind, topic in (("milestones", "milestone"), ("challenges", "challenge")):
         for slug, name in readme_topics(section)[kind]:
-            desc = next((re.sub(r"^\*\s+\*\*.+?\*\*:?\s*", "", ln).strip()
-                         for ln in block if re.match(r"^\*\s+\*\*", ln) and slugify(
-                             re.match(r"^\*\s+\*\*(.+?)\*\*", ln)[1].rstrip(":").strip().strip('"“”')) == slug), "")
-            items.append((f"{topic}:{slug}", name, desc))
+            items.append((f"{topic}:{slug}", name, descs.get(slug, "")))
     items.append(("beyond", "Beyond the Framework",
                   "Significant developments for this endeavor that fit no milestone or challenge: "
                   "surprising breakthroughs, setbacks, policy shifts, new players, important data releases."))

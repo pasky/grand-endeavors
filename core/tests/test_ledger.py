@@ -27,6 +27,13 @@ def main():
     case("negative value matches unsigned prose", kpi.kpi_traceable("-0.5", {0.5}))
     case("positive value never matches negative evidence", not kpi.kpi_traceable("0.5", {-0.5}))
 
+    # --- README bullet descriptions (sub-bullets = precise criteria) ---------------
+    bd = ledger.bullet_descriptions([
+        '*   **Shift:** Robot works.', '    *   8h+ shifts.', '    *   No teleop.',
+        '*   **Other:** Plain.', '', '*   **Shift:** duplicate', 'Paragraph.', '    *   orphan'])
+    case("README sub-bullets are appended to the description",
+         bd == {"Shift": "Robot works.\n- 8h+ shifts.\n- No teleop.", "Other": "Plain."})
+
     # --- periods / cutoffs ------------------------------------------------------
     case("26H1 cutoff = period end + 14d", str(ledger.cutoff("26H1")) == "2026-07-14")
     case("26H1 previous cutoff = 25H2 cutoff", str(ledger.prev_cutoff("26H1")) == "2026-01-14")

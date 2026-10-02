@@ -227,11 +227,7 @@ def readme_meta(section: str) -> tuple[str, str, str, dict[str, str]]:
         group = next((ln[3:].strip() for ln in reversed(lines[:start]) if ln.startswith("## ")), "")
     body = lines[start:end]
     kpi_line = next((ln.split("**KPI:**", 1)[1].strip() for ln in body if ln.startswith("**KPI:**")), "")
-    desc = {}
-    for ln in body:
-        if m := re.match(r"^\*\s+\*\*(.+?)\*\*:?\s*(.*)$", ln):
-            desc[m[1].rstrip(":").strip().strip('"“”')] = m[2].strip()
-    return group, head.lstrip("# "), kpi_line, desc
+    return group, head.lstrip("# "), kpi_line, ledger.bullet_descriptions(body)
 
 
 def _known(recs: list[dict], as_of: dt.date, what: str) -> list[tuple[dict, str]]:
