@@ -43,6 +43,12 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
       `DATA_URL` in `gather/collectors/climate_emissions.py`. Watch for WHO's next GHE
       round; health data ends in 2021, so its KPI is labelled "Stale".
+- [ ] 🤖 Check The Bend's next assessment (yellow on 2026-09-30, label
+      "Progressing: GHG 54.1 GtCO2e..."). Its rationale counted slowing **CO₂**
+      growth as progress on a **total-GHG** milestone. It is re-assessed
+      automatically once new Bend evidence arrives (`ledger.py stale`), and the
+      assess prompt now asks for the milestone's own quantity or a named proxy.
+      Verify that the new record judges it on total GHG (EDGAR).
 - [ ] Fusion KPI caveats (independent spot-check of 2025-Q4 matched exactly;
       2021-Q4 couldn't be independently parsed):
       - exchange-rate swings move the series;

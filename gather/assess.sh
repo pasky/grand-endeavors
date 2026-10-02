@@ -62,6 +62,10 @@ $SPEC
 - Previous assessments: ledger/assessments/$SECTION.jsonl (the latest per target
   with made_at <= $UNTIL is "prev").
 $CORR
+Judge each milestone on its OWN quantity as the README wording defines it (e.g.
+total greenhouse-gas emissions, not CO2 alone). If only a proxy has data, name
+the proxy and why it tracks the target in basis.path, and let that uncertainty
+show in the ETA.
 If the rubric cannot judge a target (e.g. its KPI series does not cover the
 window), write status "unknown" with the label "Unassessed: <reason>" and the
 basis keys rule, reason, prev and change_note (evidence may be empty). Never

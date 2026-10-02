@@ -48,7 +48,7 @@ never hidden; an unfilled datapoint shows as unfilled.
   A `legacy` badge marks values from the unverified 2025 report.
 - **KPI assessment and milestone list**: the current status per gather/RUBRIC.md:
   - 🟢 green, 🟡 yellow, 🔴 red;
-  - 🔵 achieved (milestones only);
+  - ✅ achieved (milestones only; a green dot with a check mark, as in bulletins);
   - ⚪ **Unassessed** (the rubric can't judge it: no KPI spec or no data).
 
   The label starts with the verdict word ("Off track", "Progressing",
