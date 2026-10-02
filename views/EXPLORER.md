@@ -168,5 +168,10 @@ ORDER BY known_at DESC;
 - `explore.py site` (run by gather.sh after each gather) rewrites `build/`,
   which is the published directory; the old `dashboard.html` URL redirects to
   the new front page.
+- Previews: every side-agent worktree's `build/` is served at
+  `<site>/<slot>/` (e.g. `/grand-endeavors/worktree-0002/`). The local side-agent
+  tooling (`.pi/side-agent-preview.sh`, the `preview` skill) links it at agent
+  start, rebuilds it on request, and removes it after the merge, then rebuilds
+  the published site.
 - Datasette can be published read-only with `datasette publish` (Cloud Run,
   Fly, Vercel); not set up yet (TODO).
