@@ -18,9 +18,10 @@ COMMANDS
   explore.py site [--out build/] [--as-of YYYY-MM-DD]
         -> the published directory: index.html (live) + <period>/index.html (frozen
            period pages from the data repo) + ledger.sqlite + metadata.json
-  explore.py period <period-dir> [--note TEXT]
+  explore.py period <period-dir> [--note TEXT] [--force]
         -> <period-dir>/index.html, frozen: the page as of the period's cutoff, with
-           the period's framework (<period-dir>/framework.yaml, copied on first run)
+           the period's framework (<period-dir>/framework.yaml, copied on first run);
+           an existing page is kept unless --force
 
 --as-of applies the ledger time rule (DESIGN.md §2): only records with
 known_at <= as-of are included, and "expected by"/"overdue" are judged against
@@ -523,10 +524,13 @@ def spark_points(db: sqlite3.Connection, k: sqlite3.Row) -> tuple[list[tuple[dt.
     return pts, KIND_NAMES.get(kind, kind)
 
 
+CITED = '<span class="badge b-cited">cited as evidence</span>'
+
+
 def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None = None,
-             anchor: bool = True, cited: bool = False) -> str:
-    """anchor: carry the #ev-<section>-<id> target (once per page: the section's all-events list);
-    cited: the event is evidence of the assessment it is listed under."""
+             anchor: bool = True, cited: bool = False, note: str = "") -> str:
+    """anchor: carry the #ev-<section>-<id> target (the event's first occurrence on the page);
+    cited: the event is evidence of the assessment it is listed under; note: an extra badge."""
     sig = int(e["significance"] or 0)
     chips = "".join(f'<span class="chip">{esc(names.get(t, t))}</span>' for t in json.loads(e["topics"] or "[]"))
     srcs = json.loads(e["sources"] or "[]")
@@ -536,8 +540,10 @@ def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None 
 
     def target(eid) -> str:  # a superseded event is not shown: link to its effective successor
         seen, t = set(), eid
-        while t in succ and t not in seen:
+        while succ.get(t) and t not in seen:
             seen.add(t); t = succ[t]
+        if t in succ:  # not effective and no successor: withdrawn (a tombstone is never shown)
+            return f"{esc(eid)} (withdrawn)"
         label = esc(eid) + (f" (superseded by {esc(t)})" if t != eid else "")
         return f'<a href="#ev-{esc(e["section"])}-{esc(t)}">{label}</a>'
     rels = "".join(f'<div class="rel">↳ {esc(r.get("rel"))} of {target(r.get("id"))}</div>'
@@ -549,7 +555,7 @@ def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None 
             f'<div class="meta">{esc(e["date"])} · {esc(e["kind"])} · '
             f'<span title="significance {sig}/3">{"●" * sig}{"○" * (3 - sig)}</span> · '
             f'known {esc(e["known_at"])}{badge(e["verification_status"])}'
-            f'{'<span class="badge b-cited">cited as evidence</span>' if cited else ""}</div>'
+            f'{CITED if cited else ""}{f" <span class=badge>{esc(note)}</span>" if note else ""}</div>'
             f'<div>{esc(e["claim"])}</div><div>{chips} {links}</div>{rels}</li>')
 
 
@@ -628,11 +634,42 @@ def events_ul(evs, names, succ, shown: set, cited: set | None = None) -> str:
     return "<ul>" + "".join(out) + "</ul>"
 
 
+def evidence_and_events(db, sec: str, topic: str, m: sqlite3.Row | None, names, succ, shown: set) -> str:
+    """The assessment's cited evidence (whatever its topic tags; a since-superseded
+    record is shown as cited, flagged), then the topic's other events."""
+    out = []
+    cited = json.loads(m["evidence"] or "[]") if m and m["assessment_id"] else []
+    if cited:
+        rows = {r["id"]: r for r in db.execute(
+            f"SELECT * FROM events WHERE section=? AND id IN ({','.join('?' * len(cited))})", (sec, *cited))}
+        lis = []
+        for eid in cited:
+            e = rows.get(eid)
+            if e is None:
+                lis.append(f'<li class="ev"><span class="gap">{esc(eid)}: not in the ledger as of this date</span></li>')
+            elif e["effective"]:
+                lis.append(event_li(e, names, succ, anchor=eid not in shown, cited=True))
+                shown.add(eid)
+            else:
+                lis.append(event_li(e, names, succ, anchor=False, cited=True,
+                                    note=f"since superseded by {e['superseded_by']}" if e["superseded_by"]
+                                    else "since withdrawn"))
+        out.append(f"<h4>Cited evidence ({len(cited)})</h4><ul>{''.join(lis)}</ul>")
+    evs = [e for e in topic_events(db, sec, topic) if e["id"] not in set(cited)]
+    if evs:
+        out.append(f"<h4>{'Other events' if cited else 'Events'} ({len(evs)})</h4>" + events_ul(evs, names, succ, shown))
+    elif not cited:
+        out.append('<div class="mute">no events tagged yet</div>')
+    return "".join(out)
+
+
 def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, succ, shown: set) -> str:
     """One milestone/challenge, README-style (dot, name, definition, status line); the
     detail (criteria, assessment, evidence) expands."""
     topic = f"{kind}:{item['slug']}"
-    evs = topic_events(db, sec, topic)
+    # events = tagged with the topic, or cited by its assessment
+    evs = {e["id"] for e in topic_events(db, sec, topic)}
+    evs |= set(json.loads(m["evidence"] or "[]")) if m and m["assessment_id"] else set()
     head = (f'{dot(m["status"]) if (m and m["assessment_id"]) else (dot(None) if kind == "milestone" else "")}'
             f'<b>{md_inline(item["name"])}:</b> {md_inline(item["description"])}')
     if kind == "milestone":
@@ -646,9 +683,7 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
         body += '<ul class="md">' + "".join(f"<li>{md_inline(d)}</li>" for d in item["details"]) + "</ul>"
     if kind == "milestone":
         body += assessment_html(m) if m else '<div class="gap">not yet assessed</div>'
-    cited = set(json.loads(m["evidence"] or "[]")) if m and m["assessment_id"] else set()
-    body += (f"<h4>Events ({len(evs)})</h4>" + events_ul(evs, names, succ, shown, cited=cited)) if evs \
-        else '<div class="mute">no events tagged yet</div>'
+    body += evidence_and_events(db, sec, topic, m, names, succ, shown)
     return f'<li class="topic"><details><summary>{head}</summary><div class="more">{body}</div></details></li>'
 
 
@@ -679,10 +714,7 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -
         body.append(f"<details><summary>{len(rest)} more registered metric(s)</summary>"
                     '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
     body.append("<h4>Assessment</h4>" + (assessment_html(km) if km else '<div class="gap">not yet assessed</div>'))
-    evs = topic_events(db, sec, "kpi")
-    if evs:
-        cited = set(json.loads(km["evidence"] or "[]")) if km and km["assessment_id"] else set()
-        body.append(f"<h4>KPI events ({len(evs)})</h4>" + events_ul(evs, names, succ, shown, cited=cited))
+    body.append(evidence_and_events(db, sec, "kpi", km, names, succ, shown))
     out.append(f'<details class="kpid"><summary>{"Now: " + vals if vals else "Now: —"}<span class="st">{status}</span>'
                f'</summary><div class="more">{"".join(body)}</div></details>')
     return "".join(out)
@@ -731,7 +763,7 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
     # events no framework topic lists (e.g. tags of a since-changed framework): never silently dropped
     other = [e for e in evs if e["id"] not in shown]
     if other:
-        out.append(f'<details class="news"><summary>Other events: {len(other)} (no current topic)</summary>'
+        out.append(f'<details class="news"><summary>Events under no current topic: {len(other)}</summary>'
                    f'<div class="more">{events_ul(other, names, succ, shown)}</div></details>')
     out.append(f'<details class="news"><summary>Latest events (the {min(n_recent, len(evs))} most recently '
                f'known of {len(evs)})</summary><div class="more">{events_ul(evs[:n_recent], names, succ, shown)}'
@@ -844,12 +876,17 @@ def period_dirs() -> list[str]:
     return [d for _, d in sorted(out, reverse=True)]
 
 
-def period_page(period_dir: str, note: str = "") -> str:
+def period_page(period_dir: str, note: str = "", force: bool = False) -> str:
     """Freeze <period-dir>/index.html: the dashboard as of the period's cutoff, with
     the framework of that period (<period-dir>/framework.yaml; copied from the
-    mechanism repo on the first run, then kept). Returns the page path."""
+    mechanism repo on the first run, then kept). An existing page is frozen: it is
+    replaced only with force (a regenerated one may differ, see views/EXPLORER.md;
+    give it a note saying so). Returns the page path."""
     import shutil
     name = os.path.basename(os.path.normpath(period_dir))
+    out = os.path.join(period_dir, PAGE)
+    if os.path.exists(out) and not force:
+        raise ValueError(f"{out} exists and is frozen (regenerate with --force, and a --note saying why)")
     cut = ledger.cutoff(name.removeprefix("pilot-"))
     fw_path = os.path.join(period_dir, "framework.yaml")
     if not os.path.exists(fw_path):
@@ -857,9 +894,10 @@ def period_page(period_dir: str, note: str = "") -> str:
     fw = ledger.framework(period_dir)
     covered = {s for s in ledger.SECTIONS
                if os.path.isfile(p := os.path.join(period_dir, f"{s}.md")) and os.path.getsize(p) > 0}
-    out = os.path.join(period_dir, PAGE)
-    with open(out, "w", encoding="utf-8") as f:
-        f.write(dashboard(cut, fw, period=name, covered=covered, note=note))
+    page = dashboard(cut, fw, period=name, covered=covered, note=note)  # render first, then replace atomically
+    with open(out + ".tmp", "w", encoding="utf-8") as f:
+        f.write(page)
+    os.replace(out + ".tmp", out)
     return out
 
 
@@ -898,6 +936,7 @@ def main() -> int:
         p.add_argument("--as-of", type=dt.date.fromisoformat, default=dt.date.today(), help="YYYY-MM-DD (default: today)")
     pp = sub.add_parser("period"); pp.add_argument("period_dir")
     pp.add_argument("--note", default="", help="a remark shown under the page header (Markdown)")
+    pp.add_argument("--force", action="store_true", help="replace an existing (frozen) page")
     a = ap.parse_args()
     try:
         if a.cmd == "build":
@@ -917,7 +956,7 @@ def main() -> int:
             for p in site(a.out, a.as_of):
                 print(f"wrote {p}")
         else:
-            print(f"wrote {period_page(a.period_dir, a.note)}")
+            print(f"wrote {period_page(a.period_dir, a.note, a.force)}")
     except ValueError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1

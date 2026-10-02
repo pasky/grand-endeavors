@@ -23,7 +23,7 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [x] Dashboard published as the front page (owner symlink: pasky.or.cz/grand-endeavors/
       = `build/`; `index.html` + frozen period pages; `gather.sh` runs `explore.py site`).
       Still open: a hosted Datasette (`datasette publish`), and linking the
-      dashboard from round-ups and the data repo README.
+      dashboard from the round-ups.
 
 ## Data quality
 

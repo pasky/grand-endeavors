@@ -378,11 +378,23 @@ def main():
         sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), fsec, 1)
         case("events under their topics, beyond + latest folded",
              "Beyond the framework: 1 event(s)" in sec and "Latest events (the 1 most recently known of 5)" in sec
-             and "previously green on 2026-07-02" in sec and "Other events" not in sec)
+             and "previously green on 2026-07-02" in sec and "under no current topic" not in sec)
         other = dict(fsec, milestones=[m for m in fsec["milestones"] if m["slug"] != "the-balance"])
         sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), other, 1)
         case("events of a topic the framework no longer lists are not dropped",
-             "Other events: 2 (no current topic)" in sec and "cover 88%" in sec)
+             "Events under no current topic: 2" in sec and "cover 88%" in sec)
+        case("cited evidence shown under the target even when tagged with another topic",
+             re.search(r"<b>The Balance:</b>.*?Cited evidence \(1\).*?An agency projected", page, re.S) is not None)
+        ev_sec = explore.evidence_and_events(
+            db, "climate", "milestone:the-balance",
+            {"assessment_id": "x", "evidence": '["2026-05-01-pledge-coverage", "nope"]'}, {}, {}, set())
+        case("superseded / unknown evidence is flagged, not dropped",
+             "since superseded by 2026-05-01-pledge-coverage-corrected" in ev_sec and "cover 90%" in ev_sec
+             and "nope: not in the ledger as of this date" in ev_sec and "Other events (2)" in ev_sec)
+        tomb = dict(db.execute("SELECT * FROM current_events LIMIT 1").fetchone())
+        tomb["relates"] = '[{"id": "x", "rel": "update"}]'
+        case("lifecycle link to a withdrawn record: no dangling anchor",
+             "x (withdrawn)" in explore.event_li(tomb, {}, {"x": "t", "t": None}) and 'href="#ev-climate-"' not in page)
         case("markdown: inline emphasis, escaped, http links only",
              explore.md_inline("**b** *i* <x> [t](https://a.b/?q=1&r=2) [j](javascript:x)")
              == '<b>b</b> <i>i</i> &lt;x&gt; <a href="https://a.b/?q=1&amp;r=2" target="_blank" '
@@ -409,6 +421,15 @@ def main():
              and "Reconstructed <i>later</i>." in pg and 'href="../"' in pg and "ledger.sqlite" not in pg)
         case("period page: sections without a bulletin are marked",
              pg.count("Not covered by this period") == 1 and "late announcement" not in pg)
+        try:
+            explore.period_page(pdir)
+            refused = False
+        except ValueError:
+            refused = True
+        case("period page is frozen: no silent overwrite, --force replaces it",
+             refused and open(p, encoding="utf-8").read() == pg
+             and "Reconstructed" not in open(explore.period_page(pdir, force=True), encoding="utf-8").read())
+        explore.period_page(pdir, note="Reconstructed *later*.", force=True)
         fresh = os.path.join(root, "pilot-2025")
         os.makedirs(fresh)
         explore.period_page(fresh)

@@ -23,7 +23,8 @@
 # override), scoped commit of this stage's own artifacts only, saved pi session
 # under <out-dir>/.sessions/, fatal gate (STRICT=0 for report-only).
 # Finally freezes the period page <out-dir>/index.html (explore.py period: the
-# dashboard as of the cutoff, with the framework copied to <out-dir>/framework.yaml).
+# dashboard as of the cutoff, with the framework copied to <out-dir>/framework.yaml;
+# once: a re-run keeps it) and refreshes the published site.
 # Provenance: <out-dir>/MANIFEST-roundup.txt (separate from the per-section
 # MANIFEST-<section>.txt files) records the tool versions and the git blob hash of every input
 # section file.
@@ -169,11 +170,17 @@ fi
 
 # The period page: the dashboard as of the cutoff, frozen next to the bulletins
 # (with the framework in force, copied once to $OUT_DIR/framework.yaml).
-echo ">>> [roundup/$OUT_DIR] period page"
-uv run $ROOT/views/explore.py period "$OUT_DIR"
-git add "$OUT_DIR/index.html" "$OUT_DIR/framework.yaml"
-if ! git diff --cached --quiet -- "$OUT_DIR/index.html" "$OUT_DIR/framework.yaml"; then
+# A re-run keeps the existing page (it is frozen; replace it by hand with
+# `explore.py period --force --note ...`).
+if [ -e "$OUT_DIR/index.html" ]; then
+	echo ">>> [roundup/$OUT_DIR] period page exists, kept (frozen)"
+else
+	echo ">>> [roundup/$OUT_DIR] period page"
+	uv run $ROOT/views/explore.py period "$OUT_DIR"
+	git add "$OUT_DIR/index.html" "$OUT_DIR/framework.yaml"
 	git commit -q -m "$OUT_DIR: period page (dashboard as of the cutoff)" -- "$OUT_DIR/index.html" "$OUT_DIR/framework.yaml"
+	# publish it: refresh the site ($ROOT/build/; best effort, the page is committed)
+	uv run $ROOT/views/explore.py site >/dev/null || echo "WARN: site refresh failed (see above)" >&2
 fi
 
 echo ">>> [roundup/$OUT_DIR] validate"

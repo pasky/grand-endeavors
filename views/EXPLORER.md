@@ -26,7 +26,7 @@ git clone https://github.com/pasky/grand-endeavors-data.git data   # or set GE_D
 ```sh
 uv run views/explore.py site                            # -> build/: index.html, period pages, ledger.sqlite (gather.sh runs this)
 uv run views/explore.py dashboard --as-of 2026-07-14    # just the page, as the ledger knew the world on that date
-uv run views/explore.py period pilot-26H1               # (cwd = data) freeze a period page (roundup.sh runs this)
+(cd data && uv run ../views/explore.py period pilot-26H1)  # freeze a period page (roundup.sh runs this)
 ```
 
 The page is the **maximal source of truth** for a reader: it carries the
@@ -53,25 +53,29 @@ Automation carry their own intro):
     granularity; "next expected by …", **OVERDUE**, or **no data yet**. A
     `legacy` badge marks values from the unverified 2025 report.
   - the **assessment**: label, rationale and its structured basis (assessed
-    quantity, window, benchmark, …), and the KPI-tagged events.
+    quantity, window, benchmark, …), its cited evidence, and the other
+    KPI-tagged events.
 - **Milestone Countdown**: per milestone its status dot, name and definition,
   then the status label, assessment date and event count. Expanded: the
   precise criteria, the assessment (rationale; ETA, path, blockers; the
-  previous status), and its events, the cited evidence marked. Statuses follow
+  previous status), the **cited evidence** (every event the assessment cites,
+  whatever its topic tags; one superseded or withdrawn since is flagged), then
+  the milestone's other events. Statuses follow
   gather/RUBRIC.md: 🟢 green, 🟡 yellow, 🔴 red, ✅ achieved (a green dot with a
   check mark), ⚪ unknown ("Unassessed"), dashed = not yet assessed.
 - **Open challenges** (or fusion's Tech Tree): name, definition and event
   count; expanded, the details and events. Challenges are not assessed.
-- Folded at the end: **Beyond the framework** events, **Other events** (tags
-  the framework no longer lists, e.g. after a change; never silently
+- Folded at the end: **Beyond the framework** events, **events under no
+  current topic** (tags the framework no longer lists, e.g. after a change; never silently
   dropped) and the **latest events**.
 
 Each event shows the claim, event date, kind (achievement, announcement,
 projection, setback, …), significance (●●○), when it became known, topic tags,
 source links and a verification badge (verified / corrected / **legacy**). It
 is listed under every topic it is tagged with; lifecycle links (`relates`,
-`supersedes`) jump to its first occurrence. Superseded and withdrawn records
-are not shown; the current version is.
+`supersedes`) jump to its first occurrence (or say "withdrawn"). Superseded
+and withdrawn records are not shown, except as cited evidence (flagged); the
+current version is.
 
 **Footer**: record counts, the metric **gaps** (overdue or never observed;
 never hidden), links to the earlier **period pages**, and the data/code repos.
@@ -87,7 +91,8 @@ That makes it the right way to answer "what did we know on date X?"
 repo (published as `build/<period-dir>/index.html`): the dashboard as of the
 period's cutoff, rendered with the framework in force for that period
 (`<period-dir>/framework.yaml`, copied from the mechanism repo on the first run
-and kept). Sections without a bulletin in that period are marked "not
+and kept). An existing page is never replaced silently: a re-run of roundup.sh
+keeps it, and `--force` (with a `--note` saying why) regenerates it. Sections without a bulletin in that period are marked "not
 covered". The page is frozen because a regenerated as-of view drifts: later
 corrections of facts that were public by the cutoff, and assessments written
 retrospectively, enter it. pilot-2025 and pilot-26H1 were reconstructed this
