@@ -41,6 +41,12 @@ def main():
     case("details are appended to the description as '- ' lines",
          ledger.fw_description({"description": "Robot works.", "details": ["8h+ shifts.", "No teleop."]})
          == "Robot works.\n- 8h+ shifts.\n- No teleop.")
+    import subprocess
+    out = subprocess.run([sys.executable, os.path.join(ledger.ROOT, "core", "ledger.py"), "items", "robots-hardware"],
+                         capture_output=True, text=True, check=True).stdout.splitlines()
+    case("ledger.py items: one line per watch item (details inlined, gather.sh reads lines)",
+         [ln.split("|")[0] for ln in out] == [t for t, _, _ in ledger.framework_items("robots-hardware")]
+         and any(" • No teleoperation" in ln for ln in out))
     bad_fw = {"title": "t", "tagline": "t", "manifesto": "m", "endeavors": [
         {"id": "x", "title": "X", "milestones": [{"slug": "a", "name": "A", "description": "d"},
                                                 {"slug": "a", "name": "B", "description": "d"},

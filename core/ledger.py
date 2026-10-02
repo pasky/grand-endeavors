@@ -1119,7 +1119,8 @@ def main() -> int:
             return 1 if errs else 0
         elif a.cmd == "items":
             for topic, name, desc in framework_items(a.section):
-                print(f"{topic}|{name}|{desc}")
+                # ONE line per item (gather.sh reads topic|name|desc lines): details inline
+                print(f"{topic}|{name}|{desc}".replace("\n- ", " • ").replace("\n", " "))
         elif a.cmd == "stale":
             for target, aid in stale_targets(a.section, day(a.until), a.force):
                 print(f"{target}|{aid}")
