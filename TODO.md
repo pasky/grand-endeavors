@@ -7,13 +7,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 
 ## Owner decisions
 
-- [ ] **A milestone beyond "The Blue Collar Shift"?** It was tightened on
-      2026-10-01 (30 working days, no teleoperation, ≤1 disclosed intervention
-      per shift, ≥90% throughput); it is now yellow. Open question: should
-      Chinese "dark factories" count? They use special-purpose automation, not
-      general-purpose robots, so not under the current wording. A possible
-      later milestone is "The Dark Line": a production line staffed only by
-      general-purpose robots runs a full week with no humans on the floor.
 - [ ] **Scheduling budget**: how often each section's gather runs (a full
       8-item climate gather ≈ 75 min of agent time), and which model per stage
       (e.g. a cheaper intake model, a strong verifier).
