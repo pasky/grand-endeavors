@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Grand Endeavors explorer: derived, read-only views of the ledger
 (DESIGN.md §1 "explorer (SQLite/Datasette)"). Nothing here is canonical;
 outputs go to build/ (gitignored) and can be rebuilt at any time.
@@ -118,8 +121,8 @@ ORDER BY required DESC, section, metric;
 
 TABLE_DOCS = {
     "build_info": "Build parameters (as_of: the known_at cutoff applied to every record).",
-    "sections": "README endeavors (sections), in README order, with their KPI line.",
-    "topics": "Topic tags per section from README: kpi, milestone:<slug>, challenge:<slug>, beyond.",
+    "sections": "Endeavors (sections) in framework.yaml order, with their KPI line.",
+    "topics": "Topic tags per section from framework.yaml: kpi, milestone:<slug>, challenge:<slug>, beyond.",
     "events": "News/claims (ledger/events), incl. superseded ones (effective=0, superseded_by = the "
               "correcting record known by as_of). known_at = published. JSON columns keep nested fields.",
     "event_topics": "One row per (event, topic tag).",
@@ -212,22 +215,14 @@ def next_expected(cadence: str, lag: str, obs_end: dt.date) -> dt.date | None:
 _change_text, compare, year_ago = ledger.change_text, ledger.compare, ledger.year_ago
 
 
-def readme_meta(section: str) -> tuple[str, str, str, dict[str, str]]:
-    """(group, title, KPI line, {topic name: description}) from README.md.
-    (ledger.readme_topics gives slugs/names only; this adds the prose.)"""
-    head = ledger._HEADINGS[section]
-    lines = open(os.path.join(ledger.ROOT, "README.md"), encoding="utf-8").read().splitlines()
-    start = next((i for i, ln in enumerate(lines) if ln.strip() == head), None)
-    if start is None:
-        return "", head.lstrip("# "), "", {}
-    level = len(head.split()[0])
-    end = next((i for i in range(start + 1, len(lines)) if re.match(r"^#{1,%d} " % level, lines[i])), len(lines))
-    group = ""
-    if level > 2:
-        group = next((ln[3:].strip() for ln in reversed(lines[:start]) if ln.startswith("## ")), "")
-    body = lines[start:end]
-    kpi_line = next((ln.split("**KPI:**", 1)[1].strip() for ln in body if ln.startswith("**KPI:**")), "")
-    return group, head.lstrip("# "), kpi_line, ledger.bullet_descriptions(body)
+def framework_meta(section: str) -> tuple[str, str, str, dict[str, str]]:
+    """(group title, section title, KPI line, {topic name: description}) from framework.yaml."""
+    try:
+        sec, grp = ledger.fw_section(section)
+    except KeyError:
+        return "", section, "", {}
+    desc = {t["name"]: ledger.fw_description(t) for k in ("milestones", "challenges") for t in sec.get(k) or []}
+    return (grp or {}).get("title", ""), sec["title"], sec.get("kpi", ""), desc
 
 
 def _known(recs: list[dict], as_of: dt.date, what: str) -> list[tuple[dict, str]]:
@@ -261,11 +256,11 @@ def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
         f"INSERT INTO {table} VALUES ({','.join('?' * len(row))})", row)
     ins("build_info", ("as_of", str(as_of)))
     for n, sec in enumerate(ledger.SECTIONS):
-        group, title, kpi_line, desc = readme_meta(sec)
+        group, title, kpi_line, desc = framework_meta(sec)
         ins("sections", (sec, n, group, title, kpi_line))
         try:
-            t = ledger.readme_topics(sec)
-        except StopIteration:  # section heading not in README
+            t = ledger.framework_topics(sec)
+        except KeyError:  # section not in framework.yaml
             t = {"milestones": [], "challenges": []}
         tops = [("kpi", "kpi", "kpi", "KPI", kpi_line)]
         tops += [(f"milestone:{s}", "milestone", s, name, desc.get(name, "")) for s, name in t["milestones"]]
@@ -537,7 +532,7 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, n_recent: int = 8) -> s
     if s["kpi"]:
         out.append(f'<div class="mute">KPI: {esc(s["kpi"])}</div>')
     elif not framework:
-        out.append('<div class="mute">Supplemental section: no KPI, milestones or challenges in README.</div>')
+        out.append('<div class="mute">Supplemental section: no KPI, milestones or challenges in the framework.</div>')
 
     # required metrics and every gap are always shown; the rest of the registry folds away
     main = [t for t in tiles if t["required"] or t["status"] in ("overdue", "no data")]
@@ -560,7 +555,7 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, n_recent: int = 8) -> s
         rows = [m for m in ms if m["kind"] == kind]
         if not rows:
             if kind != "kpi" and framework:
-                out.append(f'<h3>{title}</h3><div class="gap">none listed in README</div>')
+                out.append(f'<h3>{title}</h3><div class="gap">none listed in the framework</div>')
             continue
         out.append(f"<h3>{title}</h3><ul>")
         for m in rows:

@@ -9,7 +9,7 @@
 #         FORCE=1            assess ALL targets (kpi + milestones), not just stale ones
 #         CORRECTION=1       records are rubric corrections (RUBRIC.md rule 4:
 #                            once per target per rubric version, no new-evidence claim)
-#         DEFCHANGE=<commit> the README definition of the targets changed in that
+#         DEFCHANGE=<commit> the framework.yaml definition of the targets changed in that
 #                            mechanism commit (RUBRIC.md rule 6)
 #         ONLY="milestone:x kpi"   restrict to these targets
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
@@ -37,8 +37,8 @@ SPEC="$(awk -F, -v s="$SECTION" 'NR==1 || $1==s' metrics/kpi-assessment.csv)"
 case "$SPEC" in *"
 $SECTION,"*) : ;; *) SPEC="(no KPI spec for $SECTION: do NOT assess its 'kpi' target; skip it)" ;; esac
 CORR=""
-[ -n "${DEFCHANGE:-}" ] && CORR="The README definition of these targets changed in mechanism commit $DEFCHANGE
-(see: git -C $ROOT show $DEFCHANGE -- README.md). Set \"definition_change\": \"$DEFCHANGE\"
+[ -n "${DEFCHANGE:-}" ] && CORR="The framework.yaml definition of these targets changed in mechanism commit $DEFCHANGE
+(see: git -C $ROOT show $DEFCHANGE -- framework.yaml). Set \"definition_change\": \"$DEFCHANGE\"
 on every record and judge the evidence against the NEW wording only (RUBRIC.md rule 6)."
 [ "${CORRECTION:-}" = 1 ] && CORR='Set "rubric_correction": "v1" on every record: these re-judge the existing
 evidence under the new rubric (no new-evidence claim). The change_note must
@@ -51,7 +51,7 @@ in $ROOT/gather/RUBRIC.md (read it fully; it is binding). Targets (target|assess
 $TARGETS
 
 Inputs:
-- $ROOT/README.md: the "$SECTION" KPI and milestone definitions (their literal wording).
+- $ROOT/framework.yaml: the "$SECTION" KPI and milestone definitions (their literal wording).
 - KPI spec (fixed; do not choose your own metric, window or benchmark):
 $SPEC
 - Evidence: the effective events in ledger/events/$SECTION.jsonl with published <= $UNTIL.
@@ -62,7 +62,7 @@ $SPEC
 - Previous assessments: ledger/assessments/$SECTION.jsonl (the latest per target
   with made_at <= $UNTIL is "prev").
 $CORR
-Judge each milestone on its OWN quantity as the README wording defines it (e.g.
+Judge each milestone on its OWN quantity as the framework wording defines it (e.g.
 total greenhouse-gas emissions, not CO2 alone). If only a proxy has data, name
 the proxy and why it tracks the target in basis.path, and let that uncertainty
 show in the ETA.

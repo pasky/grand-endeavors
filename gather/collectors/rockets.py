@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Rockets KPI collector: Jonathan's Space Report annual payload tonnage -> payload-mass-to-orbit.
 
 Usage:  uv run gather/collectors/rockets.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]

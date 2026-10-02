@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Offline tests for gather/collectors/health.py (WHO GHO HALE at birth).
 
 Run:  uv run gather/tests/test_collector_health.py     (no network; the source is

@@ -4,7 +4,7 @@ Status: adopted 2026-09 (replaces the period-centric `generate.sh` pipeline).
 
 ## 1. Principle: the ledger is the product
 
-Grand Endeavors tracks humanity's progress on a handful of endeavors (README.md).
+Grand Endeavors tracks humanity's progress on a handful of endeavors (framework.yaml).
 The primary artifact is a continuously growing, verified **ledger** of what is
 known and when it became known. Everything readers see is a **view** of it:
 
@@ -77,7 +77,7 @@ metrics/<section>.csv                metric registry = schema/contract for obser
 | `date` | event date (YYYY-MM-DD; YYYY-MM or YYYY if only that is known) |
 | `published`, `published_basis`, `retrieved` | see §2 |
 | `kind` | `achievement` `announcement` `projection` `setback` `data` `analysis` `policy` `retraction` |
-| `topics` | ≥1 of `kpi`, `milestone:<slug>`, `challenge:<slug>`, `beyond` (slugs from README) |
+| `topics` | ≥1 of `kpi`, `milestone:<slug>`, `challenge:<slug>`, `beyond` (slugs from framework.yaml: stable ids, kept across renames) |
 | `claim` | one self-contained factual sentence with numbers AND their metric scope |
 | `sources` | `[{url, title, primary}]`, deep links, at least one; primary sources preferred |
 | `metrics` | optional `[{metric, obs, value}]` links to registered observations |
@@ -133,7 +133,7 @@ may use them only as background context, never as this period's news.
 
 ## 4. Gather (`gather/gather.sh <section>`; env UNTIL, SINCE, ITEMS, OVERLAP_DAYS)
 
-1. **plan**: watch items from README: the KPI, every milestone, every challenge,
+1. **plan**: watch items from framework.yaml: the KPI, every milestone, every challenge,
    and always an open-ended `beyond` sweep for significant developments outside
    the framework.
 2. **collect**: deterministic collectors (`gather/collectors/<section>.py`) fetch
@@ -180,11 +180,11 @@ may use them only as background context, never as this period's news.
      change versus the previous cutoff, comparability caveats and same month
      last year;
    - the frozen chart series;
-   - the README framework.
+   - the framework (from framework.yaml).
 
    It is written to `<period-dir>/snapshot/<section>.json` and committed.
    Drafting, chart rendering and validation read the snapshot, not live
-   state, so a later ledger or README change cannot alter or invalidate a
+   state, so a later ledger or framework change cannot alter or invalidate a
    committed bulletin.
 2. **draft**: from the snapshot only, in the reference format. Footnotes cite
    snapshot sources, and charts are rendered from the frozen series
@@ -215,7 +215,9 @@ tests in its own `tests/` directory:
   snapshots and charts;
 - `core/tests/test_guard.sh`: the write-scope guard;
 - `core/tests/test_paths.py`: every `$ROOT/...` path and module the pipeline
-  scripts use exists (a broken one inside a prompt heredoc fails silently);
+  scripts use exists (a broken one inside a prompt heredoc fails silently),
+  and every runnable script declares `pyyaml` in its PEP 723 block (`uv run`
+  installs only what the script itself lists; the core reads framework.yaml);
 - `gather/tests/test_collector*.py`: the collectors, on trimmed real fixtures
   (they read the metric registry, so they need the data repo);
 - `views/tests/test_validate.py` (the bulletin and round-up gate) and
@@ -237,11 +239,12 @@ themselves.
 ## 7. Two repositories: mechanism and data
 
 - **Mechanism** (this repo): the code, the pipeline scripts and their prompts,
-  the endeavor framework (README.md), the schemas (this file) and the status
+  the endeavor framework (framework.yaml), the schemas (this file) and the status
   rubric (gather/RUBRIC.md). It is reviewed like code. Layout:
 
   ```
-  README.md DESIGN.md TODO.md   framework, design, backlog
+  README.md DESIGN.md TODO.md   pointer to the site, design, backlog
+  framework.yaml                endeavor definitions (read by the pipeline and the dashboard)
   core/     ledger.py kpi.py lib.sh      shared by gather and views
   gather/   gather.sh assess.sh RUBRIC.md collectors/   grows the ledger
   views/    bulletin.sh roundup.sh validate.py explore.py

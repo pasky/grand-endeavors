@@ -4,7 +4,7 @@
 # Data gathering runs on its own schedule, independent of bulletins. Each run
 # covers a publication window [SINCE, UNTIL] and:
 #   1. collect  deterministic collectors (collectors/<section>.py), if any
-#   2. intake   one web-capable pi agent per watch item (KPI, every README
+#   2. intake   one web-capable pi agent per watch item (KPI, every framework.yaml
 #               milestone and challenge, and an open-ended "beyond" sweep) stages
 #               candidate events/observations, deduplicated against the ledger
 #   3. verify   a FRESH agent re-checks every staged record against its source:
@@ -92,13 +92,13 @@ while IFS='|' read -r topic name desc <&3; do
 You are a news-intake researcher for "Grand Endeavors", a live tracker of
 humanity's progress. Section "$SECTION", watch item "$topic" ($name):
   $desc
-Read $ROOT/README.md (the "$SECTION" endeavor) and $ROOT/DESIGN.md §2-3 (ledger time
+Read $ROOT/framework.yaml (the "$SECTION" endeavor) and $ROOT/DESIGN.md §2-3 (ledger time
 semantics and the event schema; ledger.py check_event is the validator).
 
 WINDOW: developments whose source was PUBLISHED between $ISINCE and $UNTIL
 (inclusive). Use your web-search and visit-webpage skills; prefer PRIMARY
 sources (agencies, papers, companies, official data) and deep links. VISIT every
-source to confirm it states the claim. Stay strictly on this watch item.$( [ "$topic" = beyond ] && printf '\n"beyond" = significant developments for this endeavor that fit NONE of the README milestones/challenges.' )
+source to confirm it states the claim. Stay strictly on this watch item.$( [ "$topic" = beyond ] && printf '\n"beyond" = significant developments for this endeavor that fit NONE of the framework milestones/challenges.' )
 
 THE LEDGER ALREADY CONTAINS these $SECTION events (id [kind; topics; verification] claim):
 $RECENT

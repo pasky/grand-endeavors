@@ -33,7 +33,7 @@ list: KPI metrics that are overdue (the next release is past due given the
 registry's cadence and release lag) or that have never been observed. Gaps are
 never hidden; an unfilled datapoint shows as unfilled.
 
-**Per endeavor** (in README order):
+**Per endeavor** (in framework.yaml order):
 - **KPI tiles**, one per required metric (others fold under "more registered
   metrics"). Each tile shows:
   - the latest value and its observation period;

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Offline regression tests for the deterministic KPI collectors (gather/collectors/*.py).
 
 Run:  uv run gather/tests/test_collectors.py     (no network; sources come from gather/tests/fixtures/,

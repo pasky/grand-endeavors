@@ -1,6 +1,6 @@
 # Shared plumbing for gather/gather.sh, gather/assess.sh, views/bulletin.sh (POSIX sh;
 # source it from a script one directory below the repo root).
-# TWO repositories (DESIGN.md §7): the mechanism ($ROOT: code, prompts, README,
+# TWO repositories (DESIGN.md §7): the mechanism ($ROOT: code, prompts, framework.yaml,
 # rubric) and the data ($D: ledger, registry, bulletins; $GE_DATA, default
 # $ROOT/data). Scripts run with cwd = $D, so every data path is repo-relative and
 # pi agents work inside the data repo; code is invoked as $ROOT/<dir>/<tool>.

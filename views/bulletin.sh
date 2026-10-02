@@ -66,7 +66,7 @@ $OUT_FILE.
 SOURCE OF FACTS: ONLY the ledger snapshot $SNAP (read ALL of it). It is the
 ledger as of the cutoff $CUTOFF. Do no web research, and add nothing from
 memory. Also read:
-- $ROOT/README.md: the "$SECTION" endeavor, i.e. KPI, milestones and challenges;
+- $ROOT/framework.yaml: the "$SECTION" endeavor, i.e. KPI, milestones and challenges;
 - $REF_TEMPLATE: the reference FORMAT (not content);
 - $ROOT/DESIGN.md §2 and §5.
 Snapshot parts:
@@ -90,7 +90,7 @@ STRUCTURE (follow the reference format):
         uv run $ROOT/core/kpi.py chart $OUT_DIR $SECTION <metric> --since <YYYY> --label year [--match '*-05']
     Choose metrics from chartable_metrics. Use a single granularity (--match for
     one month per year) and about 10-15 points.
-- Milestone Status: one subsection per README milestone, using the assessment
+- Milestone Status: one subsection per framework milestone, using the assessment
   status (green 🟢, yellow 🟡, red 🔴, achieved ✅), its label (the verdict word
   first, e.g. "Off track", as defined in $ROOT/gather/RUBRIC.md) and rationale, and what
   changed since the previous assessment. Mark it "Not yet assessed" if it has
@@ -98,9 +98,9 @@ STRUCTURE (follow the reference format):
   the KPI Dashboard, and add a one-line status legend from RUBRIC.md: KPI
   status = pace versus what the goal needs, not the level; milestone status =
   ETA on evidence.
-- Open Challenges: one subsection per README challenge, covering its new events.
+- Open Challenges: one subsection per framework challenge, covering its new events.
   If there are none, write "No significant developments this period." (Name every
-  challenge and milestone exactly as README does.)
+  challenge and milestone exactly as framework.yaml does.)
 - Beyond the Framework: the "beyond" new events.
 - Reference Data: dataset links from the snapshot sources.
 - Footnotes: wiki-style [^ref] citations; each points to a source URL of the

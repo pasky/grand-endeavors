@@ -2,7 +2,7 @@
 and the bulletin-gate tests (views/tests/test_validate.py). Not a test itself.
 
 fixture() points ledger.ROOT, kpi.ROOT and ledger.DATA at a fresh temp dir holding
-a copy of the real README.md, a climate metric registry, observations and events.
+a copy of the real framework.yaml, a climate metric registry, observations and events.
 """
 import csv
 import json
@@ -50,11 +50,11 @@ def obs(metric, o, value, published, basis="source", unit="ppm", verification="v
 
 
 def fixture():
-    """Temp ROOT: README (climate), registry, observations, events, assessments."""
+    """Temp ROOT: framework.yaml, registry, observations, events, assessments."""
     root = tempfile.mkdtemp()
     ledger.ROOT = kpi.ROOT = ledger.DATA = root
     import shutil
-    shutil.copy(os.path.join(REAL_ROOT, "README.md"), root)
+    shutil.copy(os.path.join(REAL_ROOT, "framework.yaml"), root)
     write_csv(f"{root}/metrics/climate.csv", kpi.REG_COLUMNS, [
         ["co2-mlo-monthly", "ppm", "monthly", "7", "pilot-26H1", "", "NOAA Mauna Loa monthly mean CO2 dry-air mole fraction"],
         ["co2-mlo-annual", "ppm", "annual", "10", "", "", "NOAA Mauna Loa calendar-year annual mean CO2"],

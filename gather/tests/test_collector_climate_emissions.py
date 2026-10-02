@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Offline tests for gather/collectors/climate_emissions.py (Global Carbon Budget emissions series).
 
 Run:  uv run gather/tests/test_collector_climate_emissions.py

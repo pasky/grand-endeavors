@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Grand Endeavors ledger: the canonical, append-only record of what is known
 and when it became known. See DESIGN.md (§2 time semantics, §3 schemas).
 
 COMMANDS
   ledger.py check [section ...]                    validate ledger files (all sections by default)
-  ledger.py topics <section>                       valid topic tags (from README.md)
+  ledger.py topics <section>                       valid topic tags (from framework.yaml)
   ledger.py recent <section> [--limit N]           compact event list (for intake dedup prompts)
   ledger.py lint <section> [--events F..] [--obs F..] [--assessments F..] [--final]
                                                    validate staged files as if merged
@@ -13,7 +16,7 @@ COMMANDS
                                                    admitted records atomically (idempotent on replay;
                                                    rejected ones -> ledger/rejected/)
   ledger.py stale <section> --until D              assessment targets with newer evidence (+ next ids)
-  ledger.py items <section>                        gather watch list from README
+  ledger.py items <section>                        gather watch list from framework.yaml
   ledger.py state <section> [--get-item T | --record JSON]  per-item gather watermarks
   ledger.py cutoff <period>                        bulletin cutoff date (+ previous period's cutoff)
   ledger.py snapshot <period-dir> <section>        write <period-dir>/snapshot/<section>.json
@@ -29,7 +32,7 @@ import os
 import re
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # the mechanism repo (code, README, rubric)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # the mechanism repo (code, framework, rubric)
 # The data (ledger, registry, period bulletins) is a SEPARATE git repository:
 # $GE_DATA, default <mechanism>/data (gitignored here). See DESIGN.md §7.
 DATA = os.environ.get("GE_DATA") or os.path.join(ROOT, "data")
@@ -83,77 +86,88 @@ def date_end(s: str) -> dt.date:
     return kpi.obs_range(s)[1]
 
 
-# --- README topics ------------------------------------------------------------
-_HEADINGS = {"robots-software": "### Software", "robots-hardware": "### Hardware",
-             "rockets": "## Rockets and Space", "fusion": "## Fusion and Energy",
-             "health": "## Health and Lifespan", "climate": "## Climate and Environment",
-             "knowledge-beyond": "### The Knowledge Beyond",
-             "society-cohesion": "### Society and Cohesion"}
+# --- framework (framework.yaml: the endeavor definitions) ---------------------
+_FW_CACHE: dict = {}
 
 
-def slugify(name: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", name.lower().replace("$", "")).strip("-")
+def framework(root: str | None = None) -> dict:
+    """framework.yaml of the mechanism repo (or of `root`), parsed and checked."""
+    import yaml
+    p = os.path.join(root or ROOT, "framework.yaml")
+    key = (p, os.path.getmtime(p))
+    if key not in _FW_CACHE:
+        with open(p, encoding="utf-8") as f:
+            fw = yaml.safe_load(f)
+        errs = check_framework(fw)
+        if errs:
+            raise ValueError(f"{p}: " + "; ".join(errs))
+        _FW_CACHE[key] = fw
+    return _FW_CACHE[key]
 
 
-def readme_topics(section: str) -> dict[str, list[str]]:
-    """{'milestones': [(slug, name)...], 'challenges': [...]} parsed from README.md."""
-    lines = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read().splitlines()
-    start = next(i for i, ln in enumerate(lines) if ln.strip() == _HEADINGS[section])
-    level = len(_HEADINGS[section].split()[0])
-    end = next((i for i in range(start + 1, len(lines))
-                if re.match(r"^#{1,%d} " % level, lines[i])), len(lines))
-    out: dict[str, list] = {"milestones": [], "challenges": []}
-    mode = None
-    for ln in lines[start:end]:
-        if "Milestone Countdown" in ln:
-            mode = "milestones"
-        elif "Major Open Challenges" in ln or "Tech Tree" in ln:  # fusion: tech-tree branches = challenges
-            mode = "challenges"
-        elif mode and (m := re.match(r"^\*\s+\*\*(.+?)\*\*", ln)):
-            name = m[1].rstrip(":").strip().strip('"“”')
-            out[mode].append((slugify(name), name))
-        elif mode and ln.strip() and not ln.startswith(" ") and not re.match(r"^\*\s", ln):
-            mode = None  # any other paragraph (incl. a bold "**Header:**") ends the list
-    return out
+def check_framework(fw: dict) -> list[str]:
+    errs = []
+    for k in ("title", "tagline", "manifesto", "endeavors"):
+        if not fw.get(k):
+            errs.append(f"missing {k}")
+    secs = [s for s, _ in fw_sections(fw)]
+    ids = [s.get("id") for s in secs]
+    if len(set(ids)) != len(ids):
+        errs.append("duplicate section id")
+    for s in secs:
+        if not s.get("id") or not s.get("title"):
+            errs.append(f"section without id/title: {s}")
+        for kind in ("milestones", "challenges"):
+            slugs = [t.get("slug") for t in s.get(kind) or []]
+            if len(set(slugs)) != len(slugs):
+                errs.append(f"{s.get('id')}: duplicate {kind} slug")
+            for t in s.get(kind) or []:
+                if not (t.get("slug") and re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", t["slug"])):
+                    errs.append(f"{s.get('id')}: bad slug {t.get('slug')!r}")
+                if not t.get("name") or not t.get("description"):
+                    errs.append(f"{s.get('id')}: {t.get('slug')}: name and description required")
+    return errs
 
 
-def bullet_descriptions(lines: list[str]) -> dict[str, str]:
-    """{name: description} for every top-level '*   **Name:** text' bullet. Indented
-    sub-bullets (precise criteria) are appended as '\n- <text>' lines. First wins."""
-    out: dict[str, str] = {}
-    name = None
-    for ln in lines:
-        if m := re.match(r"^\*\s+\*\*(.+?)\*\*:?\s*(.*)$", ln):
-            name = m[1].rstrip(":").strip().strip('"“”')
-            if name in out:
-                name = None  # duplicate heading: keep the first description only
-            else:
-                out[name] = m[2].strip()
-        elif name and (m := re.match(r"^\s+[*-]\s+(.*)$", ln)):
-            out[name] += "\n- " + m[1].strip()
+def fw_sections(fw: dict) -> list[tuple[dict, dict | None]]:
+    """[(section, its group or None)] in framework order."""
+    out = []
+    for e in fw.get("endeavors") or []:
+        if "sections" in e:
+            out += [(s, e) for s in e["sections"]]
         else:
-            name = None
+            out.append((e, None))
     return out
 
 
-def readme_items(section: str) -> list[tuple[str, str, str]]:
+def fw_section(section: str, fw: dict | None = None) -> tuple[dict, dict | None]:
+    """(section, group) from the framework; KeyError if the section is not defined."""
+    for s, g in fw_sections(fw or framework()):
+        if s["id"] == section:
+            return s, g
+    raise KeyError(f"section {section!r} is not in framework.yaml")
+
+
+def fw_description(item: dict) -> str:
+    """A milestone/challenge description incl. its details as '\\n- <text>' lines."""
+    return item["description"] + "".join(f"\n- {d}" for d in item.get("details") or [])
+
+
+def framework_topics(section: str, fw: dict | None = None) -> dict[str, list[tuple[str, str]]]:
+    """{'milestones': [(slug, name)...], 'challenges': [...]} from framework.yaml."""
+    s, _ = fw_section(section, fw)
+    return {k: [(t["slug"], t["name"]) for t in s.get(k) or []] for k in ("milestones", "challenges")}
+
+
+def framework_items(section: str, fw: dict | None = None) -> list[tuple[str, str, str]]:
     """Gather watch list: (topic, name, description) for the KPI, every milestone
-    and challenge in README, plus the open-ended 'beyond' sweep."""
-    text = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
-    lines = text.splitlines()
-    start = next(i for i, ln in enumerate(lines) if ln.strip() == _HEADINGS[section])
-    level = len(_HEADINGS[section].split()[0])
-    end = next((i for i in range(start + 1, len(lines)) if re.match(r"^#{1,%d} " % level, lines[i])), len(lines))
-    block = lines[start:end]
-    kpi_line = next((ln for ln in block if ln.startswith("**KPI:**")), "")
-    intro = " ".join(ln for ln in block[1:] if ln.strip() and not ln.startswith(("*", "#")))[:600]
-    items = [("kpi", "KPI", kpi_line.replace("**KPI:**", "").strip() or f"The section's key indicators. {intro}")]
-    descs: dict[str, str] = {}
-    for n, d in bullet_descriptions(block).items():
-        descs.setdefault(slugify(n), d)
+    and challenge in framework.yaml, plus the open-ended 'beyond' sweep."""
+    s, g = fw_section(section, fw)
+    intro = re.sub(r"\s+", " ", s.get("intro") or (g or {}).get("intro") or "").strip()[:600]
+    items = [("kpi", "KPI", s.get("kpi") or f"The section's key indicators. {intro}")]
     for kind, topic in (("milestones", "milestone"), ("challenges", "challenge")):
-        for slug, name in readme_topics(section)[kind]:
-            items.append((f"{topic}:{slug}", name, descs.get(slug, "")))
+        for t in s.get(kind) or []:
+            items.append((f"{topic}:{t['slug']}", t["name"], fw_description(t)))
     items.append(("beyond", "Beyond the Framework",
                   "Significant developments for this endeavor that fit no milestone or challenge: "
                   "surprising breakthroughs, setbacks, policy shifts, new players, important data releases."))
@@ -161,7 +175,7 @@ def readme_items(section: str) -> list[tuple[str, str, str]]:
 
 
 def valid_topics(section: str) -> set[str]:
-    t = readme_topics(section)
+    t = framework_topics(section)
     return ({"kpi", "beyond"} | {f"milestone:{s}" for s, _ in t["milestones"]}
             | {f"challenge:{s}" for s, _ in t["challenges"]})
 
@@ -495,7 +509,7 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
             if a.get("rubric") != "v1":
                 continue
             if a.get("definition_change"):
-                continue  # gather/RUBRIC.md rule 6: README wording changed -> fresh judgment
+                continue  # gather/RUBRIC.md rule 6: framework definition changed -> fresh judgment
             if a.get("rubric_correction") == "v1":
                 # a correction re-judges a PRE-rubric record; a v1 record is never "corrected"
                 if prev.get("rubric") == "v1":
@@ -741,7 +755,7 @@ BACKGROUND = {"week": (1, 3), "month": (1, 2), "quarter": (2, 2), "half": (2, 2)
 
 def snapshot(period_dir: str, section: str) -> dict:
     """Deterministic, SELF-CONTAINED bulletin input: the ledger as of the period's
-    cutoff, including chart series and the README framework, so drafting and
+    cutoff, including chart series and the framework (framework.yaml), so drafting and
     validation need no live state."""
     import kpi
     period = os.path.basename(os.path.normpath(period_dir)).removeprefix("pilot-")
@@ -802,7 +816,7 @@ def snapshot(period_dir: str, section: str) -> dict:
         "section": section, "period": period, "period_start": str(start),
         "period_end": str(end), "cutoff": str(cut), "previous_cutoff": str(prev),
         "rule": "records with known_at (published) <= cutoff; 'new' = known_at in (previous_cutoff, cutoff]",
-        "framework": [{"topic": t, "name": n, "description": d} for t, n, d in readme_items(section)],
+        "framework": [{"topic": t, "name": n, "description": d} for t, n, d in framework_items(section)],
         "new_events": [clean(e) for e in sorted(new, key=lambda e: (e["date"], e["id"]))],
         "background_events": [clean(e) for e in sorted(background, key=lambda e: (e["date"], e["id"]))],
         "kpi_headlines": kpis,
@@ -1104,7 +1118,7 @@ def main() -> int:
             print(f"lint {a.section}: {len(errs)} error(s)")
             return 1 if errs else 0
         elif a.cmd == "items":
-            for topic, name, desc in readme_items(a.section):
+            for topic, name, desc in framework_items(a.section):
                 print(f"{topic}|{name}|{desc}")
         elif a.cmd == "stale":
             for target, aid in stale_targets(a.section, day(a.until), a.force):

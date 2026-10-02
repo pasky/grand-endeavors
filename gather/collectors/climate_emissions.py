@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Climate emissions collector: Global Carbon Budget global budget xlsx -> staged observations.
 
 Usage:  uv run gather/collectors/climate_emissions.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]

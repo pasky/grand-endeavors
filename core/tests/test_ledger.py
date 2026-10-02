@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Regression tests for the deterministic ledger checks (ledger.py, kpi.py).
 
 Run:  uv run core/tests/test_ledger.py      (no network; builds a throwaway ledger)
@@ -7,6 +10,7 @@ The bulletin gate (validate.py) is tested in views/tests/test_validate.py.
 """
 import csv
 import os
+import re
 import sys
 
 from ledger_fixture import ev, fixture, has, kpi, ledger, obs, write_csv, write_jsonl
@@ -27,12 +31,25 @@ def main():
     case("negative value matches unsigned prose", kpi.kpi_traceable("-0.5", {0.5}))
     case("positive value never matches negative evidence", not kpi.kpi_traceable("0.5", {-0.5}))
 
-    # --- README bullet descriptions (sub-bullets = precise criteria) ---------------
-    bd = ledger.bullet_descriptions([
-        '*   **Shift:** Robot works.', '    *   8h+ shifts.', '    *   No teleop.',
-        '*   **Other:** Plain.', '', '*   **Shift:** duplicate', 'Paragraph.', '    *   orphan'])
-    case("README sub-bullets are appended to the description",
-         bd == {"Shift": "Robot works.\n- 8h+ shifts.\n- No teleop.", "Other": "Plain."})
+    # --- framework.yaml -------------------------------------------------------------
+    fw = ledger.framework()
+    case("framework sections = ledger.SECTIONS, in order",
+         [s["id"] for s, _ in ledger.fw_sections(fw)] == ledger.SECTIONS)
+    lib = open(os.path.join(ledger.ROOT, "core", "lib.sh")).read()
+    case("lib.sh SECTIONS = ledger.SECTIONS",
+         re.search(r'^SECTIONS="([^"]+)"', lib, re.M)[1].split() == ledger.SECTIONS)
+    case("details are appended to the description as '- ' lines",
+         ledger.fw_description({"description": "Robot works.", "details": ["8h+ shifts.", "No teleop."]})
+         == "Robot works.\n- 8h+ shifts.\n- No teleop.")
+    bad_fw = {"title": "t", "tagline": "t", "manifesto": "m", "endeavors": [
+        {"id": "x", "title": "X", "milestones": [{"slug": "a", "name": "A", "description": "d"},
+                                                {"slug": "a", "name": "B", "description": "d"},
+                                                {"slug": "Bad Slug", "name": "C", "description": "d"}],
+         "challenges": [{"slug": "c", "name": "C"}]}, {"id": "x", "title": "X again"}]}
+    errs = ledger.check_framework(bad_fw)
+    case("framework check: duplicate section/slug, bad slug, missing description",
+         has(errs, "duplicate section id") and has(errs, "duplicate milestones slug")
+         and has(errs, "bad slug 'Bad Slug'") and has(errs, "name and description required"))
 
     # --- periods / cutoffs ------------------------------------------------------
     case("26H1 cutoff = period end + 14d", str(ledger.cutoff("26H1")) == "2026-07-14")
@@ -70,7 +87,7 @@ def main():
     es = ledger.check_event(bad, "climate", topics)
     case("event schema: unknown topic, short claim, bad significance",
          has(es, "unknown topic") and has(es, "claim too short") and has(es, "significance"))
-    case("README topics include fusion tech-tree branches as challenges",
+    case("framework topics include fusion tech-tree branches as challenges",
          "challenge:d-t-fusion" in ledger.valid_topics("fusion") and "milestone:d-t-fusion" not in ledger.valid_topics("fusion"))
     dup = [ev("2026-05-13-a", "2026-05-13", "Global Carbon Budget final paper puts 2025 fossil CO2 at 38.1 GtCO2 up 1.0 percent."),
            ev("2026-05-14-b", "2026-05-14", "Global Carbon Budget final paper puts 2025 fossil CO2 at 38.1 GtCO2, up 1.0%, a record.")]
@@ -258,7 +275,7 @@ def main():
     case("snapshot: seasonal caveat + same-month-last-year comparison",
          not k["change"]["comparable"] and k["year_ago"]["change"] == "+1.82")
     case("snapshot: retired metrics never required", all(x["metric"] != "co2-trend-old" for x in snap["kpi_headlines"]))
-    case("snapshot is self-contained: frozen series + README framework",
+    case("snapshot is self-contained: frozen series + framework",
          snap["series"]["co2-mlo-annual"][-1] == ["2025", "427.35"] and any(f["name"] == "The Bend" for f in snap["framework"]))
     reg_rows = list(csv.reader(open(f"{kpi.ROOT}/metrics/climate.csv")))
     write_csv(f"{kpi.ROOT}/metrics/climate.csv", reg_rows[0], reg_rows[1:] + [

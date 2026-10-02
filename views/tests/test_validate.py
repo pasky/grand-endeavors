@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Regression tests for the bulletin/round-up gate (views/validate.py).
 
 Run:  uv run views/tests/test_validate.py      (no network; builds a throwaway ledger)
@@ -39,7 +42,7 @@ def main():
     sp = f"{pdir}/snapshot/climate.json"
     os.makedirs(os.path.dirname(sp), exist_ok=True)
     json.dump(snap, open(sp, "w"))
-    names = [n for items in ledger.readme_topics("climate").values() for _, n in items]
+    names = [n for items in ledger.framework_topics("climate").values() for _, n in items]
     doc = (f"# Climate\n\nCO2 was 431.43 ppm in June 2026[^a].\n\n{chart}\n\n"
            + "\n".join(f"### {n}\nNo significant developments." for n in names)
            + "\n\n[^a]: [GCB](https://x.org/2026-05-13-gcb-final)\n")

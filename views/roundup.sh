@@ -32,7 +32,7 @@ set -eu
 OUT_DIR="${1:?usage: roundup.sh <out-dir>}"
 OUT_DIR="${OUT_DIR%/}"
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"   # mechanism repo (code, README)
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"   # mechanism repo (code, framework.yaml)
 D="$(cd "${GE_DATA:-$ROOT/data}" 2>/dev/null && pwd)" \
 	|| { echo "ERROR: data repo not found at ${GE_DATA:-$ROOT/data} (set GE_DATA)" >&2; exit 1; }
 export GE_DATA="$D"
@@ -44,7 +44,7 @@ MANIFEST="$OUT_DIR/MANIFEST-roundup.txt"
 SESS_DIR="$OUT_DIR/.sessions"
 REF_TEMPLATE="pilot-2025/README.md"   # structural reference (format, not content)
 AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
-# Canonical section order (as in README.md); also the allow-list of inputs.
+# Canonical section order (as in framework.yaml); also the allow-list of inputs.
 ALL_SECTIONS="robots-software robots-hardware rockets fusion health climate knowledge-beyond society-cohesion"
 
 case "$OUT_DIR" in *[[:space:]]*)
@@ -104,7 +104,7 @@ reporting period "$PERIOD", into $OUT_FILE.
 Inputs:
 - The section reports for this period (the ONLY source of facts): $section_files
   Read each one in full.
-- $ROOT/README.md: endeavor definitions, their order, and the short intro text for
+- $ROOT/framework.yaml: endeavor definitions, their order, and the intro text for
   each endeavor.
 - $REF_TEMPLATE: the structural/formatting reference (the 2025 round-up).
   Follow its format, NOT its content. Its numbers are from a different period.
@@ -116,11 +116,11 @@ Structure (as in $REF_TEMPLATE):
   one-paragraph edition note: which period it is, which endeavors this edition
   covers, and which it does not. If a section report says it is a
   narrowed/partial-scope run, say so here and in that endeavor's block.
-- For each present endeavor, in README.md order: a heading (robots-software and
+- For each present endeavor, in framework.yaml order: a heading (robots-software and
   robots-hardware go under "## Robots and Automation" as "### Software" /
   "### Hardware"; knowledge-beyond and society-cohesion go under
   "## Supplemental"), then:
-  - a one-line italic intro condensed from README.md
+  - a one-line italic intro condensed from framework.yaml
   - the **KPI line**, giving EVERY component of the KPI exactly as that
     section's KPI Dashboard reports it (e.g. current value AND multi-year
     trend)

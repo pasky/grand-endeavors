@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Health KPI collector: WHO Global Health Observatory (GHO) HALE at birth -> staged observations.
 
 Usage:  uv run gather/collectors/health.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]

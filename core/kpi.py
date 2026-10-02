@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """KPI metrics: registry, time parsing, number matching, and charts rendered
 from the ledger (DESIGN.md §2-3). Observations live in ledger/observations/;
 this module no longer holds per-period vintage files.

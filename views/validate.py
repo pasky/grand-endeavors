@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Deterministic, no-LLM validation gate for a generated newsletter section.
 
 Run AFTER the review stage. Catches mechanical defects the LLM review can miss
@@ -330,11 +333,11 @@ def check_snapshot(doc_path: str, text: str, snap_path: str) -> None:
     if any(c["metric"] in req for c in snap["chartable_metrics"]) and not kpi.MARKER_RE.search(text):
         err("snapshot: a required KPI has a chartable series but the bulletin has no ledger-rendered ('%% kpi:') chart")
     # 5. coverage (structural): every milestone/challenge of the snapshot's frozen
-    #    framework has its own heading (older snapshots: README at validation time)
+    #    framework has its own heading
     heads = "\n".join(ln.lower() for ln in prose.splitlines() if ln.lstrip().startswith("#"))
     frame = snap.get("framework")
     if frame is None:
-        err("snapshot: predates the frozen README framework (regenerate the bulletin)")
+        err("snapshot: predates the frozen framework (regenerate the bulletin)")
         frame = []
     for f in frame:
         if f["topic"].startswith(("milestone:", "challenge:")) and f["name"].lower() not in heads:

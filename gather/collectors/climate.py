@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Climate KPI collector: NOAA GML CO2 trend files -> staged observations.
 
 Usage:  uv run gather/collectors/climate.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]

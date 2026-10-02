@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Regression tests for explore.py (SQLite build + static dashboard).
 
 Run:  uv run views/tests/test_explorer.py      (stdlib, offline; builds a throwaway fixture ledger)
@@ -27,20 +30,23 @@ def case(name, cond):
     print(("ok   " if cond else "FAIL ") + name)
 
 
-README = """# Five Grand Endeavors
-
-## Climate and Environment
-
-**KPI:** Atmospheric CO₂ concentration (ppm) and 10-year trend (ppm/year)
-
-**Milestone Countdown:**
-*   **The Bend:** Global emissions peak & decline.
-*   **The Balance:** Net zero.
-
-**Major Open Challenges:**
-*   **Permanent Removal:** Durable carbon removal at gigaton scale.
-
-## Supplemental
+FRAMEWORK = """title: Five Grand Endeavors
+tagline: Tracking humanity's progress.
+manifesto: Science has a communication problem.
+endeavors:
+  - id: climate
+    title: Climate and Environment
+    intro: Fixing the past.
+    kpi: Atmospheric CO₂ concentration (ppm) and 10-year trend (ppm/year)
+    milestones:
+      - {slug: the-bend, name: The Bend, description: Global emissions peak & decline.}
+      - {slug: the-balance, name: The Balance, description: Net zero.}
+    challenges:
+      - {slug: permanent-removal, name: Permanent Removal, description: Durable carbon removal at gigaton scale.}
+  - title: Supplemental
+    supplemental: true
+    sections:
+      - {id: knowledge-beyond, title: The Knowledge Beyond, intro: Deep understanding.}
 """
 
 REGISTRY = """metric,unit,cadence,release_lag_days,required_from,retired_after,definition
@@ -139,7 +145,7 @@ def write(root, rel, text):
 
 
 def make_fixture(root):
-    write(root, "README.md", README)
+    write(root, "framework.yaml", FRAMEWORK)
     write(root, "metrics/climate.csv", REGISTRY)
     rows = [",".join(ledger.OBS_COLUMNS)]
     for m, o, v, u, pub, ver in OBS:
@@ -195,8 +201,8 @@ def main():
              {r[0] for r in q(db, "SELECT id FROM recent_events")} and n("recent_events") == 4)
         case("observations incl. revisions", n("observations") == 15)
         case("assessments as-of (later one excluded)", n("assessments") == 2)
-        case("sections: all SECTIONS, README-less ones included", n("sections") == len(ledger.SECTIONS))
-        case("topics from README", {r[0] for r in q(db, "SELECT topic FROM topics WHERE section='climate'")}
+        case("sections: all SECTIONS, framework-less ones included", n("sections") == len(ledger.SECTIONS))
+        case("topics from framework.yaml", {r[0] for r in q(db, "SELECT topic FROM topics WHERE section='climate'")}
              == {"kpi", "beyond", "milestone:the-bend", "milestone:the-balance", "challenge:permanent-removal"})
         ev = q(db, "SELECT known_at, verification_status, primary_url, json_array_length(relates) FROM events "
                    "WHERE id='2026-07-01-peak-update'")[0]

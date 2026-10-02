@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Fusion KPI collector: worldwide household electricity price, built from
 GlobalPetrolPrices (GPP) country prices, World Bank population weights and US CPI.
 

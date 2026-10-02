@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Robots/software KPI collector: METR time-horizon benchmark -> release-cohort series.
 
 Usage:  uv run gather/collectors/robots_software.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]

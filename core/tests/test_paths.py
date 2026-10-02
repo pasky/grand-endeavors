@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["pyyaml"]
+# ///
 """Static check that the pipeline scripts reference code that exists.
 
 Run:  uv run core/tests/test_paths.py      (no network, no data repo)
@@ -40,6 +43,16 @@ def main():
         for d, mod in sorted(set(IMPORT_RE.findall(text))):
             where = os.path.join(REPO, d.lstrip("/"))
             case(f"{rel}: import {mod} from $ROOT{d}", os.path.exists(os.path.join(where, mod + ".py")))
+    # every runnable script declares the third-party modules the shared core needs
+    # (`uv run <script>` installs only what the script's own PEP 723 block lists)
+    for p in sorted(glob.glob(os.path.join(REPO, "**", "*.py"), recursive=True)):
+        rel = os.path.relpath(p, REPO)
+        if rel.startswith(("data", "build", ".")):
+            continue
+        text = open(p, encoding="utf-8").read()
+        if text.startswith("#!"):  # runnable: `uv run <script>`
+            case(f"{rel}: PEP 723 block declares pyyaml",
+                 bool(re.search(r'^# /// script\n(#.*\n)*?# dependencies = \[[^\]]*"pyyaml"', text, re.M)))
     print(f"\n{len(FAILS)} failure(s)")
     return 1 if FAILS else 0
 

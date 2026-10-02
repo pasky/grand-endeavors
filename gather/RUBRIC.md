@@ -1,6 +1,6 @@
 # Status rubric (v1)
 
-Every KPI and milestone in README.md carries a **status**: a colour plus a
+Every KPI and milestone in framework.yaml carries a **status**: a colour plus a
 one-line label such as "Off track: 421 ppm, +2.4 ppm/yr vs ≤0 needed". This
 file defines how that status is chosen, so it means the same thing across
 sections and runs and does not flap.
@@ -145,9 +145,9 @@ is no KPI assessment (status unknown).
    what the old assessment got wrong. A record that is already under v1 is
    never "corrected": changing it needs newer evidence (rule 1).
 5. Projections alone never change a status. They may inform the label.
-6. \* A change to a target's README definition permits one re-assessment of
+6. \* A change to a target's framework.yaml definition permits one re-assessment of
    that target that ignores rules 1–4 and the terminality of `achieved`. It
-   sets `"definition_change": "<mechanism commit of the README change>"` and
+   sets `"definition_change": "<mechanism commit of the framework.yaml change>"` and
    judges the evidence against the new wording.
 
 ## 6. Writing the record
