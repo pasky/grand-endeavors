@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Offline regression tests for the deterministic KPI collectors (collectors/*.py).
+"""Offline regression tests for the deterministic KPI collectors (gather/collectors/*.py).
 
-Run:  uv run test_collectors.py     (no network; sources come from tests/fixtures/,
-                                     small verbatim snippets of the real files)
+Run:  uv run gather/tests/test_collectors.py     (no network; sources come from gather/tests/fixtures/,
+                                                   small verbatim snippets of the real files)
 """
 import datetime as dt
 import os
@@ -10,9 +10,9 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-FIX = os.path.join(ROOT, "tests", "fixtures")
-sys.path.insert(0, os.path.join(ROOT, "collectors"))
+GATHER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FIX = os.path.join(GATHER, "tests", "fixtures")
+sys.path.insert(0, os.path.join(GATHER, "collectors"))
 
 import climate  # noqa: E402
 import common  # noqa: E402
@@ -519,7 +519,7 @@ with tempfile.TemporaryDirectory() as tmp:
     for script, section, fix in (("climate.py", "climate", FIX), ("robots_software.py", "robots-software", FIX),
                                  ("rockets.py", "rockets", FIX), ("fusion.py", "fusion", FFIX)):
         out = os.path.join(tmp, f"{section}.csv")
-        p = subprocess.run([sys.executable, os.path.join(ROOT, "collectors", script), "--fixture", fix,
+        p = subprocess.run([sys.executable, os.path.join(GATHER, "collectors", script), "--fixture", fix,
                             "--out", out, "--today", "2026-09-28"], capture_output=True, text=True)
         try:
             rows = ledger.load_obs(out)  # raises unless the header is exactly OBS_COLUMNS

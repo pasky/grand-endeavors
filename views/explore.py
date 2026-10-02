@@ -28,8 +28,9 @@ import re
 import sqlite3
 import sys
 
-import kpi
-import ledger
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "core"))
+import kpi  # noqa: E402
+import ledger  # noqa: E402
 
 SCHEMA = """
 CREATE TABLE build_info (key TEXT PRIMARY KEY, value TEXT);

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Offline tests for collectors/health.py (WHO GHO HALE at birth).
+"""Offline tests for gather/collectors/health.py (WHO GHO HALE at birth).
 
-Run:  uv run tests/test_collector_health.py     (no network; the source is
-      tests/fixtures/who_hale.json, verbatim records trimmed from the real
+Run:  uv run gather/tests/test_collector_health.py     (no network; the source is
+      gather/tests/fixtures/who_hale.json, verbatim records trimmed from the real
       https://ghoapi.azureedge.net/api/WHOSIS_000002 answer: 2000/2020/2021, 7/6/7
       countries x 3 sexes, GLOBAL x 3 sexes, one WHO region and one WB income group)
 """
@@ -15,9 +15,9 @@ import tempfile
 from decimal import Decimal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
+GATHER = os.path.dirname(HERE)
 FIX = os.path.join(HERE, "fixtures")
-sys.path.insert(0, os.path.join(ROOT, "collectors"))
+sys.path.insert(0, os.path.join(GATHER, "collectors"))
 
 import common  # noqa: E402
 import health  # noqa: E402
@@ -121,7 +121,7 @@ case("rows: a GHO date after retrieval falls back to basis seen (published = ret
 # --- CLI --------------------------------------------------------------------------------
 with tempfile.TemporaryDirectory() as tmp:
     out = os.path.join(tmp, "health.csv")
-    p = subprocess.run([sys.executable, os.path.join(ROOT, "collectors", "health.py"), "--out", out,
+    p = subprocess.run([sys.executable, os.path.join(GATHER, "collectors", "health.py"), "--out", out,
                         "--fixture", FIX, "--today", str(TODAY)], capture_output=True, text=True)
     case("cli: exit 0 and writes 6 rows", p.returncode == 0 and os.path.exists(out)
          and len(open(out, encoding="utf-8").read().splitlines()) == 7)

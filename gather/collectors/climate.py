@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Climate KPI collector: NOAA GML CO2 trend files -> staged observations.
 
-Usage:  uv run collectors/climate.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
+Usage:  uv run gather/collectors/climate.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
 
 Sources (https://gml.noaa.gov/webdata/ccgg/trends/co2/), all whitespace-separated
 text with '#' comment headers (incl. '# File Creation: <ctime>'):
@@ -29,8 +29,8 @@ Choices:
     (negative stdev), Maunakea substitute site months (Dec 2022 - Jul 2023) and
     preliminary values (last 12 months / last year of a file; all daily values).
 
-The CLI run (`collectors/run.sh climate`) also stages the Global Carbon Budget emissions
-series (collectors/climate_emissions.py, collector id climate_emissions.py) via collect_all().
+The CLI run (`gather/collectors/run.sh climate`) also stages the Global Carbon Budget emissions
+series (gather/collectors/climate_emissions.py, collector id collectors/climate_emissions.py) via collect_all().
 """
 from __future__ import annotations
 

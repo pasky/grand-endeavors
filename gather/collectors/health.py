@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Health KPI collector: WHO Global Health Observatory (GHO) HALE at birth -> staged observations.
 
-Usage:  uv run collectors/health.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
+Usage:  uv run gather/collectors/health.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
 
 Source: GHO OData API, indicator WHOSIS_000002 "Healthy life expectancy (HALE) at
 birth (years)", https://ghoapi.azureedge.net/api/WHOSIS_000002 (WHO Global Health

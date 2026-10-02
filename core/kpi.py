@@ -37,7 +37,7 @@ import re
 import shlex
 import sys
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # the mechanism repo
 REG_COLUMNS = ["metric", "unit", "cadence", "release_lag_days", "required_from", "retired_after", "definition"]
 CADENCES = {"daily", "weekly", "monthly", "quarterly", "annual", "irregular"}
 METRIC_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")

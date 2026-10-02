@@ -7,8 +7,8 @@ axis/series length mismatches, dead citation URLs, and (optional) coverage of
 the run's PLAN slugs.
 
 Usage:
-    uv run validate.py <bulletin.md> --snapshot <period-dir>/snapshot/<section>.json
-    uv run validate.py <period-dir>/README.md --roundup
+    uv run views/validate.py <bulletin.md> --snapshot <period-dir>/snapshot/<section>.json
+    uv run views/validate.py <period-dir>/README.md --roundup
 
 Exit status: 0 if no ERRORs (WARNs allowed), 1 otherwise.
 Env:
@@ -18,7 +18,7 @@ Link liveness is a heuristic, not proof: a URL is "dead" (error) only if two
 GETs 3 s apart both return 404/410; HEAD-404 alone never is. Known limits: a
 cached/bot-served 404 can still false-positive (use STRICT=0 in bulletin.sh /
 roundup.sh to proceed report-only), and HEAD-200 is trusted without a GET.
-Regression tests: uv run test_harness.py
+Regression tests: uv run views/tests/test_validate.py
 """
 import argparse
 import os
@@ -27,6 +27,8 @@ import sys
 import time
 import urllib.request
 import urllib.error
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "core"))
 
 ERRORS: list[str] = []
 WARNS: list[str] = []

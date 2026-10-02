@@ -44,8 +44,8 @@ import sys
 import urllib.request
 from decimal import ROUND_HALF_UP, Decimal
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # the mechanism repo
+sys.path.insert(0, os.path.join(ROOT, "core"))
 import kpi  # noqa: E402
 import ledger  # noqa: E402
 
@@ -143,6 +143,7 @@ def main(section: str, script: str, collect) -> int:
     a = ap.parse_args()
     today = dt.date.fromisoformat(a.today)
     existing = ledger.observations(section)
+    # collector id "collectors/<script>@<date>" is stored in ledger rows: a stable id, not a path
     rows = collect(a.fixture, today, f"collectors/{os.path.basename(script)}@{today}", existing)
     rows = mark_revisions(rows, existing)
     errs = check(rows, registry(section))

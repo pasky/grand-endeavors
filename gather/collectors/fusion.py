@@ -2,7 +2,7 @@
 """Fusion KPI collector: worldwide household electricity price, built from
 GlobalPetrolPrices (GPP) country prices, World Bank population weights and US CPI.
 
-Usage:  uv run collectors/fusion.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
+Usage:  uv run gather/collectors/fusion.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
 
 No source publishes the KPI (a population-weighted, inflation-adjusted world
 household price), so it is computed here, deterministically:

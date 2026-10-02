@@ -1,24 +1,17 @@
 #!/usr/bin/env python3
-"""Regression tests for the deterministic checks (ledger.py, kpi.py, validate.py).
+"""Regression tests for the deterministic ledger checks (ledger.py, kpi.py).
 
-Run:  uv run test_harness.py      (no network; builds a throwaway ledger)
+Run:  uv run core/tests/test_ledger.py      (no network; builds a throwaway ledger)
 Each case pins a behavior that a review found broken or easy to regress.
-Collector and explorer tests live in test_collectors.py / test_explorer.py.
+The bulletin gate (validate.py) is tested in views/tests/test_validate.py.
 """
 import csv
-import json
 import os
 import sys
-import tempfile
-import urllib.error
-from unittest import mock
 
-import kpi
-import ledger
-import validate
+from ledger_fixture import ev, fixture, has, kpi, ledger, obs, write_csv, write_jsonl
 
 FAILS = []
-REAL_ROOT = ledger.ROOT
 
 
 def case(name, cond):
@@ -27,73 +20,12 @@ def case(name, cond):
     print(("ok   " if cond else "FAIL ") + name)
 
 
-def write_csv(path, header, rows):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", newline="") as f:
-        w = csv.writer(f, lineterminator="\n")
-        w.writerow(header)
-        w.writerows(rows)
-
-
-def write_jsonl(path, recs):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as f:
-        for r in recs:
-            f.write(json.dumps({k: v for k, v in r.items() if not k.startswith("_")}) + "\n")
-
-
-def has(errs, needle):
-    return any(needle in e for e in errs)
-
-
-def ev(id_, published, claim, topics=("milestone:the-bend",), status="verified", sig=2, **kw):
-    return {"id": id_, "date": id_[:10], "published": published, "published_basis": "source",
-            "retrieved": "2026-09-28", "kind": "data", "topics": list(topics), "claim": claim,
-            "sources": [{"url": f"https://x.org/{id_}", "title": "t", "primary": True}],
-            "significance": sig, "collector": "test",
-            "verification": {"status": status, "by": "t", "at": "2026-09-28"}, **kw}
-
-
-def obs(metric, o, value, published, basis="source", unit="ppm", verification="verified", retrieved="2026-09-28"):
-    return [metric, o, value, unit, "https://x.org/data", published, basis, retrieved, "test", verification, ""]
-
-
-def fixture():
-    """Temp ROOT: README (climate), registry, observations, events, assessments."""
-    root = tempfile.mkdtemp()
-    ledger.ROOT = kpi.ROOT = ledger.DATA = root
-    import shutil
-    shutil.copy(os.path.join(REAL_ROOT, "README.md"), root)
-    write_csv(f"{root}/metrics/climate.csv", kpi.REG_COLUMNS, [
-        ["co2-mlo-monthly", "ppm", "monthly", "7", "pilot-26H1", "", "NOAA Mauna Loa monthly mean CO2 dry-air mole fraction"],
-        ["co2-mlo-annual", "ppm", "annual", "10", "", "", "NOAA Mauna Loa calendar-year annual mean CO2"],
-        ["co2-trend-old", "ppm/yr", "annual", "", "", "pilot-2025", "Old basis decadal trend of global annual means (retired)"],
-    ])
-    write_csv(ledger.path("observations", "climate"), ledger.OBS_COLUMNS, [
-        obs("co2-mlo-monthly", "2025-11", "426.5", "2026-01-03", "seen", verification="legacy", retrieved="2026-01-03"),
-        obs("co2-mlo-monthly", "2025-06", "429.61", "2025-07-07", "rule"),
-        obs("co2-mlo-monthly", "2026-06", "431.43", "2026-07-07", "rule"),
-        obs("co2-mlo-monthly", "2026-07", "429.13", "2026-08-07", "rule"),   # after the 26H1 cutoff
-        *[obs("co2-mlo-annual", str(y), v, f"{y + 1}-01-10", "rule")
-          for y, v in [(2021, "416.41"), (2022, "418.53"), (2023, "421.08"), (2024, "424.61"), (2025, "427.35")]],
-    ])
-    write_jsonl(ledger.path("events", "climate"), [
-        ev("2025-11-13-gcb-projection", "2025-11-13", "Global Carbon Budget projects 2025 fossil CO2 at 38.1 GtCO2, up 1.1%.", status="legacy"),
-        ev("2026-05-13-gcb-final", "2026-05-13", "Global Carbon Budget final paper puts 2025 fossil CO2 at 38.1 GtCO2, up 1.0%.",
-           relates=[{"id": "2025-11-13-gcb-projection", "rel": "update"}]),
-        ev("2026-08-27-climate-trace-h1", "2026-08-27", "Climate TRACE: total GHG in H1 2026 was 29.7 GtCO2e, up 0.2% on H1 2025."),
-    ])
-    return root
-
-
 def main():
     # --- number matching -----------------------------------------------------
     nums = kpi.kpi_numbers("fell −0.5% in 2016-2025, $2000/kg, 38,082 Mt, (+1.0%)")
     case("kpi_numbers keeps sign, years-as-data, thousands", {-0.5, 2000.0, 38082.0, 1.0} <= nums and -2025.0 not in nums)
     case("negative value matches unsigned prose", kpi.kpi_traceable("-0.5", {0.5}))
     case("positive value never matches negative evidence", not kpi.kpi_traceable("0.5", {-0.5}))
-    case("roundup numbers(): unit suffix + no partial decimals",
-         validate.numbers("9% $8.99B 12.5GW in 2025 the") == {"9", "8.99", "12.5"})
 
     # --- periods / cutoffs ------------------------------------------------------
     case("26H1 cutoff = period end + 14d", str(ledger.cutoff("26H1")) == "2026-07-14")
@@ -260,7 +192,7 @@ def main():
          (write_jsonl(ledger.path("assessments", "climate"), [dict(a, id="x-9", label="old"), dict(a, id="x-10", label="new")]) or True)
          and ledger.assessment_as_of("climate", until)["milestone:the-bend"]["label"] == "new")
 
-    # --- status rubric v1 (STATUS.md) ----------------------------------------------------------
+    # --- status rubric v1 (gather/RUBRIC.md) ----------------------------------------------------------
     fixture()
     evs = {e["id"]: e for e in ledger.events("climate")}
     topics = ledger.valid_topics("climate")
@@ -357,94 +289,6 @@ def main():
          has(kpi.verify_charts(chart.replace(y_line, '    y-axis "ppm" 425 --> 426'), pdir), "clips"))
     case("chart excludes obs after the period end",
          "429.13" not in kpi.chart(pdir, "climate", ["co2-mlo-monthly"], match="*-0[67]"))
-
-    # --- bulletin gate (validate --snapshot) --------------------------------------------------
-    sp = f"{pdir}/snapshot/climate.json"
-    os.makedirs(os.path.dirname(sp), exist_ok=True)
-    json.dump(snap, open(sp, "w"))
-    names = [n for items in ledger.readme_topics("climate").values() for _, n in items]
-    doc = (f"# Climate\n\nCO2 was 431.43 ppm in June 2026[^a].\n\n{chart}\n\n"
-           + "\n".join(f"### {n}\nNo significant developments." for n in names)
-           + "\n\n[^a]: [GCB](https://x.org/2026-05-13-gcb-final)\n")
-    dp = f"{pdir}/climate.md"
-
-    def gate(text):
-        open(dp, "w").write(text)
-        validate.ERRORS.clear(); validate.WARNS.clear()
-        validate.check_snapshot(dp, text, sp)
-        return list(validate.ERRORS)
-    case("bulletin gate: faithful bulletin passes", gate(doc) == [])
-    case("bulletin gate: number not in snapshot is caught", has(gate(doc.replace("431.43 ppm", "431.43 ppm (about 432)")), "number 432"))
-    case("bulletin gate: URL outside the snapshot is caught", has(gate(doc.replace("https://x.org/2026-05-13-gcb-final", "https://evil.org/x")), "not a source"))
-    case("bulletin gate: unreported KPI headline is caught", has(gate(doc.replace("431.43 ppm", "high")), "not reported"))
-    case("bulletin gate: uncovered milestone is caught", has(gate(doc.replace("### The Bend", "### Something")), "The Bend"))
-    case("bulletin gate: a name only in prose (no heading) does not count as coverage",
-         has(gate(doc.replace("### The Bend\n", "The Bend is mentioned.\n")), "The Bend"))
-    case("bulletin gate: charts come from the frozen snapshot, not today's ledger",
-         (write_csv(ledger.path("observations", "climate"), ledger.OBS_COLUMNS,
-                    [list(r.values())[:11] for r in ledger.observations("climate")]
-                    + [obs("co2-mlo-annual", "2020", "414.21", "2021-01-10", "rule")]) or True)
-         and gate(doc) == [])
-    old = {k: v for k, v in snap.items() if k not in ("series", "framework")}
-    json.dump(old, open(sp, "w"))
-    case("pre-freeze snapshots fail explicitly (no silent live-ledger fallback)",
-         has(gate(doc), "predates"))
-    json.dump(snap, open(sp, "w"))
-
-    # --- footnote / reference-link integrity (CommonMark label semantics) ---------------------
-    def refs(text):
-        validate.ERRORS.clear(); validate.WARNS.clear()
-        prose = validate.strip_code(text)
-        validate.check_footnotes(prose)
-        validate.check_reference_links(prose)
-        return list(validate.ERRORS), list(validate.WARNS)
-    case("refs: duplicate footnote definition is an error",
-         has(refs("A[^a].\n\n[^a]: one\n[^A]: two\n")[0], "[^a] defined 2 times"))
-    case("refs: duplicate reference definition is an error",
-         has(refs("See [x][gcb].\n\n[gcb]: https://a.org\n  [GCB]: https://b.org\n")[0], "defined 2 times"))
-    case("refs: definitions indented up to 3 spaces count",
-         refs("A[^a] and [x][r].\n\n   [^a]: note\n   [r]: https://a.org\n") == ([], []))
-    case("refs: 4-space indent is a code block, not a definition",
-         has(refs("A[^a].\n\n    [^a]: note\n")[0], "[^a] used but never defined"))
-    case("refs: labels match case-insensitively with collapsed whitespace",
-         refs("A[^Note] and [x][Global  Carbon\nBudget].\n\n[^note]: n\n[global carbon budget]: https://a.org\n") == ([], []))
-    case("refs: shortcut [label] counts as a use when defined",
-         refs("Per the [GCB] data.\n\n[gcb]: https://a.org\n") == ([], []))
-    case("refs: unused definition still warns",
-         has(refs("Nothing.\n\n[gcb]: https://a.org\n")[1], "[gcb] never used"))
-    case("refs: footnotes inside inline code are ignored",
-         refs("Write `[^x]` or ``a ` [^y]`` to cite.\n") == ([], []))
-    case("refs: a definition in inline code is not a definition",
-         has(refs("A[^a].\n\n`[^a]: x`\n")[0], "[^a] used but never defined"))
-    case("refs: realistic paragraph has no false positives",
-         refs("CO2 [ppm] rose ([NOAA](https://x.org/a)) in [June 2026], see [chart] below[^1][^2]. "
-              "- [ ] todo, [x] done, ![img](i.png), `[^z]` and arr[0].\n\n"
-              "```\n[^q]\n[a][b]\n```\n\n[^1]: [GCB](https://x.org/g)\n[^2]: Ibid.\n") == ([], []))
-    case("URLs with balanced parentheses are extracted whole",
-         validate.extract_urls("[x](https://a.org/S0092-8674(25)00284-3).") == ["https://a.org/S0092-8674(25)00284-3"])
-
-    # --- link probe (mocked, no network) -----------------------------------------------------
-    def seq(*codes):
-        it = iter(codes)
-
-        def fake(req, timeout=15):
-            c = next(it)
-            if c == 200:
-                m = mock.MagicMock()
-                m.__enter__.return_value.status = 200
-                return m
-            raise urllib.error.HTTPError(req.full_url, c, "x", {}, None)
-        return fake
-
-    with mock.patch("time.sleep"):
-        for codes, want, name in [
-            ((404, 200), "ok", "HEAD 404 then GET 200 is alive"),
-            ((404, 404, 200), "ok", "one transient GET 404 is retried"),
-            ((404, 404, 404), "404", "two GET 404s are dead"),
-            ((403, 403), "403", "403 stays warn-level (not dead)"),
-        ]:
-            with mock.patch("urllib.request.urlopen", seq(*codes)):
-                case(name, validate.probe("https://x.org/p") == want)
 
     print(f"\n{len(FAILS)} failure(s)")
     return 1 if FAILS else 0

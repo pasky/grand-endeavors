@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Robots/software KPI collector: METR time-horizon benchmark -> release-cohort series.
 
-Usage:  uv run collectors/robots_software.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
+Usage:  uv run gather/collectors/robots_software.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
 
 Source: https://metr.org/assets/benchmark_results_1_1.yaml, the data file behind
 https://metr.org/time-horizons/ ("Time Horizon 1.1 (Current)"). The older URL

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Regression tests for the lib.sh write-scope guard (scratch git repo, fake pi).
-#   sh tests/test_guard.sh
+#   sh core/tests/test_guard.sh
 set -u
 LIB="$(cd "$(dirname "$0")/.." && pwd)/lib.sh"
 FAILS=0

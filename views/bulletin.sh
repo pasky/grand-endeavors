@@ -12,22 +12,22 @@
 #   4. gate      validate.py --snapshot (fatal by default; STRICT=0 = report-only)
 # Same ledger + same period => the same facts, however late the bulletin runs.
 #
-# USAGE:  ./bulletin.sh <period-dir> <section>
+# USAGE:  views/bulletin.sh <period-dir> <section>
 #         period-dir = pilot-<period> or <period>: 2025, 26H1, 2026-Q2, 2026-06, 2026-W39
 # ENV:    EARLY=1       allow a run before the cutoff (the ledger may still grow)
 #         ALLOW_DIRTY=1 skip the clean-worktree preflight
-# Then: ./roundup.sh <period-dir> compiles the period README.
+# Then: views/roundup.sh <period-dir> compiles the period README.
 # =============================================================================
 OUT_DIR="${1:?usage: bulletin.sh <period-dir> <section>}"
 SECTION="${2:?usage: bulletin.sh <period-dir> <section>}"
-. "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/../core/lib.sh"
 require_section "$SECTION"
 OUT_DIR="${OUT_DIR%/}"
 case "$OUT_DIR" in ""|*/*|.*|*[!A-Za-z0-9-]*)
 	echo "ERROR: period-dir must be a plain top-level name, e.g. pilot-26H1" >&2; exit 1 ;;
 esac
 PERIOD="${OUT_DIR#pilot-}"
-CUT_LINE="$(uv run $ROOT/ledger.py cutoff "$PERIOD")" || { echo "ERROR: '$PERIOD' is not a period" >&2; exit 1; }
+CUT_LINE="$(uv run $ROOT/core/ledger.py cutoff "$PERIOD")" || { echo "ERROR: '$PERIOD' is not a period" >&2; exit 1; }
 CUTOFF="$(echo "$CUT_LINE" | awk '{print $2}')"
 PREV_CUTOFF="$(echo "$CUT_LINE" | awk '{print $4}')"
 TODAY="$(date -u +%Y-%m-%d)"
@@ -45,7 +45,7 @@ MANIFEST="$OUT_DIR/MANIFEST-$SECTION.txt"
 REF_TEMPLATE="pilot-2025/$SECTION.md"; [ -f "$REF_TEMPLATE" ] || REF_TEMPLATE="pilot-2025/climate.md"
 ALLOWED="$OUT_FILE $GAPS"
 mkdir -p "$OUT_DIR" "$SESS_DIR"
-GATE="uv run $ROOT/validate.py $OUT_FILE --snapshot $SNAP"
+GATE="uv run $ROOT/views/validate.py $OUT_FILE --snapshot $SNAP"
 
 # --- 1. snapshot ----------------------------------------------------------------
 {
@@ -55,7 +55,7 @@ GATE="uv run $ROOT/validate.py $OUT_FILE --snapshot $SNAP"
 	echo "ledger_commit: $(git rev-parse HEAD)  (the snapshot is the ledger at this commit, as of the cutoff)"
 	tool_versions
 } > "$MANIFEST"
-uv run $ROOT/ledger.py snapshot "$OUT_DIR" "$SECTION"
+uv run $ROOT/core/ledger.py snapshot "$OUT_DIR" "$SECTION"
 commit "$OUT_DIR $SECTION: bulletin snapshot (cutoff $CUTOFF)" "$MANIFEST" "$SNAP"
 
 # --- 2. draft -------------------------------------------------------------------------
@@ -87,15 +87,15 @@ STRUCTURE (follow the reference format):
     flagged, never presented as a trend). Give year_ago where provided.
   - Include 1-2 trend charts rendered FROM THE LEDGER, pasted verbatim, keeping
     their "%% kpi:" line. You may edit only the title and y-axis label. E.g.:
-        uv run $ROOT/kpi.py chart $OUT_DIR $SECTION <metric> --since <YYYY> --label year [--match '*-05']
+        uv run $ROOT/core/kpi.py chart $OUT_DIR $SECTION <metric> --since <YYYY> --label year [--match '*-05']
     Choose metrics from chartable_metrics. Use a single granularity (--match for
     one month per year) and about 10-15 points.
 - Milestone Status: one subsection per README milestone, using the assessment
   status (green 🟢, yellow 🟡, red 🔴, achieved ✅), its label (the verdict word
-  first, e.g. "Off track", as defined in $ROOT/STATUS.md) and rationale, and what
+  first, e.g. "Off track", as defined in $ROOT/gather/RUBRIC.md) and rationale, and what
   changed since the previous assessment. Mark it "Not yet assessed" if it has
   none. Add the relevant new events. Show the KPI assessment the same way in
-  the KPI Dashboard, and add a one-line status legend from STATUS.md: KPI
+  the KPI Dashboard, and add a one-line status legend from RUBRIC.md: KPI
   status = pace versus what the goal needs, not the level; milestone status =
   ETA on evidence.
 - Open Challenges: one subsection per README challenge, covering its new events.

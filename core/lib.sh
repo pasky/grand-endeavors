@@ -1,14 +1,15 @@
-# Shared plumbing for gather.sh / assess.sh / bulletin.sh (POSIX sh; source it).
+# Shared plumbing for gather/gather.sh, gather/assess.sh, views/bulletin.sh (POSIX sh;
+# source it from a script one directory below the repo root).
 # TWO repositories (DESIGN.md §7): the mechanism ($ROOT: code, prompts, README,
-# STATUS) and the data ($D: ledger, registry, bulletins; $GE_DATA, default
+# rubric) and the data ($D: ledger, registry, bulletins; $GE_DATA, default
 # $ROOT/data). Scripts run with cwd = $D, so every data path is repo-relative and
-# pi agents work inside the data repo; code is invoked as $ROOT/<tool>.
+# pi agents work inside the data repo; code is invoked as $ROOT/<dir>/<tool>.
 # Callers set: SECTION, SESS_DIR, RUN_NAME, ALLOWED (space-separated DATA-repo
 # paths the pi agents may modify; entries ending in "/" are prefixes). Agents may
 # modify NOTHING in the mechanism repo. Paths never contain whitespace.
 
 set -eu
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 D="$(cd "${GE_DATA:-$ROOT/data}" 2>/dev/null && pwd)" \
 	|| { echo "ERROR: data repo not found at ${GE_DATA:-$ROOT/data} (set GE_DATA)" >&2; exit 1; }
 export GE_DATA="$D"

@@ -23,9 +23,9 @@ git clone https://github.com/pasky/grand-endeavors-data.git data   # or set GE_D
 ## Dashboard
 
 ```sh
-uv run explore.py dashboard                       # -> build/dashboard.html (as of today)
-uv run explore.py dashboard --as-of 2026-07-14    # the world as the ledger knew it on that date
-xdg-open build/dashboard.html                     # or open it in any browser
+uv run views/explore.py dashboard                       # -> build/dashboard.html (as of today)
+uv run views/explore.py dashboard --as-of 2026-07-14    # the world as the ledger knew it on that date
+xdg-open build/dashboard.html                           # or open it in any browser
 ```
 
 **Header**: the as-of date, record counts (verified vs legacy), and a **Gaps**
@@ -46,7 +46,7 @@ never hidden; an unfilled datapoint shows as unfilled.
   - "next expected by …", **OVERDUE**, or **no data yet**.
 
   A `legacy` badge marks values from the unverified 2025 report.
-- **KPI assessment and milestone list**: the current status per STATUS.md:
+- **KPI assessment and milestone list**: the current status per gather/RUBRIC.md:
   - 🟢 green, 🟡 yellow, 🔴 red;
   - 🔵 achieved (milestones only);
   - ⚪ **Unassessed** (the rubric can't judge it: no KPI spec or no data).
@@ -70,7 +70,7 @@ That makes it the right way to answer "what did we know on date X?"
 ## Datasette
 
 ```sh
-uv run explore.py build                                   # -> build/ledger.sqlite + metadata.json
+uv run views/explore.py build                             # -> build/ledger.sqlite + metadata.json
 uvx datasette build/ledger.sqlite -m build/metadata.json  # http://127.0.0.1:8001
 ```
 

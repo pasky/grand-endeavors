@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Offline tests for collectors/climate_emissions.py (Global Carbon Budget emissions series).
+"""Offline tests for gather/collectors/climate_emissions.py (Global Carbon Budget emissions series).
 
-Run:  uv run tests/test_collector_climate_emissions.py
+Run:  uv run gather/tests/test_collector_climate_emissions.py
 
-Fixture: tests/fixtures/Global_Carbon_Budget_2025_v0.6.xlsx is the real GCB 2025 global
+Fixture: gather/tests/fixtures/Global_Carbon_Budget_2025_v0.6.xlsx is the real GCB 2025 global
 budget file (globalcarbonbudget.org/download/2341/) trimmed to its 'Global Carbon Budget'
 sheet: the 22 header/notes rows and years 1959, 1960, 2019-2024 kept verbatim (workbook,
 rels and shared strings unchanged; other sheets dropped).
@@ -15,9 +15,9 @@ import sys
 import zipfile
 from decimal import Decimal
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FIX = os.path.join(ROOT, "tests", "fixtures")
-sys.path.insert(0, os.path.join(ROOT, "collectors"))
+GATHER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FIX = os.path.join(GATHER, "tests", "fixtures")
+sys.path.insert(0, os.path.join(GATHER, "collectors"))
 
 import climate  # noqa: E402
 import climate_emissions as ce  # noqa: E402

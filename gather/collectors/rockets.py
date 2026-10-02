@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Rockets KPI collector: Jonathan's Space Report annual payload tonnage -> payload-mass-to-orbit.
 
-Usage:  uv run collectors/rockets.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
+Usage:  uv run gather/collectors/rockets.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
 
 Source: https://planet4589.org/space/stats/out/msatannual.txt (J. McDowell, JSR).
 Format: one '#' header line naming the columns, then whitespace-separated rows

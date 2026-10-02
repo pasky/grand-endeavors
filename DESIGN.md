@@ -104,25 +104,25 @@ evidence event must be known by `made_at` (checked), so a retrospective
 assessment ("status as of 14 Jul given what was public then") is honest and
 reproducible. Its `known_at` is `made_at`.
 
-Statuses follow the rubric in **STATUS.md** (v1). KPI status = pace
+Statuses follow the rubric in **gather/RUBRIC.md** (v1). KPI status = pace
 toward the goal versus what the goal needs (never the level). Milestone status =
 ETA on evidence, with `achieved` as a terminal status. Records carry `rubric`,
 a structured `basis` and verdict-bound labels. Hysteresis (a status change needs
 newer evidence, or a once-per-target `rubric_correction`) is enforced by
 `ledger.py check`. Each KPI's assessed metric, window and benchmark are fixed in
-`metrics/kpi-assessment.csv`. `assess.sh` runs the assessment stage (called by
+`metrics/kpi-assessment.csv`. `gather/assess.sh` runs the assessment stage (called by
 gather.sh; standalone with FORCE=1 / CORRECTION=1 after a rubric change).
 
 `legacy` records were converted from the pilot-2025 reports. They are useful
 history, but they were not verified at ingest. Views flag them, and bulletins
 may use them only as background context, never as this period's news.
 
-## 4. Gather (`gather.sh <section>`; env UNTIL, SINCE, ITEMS, OVERLAP_DAYS)
+## 4. Gather (`gather/gather.sh <section>`; env UNTIL, SINCE, ITEMS, OVERLAP_DAYS)
 
 1. **plan**: watch items from README: the KPI, every milestone, every challenge,
    and always an open-ended `beyond` sweep for significant developments outside
    the framework.
-2. **collect**: deterministic collectors (`collectors/<section>.py`) fetch
+2. **collect**: deterministic collectors (`gather/collectors/<section>.py`) fetch
    machine-readable sources into staged observations. No LLM.
 3. **intake** (one web-capable agent per watch item): find developments
    published in the item's window, and stage event records and observations.
@@ -154,7 +154,7 @@ may use them only as background context, never as this period's news.
    even if the agent crashes. The registry is APPEND_ONLY: existing rows can
    never change.
 
-## 5. Bulletin (`bulletin.sh <period-dir> <section>`)
+## 5. Bulletin (`views/bulletin.sh <period-dir> <section>`)
 
 1. **snapshot** (`ledger.py snapshot`, deterministic, **self-contained**): the
    ledger as of the cutoff. It includes:
@@ -189,30 +189,49 @@ may use them only as background context, never as this period's news.
    - every milestone and challenge has its own heading;
    - plus the usual link, footnote and mermaid checks.
 
-`roundup.sh <period-dir>` compiles the bulletins into the period README, as
+`views/roundup.sh <period-dir>` compiles the bulletins into the period README, as
 before.
 
 ## 6. Verification model
 
-Regression tests pin every mechanical guarantee above:
-- `test_harness.py`: ledger, snapshot and gate, including replay idempotency,
-  precedence, supersedes lineage and cycles, staleness digests, and frozen
-  snapshots;
-- `tests/test_guard.sh`: the write-scope guard;
-- `test_collectors.py` and `test_explorer.py`.
+Regression tests pin every mechanical guarantee above. Each part keeps its
+tests in its own `tests/` directory:
+- `core/tests/test_ledger.py`: ledger and snapshot, including replay idempotency,
+  precedence, supersedes lineage and cycles, staleness digests, frozen
+  snapshots and charts;
+- `core/tests/test_guard.sh`: the write-scope guard;
+- `gather/tests/test_collector*.py`: the collectors, on trimmed real fixtures
+  (they read the metric registry, so they need the data repo);
+- `views/tests/test_validate.py` (the bulletin and round-up gate) and
+  `views/tests/test_explorer.py`.
+
+Run them all (offline) with:
+
+```sh
+for t in */tests/test_*.py; do uv run "$t" >/dev/null || echo "FAIL $t"; done
+sh core/tests/test_guard.sh >/dev/null || echo "FAIL test_guard.sh"
+```
 
 Verification happens at ingest (step 4), so it is done once per fact rather
 than once per report. Bulletins re-use verified facts, and their review becomes
 editorial. The deterministic gates are `ledger.py check` (the ledger itself),
-`kpi.py`/`validate.py` (views), and `test_harness.py` (regression tests of the
-checks themselves).
+`kpi.py`/`validate.py` (views), and the regression tests of the checks
+themselves.
 
 ## 7. Two repositories: mechanism and data
 
-- **Mechanism** (this repo): code (`ledger.py`, `kpi.py`, `validate.py`,
-  `explore.py`, collectors), the pipeline scripts and their prompts, the endeavor
-  framework (README.md), the schemas (this file) and the status rubric
-  (STATUS.md). It is reviewed like code.
+- **Mechanism** (this repo): the code, the pipeline scripts and their prompts,
+  the endeavor framework (README.md), the schemas (this file) and the status
+  rubric (gather/RUBRIC.md). It is reviewed like code. Layout:
+
+  ```
+  README.md DESIGN.md TODO.md   framework, design, backlog
+  core/     ledger.py kpi.py lib.sh      shared by gather and views
+  gather/   gather.sh assess.sh RUBRIC.md collectors/   grows the ledger
+  views/    bulletin.sh roundup.sh validate.py explore.py
+            EXPLORER.md newsletter-intro.md             reads the ledger
+  */tests/  each part's regression tests
+  ```
 - **Data** (`$GE_DATA`, default `./data`, gitignored here; its own git repo,
   public at github.com/pasky/grand-endeavors-data; set up with
   `git clone https://github.com/pasky/grand-endeavors-data.git data`):
@@ -220,7 +239,7 @@ checks themselves).
   directories (bulletins, frozen snapshots, gaps, manifests). The pipeline
   commits here, one commit per stage. Its history before 2026-09-30 was
   extracted from this repo with git filter-repo.
-- Scripts run with cwd = the data repo and call the code as `$ROOT/<tool>`. The
+- Scripts run with cwd = the data repo and call the code as `$ROOT/<dir>/<tool>`. The
   write-scope guard watches BOTH repos: agents may change only their allowed
   data paths, and nothing in the mechanism repo. Every manifest and state record
   stores `mechanism_commit` and `data_commit`, so any output can be traced to
@@ -233,7 +252,7 @@ Migration history (2026-09): the per-period `kpis/` vintages became
 pilot-2025 sections became `legacy` events and assessments; `generate.sh` was
 retired.
 
-Views of the ledger are described in **EXPLORER.md** (the dashboard vs Datasette).
+Views of the ledger are described in **views/EXPLORER.md** (the dashboard vs Datasette).
 
 ## 8. Known limits / open questions
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Climate emissions collector: Global Carbon Budget global budget xlsx -> staged observations.
 
-Usage:  uv run collectors/climate_emissions.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
-(also run by collectors/climate.py, i.e. by `collectors/run.sh climate`).
+Usage:  uv run gather/collectors/climate_emissions.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
+(also run by gather/collectors/climate.py, i.e. by `gather/collectors/run.sh climate`).
 
 Source: the Global Carbon Budget's own global budget spreadsheet, linked as
 "Global Carbon Budget v<YEAR> [xlsx]" on https://globalcarbonbudget.org/datahub/

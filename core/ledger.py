@@ -29,7 +29,7 @@ import os
 import re
 import sys
 
-ROOT = os.path.dirname(os.path.abspath(__file__))   # the mechanism (code, README, STATUS)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # the mechanism repo (code, README, rubric)
 # The data (ledger, registry, period bulletins) is a SEPARATE git repository:
 # $GE_DATA, default <mechanism>/data (gitignored here). See DESIGN.md §7.
 DATA = os.environ.get("GE_DATA") or os.path.join(ROOT, "data")
@@ -45,7 +45,7 @@ BASES = {"source", "rule", "seen"}
 OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
                "published_basis", "retrieved", "collector", "verification", "note"]
 ASSESS_STATUS = {"green", "yellow", "red", "achieved", "unknown"}
-# STATUS.md (rubric v1): verdict words bound to each status
+# gather/RUBRIC.md (rubric v1): verdict words bound to each status
 VERDICTS = {"green": ("Ahead", "On track"), "yellow": ("Behind pace", "Progressing"),
             "red": ("Off track", "Stalled", "Regressing", "Distant", "Blocked"), "achieved": ("Achieved",),
             "unknown": ("Unassessed",)}
@@ -56,7 +56,7 @@ BASIS_MILESTONE = {"rule", "eta", "path", "blockers", "prev", "change_note"}
 
 
 def kpi_assessment_spec(section: str) -> dict | None:
-    """metrics/kpi-assessment.csv row for a section (STATUS.md: fixed per KPI)."""
+    """metrics/kpi-assessment.csv row for a section (gather/RUBRIC.md: fixed per KPI)."""
     p = os.path.join(DATA, "metrics", "kpi-assessment.csv")
     if not os.path.exists(p):
         return None
@@ -302,12 +302,12 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
                      and evs.get(e, {}).get("verification", {}).get("status") in ("verified", "corrected")
                      for e in a.get("evidence") or []):
             errs.append(f"{at}: 'achieved' needs a verified evidence event of kind 'achievement'")
-    if "rubric" in a:  # STATUS.md rubric v1 (older records have no rubric field)
+    if "rubric" in a:  # gather/RUBRIC.md rubric v1 (older records have no rubric field)
         if a["rubric"] != "v1":
             errs.append(f"{at}: unknown rubric '{a['rubric']}'")
         else:
             words = VERDICTS.get(a["status"], ())
-            verdict_part = re.sub(r"^Stale \(data to \d{4}(-\d{2})?\): ", "", str(a["label"]))  # STATUS.md stale prefix
+            verdict_part = re.sub(r"^Stale \(data to \d{4}(-\d{2})?\): ", "", str(a["label"]))  # gather/RUBRIC.md stale prefix
             if not any(verdict_part.startswith(w + ":") for w in words):
                 errs.append(f"{at}: label must start with a verdict bound to '{a['status']}': "
                             + ", ".join(f"'{w}:'" for w in words))
@@ -464,7 +464,7 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
 
 
 def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: list[dict] | None = None) -> list[str]:
-    """STATUS.md rules 1 and 4 for rubric-v1 records: a status change needs evidence
+    """gather/RUBRIC.md rules 1 and 4 for rubric-v1 records: a status change needs evidence
     published after the previous assessment, or a once-per-target rubric correction.
     KPI assessments need the section's fixed spec in metrics/kpi-assessment.csv."""
     errs = []
@@ -476,12 +476,12 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
             if a.get("rubric") != "v1":
                 continue
             if a.get("definition_change"):
-                continue  # STATUS.md rule 6: README wording changed -> fresh judgment
+                continue  # gather/RUBRIC.md rule 6: README wording changed -> fresh judgment
             if a.get("rubric_correction") == "v1":
                 # a correction re-judges a PRE-rubric record; a v1 record is never "corrected"
                 if prev.get("rubric") == "v1":
                     errs.append(f"assessment {a['id']}: rubric_correction of a record already under rubric v1 "
-                                "(needs newer evidence instead; STATUS.md rule 4)")
+                                "(needs newer evidence instead; gather/RUBRIC.md rule 4)")
                 continue
             if "unknown" in (a["status"], prev["status"]):
                 continue  # 'unknown' is the absence of a judgment, not a status flip
@@ -493,7 +493,7 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
             if a["status"] != prev["status"] and not newer_obs and not any(
                     e in evs and known_at(evs[e]) > day(prev["made_at"]) for e in a.get("evidence") or []):
                 errs.append(f"assessment {a['id']}: status change {prev['status']}->{a['status']} without evidence "
-                            f"published after {prev['made_at']} (STATUS.md hysteresis rule 1; a pre-rubric prev "
+                            f"published after {prev['made_at']} (gather/RUBRIC.md hysteresis rule 1; a pre-rubric prev "
                             "may be re-judged with rubric_correction v1)")
         if target == "kpi" and any(a.get("rubric") == "v1" and a["status"] != "unknown" for a in recs) \
                 and not kpi_assessment_spec(section):
@@ -652,7 +652,7 @@ def stale_targets(section: str, until: dt.date, force: bool = False) -> list[tup
     (assessments without a digest: evidence published after made_at). Returns
     [(target, next free assessment id)]."""
     valid = sorted(t for t in valid_topics(section) if t.startswith("milestone:")
-                   or (t == "kpi" and kpi_assessment_spec(section)))  # no KPI spec => not assessable (STATUS.md)
+                   or (t == "kpi" and kpi_assessment_spec(section)))  # no KPI spec => not assessable (gather/RUBRIC.md)
     current = assessment_as_of(section, until)
     ids = {a["id"] for a in assessments(section)}
     out = []

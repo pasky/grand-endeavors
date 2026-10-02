@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Regression tests for explore.py (SQLite build + static dashboard).
 
-Run:  uv run test_explorer.py      (stdlib, offline; builds a throwaway fixture ledger)
+Run:  uv run views/tests/test_explorer.py      (stdlib, offline; builds a throwaway fixture ledger)
 """
 import datetime as dt
 import json
@@ -11,9 +11,11 @@ import sys
 import tempfile
 from unittest import mock
 
-import explore
-import kpi
-import ledger
+VIEWS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path[:0] = [VIEWS, os.path.join(os.path.dirname(VIEWS), "core")]
+import explore  # noqa: E402
+import kpi  # noqa: E402
+import ledger  # noqa: E402
 
 FAILS = []
 D = dt.date.fromisoformat

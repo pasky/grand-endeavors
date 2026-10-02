@@ -1,7 +1,7 @@
 # TODO — Grand Endeavors
 
 Current backlog only; finished work lives in git history and DESIGN.md.
-Architecture: DESIGN.md · status rubric: STATUS.md · views: EXPLORER.md ·
+Architecture: DESIGN.md · status rubric: gather/RUBRIC.md · views: views/EXPLORER.md ·
 data: github.com/pasky/grand-endeavors-data (`./data`).
 🤖 = can be done by agents without the owner in the loop.
 
@@ -17,12 +17,12 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] **Scheduling budget**: how often each section's gather runs (a full
       8-item climate gather ≈ 75 min of agent time), and which model per stage
       (e.g. a cheaper intake model, a strong verifier).
-- [ ] Finish `TEMPLATE.md` (the newsletter intro still ends in `..todo..`).
+- [ ] Finish `views/newsletter-intro.md` (the newsletter intro still ends in `..todo..`).
 
 ## Operations
 
-- [ ] Scheduling: cron or systemd timer for `gather.sh <section>`, then
-      `bulletin.sh` + `roundup.sh` after each cutoff, then `git -C data push`.
+- [ ] Scheduling: cron or systemd timer for `gather/gather.sh <section>`, then
+      `views/bulletin.sh` + `views/roundup.sh` after each cutoff, then `git -C data push`.
       Weekly cutoff = Sunday + 2 days.
 - [ ] Gather all sections. Only climate (full), fusion (KPI) and the
       re-verification pass have run; the other sections' news is all
@@ -41,7 +41,7 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] 🤖 Re-verify the legacy KPI **observations** (pilot-2025 values); only events
       were re-verified.
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
-      `DATA_URL` in `collectors/climate_emissions.py`. Watch for WHO's next GHE
+      `DATA_URL` in `gather/collectors/climate_emissions.py`. Watch for WHO's next GHE
       round; health data ends in 2021, so its KPI is labelled "Stale".
 - [ ] Fusion KPI caveats (independent spot-check of 2025-Q4 matched exactly;
       2021-Q4 couldn't be independently parsed):

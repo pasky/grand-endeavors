@@ -8,9 +8,9 @@
 # link to the full section report, then a Quick Reference table.
 #
 # USAGE:
-#   ./roundup.sh <out-dir>          e.g.  ./roundup.sh pilot-26H1
+#   views/roundup.sh <out-dir>          e.g.  views/roundup.sh pilot-26H1
 #
-# Run AFTER the period's bulletins exist (./bulletin.sh <period-dir> <section>).
+# Run AFTER the period's bulletins exist (views/bulletin.sh <period-dir> <section>).
 # Only sections present as <out-dir>/<section>.md are compiled; endeavors
 # without a section file are listed as "not covered in this edition".
 #
@@ -32,7 +32,7 @@ set -eu
 OUT_DIR="${1:?usage: roundup.sh <out-dir>}"
 OUT_DIR="${OUT_DIR%/}"
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"   # mechanism repo (code, README)
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"   # mechanism repo (code, README)
 D="$(cd "${GE_DATA:-$ROOT/data}" 2>/dev/null && pwd)" \
 	|| { echo "ERROR: data repo not found at ${GE_DATA:-$ROOT/data} (set GE_DATA)" >&2; exit 1; }
 export GE_DATA="$D"
@@ -149,7 +149,7 @@ HARD RULES:
 Then run the mechanical validator and fix EVERY error it reports. It checks
 that every number in an endeavor block appears in the section file that block
 links to, that every section file is linked, and that the links resolve:
-    uv run $ROOT/validate.py $OUT_FILE --roundup
+    uv run $ROOT/views/validate.py $OUT_FILE --roundup
 Re-run until it reports 0 errors. Then give a brief summary.
 EOF
 )" </dev/null
@@ -166,7 +166,7 @@ else
 fi
 
 echo ">>> [roundup/$OUT_DIR] validate"
-if ! uv run $ROOT/validate.py "$OUT_FILE" --roundup; then
+if ! uv run $ROOT/views/validate.py "$OUT_FILE" --roundup; then
 	echo "!!! validation gate reported errors in $OUT_FILE"
 	[ "${STRICT:-1}" = 0 ] || exit 1
 fi
