@@ -97,11 +97,24 @@ and "overdue" in views, and `rule`-basis publication dates) and
 `required_from`/`retired_after` (KPI components; basis changes).
 
 **Assessment** (`assessments/<section>.jsonl`): `{id, target ("kpi" |
-"milestone:<slug>"), status ("green"|"yellow"|"red"), label, made_at, rationale,
-evidence: [event ids], by}`. `made_at` is the as-of date of the evidence that was
-considered, not the wall-clock time of the run (`by` records the run). Every
-evidence event must be known by `made_at` (checked), so a retrospective
-assessment ("status as of 14 Jul given what was public then") is honest and
+"milestone:<slug>"), status ("green"|"yellow"|"red"|"achieved"|"unknown"), label,
+made_at, rationale, evidence: [event ids], by, rubric, basis}`. Optional fields:
+- `rubric_correction: "v1"` and `definition_change: "<commit>"` (rubric rules 4
+  and 6);
+- `evidence_digest`, the staleness seal added by merge.
+
+Records without `rubric` predate rubric v1. `basis` is the structured reasoning,
+and `ledger.py check` requires its keys:
+- KPI: `rule, assessed_quantity, window: {current, previous}, benchmark,
+  benchmark_source, transients_discounted, data_as_of, prev: {status,
+  made_at}, change_note`;
+- milestone: `rule, eta, path, blockers, prev, change_note` (window and
+  benchmark may be null);
+- unknown: `rule, reason, prev, change_note`.
+
+`made_at` is the as-of date of the evidence that was considered, not the
+wall-clock time of the run (`by` records the run). Every evidence event must be
+known by `made_at` (checked), so a retrospective assessment ("status as of 14 Jul given what was public then") is honest and
 reproducible. Its `known_at` is `made_at`.
 
 Statuses follow the rubric in **gather/RUBRIC.md** (v1). KPI status = pace

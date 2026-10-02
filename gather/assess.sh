@@ -71,8 +71,8 @@ Write $AS: one JSON object per line with fields exactly: id (EXACTLY as given),
 target, status (green|yellow|red, or achieved for milestones), label
 ("<Verdict>: ..." per RUBRIC.md, at most 100 chars), made_at "$UNTIL", rationale
 (2-4 sentences, consistent with basis), evidence [event ids], by
-"assess:$RUN_ID", rubric "v1", basis (the object RUBRIC.md specifies for KPI or
-milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ', rubric_correction "v1"' ).
+"assess:$RUN_ID", rubric "v1", basis (the keys $ROOT/DESIGN.md §3 "Assessment" lists for
+KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ', rubric_correction "v1"' ).
 Validate until 0 errors:
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
 EOF
