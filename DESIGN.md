@@ -103,8 +103,9 @@ made_at, rationale, evidence: [event ids], by, rubric, basis}`. Optional fields:
   and 6);
 - `evidence_digest`, the staleness seal added by merge.
 
-Records without `rubric` predate rubric v1. `basis` is the structured reasoning,
-and `ledger.py check` requires its keys:
+Records without `rubric` predate rubric v1. `basis` is the structured reasoning.
+`ledger.py check` requires its top-level keys; the nested structure shown is the
+expected content, but it is not checked:
 - KPI: `rule, assessed_quantity, window: {current, previous}, benchmark,
   benchmark_source, transients_discounted, data_as_of, prev: {status,
   made_at}, change_note`;
@@ -213,6 +214,8 @@ tests in its own `tests/` directory:
   precedence, supersedes lineage and cycles, staleness digests, frozen
   snapshots and charts;
 - `core/tests/test_guard.sh`: the write-scope guard;
+- `core/tests/test_paths.py`: every `$ROOT/...` path and module the pipeline
+  scripts use exists (a broken one inside a prompt heredoc fails silently);
 - `gather/tests/test_collector*.py`: the collectors, on trimmed real fixtures
   (they read the metric registry, so they need the data repo);
 - `views/tests/test_validate.py` (the bulletin and round-up gate) and
@@ -221,8 +224,8 @@ tests in its own `tests/` directory:
 Run them all (offline) with:
 
 ```sh
-for t in */tests/test_*.py; do uv run "$t" >/dev/null || echo "FAIL $t"; done
-sh core/tests/test_guard.sh >/dev/null || echo "FAIL test_guard.sh"
+f=0; for t in */tests/test_*.py; do uv run "$t" >/dev/null || { echo "FAIL $t"; f=1; }; done
+sh core/tests/test_guard.sh >/dev/null || { echo "FAIL test_guard.sh"; f=1; }; [ $f = 0 ]
 ```
 
 Verification happens at ingest (step 4), so it is done once per fact rather

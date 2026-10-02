@@ -73,6 +73,8 @@ fi
 # --- 2. intake (one agent per watch item) ------------------------------------------
 RECENT="$(uv run $ROOT/core/ledger.py recent "$SECTION" --limit 250)"
 REG_TEXT="$(uv run $ROOT/core/kpi.py registry "$SECTION")"
+# (an assignment, not inline in the prompt heredoc: a failure must abort under set -e)
+OBS_HEADER="$(cd "$ROOT/core" && uv run python -c 'import ledger; print(",".join(ledger.OBS_COLUMNS))')"
 # Open questions logged by bulletins' edit stage ($ROOT/DESIGN.md §5): input for intake.
 GAPS_TEXT="$(cat */gaps/"$SECTION".md 2>/dev/null | grep -E '^[-*] ' | tail -40 || true)"
 uv run $ROOT/core/ledger.py items "$SECTION" > "$STAGE/items.txt"
@@ -129,7 +131,7 @@ OUTPUT (write only these files):
    {"status":"unverified","by":"intake:$RUN_ID","at":"$TODAY"},
    collector "gather:$SECTION/$slug@$RUN_ID".
 2. OPTIONAL $ob: observations of REGISTERED metrics that the sources report
-   (header exactly: $(cd "$ROOT" && uv run python -c 'import ledger; print(",".join(ledger.OBS_COLUMNS))')),
+   (header exactly: $OBS_HEADER),
    verification "unverified", collector as above, published_basis
    source|rule|seen per $ROOT/DESIGN.md §2. A genuinely new measure needs a new
    row in $REGISTRY with a precise definition (never edit existing rows).

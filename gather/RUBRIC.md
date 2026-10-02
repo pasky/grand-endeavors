@@ -39,9 +39,9 @@ A status answers a different question for each kind of target:
 
 ## 2. Examples
 
-These are the climate assessments made on 2026-09-30.
+These are real assessments made on 2026-09-30.
 
-**KPI (red).** Label: "Regressing: 427.35 ppm (2025); 10-yr growth 2.56 vs 2.15
+**Climate KPI (red).** Label: "Regressing: 427.35 ppm (2025); 10-yr growth 2.56 vs 2.15
 ppm/yr, need <=1.79 (tier 1)".
 - The goal is for atmospheric CO₂ to stop accumulating, so the assessed
   quantity is its growth rate, not the ppm level.
@@ -53,14 +53,17 @@ ppm/yr, need <=1.79 (tier 1)".
 - The Jan–Aug 2026 monthly swings (La Niña giving way to El Niño) were
   discounted as a transient. The record 427.35 ppm appears in the label only.
 
-**Milestone "The Bend" (yellow).** Label: "Progressing: GHG 54.1 GtCO2e (2025,
-+0.7%), +0.3% Jan-Jul 2026, plateau; ETA 5-10 yrs".
-- It is not achieved: emissions still rose in 2025, and no verified event shows
-  the peak "definitively" behind us.
-- There is measurable progress on the milestone's own quantity: CO₂ growth
-  slowed from 1.9 %/yr (2005–2014) to 0.3 %/yr (2015–2024).
-- That gives a credible ETA of 5–10 years, so the status is yellow.
-- A projected fall in 2026 is only a projection, so it cannot lift the status.
+**Rockets milestone "The Deluge" (yellow).** The milestone is 100,000 tonnes
+delivered to orbit in a single year. Label: "Progressing: 3,194 t to orbit in
+2025 (3.2% of 100 kt/yr); +45%/yr 5-yr trend, ETA ~2034".
+- The milestone's own quantity, annual payload mass to orbit, grew about 45 %/yr
+  over 2021–2025, up from about 11 %/yr over 2016–2020.
+- Extrapolating that trend reaches 100,000 t/yr around 2034, inside the 5–10
+  year band, so the status is yellow.
+- It is not green because the path depends on Starship flying at operational
+  cadence, and no precursor at that scale has been demonstrated yet.
+- The slower 2025 step (+22 %) is a single observation, so it does not flip
+  the status.
 
 **Unknown.** The rockets KPI is "Unassessed: only one cost-to-leo-best
 observation (2025, legacy)...". The 5-year window needs at least 3 points, and
@@ -152,7 +155,7 @@ is no KPI assessment (status unknown).
 - **label** = "<Verdict>: <level>, <trend> vs <benchmark>", at most 100 chars.
   \* The verdict word must be one of those bound to the status (table in §1).
   It must also match the window trend: no "Worsening" when nothing worsened.
-- **rationale**: 2–4 sentences of prose, consistent with the basis.
+- **rationale**: prose that is consistent with the basis.
 - **evidence**: the ids of the events relied on. Only `unknown` may have none.
 - \* **rubric** "v1" and a structured **basis**. Its keys are listed in
   DESIGN.md §3 (Assessment); for KPIs it includes the window numbers, so the
