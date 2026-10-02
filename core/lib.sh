@@ -66,7 +66,7 @@ commit() {
 # before each stage. Gitignored paths are invisible to
 # git, so staging directories are out of scope by construction.
 _dirty_hashes() {  # $1 = repo dir
-	git -C "$1" status --porcelain --untracked-files=all | cut -c4- | while read -r f; do
+	git -C "$1" status --porcelain --untracked-files=all --no-renames | cut -c4- | while read -r f; do
 		[ -f "$1/$f" ] && echo "$f $(git -C "$1" hash-object "$f")" || echo "$f -"
 	done
 }
@@ -75,8 +75,10 @@ guard_paths() {  # $1 pre-HEAD, $2 pre-dirty "path hash" lines, $3 label, $4 app
 	           # $5 repo dir (default: cwd), $6 allowed list (default: $ALLOWED)
 	repo="${5:-.}"; allowed="${6-$ALLOWED}"
 	# every path changed since the stage began, PLUS every path that was dirty
-	# before it (so restoring/deleting a pre-dirty file is caught too)
-	changed="$( { git -C "$repo" diff --name-only "$1" HEAD; git -C "$repo" status --porcelain --untracked-files=all | cut -c4-;
+	# before it (so restoring/deleting a pre-dirty file is caught too). --no-renames: a
+	# rename is its delete + add (porcelain "old -> new" would word-split; diff
+	# --name-only would hide a protected file renamed into an allowed path)
+	changed="$( { git -C "$repo" diff --name-only --no-renames "$1" HEAD; git -C "$repo" status --porcelain --untracked-files=all --no-renames | cut -c4-;
 		printf '%s\n' "$2" | cut -d' ' -f1; } | grep -v '^$' | sort -u)"
 	bad=""
 	for f in $changed; do

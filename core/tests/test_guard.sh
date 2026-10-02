@@ -8,7 +8,7 @@ m=$(mktemp -d)   # scratch "mechanism" repo: agents may change NOTHING there
 git -C "$m" init -q && echo code > "$m/code.py" && git -C "$m" add . && git -C "$m" commit -qm init
 d=$(mktemp -d)   # scratch data repo (cwd of the stages)
 cd "$d" && git init -q && mkdir -p metrics && printf 'a\nb\n' > metrics/r.csv && echo x > prot.txt \
-	&& echo keep > untracked-before.txt && git add metrics prot.txt && git commit -qm init
+	&& echo keep > untracked-before.txt && echo mv > mv-me.txt && git add metrics prot.txt mv-me.txt && git commit -qm init
 
 reset() {
 	cd "$d"; git checkout -q -- metrics/r.csv prot.txt; rm -rf stage evil.txt
@@ -42,6 +42,14 @@ t "pi fails without writes still fails"    block 'return 3'
 BASE='mkdir -p "$d/base"; printf "a\nb\n" > "$d/base/metrics_r.csv"; APPEND_ONLY_BASE="$d/base"; printf "c\n" >> metrics/r.csv'
 t "verifier removes intake's registry addition" pass 'printf "a\nb\n" > metrics/r.csv' "$BASE"
 t "verifier cannot edit a baseline row"          block 'printf "a\n" > metrics/r.csv' "$BASE"
+# a staged rename made BEFORE the stage ("old -> new" in porcelain output) is pre-existing, not the agent's
+t "pre-existing staged rename (data repo)"         pass  'mkdir -p stage; echo y > stage/x' 'git mv mv-me.txt moved.txt'
+git -C "$d" reset -q --hard
+t "pre-existing staged rename (mechanism repo)"    pass  'mkdir -p stage; echo y > stage/x' 'git -C "$m" mv code.py code2.py'
+git -C "$m" reset -q --hard
+INIT="$(git -C "$d" rev-parse HEAD)"
+t "committed rename of a protected file into an allowed path" block 'mkdir -p stage; git mv mv-me.txt stage/m; git commit -qm x'
+git -C "$d" reset -q --hard "$INIT"
 t "agent edits the mechanism repo (code)"        block 'echo hacked >> "$ROOT/code.py"'
 git -C "$m" checkout -q -- code.py
 
