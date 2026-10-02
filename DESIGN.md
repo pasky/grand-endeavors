@@ -96,7 +96,11 @@ published,published_basis,retrieved,collector,verification,note`.
 primary data file) `legacy`. `metric` and `unit` must match `metrics/<section>.csv`.
 The registry also gives `cadence` and `release_lag_days` (enabling "expected by"
 and "overdue" in views, and `rule`-basis publication dates) and
-`required_from`/`retired_after` (KPI components; basis changes).
+`required_from`/`retired_after` (KPI components; basis changes). A corrected
+`release_lag_days` goes with a `metrics/lag-history.csv` row (former lag, `until` = the
+last retrieval date it applied to), so the ledger's earlier `rule`-dated rows stay
+valid (append-only: they keep their original estimate). This only keeps validation
+green; it does not repair `known_at`: as-of views still date those rows by the old lag.
 
 **Assessment** (`assessments/<section>.jsonl`): `{id, target ("kpi" |
 "milestone:<slug>"), status ("green"|"yellow"|"red"|"achieved"|"unknown"), label,

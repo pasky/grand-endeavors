@@ -15,6 +15,9 @@ text with '#' comment headers (incl. '# File Creation: <ctime>'):
   co2_gr_mlo.txt      year ann_inc unc (Jan 1 -> Dec 31 change)     -> co2-growth-mlo-jan-dec
   co2_gr_gl.txt       year ann_inc unc                             -> co2-growth-global-jan-dec
   co2_daily_mlo.txt   year month day decimal value                 -> co2-mlo-daily
+and the Scripps CO2 Program's own Mauna Loa record (SCRIPPS, a comma-separated file with a
+quoted header incl. '... from archive dated 21-Sep-2026 ...'):
+  monthly_in_situ_co2_mlo.csv  year, month, xls date, decimal, co2, ..., station -> co2-mlo-monthly-scripps
 
 Choices:
   - Values are copied verbatim from the file (e.g. '1.90'), so unchanged
@@ -26,7 +29,11 @@ Choices:
     consecutive annual growth rates ending in the obs year (obs = final year of
     the window), for every year with a full window; exact decimal arithmetic,
     rounded half-up to 2 decimals; source = the growth-rate file.
-  - published: registry release_lag_days rule (NOAA files are re-issued with a
+  - Derived co2-growth-mlo-yoy-monthly: NOAA MLO monthly mean minus the same month a
+    year earlier, for every month where both are present (exact decimal difference of
+    the verbatim 2-decimal values); source = co2_mm_mlo.txt.
+  - published: registry release_lag_days rule (the Scripps 'archive dated' stamp is noted as
+    provenance only: it dates the data vintage, not when the file went public) (NOAA files are re-issued with a
     file-creation date that applies to the vintage, not to each value).
   - Notes flag Scripps-era months (before May 1974), NOAA-interpolated months
     (negative stdev), Maunakea substitute site months (Dec 2022 - Jul 2023) and
@@ -46,6 +53,8 @@ import common
 
 SECTION = "climate"
 BASE = "https://gml.noaa.gov/webdata/ccgg/trends/co2/"
+# Scripps moved it here in 2026 (the old scrippsco2.ucsd.edu/assets/data/... URL now serves an HTML page)
+SCRIPPS = "https://keelinglabsites.ucsd.edu/websitedataco2/monthly_in_situ_co2_mlo.csv"
 DAILY_DAYS = 60
 MISSING_BELOW = Decimal("-99")  # NOAA sentinels are -99.99 / -999.99
 TRENDS = [  # (metric, growth-rate file, window years, scope label)
@@ -85,6 +94,41 @@ def parse_monthly(text: str, value_col: int = 3) -> list[tuple[str, str, list[st
     for t in data_rows(text):
         if present(t[value_col]):
             out.append((f"{int(t[0]):04d}-{int(t[1]):02d}", t[value_col], t))
+    return out
+
+
+def scripps_archive_date(text: str) -> str | None:
+    """'... from archive dated 21-Sep-2026 07:50:26' -> '2026-09-21' (None if absent)."""
+    for ln in text.splitlines():
+        if "archive dated" in ln:
+            stamp = ln.split("archive dated", 1)[1].split()[0]
+            return str(dt.datetime.strptime(stamp, "%d-%b-%Y").date())
+    return None
+
+
+def parse_scripps_monthly(text: str) -> list[tuple[str, str, str]]:
+    """[(YYYY-MM, value, station)] from Scripps monthly_in_situ_co2_mlo.csv (column 5 = the
+    standard monthly mean, -99.99 = missing). Fails loudly on anything that is not that file."""
+    out = []
+    for ln in text.splitlines():
+        t = [x.strip() for x in ln.split(",")]
+        if len(t) < 5 or not t[0].isdigit():
+            continue
+        if present(t[4]):
+            out.append((f"{int(t[0]):04d}-{int(t[1]):02d}", t[4], t[10] if len(t) > 10 else ""))
+    if not out or "Scripps" not in text:
+        raise SystemExit("climate: the Scripps monthly MLO file has no data rows (moved or an HTML page?)")
+    return out
+
+
+def yoy(monthly: list[tuple[str, str, list[str]]]) -> list[tuple[str, str, str]]:
+    """[(YYYY-MM, value minus the same month a year earlier, YYYY-MM a year earlier)]."""
+    by = {obs: Decimal(v) for obs, v, _ in monthly}
+    out = []
+    for obs, _, _ in monthly:
+        prev = f"{int(obs[:4]) - 1:04d}{obs[4:]}"
+        if prev in by:
+            out.append((obs, str(by[obs] - by[prev]), prev))
     return out
 
 
@@ -145,6 +189,29 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
         for obs, value, tokens in parsed:
             flags = monthly_flags(obs, tokens, parsed[-1][0], mlo)
             add(metric, obs, value, fname, "; ".join([f"{label} ({src_note(fname, texts[fname])})"] + flags))
+
+    mlo = parse_monthly(texts["co2_mm_mlo.txt"])
+    tokens = {obs: t for obs, _, t in mlo}
+    for obs, value, prev in yoy(mlo):
+        flags = monthly_flags(obs, tokens[obs], mlo[-1][0], True)
+        flags += [f"{prev}: {f}" for f in monthly_flags(prev, tokens[prev], mlo[-1][0], True)]
+        add("co2-growth-mlo-yoy-monthly", obs, value, "co2_mm_mlo.txt",
+            "; ".join([f"Derived by the collector: NOAA MLO monthly mean {obs} minus {prev} "
+                       f"({src_note('co2_mm_mlo.txt', texts['co2_mm_mlo.txt'])})"] + flags))
+
+    stext = common.fetch(SCRIPPS, fixture)
+    archived = scripps_archive_date(stext)
+    scripps = parse_scripps_monthly(stext)
+    for obs, value, station in scripps:
+        flags = []
+        if station == "MKO":
+            flags.append("measured at Maunakea during the Mauna Loa eruption outage")
+        ly, lm = map(int, scripps[-1][0].split("-"))
+        if (ly * 12 + lm) - (int(obs[:4]) * 12 + int(obs[5:])) < 12:
+            flags.append("preliminary (last 12 months, subject to recalibration)")
+        rows.append(common.row(reg, "co2-mlo-monthly-scripps", obs, value, SCRIPPS, "; ".join(
+            ["Scripps CO2 Program MLO monthly mean, 2012 SIO manometric scale (monthly_in_situ_co2_mlo.csv"
+             + (f", archive dated {archived})" if archived else ")")] + flags), collector, str(today)))
 
     for fname, metric, label in (
             ("co2_annmean_mlo.txt", "co2-mlo-annual", "NOAA MLO calendar-year annual mean"),

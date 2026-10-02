@@ -86,6 +86,29 @@ def main():
     case("unregistered metric is an error", has(ledger.check_obs_row(row("co2-renamed", "2026-06", "1", "2026-07-07"), reg), "not in the registry"))
     case("unit drift vs registry is an error", has(ledger.check_obs_row(row("co2-mlo-annual", "2025", "1", "2026-01-10", unit="ppb"), reg), "!= registry"))
     case("rule-basis date must equal obs end + lag", has(ledger.check_obs_row(row("co2-mlo-monthly", "2026-06", "1", "2026-07-01", "rule"), reg), "rule-basis published must be"))
+    # a corrected lag (7 -> 70) keeps the rows rule-dated under the old lag valid (metrics/lag-history.csv)
+    reg_rows = list(csv.reader(open(f"{kpi.ROOT}/metrics/climate.csv")))
+    write_csv(f"{kpi.ROOT}/metrics/climate.csv", reg_rows[0],
+              [[*r[:3], "70", *r[4:]] if r[0] == "co2-mlo-monthly" else r for r in reg_rows[1:]])
+    case("lag corrected without history: earlier rule-dated rows fail", has(ledger.check_section("climate")[0], "obs end + 70d"))
+    write_csv(f"{kpi.ROOT}/metrics/lag-history.csv", kpi.LAG_HISTORY_COLUMNS,
+              [["climate", "co2-mlo-monthly", "7", "2026-09-28"], ["rockets", "nope", "1", "2026-01-01"]])
+    reg2, errs2 = kpi.load_registry("climate")
+    case("lag history: rows retrieved by `until` may use the former lag (ledger passes again)",
+         errs2 == [] and ledger.check_section("climate")[0] == [])
+    case("lag history: a row retrieved after `until` must use the current lag",
+         has(ledger.check_obs_row(row("co2-mlo-monthly", "2026-08", "1", "2026-09-07", "rule", retrieved="2026-10-02"), reg2),
+             "must be 2026-10-02 (obs end + 70d")
+         and not ledger.check_obs_row(row("co2-mlo-monthly", "2026-07", "1", "2026-10-02", "rule", retrieved="2026-10-02"), reg2))
+    write_csv(f"{kpi.ROOT}/metrics/lag-history.csv", kpi.LAG_HISTORY_COLUMNS, [["climate", "co2-nope", "x", "2026"]])
+    case("lag history: unknown metric is an error", has(kpi.load_registry("climate")[1], "unknown metric 'co2-nope'"))
+    with open(f"{kpi.ROOT}/metrics/lag-history.csv", "w") as f:
+        f.write("section,metric,release_lag_days,until\nclimate,co2-mlo-monthly,7,2026-10-01,extra\n"
+                "climate,co2-mlo-monthly,7,20261001\n")
+    e = kpi.load_registry("climate")[1]
+    case("lag history: extra field and a non-YYYY-MM-DD until are errors",
+         has(e, "lag-history.csv:2: wrong number of fields") and has(e, "lag-history.csv:3: until must be YYYY-MM-DD"))
+    fixture()
     case("published after retrieved is an error", has(ledger.check_obs_row(row("co2-mlo-monthly", "2026-06", "1", "2026-10-01"), reg), "published after retrieved"))
     case("published before the observed period is an error", has(ledger.check_obs_row(row("co2-mlo-annual", "2026", "1", "2025-12-01"), reg), "before the observed period"))
     topics = ledger.valid_topics("climate")

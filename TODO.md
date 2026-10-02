@@ -55,7 +55,10 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
       needs a definition that can actually be observed.
 - [ ] Observation **withdrawal** record (today a wrong value can only be
-      outranked by a better one).
+      outranked by a better one). Also wanted for re-dating: the 570
+      `co2-global-monthly` rows collected before 2026-10-02 carry rule dates with
+      the old 7-day lag (really ~67 days, now 70; `metrics/lag-history.csv`), so
+      as-of views before then see those values ~2 months early.
 - [ ] Dedup is an LLM job plus a heuristic; reworded near-duplicates can slip
       through (fix with `supersedes`).
 

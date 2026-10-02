@@ -104,6 +104,7 @@ case("climate: all rows pass ledger.check_obs_row against metrics/climate.csv", 
 case("climate: emits every source metric and the four derived trends",
      {r["metric"] for r in crow} == {"co2-mlo-monthly", "co2-global-monthly", "co2-mlo-annual", "co2-global-annual",
                                      "co2-growth-mlo-jan-dec", "co2-growth-global-jan-dec", "co2-mlo-daily",
+                                     "co2-growth-mlo-yoy-monthly", "co2-mlo-monthly-scripps",
                                      "co2-trend-10yr-mlo-jan-dec", "co2-trend-5yr-mlo-jan-dec",
                                      "co2-trend-10yr-global-jan-dec", "co2-trend-5yr-global-jan-dec"})
 r = ck[("co2-mlo-monthly", "2026-05")]
@@ -124,6 +125,30 @@ tr = ck[("co2-trend-10yr-mlo-jan-dec", "2025")]
 case("climate: trend row is marked derived, cites the growth file and window",
      tr["value"] == "2.56" and tr["source"].endswith("/co2_gr_mlo.txt") and "Derived" in tr["note"]
      and "2016-2025" in tr["note"] and "co2_gr_mlo.txt" in tr["note"] and tr["unit"] == "ppm/yr")
+
+yo = {r["obs"]: r for r in crow if r["metric"] == "co2-growth-mlo-yoy-monthly"}
+case("climate: year-on-year MLO month = exact difference of the verbatim monthly means (2026-08: 427.55 - 425.48)",
+     sorted(yo) == ["2026-08"] and yo["2026-08"]["value"] == "2.07" and yo["2026-08"]["unit"] == "ppm"
+     and yo["2026-08"]["source"].endswith("/co2_mm_mlo.txt") and "2026-08 minus 2025-08" in yo["2026-08"]["note"]
+     and "Derived" in yo["2026-08"]["note"] and yo["2026-08"]["published"] == "2026-09-07")
+case("climate: year-on-year needs both months (1958-04 has no 1957-04; no 2026-05 without 2025-05)",
+     climate.yoy([("1958-04", "317.45", []), ("1959-04", "318.00", []), ("2026-05", "432.34", [])])
+     == [("1959-04", "0.55", "1958-04")])
+sc = {r["obs"]: r for r in crow if r["metric"] == "co2-mlo-monthly-scripps"}
+case("climate: Scripps monthly MLO parsed from its CSV (missing -99.99 skipped, values verbatim, archive date in note)",
+     sorted(sc) == ["1958-03", "2022-11", "2022-12", "2023-01", "2025-05", "2025-08", "2025-09", "2026-07", "2026-08"]
+     and sc["2025-05"]["value"] == "430.21" and sc["2025-05"]["source"] == climate.SCRIPPS
+     and "archive dated 2026-09-21" in sc["2025-05"]["note"])
+case("climate: Scripps notes flag Maunakea (MKO) months and the preliminary last 12 months",
+     "Maunakea" in sc["2022-12"]["note"] and "Maunakea" not in sc["2022-11"]["note"]
+     and "preliminary" in sc["2025-09"]["note"] and "preliminary" not in sc["2025-08"]["note"])
+case("climate: Scripps published = 35-day rule capped at retrieved (the archive date is provenance only)",
+     (sc["2026-07"]["published"], sc["2026-07"]["published_basis"]) == ("2026-09-04", "rule")
+     and (sc["2026-08"]["published"], sc["2026-08"]["published_basis"]) == ("2026-09-28", "rule"))
+case("climate: the Scripps URL serving an HTML page fails loudly",
+     raises_exit(climate.parse_scripps_monthly, "<!DOCTYPE html><html>2026, 01, x</html>"))
+case("climate: NOAA global monthly rule lag is 70 d (June data appears in the early-September file)",
+     ck[("co2-global-monthly", "2026-05")]["published"] == "2026-08-09")
 
 # --- robots-software (METR) --------------------------------------------------------
 case("metr: yaml_paths reads nested scalars, ignores comments and list items",
