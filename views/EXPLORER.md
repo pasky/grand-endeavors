@@ -2,15 +2,16 @@
 
 The explorer is a set of read-only **views of the ledger** (the data repo in
 `./data`). Nothing in it is canonical. Everything is rebuilt from the ledger
-on demand into `build/`, which is gitignored. There are two views over the same
-data:
+on demand into `build/`, which is gitignored and is the published site
+(pasky.or.cz/grand-endeavors/ is a symlink to the main checkout's `build/`).
+There are two views over the same data:
 
-| | Dashboard (`build/dashboard.html`) | Datasette (`build/ledger.sqlite`) |
+| | Dashboard (`build/index.html`) | Datasette (`build/ledger.sqlite`) |
 |---|---|---|
-| What it is | One curated, self-contained HTML page | A browsable database with a web UI |
-| Best for | "Where do we stand?" at a glance; sharing | Digging, auditing, ad-hoc questions, exports |
+| What it is | One curated, self-contained HTML page: the project's front page | A browsable database with a web UI |
+| Best for | A first-time visitor; "where do we stand?" at a glance; sharing | Digging, auditing, ad-hoc questions, exports |
 | Needs | Any browser; works offline; email it or host it anywhere | A local server (`uvx datasette ...`) |
-| Interaction | Read and click links (older events fold open) | Filter, facet, sort, run SQL, export CSV/JSON |
+| Interaction | Read; every line expands to its detail | Filter, facet, sort, run SQL, export CSV/JSON |
 | Shows | The *current* picture: effective records only | Everything, incl. superseded records and legacy rows, with flags |
 
 ## Setup (once)
@@ -23,49 +24,75 @@ git clone https://github.com/pasky/grand-endeavors-data.git data   # or set GE_D
 ## Dashboard
 
 ```sh
-uv run views/explore.py dashboard                       # -> build/dashboard.html (as of today)
-uv run views/explore.py dashboard --as-of 2026-07-14    # the world as the ledger knew it on that date
-xdg-open build/dashboard.html                           # or open it in any browser
+uv run views/explore.py site                            # -> build/: index.html, period pages, ledger.sqlite (gather.sh runs this)
+uv run views/explore.py dashboard --as-of 2026-07-14    # just the page, as the ledger knew the world on that date
+uv run views/explore.py period pilot-26H1               # (cwd = data) freeze a period page (roundup.sh runs this)
 ```
 
-**Header**: the as-of date, record counts (verified vs legacy), and a **Gaps**
-list: KPI metrics that are overdue (the next release is past due given the
-registry's cadence and release lag) or that have never been observed. Gaps are
-never hidden; an unfilled datapoint shows as unfilled.
+The page is the **maximal source of truth** for a reader: it carries the
+framework itself (`framework.yaml`: tagline, manifesto, every endeavor's intro,
+KPI, milestone and challenge definitions), so a first-time visitor needs
+nothing else. By default it reads like the old README with a status on every
+line; every line expands to its detail.
 
-**Per endeavor** (in framework.yaml order):
-- **KPI tiles**, one per required metric (others fold under "more registered
-  metrics"). Each tile shows:
-  - the latest value and its observation period;
-  - when the value became known, and a `source` link;
-  - the change **vs the previous observation**, with a ⚠ when it is not
-    comparable (different calendar month: seasonal cycle not removed;
-    different granularity; same observation revised);
-  - for monthly series, the like-for-like change vs the same month a year ago;
-  - a sparkline of one granularity;
-  - "next expected by …", **OVERDUE**, or **no data yet**.
+**Header**: the tagline, the as-of date, the manifesto, and a folded "How to
+read this page" (the status colours, KPI vs milestone status, verified vs
+legacy, what "as of" means).
 
-  A `legacy` badge marks values from the unverified 2025 report.
-- **KPI assessment and milestone list**: the current status per gather/RUBRIC.md:
-  - 🟢 green, 🟡 yellow, 🔴 red;
-  - ✅ achieved (milestones only; a green dot with a check mark, as in bulletins);
-  - ⚪ **Unassessed** (the rubric can't judge it: no KPI spec or no data).
+**Per endeavor** (in framework.yaml order; groups such as Robots and
+Automation carry their own intro):
+- **KPI**: its definition, and one summary line with the latest value of each
+  required metric and the KPI status. Expanded:
+  - **KPI tiles**, one per required metric (others fold under "more
+    registered metrics"). Each tile shows the latest value and its
+    observation period; when it became known, and a `source` link; the change
+    **vs the previous observation**, with a ⚠ when it is not comparable
+    (different calendar month: seasonal cycle not removed; different
+    granularity; same observation revised); for monthly series, the
+    like-for-like change vs the same month a year ago; a sparkline of one
+    granularity; "next expected by …", **OVERDUE**, or **no data yet**. A
+    `legacy` badge marks values from the unverified 2025 report.
+  - the **assessment**: label, rationale and its structured basis (assessed
+    quantity, window, benchmark, …), and the KPI-tagged events.
+- **Milestone Countdown**: per milestone its status dot, name and definition,
+  then the status label, assessment date and event count. Expanded: the
+  precise criteria, the assessment (rationale; ETA, path, blockers; the
+  previous status), and its events, the cited evidence marked. Statuses follow
+  gather/RUBRIC.md: 🟢 green, 🟡 yellow, 🔴 red, ✅ achieved (a green dot with a
+  check mark), ⚪ unknown ("Unassessed"), dashed = not yet assessed.
+- **Open challenges** (or fusion's Tech Tree): name, definition and event
+  count; expanded, the details and events. Challenges are not assessed.
+- Folded at the end: **Beyond the framework** events, **Other events** (tags
+  the framework no longer lists, e.g. after a change; never silently
+  dropped) and the **latest events**.
 
-  The label starts with the verdict word ("Off track", "Progressing",
-  "Blocked", …), then the assessment date, the previous status (e.g. "was
-  yellow on …") and the number of evidence events. Challenges are listed with
-  their event counts; they are not assessed.
-- **Latest events**, newest first. Each shows the claim, event date, kind
-  (achievement, announcement, projection, setback, …), significance (●●○),
-  when it became known, topic tags and source links. A badge shows
-  verification: verified / corrected / **legacy**. Older events fold away by
-  significance. Superseded and withdrawn records are not shown here; the
-  current version is.
+Each event shows the claim, event date, kind (achievement, announcement,
+projection, setback, …), significance (●●○), when it became known, topic tags,
+source links and a verification badge (verified / corrected / **legacy**). It
+is listed under every topic it is tagged with; lifecycle links (`relates`,
+`supersedes`) jump to its first occurrence. Superseded and withdrawn records
+are not shown; the current version is.
+
+**Footer**: record counts, the metric **gaps** (overdue or never observed;
+never hidden), links to the earlier **period pages**, and the data/code repos.
 
 **`--as-of`** applies the ledger's time rule: only records *published* by that
 date are included, and "overdue" is judged against that date. Two people
 building the same as-of date from the same data commit get the same page.
 That makes it the right way to answer "what did we know on date X?"
+
+### Period pages
+
+`explore.py period <period-dir>` freezes `<period-dir>/index.html` in the data
+repo (published as `build/<period-dir>/index.html`): the dashboard as of the
+period's cutoff, rendered with the framework in force for that period
+(`<period-dir>/framework.yaml`, copied from the mechanism repo on the first run
+and kept). Sections without a bulletin in that period are marked "not
+covered". The page is frozen because a regenerated as-of view drifts: later
+corrections of facts that were public by the cutoff, and assessments written
+retrospectively, enter it. pilot-2025 and pilot-26H1 were reconstructed this
+way on 2026-10-02 (with the framework of 2026-01-05) and say so; W38, a
+pipeline test run, has no page.
 
 ## Datasette
 
@@ -128,13 +155,13 @@ ORDER BY known_at DESC;
 - "What did we know when the 26H1 bulletin was cut?": either, with
   `--as-of 2026-07-14`.
 - Bulletins (`data/pilot-*/<section>.md`) are the third, narrative view, cut
-  at a fixed date with a frozen snapshot.
+  at a fixed date with a frozen snapshot; the period page is the dashboard at
+  that cutoff.
 
-## Publishing (not set up yet)
+## Publishing
 
-- The dashboard is one static file: it can be pushed to GitHub Pages of the
-  data repo after each gather.
+- `explore.py site` (run by gather.sh after each gather) rewrites `build/`,
+  which is the published directory; the old `dashboard.html` URL redirects to
+  the new front page.
 - Datasette can be published read-only with `datasette publish` (Cloud Run,
-  Fly, Vercel).
-
-Both are in TODO under "Publish the explorer".
+  Fly, Vercel); not set up yet (TODO).

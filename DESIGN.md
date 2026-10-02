@@ -8,7 +8,9 @@ Grand Endeavors tracks humanity's progress on a handful of endeavors (framework.
 The primary artifact is a continuously growing, verified **ledger** of what is
 known and when it became known. Everything readers see is a **view** of it:
 
-- a live **explorer/dashboard** (latest state, history, gaps, sources), and
+- a live **explorer/dashboard** (latest state, history, gaps, sources). It is
+  the public front page: it also carries the framework (framework.yaml), so a
+  reader needs nothing else; and
 - **bulletins** at a fixed cadence (weekly, half-year, annual, …): a snapshot of
   the ledger at a deterministic cutoff, with a narrative on top.
 
@@ -204,7 +206,10 @@ may use them only as background context, never as this period's news.
    - plus the usual link, footnote and mermaid checks.
 
 `views/roundup.sh <period-dir>` compiles the bulletins into the period README, as
-before.
+before, and then freezes the **period page** `<period-dir>/index.html`: the
+dashboard as of the cutoff, with the period's framework
+(`<period-dir>/framework.yaml`). It is committed rather than regenerated, because
+an as-of view drifts as later corrections enter the ledger (views/EXPLORER.md).
 
 ## 6. Verification model
 

@@ -20,10 +20,10 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] Gather all sections. Only climate (full), fusion (KPI) and the
       re-verification pass have run; the other sections' news is all
       2025-report history.
-- [x] Dashboard published (owner symlink: pasky.or.cz/grand-endeavors/dashboard.html).
-      `gather.sh` regenerates it after each run. Still open: a hosted Datasette
-      (`datasette publish`), and linking the dashboard from round-ups and the
-      data repo README.
+- [x] Dashboard published as the front page (owner symlink: pasky.or.cz/grand-endeavors/
+      = `build/`; `index.html` + frozen period pages; `gather.sh` runs `explore.py site`).
+      Still open: a hosted Datasette (`datasette publish`), and linking the
+      dashboard from round-ups and the data repo README.
 
 ## Data quality
 
@@ -67,7 +67,10 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       must be a snapshot source). The next step is tying each footnote to a
       record id.
 - [ ] Snapshot size (~136 KB per weekly section): gzip, or pin + regenerate.
-- [ ] Dashboard size grows with the ledger; split per section at some point.
+- [ ] Dashboard size grows with the ledger (~830 KB live; events repeat under each
+      of their topics), and every period page is a frozen copy (~650-700 KB each,
+      committed to the data repo): fine for half-years, too much for weekly
+      periods. Split per section, or gzip/trim period pages, before weekly roundups.
 
 ## Roadmap
 

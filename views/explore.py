@@ -3,14 +3,24 @@
 # dependencies = ["pyyaml"]
 # ///
 """Grand Endeavors explorer: derived, read-only views of the ledger
-(DESIGN.md §1 "explorer (SQLite/Datasette)"). Nothing here is canonical;
-outputs go to build/ (gitignored) and can be rebuilt at any time.
+(DESIGN.md §1 "explorer (SQLite/Datasette)"). Nothing here is canonical: it is all
+derived from the ledger. Outputs go to build/ (gitignored; the published site) and
+can be rebuilt at any time, except the period pages, which are frozen into the
+data repo next to the period's bulletins and snapshots.
 
 COMMANDS
   explore.py build     [--out build/] [--as-of YYYY-MM-DD]
         -> <out>/ledger.sqlite (tables, indexes, views) + <out>/metadata.json (Datasette)
-  explore.py dashboard [--out build/dashboard.html] [--as-of YYYY-MM-DD]
-        -> one self-contained static HTML dashboard (no JS/CSS/CDN dependencies)
+  explore.py dashboard [--out build/index.html] [--as-of YYYY-MM-DD]
+        -> one self-contained static HTML page (no JS/CSS/CDN dependencies): the
+           framework (framework.yaml: manifesto, definitions) with the ledger's state;
+           README-like by default, every item expands to its detail
+  explore.py site [--out build/] [--as-of YYYY-MM-DD]
+        -> the published directory: index.html (live) + <period>/index.html (frozen
+           period pages from the data repo) + ledger.sqlite + metadata.json
+  explore.py period <period-dir> [--note TEXT]
+        -> <period-dir>/index.html, frozen: the page as of the period's cutoff, with
+           the period's framework (<period-dir>/framework.yaml, copied on first run)
 
 --as-of applies the ledger time rule (DESIGN.md §2): only records with
 known_at <= as-of are included, and "expected by"/"overdue" are judged against
@@ -55,7 +65,7 @@ CREATE TABLE observations (section TEXT, metric TEXT, obs TEXT, obs_start TEXT, 
     published_basis TEXT, retrieved TEXT, known_at TEXT, collector TEXT, verification TEXT,
     note TEXT, tier INTEGER, effective INTEGER, line INTEGER);
 CREATE TABLE assessments (section TEXT, id TEXT, target TEXT, status TEXT, label TEXT, made_at TEXT,
-    known_at TEXT, rationale TEXT, evidence JSON, by TEXT, line INTEGER);
+    known_at TEXT, rationale TEXT, evidence JSON, by TEXT, line INTEGER, basis JSON);
 CREATE TABLE metrics (section TEXT, metric TEXT, unit TEXT, cadence TEXT, release_lag_days INTEGER,
     required_from TEXT, retired_after TEXT, definition TEXT, required INTEGER, retired INTEGER,
     n_obs INTEGER, latest_obs TEXT, latest_obs_end TEXT, latest_known_at TEXT, next_expected TEXT,
@@ -95,7 +105,7 @@ WITH ranked AS (SELECT a.*, ROW_NUMBER() OVER (PARTITION BY section, target
                 ORDER BY made_at DESC, line DESC) AS k FROM assessments a)
 SELECT t.section, t.topic AS target, t.kind, t.name, t.ord,
        COALESCE(a.status, 'not yet assessed') AS status, a.label, a.made_at, a.rationale,
-       a.evidence, a.by, a.id AS assessment_id,
+       a.evidence, a.by, a.id AS assessment_id, a.basis,
        -- 1 when every evidence event is legacy (an unverified pilot-2025 judgment)
        (SELECT MIN(e.verification_status = 'legacy') FROM json_each(a.evidence) j
          JOIN events e ON e.section = a.section AND e.id = j.value) AS legacy_evidence,
@@ -215,10 +225,10 @@ def next_expected(cadence: str, lag: str, obs_end: dt.date) -> dt.date | None:
 _change_text, compare, year_ago = ledger.change_text, ledger.compare, ledger.year_ago
 
 
-def framework_meta(section: str) -> tuple[str, str, str, dict[str, str]]:
+def framework_meta(section: str, fw: dict | None = None) -> tuple[str, str, str, dict[str, str]]:
     """(group title, section title, KPI line, {topic name: description}) from framework.yaml."""
     try:
-        sec, grp = ledger.fw_section(section)
+        sec, grp = ledger.fw_section(section, fw)
     except KeyError:
         return "", section, "", {}
     desc = {t["name"]: ledger.fw_description(t) for k in ("milestones", "challenges") for t in sec.get(k) or []}
@@ -250,16 +260,19 @@ def _j(v) -> str | None:
 
 
 # --- build ----------------------------------------------------------------------------
-def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
+def build_db(db: sqlite3.Connection, as_of: dt.date, fw: dict | None = None) -> None:
+    """fw: the framework to use (default: the current framework.yaml; a period page
+    passes the framework frozen with that period)."""
+    fw = fw or ledger.framework()
     db.executescript(SCHEMA)
     ins = lambda table, row: db.execute(
         f"INSERT INTO {table} VALUES ({','.join('?' * len(row))})", row)
     ins("build_info", ("as_of", str(as_of)))
     for n, sec in enumerate(ledger.SECTIONS):
-        group, title, kpi_line, desc = framework_meta(sec)
+        group, title, kpi_line, desc = framework_meta(sec, fw)
         ins("sections", (sec, n, group, title, kpi_line))
         try:
-            t = ledger.framework_topics(sec)
+            t = ledger.framework_topics(sec, fw)
         except KeyError:  # section not in framework.yaml
             t = {"milestones": [], "challenges": []}
         tops = [("kpi", "kpi", "kpi", "KPI", kpi_line)]
@@ -314,7 +327,7 @@ def build_db(db: sqlite3.Connection, as_of: dt.date) -> None:
         for a, known in _known(ledger.assessments(sec), as_of, f"assessments/{sec}"):
             ins("assessments", (sec, a.get("id"), a.get("target"), a.get("status"), a.get("label"),
                                 a.get("made_at"), known, a.get("rationale"), _j(a.get("evidence")),
-                                a.get("by"), a.get("_line")))
+                                a.get("by"), a.get("_line"), _j(a.get("basis"))))
 
         reg, _ = kpi.load_registry(sec)
         for m, row in (reg or {}).items():
@@ -407,7 +420,20 @@ li.ms,li.ev{padding:5px 0;border-bottom:1px solid var(--line)}li.ev .meta{font-s
 .chip{font-size:11px;background:#edf2f7;border-radius:3px;padding:0 4px;margin-right:3px}
 .sig3{font-weight:600}.rel{font-size:12px;color:var(--mute);margin-left:12px}
 details summary{cursor:pointer;color:var(--acc);margin:6px 0}
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:0 28px}
+header,main{max-width:980px}.tagline{font-size:16px;margin:2px 0 6px}.asof{margin:4px 0}
+.small{font-size:12px}.note{background:#fffaf0;border:1px solid #f6e05e;border-radius:6px;padding:6px 10px;margin:8px 0}
+.manifesto p{font-size:15px;margin:8px 0}.legend{margin:8px 0 4px}.more{padding:4px 0 8px 18px}
+.group>h2.gh{margin:28px 0 4px;font-size:21px}.group>p{margin:4px 0 8px}.group section h2{font-size:17px}
+section p{margin:6px 0}.kpi{margin:10px 0 2px}
+details summary{list-style:none}details summary::-webkit-details-marker{display:none}
+details>summary::before{content:"▸ ";color:var(--mute)}details[open]>summary::before{content:"▾ "}
+li.topic summary,.kpid summary{color:var(--ink);margin:0;padding:5px 0}
+li.topic{border-bottom:1px solid var(--line)}ul.topics{margin:0 0 4px}
+.st{display:block;font-size:13px;margin-left:16px}ul.md{list-style:disc;padding-left:22px;margin:4px 0}
+h4{font-size:12px;color:var(--mute);margin:10px 0 4px}.ass{margin:6px 0}
+dl.basis{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;font-size:13px;margin:6px 0}
+dl.basis dt{color:var(--mute)}dl.basis dd{margin:0}.b-cited{color:var(--acc)}
+footer{margin:24px 0}.news{margin-top:10px}
 """
 
 
@@ -497,7 +523,10 @@ def spark_points(db: sqlite3.Connection, k: sqlite3.Row) -> tuple[list[tuple[dt.
     return pts, KIND_NAMES.get(kind, kind)
 
 
-def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None = None) -> str:
+def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None = None,
+             anchor: bool = True, cited: bool = False) -> str:
+    """anchor: carry the #ev-<section>-<id> target (once per page: the section's all-events list);
+    cited: the event is evidence of the assessment it is listed under."""
     sig = int(e["significance"] or 0)
     chips = "".join(f'<span class="chip">{esc(names.get(t, t))}</span>' for t in json.loads(e["topics"] or "[]"))
     srcs = json.loads(e["sources"] or "[]")
@@ -515,98 +544,238 @@ def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None 
                    for r in json.loads(e["relates"] or "[]") if isinstance(r, dict))
     rels += "".join(f'<div class="rel">↳ supersedes (corrects / adds sources to) {esc(s)}</div>'
                     for s in json.loads(e["supersedes"] or "[]"))
-    return (f'<li class="ev sig{sig}" id="ev-{esc(e["section"])}-{esc(e["id"])}">'
+    aid = f' id="ev-{esc(e["section"])}-{esc(e["id"])}"' if anchor else ""
+    return (f'<li class="ev sig{sig}"{aid}>'
             f'<div class="meta">{esc(e["date"])} · {esc(e["kind"])} · '
             f'<span title="significance {sig}/3">{"●" * sig}{"○" * (3 - sig)}</span> · '
-            f'known {esc(e["known_at"])}{badge(e["verification_status"])}</div>'
+            f'known {esc(e["known_at"])}{badge(e["verification_status"])}'
+            f'{'<span class="badge b-cited">cited as evidence</span>' if cited else ""}</div>'
             f'<div>{esc(e["claim"])}</div><div>{chips} {links}</div>{rels}</li>')
 
 
-def section_html(db: sqlite3.Connection, s: sqlite3.Row, n_recent: int = 8) -> str:
-    sec = s["section"]
-    ms = db.execute("SELECT * FROM milestone_status WHERE section=? ORDER BY ord", (sec,)).fetchall()
+# --- Markdown (the framework's prose: inline emphasis/links, paragraphs, bullet lists) ---------
+def md_inline(text) -> str:
+    t = esc(text)
+    t = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)",
+               lambda m: f'<a href="{m[2]}" target="_blank" rel="noopener noreferrer">{m[1]}</a>', t)
+    t = re.sub(r"\*\*(\S.*?\S|\S)\*\*", r"<b>\1</b>", t)
+    return re.sub(r"(?<![\w*])\*(\S.*?\S|\S)\*(?![\w*])", r"<i>\1</i>", t)
+
+
+def md_block(text) -> str:
+    out = []
+    for blk in re.split(r"\n\s*\n", str(text or "").strip()):
+        lines = [ln.strip() for ln in blk.splitlines() if ln.strip()]
+        if lines and all(re.match(r"^[*-]\s", ln) for ln in lines):
+            out.append('<ul class="md">' + "".join(f"<li>{md_inline(ln[1:].strip())}</li>" for ln in lines) + "</ul>")
+        elif lines:
+            out.append(f"<p>{md_inline(' '.join(lines))}</p>")
+    return "".join(out)
+
+
+STATUS_WORDS = {"green": "on track or ahead", "yellow": "progressing, behind pace", "red": "off track, stalled or distant",
+                "achieved": "achieved (milestones)", "unknown": "unassessed: the rubric cannot judge it yet"}
+BASIS_LABELS = {"eta": "ETA", "path": "Path", "blockers": "Blockers", "assessed_quantity": "Assessed quantity",
+                "window": "Window", "benchmark": "Benchmark", "benchmark_source": "Benchmark source",
+                "transients_discounted": "Transients discounted", "data_as_of": "Data as of",
+                "reason": "Reason", "change_note": "Change", "rule": "Rubric rule"}
+
+
+def _plain(v) -> str:
+    if isinstance(v, dict):
+        return "; ".join(f"{k}: {_plain(x)}" for k, x in v.items() if x not in (None, "", [], {}))
+    if isinstance(v, list):
+        return "; ".join(_plain(x) for x in v)
+    return str(v)
+
+
+def dot(status) -> str:
+    st = status if status in STATUS_WORDS else "none"
+    return f'<span class="dot s-{esc(st)}" title="{esc(STATUS_WORDS.get(st, "not yet assessed"))}"></span>'
+
+
+def assessment_html(m: sqlite3.Row) -> str:
+    """The judgment behind a status: label, rationale and the structured basis."""
+    if not m["assessment_id"]:
+        return '<div class="gap">not yet assessed</div>'
+    prev = (f"; previously {esc(m['prev_status'])} on {esc(m['prev_made_at'])}"
+            if m["prev_status"] and m["prev_status"] != m["status"] else "")
+    out = [f'<div class="ass"><div>{dot(m["status"])}<b>{esc(m["label"])}</b> '
+           f'<span class="mute">({esc(m["status"])}, assessed {esc(m["made_at"])}{prev})</span>'
+           f'{badge("legacy") if m["legacy_evidence"] else ""}</div>',
+           f'<div>{esc(m["rationale"])}</div>']
+    basis = json.loads(m["basis"] or "null") or {}
+    rows = [(BASIS_LABELS[k], _plain(basis[k])) for k in BASIS_LABELS if basis.get(k) not in (None, "", [], {})]
+    if rows:
+        out.append('<dl class="basis">' + "".join(f"<dt>{esc(k)}</dt><dd>{esc(v)}</dd>" for k, v in rows) + "</dl>")
+    out.append(f'<div class="mute small">by {esc(m["by"])} · {len(json.loads(m["evidence"] or "[]"))} evidence event(s)</div></div>')
+    return "".join(out)
+
+
+def topic_events(db: sqlite3.Connection, sec: str, topic: str) -> list[sqlite3.Row]:
+    return db.execute("SELECT e.* FROM event_topics t JOIN current_events e ON e.section = t.section "
+                      "AND e.id = t.event_id WHERE t.section=? AND t.topic=? "
+                      "ORDER BY e.date_end DESC, e.known_at DESC, e.id DESC", (sec, topic)).fetchall()
+
+
+def events_ul(evs, names, succ, shown: set, cited: set | None = None) -> str:
+    """An event list. Each event appears under every topic it is tagged with; the
+    #ev-<section>-<id> anchor (lifecycle links) goes on its first occurrence."""
+    out = []
+    for e in evs:
+        out.append(event_li(e, names, succ, anchor=e["id"] not in shown, cited=bool(cited and e["id"] in cited)))
+        shown.add(e["id"])
+    return "<ul>" + "".join(out) + "</ul>"
+
+
+def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, succ, shown: set) -> str:
+    """One milestone/challenge, README-style (dot, name, definition, status line); the
+    detail (criteria, assessment, evidence) expands."""
+    topic = f"{kind}:{item['slug']}"
+    evs = topic_events(db, sec, topic)
+    head = (f'{dot(m["status"]) if (m and m["assessment_id"]) else (dot(None) if kind == "milestone" else "")}'
+            f'<b>{md_inline(item["name"])}:</b> {md_inline(item["description"])}')
+    if kind == "milestone":
+        st = (f'{esc(m["label"])} <span class="mute">· assessed {esc(m["made_at"])}</span>'
+              if m and m["assessment_id"] else '<span class="gap">not yet assessed</span>')
+        head += f'<span class="st">{st} <span class="mute">· {len(evs)} event(s)</span></span>'
+    else:
+        head += f'<span class="st mute">{len(evs)} event(s)</span>'
+    body = ""
+    if item.get("details"):
+        body += '<ul class="md">' + "".join(f"<li>{md_inline(d)}</li>" for d in item["details"]) + "</ul>"
+    if kind == "milestone":
+        body += assessment_html(m) if m else '<div class="gap">not yet assessed</div>'
+    cited = set(json.loads(m["evidence"] or "[]")) if m and m["assessment_id"] else set()
+    body += (f"<h4>Events ({len(evs)})</h4>" + events_ul(evs, names, succ, shown, cited=cited)) if evs \
+        else '<div class="mute">no events tagged yet</div>'
+    return f'<li class="topic"><details><summary>{head}</summary><div class="more">{body}</div></details></li>'
+
+
+def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -> str:
     tiles = db.execute("SELECT * FROM latest_kpi WHERE section=? AND NOT retired "
                        "ORDER BY required DESC, metric", (sec,)).fetchall()
-    framework = bool(s["kpi"] or len(ms) > 1)  # supplemental sections have no KPI/milestones by design
-    out = [f'<section id="{esc(sec)}"><h2>{esc(s["grp"] + " › " if s["grp"] else "")}{esc(s["title"])}</h2>']
-    if s["kpi"]:
-        out.append(f'<div class="mute">KPI: {esc(s["kpi"])}</div>')
-    elif not framework:
-        out.append('<div class="mute">Supplemental section: no KPI, milestones or challenges in the framework.</div>')
-
-    # required metrics and every gap are always shown; the rest of the registry folds away
+    km = next((m for m in ms if m["kind"] == "kpi"), None)
+    out = [f'<div class="kpi"><b>KPI:</b> {md_inline(s["kpi"])}</div>']
+    # headline (default view): required metrics' latest values + the KPI status
+    heads = [t for t in tiles if t["required"]]
+    vals = " · ".join(
+        f'<b>{esc(t["value_text"])}</b> {esc(t["unit"])} <span class="mute">({esc(t["metric"])}, {esc(t["obs"])})</span>'
+        if t["obs"] is not None else f'<span class="gap">{esc(t["metric"])}: no data yet</span>' for t in heads)
+    status = (f'{dot(km["status"])}{esc(km["label"])} <span class="mute">· assessed {esc(km["made_at"])}</span>'
+              if km and km["assessment_id"] else f'{dot(None)}<span class="gap">not yet assessed</span>')
+    # details: every required/gap tile, the rest of the registry, the assessment, KPI-tagged events
     main = [t for t in tiles if t["required"] or t["status"] in ("overdue", "no data")]
-    if not any(t["required"] for t in tiles):  # no headline metrics: nothing to fold behind
+    if not heads:
         main = tiles
     rest = [t for t in tiles if t not in main]
-    out.append("<h3>KPI metrics</h3>")
+    body = []
     if not tiles:
-        cls = "gap" if s["kpi"] else "mute"
-        out.append(f'<div class="{cls}">no metrics registered yet (metrics/{esc(sec)}.csv)</div>')
-    elif s["kpi"] and not any(t["required"] for t in tiles):
-        out.append('<div class="gap">no required KPI metric in the registry yet</div>')
-    out.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in main) + "</div>")
+        body.append(f'<div class="gap">no metrics registered yet (metrics/{esc(sec)}.csv)</div>')
+    elif not heads:
+        body.append('<div class="gap">no required KPI metric in the registry yet</div>')
+    body.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in main) + "</div>")
     if rest:
-        out.append(f"<details><summary>{len(rest)} more registered metric(s)</summary>"
-                   '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
+        body.append(f"<details><summary>{len(rest)} more registered metric(s)</summary>"
+                    '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
+    body.append("<h4>Assessment</h4>" + (assessment_html(km) if km else '<div class="gap">not yet assessed</div>'))
+    evs = topic_events(db, sec, "kpi")
+    if evs:
+        cited = set(json.loads(km["evidence"] or "[]")) if km and km["assessment_id"] else set()
+        body.append(f"<h4>KPI events ({len(evs)})</h4>" + events_ul(evs, names, succ, shown, cited=cited))
+    out.append(f'<details class="kpid"><summary>{"Now: " + vals if vals else "Now: —"}<span class="st">{status}</span>'
+               f'</summary><div class="more">{"".join(body)}</div></details>')
+    return "".join(out)
 
-    out.append('<div class="cols"><div>')
-    for kind, title in (("kpi", "KPI assessment"), ("milestone", "Milestones"), ("challenge", "Challenges")):
-        rows = [m for m in ms if m["kind"] == kind]
-        if not rows:
-            if kind != "kpi" and framework:
-                out.append(f'<h3>{title}</h3><div class="gap">none listed in the framework</div>')
-            continue
-        out.append(f"<h3>{title}</h3><ul>")
-        for m in rows:
-            if m["assessment_id"]:
-                prev = (f", was {esc(m['prev_status'])} on {esc(m['prev_made_at'])}"
-                        if m["prev_status"] and m["prev_status"] != m["status"] else "")
-                st = (f'<span class="dot s-{esc(m["status"])}"></span><b>{esc(m["name"])}</b> — '
-                      f'{esc(m["label"])} <span class="mute">({esc(m["status"])}, assessed '
-                      f'{esc(m["made_at"])}{prev})</span>{badge("legacy") if m["legacy_evidence"] else ""}')
-            else:
-                st = (f'<span class="dot s-none"></span><b>{esc(m["name"])}</b> — '
-                      f'<span class="gap">not yet assessed</span>')
-            tip = f'{m["rationale"]} [by {m["by"]}]' if m["assessment_id"] else ""
-            out.append(f'<li class="ms" title="{esc(tip)}">{st} '
-                       f'<span class="mute">· {m["n_events"]} event(s)</span></li>')
-        out.append("</ul>")
 
-    # latest = most recently known; older ones fold away by significance, newest first
+def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = None, n_recent: int = 8,
+                 covered: bool = True) -> str:
+    sec = s["section"]
+    fsec = fsec or {}
+    ms = db.execute("SELECT * FROM milestone_status WHERE section=? ORDER BY ord", (sec,)).fetchall()
+    by_topic = {m["target"]: m for m in ms}
     names = {r["topic"]: r["name"] for r in db.execute("SELECT topic, name FROM topics WHERE section=?", (sec,))}
     # superseded id -> its effective successor (follow chains), so links always land on a shown event
     succ = dict(db.execute("SELECT id, superseded_by FROM events WHERE section=? AND NOT effective", (sec,)).fetchall())
+    framework = bool(s["kpi"] or fsec.get("milestones") or fsec.get("challenges"))
+    shown: set[str] = set()
+    out = [f'<section id="{esc(sec)}"><h2>{esc(s["title"])}</h2>']
+    if not covered:
+        out.append('<div class="note">Not covered by this period\'s bulletins: shown is the ledger '
+                   'as of the cutoff, for reference.</div>')
+    out.append(md_block(fsec.get("intro")))
+    if s["kpi"]:
+        out.append(kpi_block(db, sec, s, ms, names, succ, shown))
+    elif not framework:
+        out.append('<div class="mute">Supplemental section: no KPI, milestones or challenges in the framework.</div>')
+    for kind, title in (("milestone", "Milestone Countdown"),
+                        ("challenge", fsec.get("challenges_heading") or "Major Open Challenges")):
+        items = fsec.get(kind + "s") or []
+        if not items:
+            if framework:
+                out.append(f'<h3>{esc(title)}</h3><div class="gap">none listed in the framework</div>')
+            continue
+        out.append(f'<h3>{md_inline(title)}</h3><ul class="topics">')
+        out += [topic_li(db, sec, it, by_topic.get(f"{kind}:{it['slug']}"), kind, names, succ, shown) for it in items]
+        out.append("</ul>")
+
     evs = db.execute("SELECT * FROM current_events WHERE section=? "
-                     "ORDER BY known_at DESC, date_end DESC, significance DESC, id DESC",
-                     (sec,)).fetchall()
-    out.append(f"</div><div><h3>Latest events ({len(evs)})</h3>")
+                     "ORDER BY known_at DESC, date_end DESC, significance DESC, id DESC", (sec,)).fetchall()
     if not evs:
         out.append('<div class="gap">no events in the ledger yet</div>')
-    out.append("<ul>" + "".join(event_li(e, names, succ) for e in evs[:n_recent]) + "</ul>")
-    older = sorted(evs[n_recent:], key=lambda e: (e["date_end"] or "", e["known_at"], e["id"]), reverse=True)
-    for sig, label in ((3, "major"), (2, "notable"), (1, "minor")):
-        group = [e for e in older if (e["significance"] or 1) == sig]
-        if group:
-            n_leg = sum(e["verification_status"] == "legacy" for e in group)
-            out.append(f"<details><summary>{len(group)} earlier {label} event(s)"
-                       f"{f' ({n_leg} legacy)' if n_leg else ''}</summary><ul>"
-                       + "".join(event_li(e, names, succ) for e in group) + "</ul></details>")
-    return "".join(out) + "</div></div></section>"
+        return "".join(out) + "</section>"
+    beyond = topic_events(db, sec, "beyond")
+    if beyond:
+        out.append(f'<details class="news"><summary>Beyond the framework: {len(beyond)} event(s)</summary>'
+                   f'<div class="more">{events_ul(beyond, names, succ, shown)}</div></details>')
+    # events no framework topic lists (e.g. tags of a since-changed framework): never silently dropped
+    other = [e for e in evs if e["id"] not in shown]
+    if other:
+        out.append(f'<details class="news"><summary>Other events: {len(other)} (no current topic)</summary>'
+                   f'<div class="more">{events_ul(other, names, succ, shown)}</div></details>')
+    out.append(f'<details class="news"><summary>Latest events (the {min(n_recent, len(evs))} most recently '
+               f'known of {len(evs)})</summary><div class="more">{events_ul(evs[:n_recent], names, succ, shown)}'
+               "</div></details>")
+    return "".join(out) + "</section>"
 
 
-def dashboard(as_of: dt.date) -> str:
+def dashboard(as_of: dt.date, fw: dict | None = None, period: str | None = None,
+              covered: set[str] | None = None, note: str = "", periods: list[str] = ()) -> str:
+    """The published page: the framework (what we track and why) with the ledger's
+    state as of `as_of`. period: a period page (frozen at its cutoff, `covered` =
+    sections with a bulletin); periods: period pages to link from the live page."""
+    fw = fw or ledger.framework()
     db = sqlite3.connect(":memory:")
     try:
-        build_db(db, as_of)
+        build_db(db, as_of, fw)
         db.row_factory = sqlite3.Row
-        return _dashboard_html(db, as_of)
+        return _dashboard_html(db, as_of, fw, period, covered, note, periods)
     finally:
         db.close()
 
 
-def _dashboard_html(db: sqlite3.Connection, as_of: dt.date) -> str:
-    secs = db.execute("SELECT * FROM sections ORDER BY ord").fetchall()
+def legend_html() -> str:
+    dots = "".join(f"<li>{dot(st)}<b>{esc(st)}</b>: {esc(w)}</li>" for st, w in STATUS_WORDS.items())
+    return (
+        '<details class="legend"><summary>How to read this page</summary><div class="more">'
+        "<p>Each endeavor has a <b>KPI</b> (the needle we watch), a <b>milestone countdown</b> "
+        "(concrete, checkable events) and <b>open challenges</b> (the problems standing in the way). "
+        "Click any line to expand its detail: the precise criteria, the current assessment and "
+        "its reasoning, and the evidence.</p>"
+        f'<p>Status (KPIs and milestones), per the status rubric:</p><ul class="md">{dots}'
+        f"<li>{dot(None)}<b>not yet assessed</b></li></ul>"
+        "<p>A KPI's status is its <i>pace</i> toward the goal versus the pace the goal needs, not its level. "
+        "A milestone's status is its evidence-based ETA. A status changes only on newer evidence.</p>"
+        "<p>Everything shown comes from an append-only <b>ledger</b> of verified facts, each with its "
+        "sources and the date it became public. "
+        f'{badge("verified")} / {badge("corrected")}: checked against the source at intake. '
+        f'{badge("legacy")}: converted from the first (2025) pilot report, not verified at ingest. '
+        "“As of” means only what was public by that date is included.</p></div></details>")
+
+
+def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: str | None,
+                    covered: set[str] | None, note: str, periods: list[str]) -> str:
+    secs = {r["section"]: r for r in db.execute("SELECT * FROM sections ORDER BY ord")}
     one = lambda q: db.execute(q).fetchone()[0]
     n_ev, n_leg = one("SELECT COUNT(*) FROM current_events"), \
         one("SELECT COUNT(*) FROM current_events WHERE verification_status='legacy'")
@@ -616,19 +785,106 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date) -> str:
     gap_li = "".join(f'<li><a href="#{esc(g["section"])}">{esc(g["section"])}</a>: {esc(g["metric"])}'
                      f'{" (required)" if g["required"] else ""} — <span class="gap">{esc(g["gap"])}</span></li>'
                      for g in gaps)
-    nav = "".join(f'<a href="#{esc(s["section"])}">{esc(s["title"])}</a>' for s in secs)
+    body, nav = [], []
+    for e in fw["endeavors"]:
+        group = "sections" in e
+        sub = e["sections"] if group else [e]
+        anchor = sub[0]["id"]
+        nav.append(f'<a href="#{esc(anchor)}">{esc(e["title"])}</a>')
+        if group:
+            body.append(f'<div class="group{" supp" if e.get("supplemental") else ""}">'
+                        f'<h2 class="gh">{esc(e["title"])}</h2>{md_block(e.get("intro"))}')
+        for fs in sub:
+            if fs["id"] in secs:
+                body.append(section_html(db, secs[fs["id"]], fs, covered=covered is None or fs["id"] in covered))
+        if group:
+            body.append("</div>")
+    title = fw["title"] + (f" — {period}" if period else "")
+    if period:
+        when = (f'<div class="asof">Period page <b>{esc(period)}</b>: the ledger as of the period\'s cutoff '
+                f'<b>{esc(as_of)}</b>, frozen. <a href="../">→ live dashboard</a></div>')
+    else:
+        when = f'<div class="asof">Live ledger state as of <b>{esc(as_of)}</b>.</div>'
+    stats = (f'<div class="mute small">{n_ev} events ({n_ev - n_leg} verified, {n_leg} legacy'
+             f"{f'; {n_sup} superseded not shown' if n_sup else ''}) · {n_obs} observations · "
+             f"{len(gaps)} metric gap(s)</div>")
+    per = ("<p>Earlier periods: " + " · ".join(f'<a href="{esc(p)}/">{esc(p)}</a>' for p in periods) + "</p>"
+           if periods else "")
     return (f'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
-            f"<title>Grand Endeavors — dashboard as of {esc(as_of)}</title><style>{CSS}</style></head><body>"
-            f"<header><h1>Grand Endeavors — ledger dashboard</h1>"
-            f'<div class="mute">As of <b>{esc(as_of)}</b> (records with known_at ≤ as-of) · {n_ev} events '
-            f"({n_ev - n_leg} verified, {n_leg} legacy{f'; {n_sup} superseded not shown' if n_sup else ''}) · {n_obs} observations · {len(gaps)} metric gap(s)</div>"
-            f"<nav>{nav}</nav>"
-            + (f"<h3>Gaps</h3><ul>{gap_li}</ul>" if gaps else "")
-            + "</header><main>" + "".join(section_html(db, s) for s in secs)
-            + '<p class="mute">Generated by explore.py from the Grand Endeavors ledger. '
-              '<span class="badge b-legacy">legacy</span> = converted from pilot-2025, not verified at ingest.</p>'
-            + "</main></body></html>\n")
+            f"<title>{esc(title)} (as of {esc(as_of)})</title><style>{CSS}</style></head><body>"
+            f'<header><h1>{esc(title)}</h1><div class="tagline">{md_inline(fw["tagline"])}</div>{when}'
+            f'{f"<div class=note>{md_inline(note)}</div>" if note else ""}'
+            f"<nav>{''.join(nav)}</nav></header><main>"
+            f'<div class="manifesto">{md_block(fw["manifesto"])}</div>{legend_html()}'
+            + "".join(body)
+            + '<footer>' + stats
+            + (f"<details><summary>Data gaps ({len(gaps)})</summary><ul>{gap_li}</ul></details>" if gaps else "")
+            + per
+            + '<p class="mute small">Generated by views/explore.py from the Grand Endeavors ledger '
+              '(<a href="https://github.com/pasky/grand-endeavors-data">data</a>, '
+              '<a href="https://github.com/pasky/grand-endeavors">code and definitions</a>'
+            + ('' if period else ', <a href="ledger.sqlite">ledger.sqlite</a> for Datasette')
+            + ").</p></footer></main></body></html>\n")
+
+
+# --- pages: live, period, site ------------------------------------------------------------
+PAGE = "index.html"
+
+
+def period_dirs() -> list[str]:
+    """Period dirs in the data repo that have a frozen page (newest first by cutoff)."""
+    out = []
+    for d in sorted(os.listdir(ledger.DATA)) if os.path.isdir(ledger.DATA) else []:
+        if os.path.isfile(os.path.join(ledger.DATA, d, PAGE)):
+            try:
+                out.append((ledger.cutoff(d.removeprefix("pilot-")), d))
+            except ValueError:
+                warn(f"{d}/{PAGE}: not a period dir name, not linked")
+    return [d for _, d in sorted(out, reverse=True)]
+
+
+def period_page(period_dir: str, note: str = "") -> str:
+    """Freeze <period-dir>/index.html: the dashboard as of the period's cutoff, with
+    the framework of that period (<period-dir>/framework.yaml; copied from the
+    mechanism repo on the first run, then kept). Returns the page path."""
+    import shutil
+    name = os.path.basename(os.path.normpath(period_dir))
+    cut = ledger.cutoff(name.removeprefix("pilot-"))
+    fw_path = os.path.join(period_dir, "framework.yaml")
+    if not os.path.exists(fw_path):
+        shutil.copy(os.path.join(ledger.ROOT, "framework.yaml"), fw_path)
+    fw = ledger.framework(period_dir)
+    covered = {s for s in ledger.SECTIONS
+               if os.path.isfile(p := os.path.join(period_dir, f"{s}.md")) and os.path.getsize(p) > 0}
+    out = os.path.join(period_dir, PAGE)
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(dashboard(cut, fw, period=name, covered=covered, note=note))
+    return out
+
+
+def site(out_dir: str, as_of: dt.date) -> list[str]:
+    """The published directory: index.html (live), the frozen period pages
+    (<period>/index.html, copied from the data repo), ledger.sqlite + metadata.json,
+    and dashboard.html redirecting to the old URL's successor."""
+    import shutil
+    os.makedirs(out_dir, exist_ok=True)
+    periods = period_dirs()
+    written = []
+    for d in periods:
+        os.makedirs(os.path.join(out_dir, d), exist_ok=True)
+        shutil.copy(os.path.join(ledger.DATA, d, PAGE), os.path.join(out_dir, d, PAGE))
+        written.append(os.path.join(out_dir, d, PAGE))
+    page = dashboard(as_of, periods=periods)
+    tmp = os.path.join(out_dir, PAGE + ".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(page)
+    os.replace(tmp, os.path.join(out_dir, PAGE))
+    with open(os.path.join(out_dir, "dashboard.html"), "w", encoding="utf-8") as f:
+        f.write('<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=./">'
+                '<title>Moved</title><a href="./">Grand Endeavors dashboard</a>\n')
+    written += [os.path.join(out_dir, PAGE), build(out_dir, as_of)]
+    return written
 
 
 # --- CLI ----------------------------------------------------------------------------------
@@ -636,9 +892,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build"); b.add_argument("--out", default=os.path.join(ledger.ROOT, "build"))
-    d = sub.add_parser("dashboard"); d.add_argument("--out", default=os.path.join(ledger.ROOT, "build", "dashboard.html"))
-    for p in (b, d):
+    d = sub.add_parser("dashboard"); d.add_argument("--out", default=os.path.join(ledger.ROOT, "build", PAGE))
+    st = sub.add_parser("site"); st.add_argument("--out", default=os.path.join(ledger.ROOT, "build"))
+    for p in (b, d, st):
         p.add_argument("--as-of", type=dt.date.fromisoformat, default=dt.date.today(), help="YYYY-MM-DD (default: today)")
+    pp = sub.add_parser("period"); pp.add_argument("period_dir")
+    pp.add_argument("--note", default="", help="a remark shown under the page header (Markdown)")
     a = ap.parse_args()
     try:
         if a.cmd == "build":
@@ -649,11 +908,16 @@ def main() -> int:
             counts["superseded_events"] = db.execute("SELECT COUNT(*) FROM events WHERE NOT effective").fetchone()[0]
             db.close()
             print(f"wrote {p} (+ metadata.json) as of {a.as_of}: {counts}")
-        else:
+        elif a.cmd == "dashboard":
             os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
             with open(a.out, "w", encoding="utf-8") as f:
-                f.write(dashboard(a.as_of))
+                f.write(dashboard(a.as_of, periods=period_dirs()))
             print(f"wrote {a.out} as of {a.as_of}")
+        elif a.cmd == "site":
+            for p in site(a.out, a.as_of):
+                print(f"wrote {p}")
+        else:
+            print(f"wrote {period_page(a.period_dir, a.note)}")
     except ValueError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1

@@ -9,6 +9,7 @@ Run:  uv run views/tests/test_explorer.py      (stdlib, offline; builds a throwa
 import datetime as dt
 import json
 import os
+import re
 import sqlite3
 import sys
 import tempfile
@@ -334,7 +335,19 @@ def main():
         case("dashboard self-contained (no script/link/src)",
              not any(s in page for s in ("<script", "<link", " src=", "@import")))
         case("dashboard gap markers", all(s in page for s in ("OVERDUE", "no data yet", "not yet assessed",
-                                                             "no events in the ledger yet", "no metrics registered yet")))
+                                                             "no events in the ledger yet")))
+        case("dashboard is self-explanatory: tagline, manifesto, intros, definitions, legend",
+             all(s in page for s in ("Tracking humanity&#x27;s progress.", "<p>Science has a communication problem.</p>",
+                                     "<p>Fixing the past.</p>", "<b>The Bend:</b> Global emissions peak &amp; decline.",
+                                     "<b>KPI:</b> Atmospheric CO₂", "How to read this page", "<h3>Milestone Countdown</h3>",
+                                     "<h3>Major Open Challenges</h3>", '<h2 class="gh">Supplemental</h2>')))
+        case("dashboard: milestone line shows its status, detail shows rationale + evidence",
+             re.search(r'<li class="topic"><details><summary><span class="dot s-green"[^>]*></span><b>The Bend:</b>'
+                       r'[^<]*<span class="st">Peak in sight', page) is not None
+             and "cited as evidence" in page and "Emissions fell &quot;&gt;&lt;b onclick" in page)
+        ids = re.findall(r' id="([^"]+)"', page)
+        case("dashboard: each event anchor once although events repeat under topics",
+             len(ids) == len(set(ids)) and page.count("Updated data &lt;script&gt;") >= 2)
         case("dashboard legacy/verified badges", '<span class="badge b-legacy">legacy</span></div>'
              '<div>An agency' in page and '<span class="badge b-verified">verified</span>' in page)
         case("dashboard escapes attributes", "<b onclick" not in page and '" onmouseover="' not in page
@@ -361,15 +374,56 @@ def main():
         db = sqlite3.connect(":memory:")
         explore.build_db(db, D("2026-10-10"))
         db.row_factory = sqlite3.Row
-        sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), 1)
-        case("older events fold by significance", "2 earlier notable event(s) (1 legacy)" in sec
-             and "1 earlier major event(s)" in sec and "was green on 2026-07-02" in sec)
+        fsec, _ = ledger.fw_section("climate")
+        sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), fsec, 1)
+        case("events under their topics, beyond + latest folded",
+             "Beyond the framework: 1 event(s)" in sec and "Latest events (the 1 most recently known of 5)" in sec
+             and "previously green on 2026-07-02" in sec and "Other events" not in sec)
+        other = dict(fsec, milestones=[m for m in fsec["milestones"] if m["slug"] != "the-balance"])
+        sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), other, 1)
+        case("events of a topic the framework no longer lists are not dropped",
+             "Other events: 2 (no current topic)" in sec and "cover 88%" in sec)
+        case("markdown: inline emphasis, escaped, http links only",
+             explore.md_inline("**b** *i* <x> [t](https://a.b/?q=1&r=2) [j](javascript:x)")
+             == '<b>b</b> <i>i</i> &lt;x&gt; <a href="https://a.b/?q=1&amp;r=2" target="_blank" '
+                'rel="noopener noreferrer">t</a> [j](javascript:x)'
+             and explore.md_block("a\nb\n\n* x\n* y") == '<p>a b</p><ul class="md"><li>x</li><li>y</li></ul>')
         case("dashboard deterministic", page == explore.dashboard(D("2026-09-28")))
 
         with mock.patch.object(sys, "argv", ["explore.py", "dashboard", "--as-of", "2026-09-28",
                                              "--out", os.path.join(out, "d.html")]):
             rc = explore.main()
         case("CLI dashboard", rc == 0 and open(os.path.join(out, "d.html"), encoding="utf-8").read() == page)
+
+        # --- period pages and the published site ------------------------------------------
+        pdir = os.path.join(root, "pilot-26H1")
+        write(root, "pilot-26H1/climate.md", "# Climate\n")
+        write(root, "pilot-2026-W38/climate.md", "# Climate\n")   # a period without a page: not linked
+        frozen = FRAMEWORK.replace("Global emissions peak &amp; decline.", "OLD bend wording.").replace(
+            "Global emissions peak & decline.", "OLD bend wording.")
+        write(root, "pilot-26H1/framework.yaml", frozen)
+        p = explore.period_page(pdir, note="Reconstructed *later*.")
+        pg = open(p, encoding="utf-8").read()
+        case("period page: as of the cutoff, with the period's frozen framework",
+             "cutoff <b>2026-07-14</b>" in pg and "OLD bend wording." in pg and "peak &amp; decline" not in pg
+             and "Reconstructed <i>later</i>." in pg and 'href="../"' in pg and "ledger.sqlite" not in pg)
+        case("period page: sections without a bulletin are marked",
+             pg.count("Not covered by this period") == 1 and "late announcement" not in pg)
+        fresh = os.path.join(root, "pilot-2025")
+        os.makedirs(fresh)
+        explore.period_page(fresh)
+        case("period page: first run freezes the current framework.yaml",
+             open(os.path.join(fresh, "framework.yaml")).read() == FRAMEWORK)
+        site_dir = os.path.join(root, "site")
+        explore.site(site_dir, D("2026-09-28"))
+        live = open(os.path.join(site_dir, "index.html"), encoding="utf-8").read()
+        case("site: live page links the period pages (newest first), copies them",
+             'Earlier periods: <a href="pilot-26H1/">pilot-26H1</a> · <a href="pilot-2025/">pilot-2025</a>' in live
+             and open(os.path.join(site_dir, "pilot-26H1", "index.html"), encoding="utf-8").read() == pg
+             and not os.path.exists(os.path.join(site_dir, "pilot-2026-W38")))
+        case("site: ledger.sqlite + old dashboard.html redirects",
+             os.path.exists(os.path.join(site_dir, "ledger.sqlite"))
+             and 'url=./' in open(os.path.join(site_dir, "dashboard.html")).read())
 
     print(f"\n{len(FAILS)} failure(s)" if FAILS else "\nall explorer tests passed")
     return 1 if FAILS else 0

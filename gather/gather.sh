@@ -205,6 +205,6 @@ uv run $ROOT/core/ledger.py state "$SECTION" --record "$(printf '{"run": "%s", "
 	"$RUN_ID" "${SINCE:-per-item}" "$UNTIL" "$items_json" "$n_ev" "$RUN_START" "$(pi --version 2>&1 | head -1)")"
 uv run $ROOT/core/ledger.py check "$SECTION"
 commit "gather $SECTION: state (until $UNTIL, run $RUN_ID)" $LEDGER_PATHS
-# refresh the published dashboard view (build/ is derived; best effort)
-uv run $ROOT/views/explore.py dashboard >/dev/null 2>&1 || echo "    (dashboard refresh failed; ledger is fine)"
+# refresh the published site, $ROOT/build/ (derived; best effort: the ledger is already committed)
+uv run $ROOT/views/explore.py site >/dev/null || echo "WARN: site refresh failed (see above); the ledger is fine" >&2
 echo ">>> done: gather $SECTION until $UNTIL"
