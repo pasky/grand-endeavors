@@ -52,7 +52,11 @@ BASES = {"source", "rule", "seen"}
 OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
                "published_basis", "retrieved", "collector", "verification", "note"]
 ASSESS_STATUS = {"green", "yellow", "red", "achieved", "unknown"}
-# gather/RUBRIC.md (rubric v1): verdict words bound to each status
+# gather/RUBRIC.md rubric versions, oldest first; new records use the last one
+RUBRICS = ("v1", "v2")
+RUBRIC = RUBRICS[-1]
+ETA_KEYS = {"p10", "p50", "p90", "method", "calc", "cruxes"}  # rubric v2: milestone basis.eta
+# gather/RUBRIC.md: verdict words bound to each status (same in all versions)
 VERDICTS = {"green": ("Ahead", "On track"), "yellow": ("Behind pace", "Progressing"),
             "red": ("Off track", "Stalled", "Regressing", "Distant", "Blocked"), "achieved": ("Achieved",),
             "unknown": ("Unassessed",)}
@@ -319,6 +323,33 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
     return errs
 
 
+def check_eta(at: str, eta, status: str, made_at: str) -> list[str]:
+    """gather/RUBRIC.md v2 §4.1/§6: a milestone ETA is a forecast {p10, p50, p90 (years; p90 may be
+    null), method, calc, cruxes}, and the status agrees with its median."""
+    if not isinstance(eta, dict) or ETA_KEYS - set(eta):
+        return [f"{at}: basis.eta must be an object with {sorted(ETA_KEYS)}"
+                + (f" (missing {sorted(ETA_KEYS - set(eta))})" if isinstance(eta, dict) else "")]
+    year = lambda v: isinstance(v, int) and not isinstance(v, bool) and 1900 <= v <= 2300
+    errs = [f"{at}: basis.eta.{k} must be a calendar year" for k in ("p10", "p50") if not year(eta[k])]
+    if eta["p90"] is not None and not year(eta["p90"]):
+        errs.append(f"{at}: basis.eta.p90 must be a calendar year or null (maybe never)")
+    errs += [f"{at}: basis.eta.{k} must be a non-empty string" for k in ("method", "calc", "cruxes")
+             if not (isinstance(eta[k], str) and eta[k].strip())]
+    if errs:
+        return errs
+    if not eta["p10"] <= eta["p50"] <= (eta["p90"] if eta["p90"] is not None else eta["p50"]):
+        errs.append(f"{at}: basis.eta needs p10 <= p50 <= p90")
+    if _valid_day(made_at):
+        y = int(made_at[:4])
+        if eta["p50"] < y:
+            errs.append(f"{at}: basis.eta.p50 {eta['p50']} is before made_at")
+        limit = {"green": 5, "yellow": 10}.get(status)
+        if limit is not None and eta["p50"] > y + limit:
+            errs.append(f"{at}: status {status} needs basis.eta.p50 <= {y + limit} (made_at + {limit} years; "
+                        "gather/RUBRIC.md §4)")
+    return errs
+
+
 def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[str]:
     """made_at = the as-of date of the evidence considered (not wall-clock), so
     every evidence event must be known by then; `by` records the actual run."""
@@ -339,8 +370,8 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
                      and evs.get(e, {}).get("verification", {}).get("status") in ("verified", "corrected")
                      for e in a.get("evidence") or []):
             errs.append(f"{at}: 'achieved' needs a verified evidence event of kind 'achievement'")
-    if "rubric" in a:  # gather/RUBRIC.md rubric v1 (older records have no rubric field)
-        if a["rubric"] != "v1":
+    if "rubric" in a:  # gather/RUBRIC.md rubric (records before v1 have no rubric field)
+        if a["rubric"] not in RUBRICS:
             errs.append(f"{at}: unknown rubric '{a['rubric']}'")
         else:
             words = VERDICTS.get(a["status"], ())
@@ -355,8 +386,11 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
             if not isinstance(basis, dict) or want - set(basis):
                 errs.append(f"{at}: basis must be an object with {sorted(want)}"
                             + (f" (missing {sorted(want - set(basis))})" if isinstance(basis, dict) else ""))
-            if a.get("rubric_correction") not in (None, "v1"):
-                errs.append(f"{at}: rubric_correction must be 'v1'")
+            if a.get("rubric_correction") not in (None, a["rubric"]):
+                errs.append(f"{at}: rubric_correction must be the record's rubric '{a['rubric']}'")
+            if a["rubric"] != "v1" and str(a["target"]).startswith("milestone:") \
+                    and a["status"] not in ("unknown", "achieved") and isinstance(basis, dict) and "eta" in basis:
+                errs += check_eta(at, basis["eta"], a["status"], a["made_at"])
     if a["target"] not in topics - {"beyond"}:
         errs.append(f"{at}: unknown target '{a['target']}'")
     if not _valid_day(a["made_at"]):
@@ -510,24 +544,25 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
 
 
 def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: list[dict] | None = None) -> list[str]:
-    """gather/RUBRIC.md rules 1 and 4 for rubric-v1 records: a status change needs evidence
-    published after the previous assessment, or a once-per-target rubric correction.
+    """gather/RUBRIC.md rules 1 and 4 for rubric records: a status change needs evidence
+    published after the previous assessment, or a once-per-target-per-version rubric correction.
     KPI assessments need the section's fixed spec in metrics/kpi-assessment.csv."""
     errs = []
     by_target: dict[str, list[dict]] = {}
     for a in sorted((a for a in ass if _valid_day(a.get("made_at", ""))), key=lambda a: a["made_at"]):  # stable: file order on ties
         by_target.setdefault(a.get("target"), []).append(a)
+    rank = lambda r: RUBRICS.index(r) + 1 if r in RUBRICS else 0  # 0 = pre-rubric record
     for target, recs in by_target.items():
         for prev, a in zip(recs, recs[1:]):
-            if a.get("rubric") != "v1":
+            if a.get("rubric") not in RUBRICS:
                 continue
             if a.get("definition_change"):
                 continue  # gather/RUBRIC.md rule 6: framework definition changed -> fresh judgment
-            if a.get("rubric_correction") == "v1":
-                # a correction re-judges a PRE-rubric record; a v1 record is never "corrected"
-                if prev.get("rubric") == "v1":
-                    errs.append(f"assessment {a['id']}: rubric_correction of a record already under rubric v1 "
-                                "(needs newer evidence instead; gather/RUBRIC.md rule 4)")
+            if a.get("rubric_correction"):
+                # a correction re-judges a record made under an OLDER rubric; never one already under its version
+                if rank(prev.get("rubric")) >= rank(a["rubric_correction"]):
+                    errs.append(f"assessment {a['id']}: rubric_correction {a['rubric_correction']} of a record already "
+                                f"under rubric {prev.get('rubric')} (needs newer evidence instead; gather/RUBRIC.md rule 4)")
                 continue
             if "unknown" in (a["status"], prev["status"]):
                 continue  # 'unknown' is the absence of a judgment, not a status flip
@@ -539,11 +574,11 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
             if a["status"] != prev["status"] and not newer_obs and not any(
                     e in evs and known_at(evs[e]) > day(prev["made_at"]) for e in a.get("evidence") or []):
                 errs.append(f"assessment {a['id']}: status change {prev['status']}->{a['status']} without evidence "
-                            f"published after {prev['made_at']} (gather/RUBRIC.md hysteresis rule 1; a pre-rubric prev "
-                            "may be re-judged with rubric_correction v1)")
-        if target == "kpi" and any(a.get("rubric") == "v1" and a["status"] != "unknown" for a in recs) \
+                            f"published after {prev['made_at']} (gather/RUBRIC.md hysteresis rule 1; a prev under an "
+                            f"older rubric may be re-judged with rubric_correction {RUBRIC})")
+        if target == "kpi" and any(a.get("rubric") in RUBRICS and a["status"] != "unknown" for a in recs) \
                 and not kpi_assessment_spec(section):
-            errs.append(f"assessment of {section} kpi under rubric v1, but metrics/kpi-assessment.csv has no row for it")
+            errs.append(f"assessment of {section} kpi under the rubric, but metrics/kpi-assessment.csv has no row for it")
     return errs
 
 

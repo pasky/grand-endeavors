@@ -208,7 +208,7 @@ uv run $ROOT/core/ledger.py check "$SECTION"
 commit "gather $SECTION: merge verified intake (until $UNTIL)" $LEDGER_PATHS
 
 # --- 5. assess (stateless trigger: evidence newer than the latest assessment) -------
-# assess.sh applies RUBRIC.md (rubric v1) to targets that `ledger.py stale` reports.
+# assess.sh applies RUBRIC.md (current rubric version) to targets that `ledger.py stale` reports.
 UNTIL="$UNTIL" ALLOW_DIRTY=1 sh "$ROOT/gather/assess.sh" "$SECTION"
 
 # --- 6. state ------------------------------------------------------------------------------------

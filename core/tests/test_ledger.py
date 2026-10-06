@@ -299,6 +299,31 @@ def main():
     case("hysteresis: a rubric correction may re-judge a pre-rubric record, never a v1 record",
          ledger.check_hysteresis("climate", [pre, corr], evs2) == []
          and has(ledger.check_hysteresis("climate", [prev, corr], evs2), "already under rubric v1"))
+    corr2 = dict(flip, rubric="v2", rubric_correction="v2",
+                 basis=dict(base["basis"], eta={"p10": 2035, "p50": 2040, "p90": None, "method": "m", "calc": "c", "cruxes": "x"}))
+    case("hysteresis: a v2 correction may re-judge a v1 record, never a v2 one",
+         ledger.check_hysteresis("climate", [prev, corr2], evs2) == []
+         and has(ledger.check_hysteresis("climate", [dict(prev, rubric="v2"), corr2], evs2), "already under rubric v2"))
+    case("rubric: rubric_correction must match the record's rubric",
+         has(ledger.check_assessment(dict(corr2, rubric_correction="v1"), topics, evs), "rubric_correction"))
+    eta = {"p10": 2029, "p50": 2032, "p90": 2040, "method": "trend", "calc": "log(31)/log(1.45)", "cruxes": "x"}
+    V2 = lambda e, **k: A(rubric="v2", basis=dict(base["basis"], eta=e), **k)
+    case("rubric v2: a structured milestone ETA passes",
+         ledger.check_assessment(V2(eta, status="yellow", label="Progressing: x, ETA ~2032"), topics, evs) == [])
+    case("rubric v2: a free-text ETA is rejected", has(ledger.check_assessment(V2("5-10 years"), topics, evs), "basis.eta"))
+    case("rubric v2: ETA keys are required",
+         has(ledger.check_assessment(V2({"p50": 2032}), topics, evs), "missing"))
+    case("rubric v2: p10 <= p50 <= p90", has(ledger.check_assessment(V2(dict(eta, p10=2033)), topics, evs), "p10 <= p50"))
+    case("rubric v2: p90 may be null (maybe never)", ledger.check_assessment(V2(dict(eta, p90=None)), topics, evs) == [])
+    case("rubric v2: years must be integers", has(ledger.check_assessment(V2(dict(eta, p50="2032")), topics, evs), "calendar year"))
+    case("rubric v2: a yellow median must be within 10 years of made_at",
+         has(ledger.check_assessment(V2(dict(eta, p50=2037, p90=2050), status="yellow", label="Progressing: x"),
+                                     topics, evs), "p50 <= 2036"))
+    case("rubric v2: a green median must be within 5 years of made_at",
+         has(ledger.check_assessment(V2(eta, status="green", label="On track: x"), topics, evs), "p50 <= 2031"))
+    case("rubric v2: an achieved milestone needs no ETA forecast",
+         not has(ledger.check_assessment(V2("done", status="achieved", label="Achieved: x"), topics, evs), "basis.eta"))
+    case("rubric v1 records keep their free-text ETA", ledger.check_assessment(A(), topics, evs) == [])
     unk = dict(A(id="u", target="kpi", status="unknown", label="Unassessed: no series"), evidence=[],
                basis={k: "x" for k in ledger.BASIS_UNKNOWN})
     case("rubric: 'unknown' needs no evidence and its own basis", ledger.check_assessment(unk, topics, evs) == [])

@@ -15,6 +15,7 @@
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
+RUBRIC=v2  # current gather/RUBRIC.md version (= ledger.RUBRIC; checked by core/tests/test_paths.py)
 . "$(dirname "$0")/../core/lib.sh"
 require_section "$SECTION"
 require_clean
@@ -40,9 +41,12 @@ CORR=""
 [ -n "${DEFCHANGE:-}" ] && CORR="The framework.yaml definition of these targets changed in mechanism commit $DEFCHANGE
 (see: git -C $ROOT show $DEFCHANGE -- framework.yaml). Set \"definition_change\": \"$DEFCHANGE\"
 on every record and judge the evidence against the NEW wording only (RUBRIC.md rule 6)."
-[ "${CORRECTION:-}" = 1 ] && CORR='Set "rubric_correction": "v1" on every record: these re-judge the existing
+[ "${CORRECTION:-}" = 1 ] && CORR="Set \"rubric_correction\": \"$RUBRIC\" on every record: these re-judge the existing
 evidence under the new rubric (no new-evidence claim). The change_note must
-say what the previous assessment got wrong under RUBRIC.md.'
+say what the previous assessment got wrong under RUBRIC.md."
+# every registered series, all sections: milestone ETAs may rest on a driver from another section
+METRICS="$(for f in metrics/*.csv; do s="$(basename "$f" .csv)"; [ "$s" = kpi-assessment ] && continue
+	printf '    %s: %s\n' "$s" "$(awk -F, 'NR>1{printf "%s%s", (n++ ? ", " : ""), $1}' "$f")"; done)"
 AS="$STAGE/assessments.jsonl"
 
 pi_run assess "$(cat <<EOF
@@ -61,11 +65,24 @@ $SPEC
   to compute window statistics exactly (show the numbers in basis.window).
 - Previous assessments: ledger/assessments/$SECTION.jsonl (the latest per target
   with made_at <= $UNTIL is "prev").
+- Other sections, for milestone ETAs (RUBRIC.md §4.1 step 2: a driver trend may live
+  elsewhere, e.g. METR task horizons in robots-software): ledger/events/<section>.jsonl,
+  and the registered series (same "series <section> <metric>" command):
+$METRICS
 $CORR
 Judge each milestone on its OWN quantity as the framework wording defines it (e.g.
 total greenhouse-gas emissions, not CO2 alone). If only a proxy has data, name
 the proxy and why it tracks the target in basis.path, and let that uncertainty
 show in the ETA.
+Milestone ETAs: follow RUBRIC.md §4.1 step by step for EACH milestone, from all the data
+above, before choosing its status. Do the arithmetic (uv run python is fine) and write
+your working per milestone to $STAGE/eta-notes.md: the gap, every data point used, the
+growth model and why, the time-to-target calculation, the cross-checks (reference class,
+discounted proponent dates, prev ETA) and the cruxes. Put the result in basis.eta
+{p10, p50, p90, method, calc, cruxes} and quote the median in the label ("ETA ~2034").
+Do not restate a status band ("5-10 years") as an ETA, and do not answer "not estimable"
+or ">10 years" for lack of a series: tie the milestone to a driver or a reference class.
+Exponential quantities must be extrapolated exponentially.
 If the rubric cannot judge a target (e.g. its KPI series does not cover the
 window), write status "unknown" with the label "Unassessed: <reason>" and the
 basis keys rule, reason, prev and change_note (evidence may be empty). Never
@@ -75,8 +92,8 @@ Write $AS: one JSON object per line with fields exactly: id (EXACTLY as given),
 target, status (green|yellow|red, or achieved for milestones), label
 ("<Verdict>: ..." per RUBRIC.md, at most 100 chars), made_at "$UNTIL", rationale
 (2-4 sentences, consistent with basis), evidence [event ids], by
-"assess:$RUN_ID", rubric "v1", basis (the keys $ROOT/DESIGN.md §3 "Assessment" lists for
-KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ', rubric_correction "v1"' ).
+"assess:$RUN_ID", rubric "$RUBRIC", basis (the keys $ROOT/DESIGN.md §3 "Assessment" lists for
+KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
 Validate until 0 errors:
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
 EOF
@@ -84,6 +101,6 @@ EOF
 [ -s "$AS" ] || { echo "ERROR: assess wrote no $AS" >&2; exit 1; }
 uv run $ROOT/core/ledger.py merge "$SECTION" --assessments "$AS"
 uv run $ROOT/core/ledger.py check "$SECTION"
-commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo ' (rubric v1 correction)'): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')" \
+commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')" \
 	"ledger/assessments/$SECTION.jsonl"
 echo ">>> done: assess $SECTION as of $UNTIL"

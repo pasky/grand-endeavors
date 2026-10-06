@@ -114,18 +114,22 @@ not regenerated). Done once: `co2-global-monthly` 7 → 70 d (2026-10).
 **Assessment** (`assessments/<section>.jsonl`): `{id, target ("kpi" |
 "milestone:<slug>"), status ("green"|"yellow"|"red"|"achieved"|"unknown"), label,
 made_at, rationale, evidence: [event ids], by, rubric, basis}`. Optional fields:
-- `rubric_correction: "v1"` and `definition_change: "<commit>"` (rubric rules 4
+- `rubric_correction: "<the record's rubric>"` and `definition_change: "<commit>"` (rubric rules 4
   and 6);
 - `evidence_digest`, the staleness seal added by merge.
 
-Records without `rubric` predate rubric v1. `basis` is the structured reasoning.
+`rubric` is the RUBRIC.md version ("v1", "v2"); records without it predate
+rubric v1. `basis` is the structured reasoning.
 `ledger.py check` requires its top-level keys; the nested structure shown is the
 expected content, but it is not checked:
 - KPI: `rule, assessed_quantity, window: {current, previous}, benchmark,
   benchmark_source, transients_discounted, data_as_of, prev: {status,
   made_at}, change_note`;
 - milestone: `rule, eta, path, blockers, prev, change_note` (window and
-  benchmark may be null);
+  benchmark may be null). Under rubric v2, `eta` of a milestone that is not
+  achieved is a checked forecast `{p10, p50, p90, method, calc, cruxes}`:
+  years with p10 ≤ p50 ≤ p90 (p90 may be null), and the status agrees with
+  p50 (RUBRIC.md §4.1, §6). Under v1 it was free text;
 - unknown: `rule, reason, prev, change_note`.
 
 `made_at` is the as-of date of the evidence that was considered, not the
@@ -133,9 +137,9 @@ wall-clock time of the run (`by` records the run). Every evidence event must be
 known by `made_at` (checked), so a retrospective assessment ("status as of 14 Jul given what was public then") is honest and
 reproducible. Its `known_at` is `made_at`.
 
-Statuses follow the rubric in **gather/RUBRIC.md** (v1). KPI status = pace
+Statuses follow the rubric in **gather/RUBRIC.md** (v2). KPI status = pace
 toward the goal versus what the goal needs (never the level). Milestone status =
-ETA on evidence, with `achieved` as a terminal status. Records carry `rubric`,
+the median of a reasoned ETA forecast on evidence, with `achieved` as a terminal status. Records carry `rubric`,
 a structured `basis` and verdict-bound labels. Hysteresis (a status change needs
 newer evidence, or a once-per-target `rubric_correction`) is enforced by
 `ledger.py check`. Each KPI's assessed metric, window and benchmark are fixed in

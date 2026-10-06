@@ -1,4 +1,4 @@
-# Status rubric (v1)
+# Status rubric (v2)
 
 Every KPI and milestone in framework.yaml carries a **status**: a colour plus a
 one-line label such as "Off track: 421 ppm, +2.4 ppm/yr vs ≤0 needed". This
@@ -13,19 +13,23 @@ sections and runs and does not flap.
 - **Who shows it**: bulletins and the dashboard. They display stored statuses
   and never judge anything themselves.
 
-Co-designed 2026-09-30. Any change in meaning is a new rubric version (rule 4).
+Co-designed 2026-09-30 (v1). v2 (2026-10-06): milestone ETAs are reasoned
+forecasts with a median and an 80% range (§4.1), no longer a status bucket
+restated; KPI rules are unchanged. Any change in meaning is a new rubric
+version (rule 4).
 
 ## 1. What the colours mean
 
 A status answers a different question for each kind of target:
 - **KPI**: is the needle moving toward the goal at the pace the goal needs? The
   status scores the **trend**, never the level.
-- **Milestone**: on today's evidence, **when** do we get there?
+- **Milestone**: on today's evidence, **when** do we get there? The answer is
+  the median of a reasoned forecast (§4.1), not a pessimistic bound.
 
 | status | KPI | milestone | label starts with |
 |---|---|---|---|
-| green | moving toward the goal at or above the needed pace | ≤ 5 years on an evidenced path | Ahead, On track |
-| yellow | clearly moving toward the goal, but too slowly | measurable progress, ETA 5–10 years (or ≤ 5 years claimed only by the proponent) | Behind pace, Progressing |
+| green | moving toward the goal at or above the needed pace | median ETA ≤ 5 years on an evidenced path | Ahead, On track |
+| yellow | clearly moving toward the goal, but too slowly | measurable progress, median ETA ≤ 10 years (≤ 5 years when the path is not yet fully evidenced) | Behind pace, Progressing |
 | red | flat (stalled) or moving the wrong way | > 10 years, no path, stalled, regressing or blocked | Off track, Stalled, Regressing, Distant, Blocked |
 | achieved | (not used) | done: a verified achievement meets the literal wording | Achieved |
 | unknown | the rubric cannot judge it (no KPI spec, or no data covering the window) | same | Unassessed |
@@ -59,7 +63,10 @@ delivered to orbit in a single year. Label: "Progressing: 3,194 t to orbit in
 - The milestone's own quantity, annual payload mass to orbit, grew about 45 %/yr
   over 2021–2025, up from about 11 %/yr over 2016–2020.
 - Extrapolating that trend reaches 100,000 t/yr around 2034, inside the 5–10
-  year band, so the status is yellow.
+  year band, so the status is yellow. As a v2 `basis.eta`: p50 2034; p10 2032
+  (Starship at operational cadence lifts growth to ~60 %/yr: 7.3 yr); p90
+  2040 (growth halves to ~25 %/yr: 15.4 yr); method trend (log-linear);
+  calc "gap 100000/3194 = 31×; log(31.3)/log(1.45) = 9.3 yr after 2025".
 - It is not green because the path depends on Starship flying at operational
   cadence, and no precursor at that scale has been demonstrated yet.
 - The slower 2025 step (+22 %) is a single observation, so it does not flip
@@ -108,25 +115,84 @@ is no KPI assessment (status unknown).
 
 ## 4. Milestone rules (ETA on evidence)
 
+The status follows the median ETA (`basis.eta.p50`, made by §4.1) and the
+evidence behind the path:
+
 - **achieved**: at least one verified (non-legacy) event of kind `achievement`,
   from a primary source, that meets the milestone's literal wording, including
   any "definitively" clause. It is terminal: only a retraction event reopens it.
-- **green**: a specific evidenced path with ETA ≤ 5 years. That means all three
-  of: a funded programme, a demonstrated precursor at relevant scale, and
+- **green**: median ETA ≤ 5 years on a specific evidenced path. That means all
+  three of: a funded programme, a demonstrated precursor at relevant scale, and
   corroboration from someone other than the proponent.
-- **yellow**: measurable progress on the milestone's own quantity, with a
-  credible ETA of 5–10 years; or an ETA ≤ 5 years asserted only by the
-  proponent (announced but not achieved).
+- **yellow**: measurable progress on the milestone's quantity (or on a driver
+  it is tied to, §4.1), with a median ETA ≤ 10 years; a median ≤ 5 years whose
+  path lacks one of green's three conditions is yellow too.
 - **red**: any of:
-  - an ETA over 10 years on any evidenced path (judged by trend extrapolation,
-    not roadmaps);
-  - no path;
+  - a median ETA over 10 years;
+  - no path: nothing measurable moves toward it, not even a driver;
   - stalled (no progress over two windows);
   - regressing;
   - structurally blocked (policy, legal or definitional), whatever the
     technical readiness. Name the block and its type.
 - Events of kind `announcement` or `projection` never lift a status by
   themselves.
+
+### 4.1 Estimating the ETA
+
+An ETA is a forecast, and forecasting is hard. It is still the assessor's job:
+reason it through with all the data in the ledger, do the arithmetic, and
+write down the reasoning so a reader can check it and disagree. The
+failure to avoid is a gut guess, especially one that extrapolates in a
+straight line or sounds cautious. Work through these steps:
+
+1. **Measure the gap.** State the milestone's quantity, its latest evidenced
+   value and its target, then the gap as a ratio: "3,194 t vs 100,000 t =
+   31×, 5 doublings". For a qualitative milestone (a first demonstration, a
+   test passed), find the measurable capability or deployment it needs and
+   measure that gap instead.
+2. **Find the trend.** Collect every data point in the ledger: observations
+   (`ledger.py series`) and the dated numbers in events, legacy ones included
+   as context. Look in other sections too. If the milestone's quantity has no
+   series, tie it to a **driver** that does, and say how the milestone maps
+   onto the driver's units. For example, an AI-written 10,000-line patch maps
+   onto METR task horizons (robots-software KPI); robots doing a full shift
+   maps onto the software autonomy trend plus hardware unit volumes. "No
+   series in the ledger" is a gap to work around (a driver, a reference class,
+   or a gather request in `blockers`), not an ETA.
+3. **Pick the growth model the quantity actually follows**, and justify it:
+   - capability metrics (task horizons, benchmark scores, energy gain), deployed
+     fleets, launch mass and revenue usually grow **exponentially**: fit in log
+     space, quote the doubling time, and compute time-to-target as
+     log(gap) / log(1 + growth). A 30× gap at +45 %/yr closes in 9 years, not
+     in "decades"; at 3×/yr it closes in about 3 years.
+   - costs usually follow **learning curves**: a fixed % drop per doubling of
+     cumulative production (Wright's law), so they fall faster as volume ramps.
+   - adoption and market share follow **S-curves**: roughly exponential until
+     about 10–20 % saturation, then slowing down. Do not slow down early growth
+     without naming the constraint that will cause it.
+   - **structural floors** cannot be compressed by any exponential: a 10-year
+     survival endpoint needs 10 years of follow-up; a power plant needs years
+     of construction; a regulatory approval needs trials. The ETA is at least
+     the floor, starting from when the step could begin.
+   Use linear extrapolation only when the quantity really is additive (e.g.
+   one-off construction projects with no learning).
+4. **Cross-check.** Compare with a reference class (how long comparable
+   transitions took from first demonstration to the milestone's level), with
+   proponents' dates (historically optimistic: discount them, e.g. 1.5–3× on
+   deep-tech schedules, but do not ignore them), and with the previous ETA.
+   When the methods disagree, explain which you weight and why.
+5. **Set the median and the range.** p50 is the year you think is as likely
+   to be late as early. p10 and p90 bound an 80 % interval; p90 may be null
+   ("maybe never, or after 2100"). Uncertainty **widens the range; it does
+   not push the median later.** Do not default to ">10 years" because the
+   question is hard or the data are thin. If the median is honestly far away,
+   show the calculation that puts it there.
+6. **Name the cruxes**: what observation would move the ETA earlier or later.
+   Gather can look for exactly those next time.
+
+ETAs come from trend extrapolation, not roadmaps: a roadmap is not a trend,
+and projections alone never move a status (rule 5). But a measured
+exponential *is* evidence, and it must be extrapolated as an exponential.
 
 ## 5. Stability rules (hysteresis; \* = enforced by `ledger.py check`)
 
@@ -140,10 +206,11 @@ is no KPI assessment (status unknown).
    observation that reversed it and explaining why the earlier change was not
    a transient.
 4. \* Reinterpretation under a new rubric version: a record whose previous
-   assessment predates this rubric version may re-judge it with
-   `"rubric_correction": "v1"`, without claiming new evidence; it must say
-   what the old assessment got wrong. A record that is already under v1 is
-   never "corrected": changing it needs newer evidence (rule 1).
+   assessment predates this rubric version (no rubric, or an older version)
+   may re-judge it with `"rubric_correction": "v2"`, without claiming new
+   evidence; it must say what the old assessment got wrong. A record that is
+   already under the current version is never "corrected": changing it needs
+   newer evidence (rule 1).
 5. Projections alone never change a status. They may inform the label.
 6. \* A change to a target's framework.yaml definition permits one re-assessment of
    that target that ignores rules 1–4 and the terminality of `achieved`. It
@@ -157,6 +224,15 @@ is no KPI assessment (status unknown).
   It must also match the window trend: no "Worsening" when nothing worsened.
 - **rationale**: prose that is consistent with the basis.
 - **evidence**: the ids of the events relied on. Only `unknown` may have none.
-- \* **rubric** "v1" and a structured **basis**. Its keys are listed in
+- \* **rubric** "v2" and a structured **basis**. Its keys are listed in
   DESIGN.md §3 (Assessment); for KPIs it includes the window numbers, so the
   judgment can be checked.
+- \* For a milestone that is not achieved, **basis.eta** is an object
+  `{p10, p50, p90, method, calc, cruxes}` (§4.1). p10 ≤ p50 ≤ p90 are
+  calendar years (p90 may be null), and p50 is not before made_at. The
+  status must agree with p50: green ≤ made_at + 5 years, yellow ≤ made_at +
+  10 years. `method` names the model (trend, driver trend, learning curve,
+  S-curve, structural floor, reference class, discounted proponent date, or a
+  combination). `calc` gives the numbers and arithmetic. `cruxes` says what
+  would move the ETA earlier or later.
+- The milestone **label** quotes the median: "..., ETA ~2034".
