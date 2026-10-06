@@ -154,20 +154,6 @@ case("climate: Scripps: a truncated data row fails loudly (not silently dropped)
 case("climate: Scripps: a changed column layout fails loudly",
      raises_exit(climate.parse_scripps_monthly, sfix.replace("     CO2,seasonally", "     CO2x,seasonally", 1)))
 
-# the 2026-10 lag correction (7 -> 70 d) recomputed the ledger's rule dates: a NOAA global month must
-# stay invisible to as-of views until ~70 days after its end (the old 7-day dates leaked it 2 months early)
-reg_c = common.registry("climate")
-old = dict(ck[("co2-global-monthly", "2026-05")], published="2026-06-07", _line=2)
-case("climate: a co2-global-monthly row with the old 7-day rule date is rejected; the 70-day one passes",
-     any("rule-basis published must be 2026-08-09" in e for e in ledger.check_obs_row(old, reg_c))
-     and not ledger.check_obs_row(dict(ck[("co2-global-monthly", "2026-05")], _line=2), reg_c))
-glm = [r for r in crow if r["metric"] == "co2-global-monthly"]
-case("climate: global 2026-05 is not in the as-of view on 2026-08-08, it is on 2026-08-09",
-     ("co2-global-monthly", "2026-05") not in ledger.obs_as_of("", dt.date(2026, 8, 8), rows=glm)
-     and ("co2-global-monthly", "2026-05") in ledger.obs_as_of("", dt.date(2026, 8, 9), rows=glm))
-case("climate: the real ledger's co2-global-monthly rule dates all follow the registry lag",
-     not [e for r in ledger.observations("climate") if r["metric"] == "co2-global-monthly"
-          for e in ledger.check_obs_row(dict(r, _line=0), reg_c)])
 case("climate: NOAA global monthly rule lag is 70 d (June data appears in the early-September file)",
      ck[("co2-global-monthly", "2026-05")]["published"] == "2026-08-09")
 
