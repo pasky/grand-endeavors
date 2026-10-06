@@ -37,10 +37,15 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       (Reuters 401, Science 403). Another fetch retry will not help. They need
       re-sourcing (find a source that states the claim, then `supersedes`), or
       they stay legacy background.
-- [ ] 🤖 Re-assess every milestone under rubric v2 (forecast ETAs, RUBRIC.md §4.1):
-      `CORRECTION=1 FORCE=1 gather/assess.sh <section>` per section, then eyeball the
-      medians against the v1 bands (expected: some reds become yellow where an
-      exponential driver exists, e.g. Linux kernel patch vs METR horizons).
+- [ ] Owner review of the rubric v2 ETAs (all milestones re-assessed 2026-10-06; working
+      in each run's ledger/staging/assess-*/eta-notes.md, gitignored). Red→yellow:
+      Linux kernel patch, Dark Line, Fukushima, all resting on METR-horizon drivers and
+      an assumed ~11-month "embodied doubling" for robots.
+- [ ] 🤖 assess.sh robustness: 5 of 8 runs on 2026-10-06 were blocked by a provider
+      false positive ("duplicating model outputs"), 3 of them on the final turn after a
+      lint-clean assessments.jsonl (merged by hand). The robots-hardware runs had read
+      other runs' staging dirs (the retry read their eta-notes); keep agents out of other staging dirs, and consider
+      merging a lint-clean staged file when only the final turn failed.
 - [ ] Cross-section ETA drivers: a milestone may rest on another section's series
       (cited in basis.eta.calc), but `ledger.py stale` does not re-assess it when
       that driver updates, and its evidence list cannot cite foreign event ids.
