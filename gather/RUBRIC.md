@@ -156,7 +156,9 @@ straight line or sounds cautious. Work through these steps:
    series, tie it to a **driver** that does, and say how the milestone maps
    onto the driver's units. For example, an AI-written 10,000-line patch maps
    onto METR task horizons (robots-software KPI); robots doing a full shift
-   maps onto the software autonomy trend plus hardware unit volumes. "No
+   maps onto the software autonomy trend plus hardware unit volumes. Cite
+   another section's data in `calc` (metric, values, event ids); `evidence`
+   lists only this section's events. "No
    series in the ledger" is a gap to work around (a driver, a reference class,
    or a gather request in `blockers`), not an ETA.
 3. **Pick the growth model the quantity actually follows**, and justify it:
@@ -227,7 +229,7 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
 - \* **rubric** "v2" and a structured **basis**. Its keys are listed in
   DESIGN.md §3 (Assessment); for KPIs it includes the window numbers, so the
   judgment can be checked.
-- \* For a milestone that is not achieved, **basis.eta** is an object
+- \* For a milestone that is neither achieved nor unknown, **basis.eta** is an object
   `{p10, p50, p90, method, calc, cruxes}` (§4.1). p10 ≤ p50 ≤ p90 are
   calendar years (p90 may be null), and p50 is not before made_at. The
   status must agree with p50: green ≤ made_at + 5 years, yellow ≤ made_at +

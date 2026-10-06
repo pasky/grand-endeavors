@@ -256,6 +256,8 @@ def main():
     case("hysteresis: a v2 correction may re-judge a v1 record, never a v2 one",
          ledger.check_hysteresis("climate", [prev, corr2], evs2) == []
          and has(ledger.check_hysteresis("climate", [dict(prev, rubric="v2"), corr2], evs2), "already under rubric v2"))
+    case("hysteresis: no rubric downgrade (v2 -> v1 would re-open a v2 correction)",
+         has(ledger.check_hysteresis("climate", [corr2, dict(prev, id="d", made_at="2026-09-29")], evs2), "older than"))
     case("rubric: rubric_correction must match the record's rubric",
          has(ledger.check_assessment(dict(corr2, rubric_correction="v1"), topics, evs), "rubric_correction"))
     eta = {"p10": 2029, "p50": 2032, "p90": 2040, "method": "trend", "calc": "log(31)/log(1.45)", "cruxes": "x"}

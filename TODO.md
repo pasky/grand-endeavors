@@ -27,6 +27,14 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 
 ## Data quality
 
+- [ ] 🤖 Re-assess every milestone under rubric v2 (forecast ETAs, RUBRIC.md §4.1):
+      `CORRECTION=1 FORCE=1 gather/assess.sh <section>` per section, then eyeball the
+      medians against the v1 bands (expected: some reds become yellow where an
+      exponential driver exists, e.g. Linux kernel patch vs METR horizons).
+- [ ] Cross-section ETA drivers: a milestone may rest on another section's series
+      (cited in basis.eta.calc), but `ledger.py stale` does not re-assess it when
+      that driver updates, and its evidence list cannot cite foreign event ids.
+
 - [ ] 🤖 Retry the legacy events that are still unverifiable, **sequentially with
       backoff**. The 2026-10-01 Wayback pass recovered 45 (21 verified, 22
       corrected, 2 refuted), but 8 parallel agents hit archive.org rate limits;

@@ -113,8 +113,8 @@ expected content, but it is not checked:
   benchmark_source, transients_discounted, data_as_of, prev: {status,
   made_at}, change_note`;
 - milestone: `rule, eta, path, blockers, prev, change_note` (window and
-  benchmark may be null). Under rubric v2, `eta` of a milestone that is not
-  achieved is a checked forecast `{p10, p50, p90, method, calc, cruxes}`:
+  benchmark may be null). Under rubric v2, `eta` of a milestone that is neither
+  achieved nor unknown is a checked forecast `{p10, p50, p90, method, calc, cruxes}`:
   years with p10 ≤ p50 ≤ p90 (p90 may be null), and the status agrees with
   p50 (RUBRIC.md §4.1, §6). Under v1 it was free text;
 - unknown: `rule, reason, prev, change_note`.
