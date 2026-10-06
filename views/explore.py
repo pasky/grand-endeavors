@@ -409,7 +409,7 @@ CSS = """
 --hov:#1f2530}}
 *{box-sizing:border-box}html{scroll-padding-top:12px}
 body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink);
-display:grid;grid-template-columns:268px minmax(0,1fr) 340px;align-items:start}
+display:grid;grid-template-columns:288px minmax(0,1fr) 340px;align-items:start}
 .mute{color:var(--mute)}a{color:var(--acc)}
 /* left: endeavor navigation */
 .side{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--side);border-right:1px solid var(--line);
@@ -423,10 +423,15 @@ border:1px solid transparent;margin:1px 0}.nv:hover{background:var(--hov)}
 .nt{display:flex;align-items:center;gap:6px;font-weight:600}.nn{flex:1}
 .nk,.nd{display:flex;align-items:center;font-size:12px;margin:2px 0 0 26px;color:var(--mute)}
 .nk .hv b{color:var(--ink)}.nk .hv{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nk .spark,.cv .spark{display:inline-block;margin:0 0 0 auto;vertical-align:middle}
+.nk .spark,.cv .spark{display:inline-block;margin:0 0 0 auto;vertical-align:middle;flex:none}
 .nd .dot{width:9px;height:9px;margin-right:3px}.ncov{opacity:.55}
 .ic{display:inline-block;min-width:1.35em;text-align:center}
-.new{font-size:11px;font-weight:600;color:var(--acc);background:var(--sel);border-radius:9px;padding:0 6px}
+.rc{flex:none;font-size:11px;font-weight:600;border-radius:9px;padding:0 6px;white-space:nowrap}
+.r-hot{background:var(--acc);color:var(--card)}.r-warm{background:var(--sel);color:var(--acc)}
+.r-cold{color:var(--mute);font-weight:400;border:1px solid var(--line)}
+.nvg{margin:1px 0}.nv.sub{margin-left:18px;padding:4px 8px;border-left:2px solid var(--line);border-radius:0 8px 8px 0}
+.nv.sub .nt{font-weight:500;font-size:13px}.nv.sub .nk,.nv.sub .nd{margin-left:26px}
+.ax{font-size:9px;fill:var(--mute)}
 .nleg{margin:18px 8px 0;display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}.nleg .dot{width:9px;height:9px;margin-right:5px}
 .nleg p{grid-column:1/-1;margin:4px 0 0}
 /* center */
@@ -436,17 +441,20 @@ main{min-width:0;max-width:1060px;width:100%;margin:0 auto;padding:18px 28px}
 .hero h1{margin:0 0 4px;font-size:28px}.tagline{font-size:17px;margin:2px 0 6px}.asof{margin:4px 0;color:var(--mute)}
 .banner{background:var(--notebg);border:1px solid var(--noteln);border-radius:8px;padding:8px 12px;margin:0 0 14px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.card.wide{grid-column:1/-1}@media (min-width:900px){.card.wide{grid-column:span 2}}.trks{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:4px 24px}
+.trk{display:flex;flex-direction:column;gap:4px}.tt{font-weight:700;font-size:14px;margin-top:4px}
+.ct{display:flex;align-items:center;gap:6px}.actw{display:inline-flex;align-items:flex-end;gap:6px;font-size:11px;color:var(--mute);white-space:nowrap}
 .card{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink);background:var(--card);
 border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:border-color .15s,transform .15s}
 .card:hover{border-color:var(--acc);transform:translateY(-1px)}
-.kick{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
 .ct{font-size:17px;font-weight:700}.ck{font-size:12px;color:var(--mute)}
 .cv{display:flex;align-items:center;gap:8px}.cv .hv b{font-size:22px}
 .cs{font-size:12.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cm{font-size:13px;margin:4px 0 0}.cm li{padding:1px 0}.cf{margin-top:auto;padding-top:6px;font-size:12px;color:var(--mute);
-display:flex;justify-content:space-between;align-items:flex-end;gap:8px}.act{flex:none;fill:var(--acc);opacity:.8}.act .z{fill:var(--line)}
+display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:4px 8px}.act{flex:none;fill:var(--acc);opacity:.8}.act .z{fill:var(--line)}
 .crumb{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
-.pane h2{margin:0;font-size:22px}.strip{display:flex;align-items:flex-end;gap:10px;color:var(--mute);font-size:12.5px;margin:2px 0 8px}
+.pane h2{margin:0;font-size:22px}.track{border-top:1px solid var(--line);margin-top:22px;padding-top:16px}
+.track h2{font-size:19px}.jump{margin:10px 0 0;font-size:13px}.jump a{text-decoration:none;margin-right:6px}.strip{display:flex;align-items:flex-end;gap:10px;color:var(--mute);font-size:12.5px;margin:2px 0 8px}
 .gintro{color:var(--mute);border-left:3px solid var(--line);padding-left:10px;margin:8px 0}
 h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:20px 0 6px}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:8px 0}
@@ -467,14 +475,18 @@ li.ev:target{background:var(--sel);outline:2px solid var(--acc);border-radius:6p
 .chip{font-size:11px;background:var(--chip);border-radius:3px;padding:0 4px;margin-right:3px}
 .sig3{font-weight:600}.rel{font-size:12px;color:var(--mute);margin-left:12px}
 details summary{cursor:pointer;color:var(--acc);margin:6px 0}
+details>summary{position:relative;padding:5px 8px 5px 34px;margin:2px 0 2px -8px;border-radius:8px}
+details>summary:hover{background:var(--hov)}
 .small{font-size:12px}.note{background:var(--notebg);border:1px solid var(--noteln);border-radius:6px;padding:6px 10px;margin:8px 0}
-.manifesto p{font-size:15px;margin:8px 0}.legend{margin:8px 0 4px}.more{padding:4px 0 8px 18px}
+.manifesto p{font-size:15px;margin:8px 0}.legend{margin:8px 0 4px}.more{padding:4px 0 8px 26px}
 section p{margin:6px 0}.kpi{margin:10px 0 2px}
 details summary{list-style:none}details summary::-webkit-details-marker{display:none}
-details>summary::before{content:"▸ ";color:var(--mute)}details[open]>summary::before{content:"▾ "}
-li.topic summary,.kpid summary{color:var(--ink);margin:0;padding:5px 0}
+details>summary::before{content:"▸";position:absolute;left:8px;top:6px;width:19px;height:19px;border-radius:50%;
+background:var(--sel);color:var(--acc);font-size:11px;line-height:19px;text-align:center;transition:transform .15s}
+details>summary:hover::before{background:var(--acc);color:var(--card)}details[open]>summary::before{transform:rotate(90deg)}
+li.topic summary,.kpid summary{color:var(--ink)}
 li.topic{border-bottom:1px solid var(--line)}ul.topics{margin:0 0 4px}
-.st{display:block;font-size:13px;margin-left:16px}ul.md{list-style:disc;padding-left:22px;margin:4px 0}
+.st{display:block;font-size:13px}ul.md{list-style:disc;padding-left:22px;margin:4px 0}
 h4{font-size:12px;color:var(--mute);margin:10px 0 4px}.ass{margin:6px 0}
 dl.basis{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;font-size:13px;margin:6px 0}
 dl.basis dt{color:var(--mute)}dl.basis dd{margin:0}.b-cited{color:var(--acc)}
@@ -509,6 +521,7 @@ body:not(:has(.pane:target,.pane :target)) .nv.ov,body:has(#intro:target) .nv.ov
 .side{position:sticky;top:0;z-index:5;height:auto;display:flex;overflow-x:auto;gap:4px;padding:6px;
 border-right:0;border-bottom:1px solid var(--line)}
 .brand,.ng,.nleg,.nk{display:none}.nv{flex:none;padding:4px 8px}.nd{margin-left:26px}
+.nvg{display:contents}.nv.sub{margin:1px 0;border-left:0;border-radius:8px}.nv.sub .nd{margin-left:26px}
 .stream{padding:0 12px 24px}.pane{padding:12px 14px}}
 """
 
@@ -527,51 +540,103 @@ def badge(status) -> str:
     return f'<span class="badge b-{esc(status)}">{esc(status or "unverified")}</span>'
 
 
-def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200, h: int = 34, pad: int = 3) -> str:
+def _metric_labels() -> dict[str, dict[str, str]]:
+    import yaml
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "metric-labels.yaml"), encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+
+METRIC_LABELS = _metric_labels()
+_UNLABELLED: set[tuple[str, str]] = set()
+
+
+def metric_label(sec: str, metric: str, definition: str | None = None) -> str:
+    """The display name of a metric (views/metric-labels.yaml); without one, the first
+    clause of its registry definition (else its id), with a warning."""
+    lab = (METRIC_LABELS.get(sec) or {}).get(metric)
+    if lab:
+        return lab
+    if (sec, metric) not in _UNLABELLED:
+        _UNLABELLED.add((sec, metric))
+        warn(f"views/metric-labels.yaml: no label for {sec}/{metric} (shown by its definition or id)")
+    first = re.split(r";|:\s| \(|, ", str(definition or ""), maxsplit=1)[0].strip()
+    if len(first) > 70:
+        first = first[:68].rsplit(" ", 1)[0] + "…"
+    return first or metric
+
+
+MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def fmt_date(d) -> str:
+    """2026-09-07 -> 7 Sep 2026."""
+    d = D(str(d)) if not isinstance(d, dt.date) else d
+    return f"{d.day} {MON[d.month - 1]} {d.year}"
+
+
+def fmt_period(obs) -> str:
+    """An observation period for humans: 2026-08 -> Aug 2026, 2025-Q4 -> Q4 2025, 2026 -> 2026."""
+    s = str(obs)
+    if m := re.fullmatch(r"(\d{4})-(\d{2})", s):
+        return f"{MON[int(m[2]) - 1]} {m[1]}"
+    if m := re.fullmatch(r"(\d{4})-([QH]\d)", s):
+        return f"{m[2]} {m[1]}"
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", s):
+        return fmt_date(s)
+    return s
+
+
+def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200, h: int = 34, pad: int = 3,
+              axis: str = "below") -> str:
+    """A line of the series; axis: "below" = its first and last date under the line,
+    "left" = the first year left of it (tiny ones), "" = none."""
     if len(points) < 2:
         return ""
-    x0, x1 = points[0][0].toordinal(), points[-1][0].toordinal()
+    (a, _), (b, _) = points[0], points[-1]
+    short = (lambda d: str(d.year)) if (b - a).days >= 700 else (lambda d: f"{MON[d.month - 1]} {d.year % 100:02d}")
+    lw = 24 if axis == "left" else 0
+    th = h + (11 if axis == "below" else 0)
+    x0, x1 = a.toordinal(), b.toordinal()
     lo, hi = min(v for _, v in points), max(v for _, v in points)
-    sx = lambda d: pad + (w - 2 * pad) * ((d.toordinal() - x0) / (x1 - x0) if x1 > x0 else 0.5)
+    sx = lambda d: lw + pad + (w - lw - 2 * pad) * ((d.toordinal() - x0) / (x1 - x0) if x1 > x0 else 0.5)
     sy = lambda v: h - pad - (h - 2 * pad) * ((v - lo) / (hi - lo) if hi > lo else 0.5)
     pts = " ".join(f"{sx(d):.1f},{sy(v):.1f}" for d, v in points)
     d, v = points[-1]
-    return (f'<svg class="spark" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img">'
-            f'<title>{len(points)} {esc(kind + " " if kind else "")}obs {points[0][0]}..{d}; '
-            f'range {lo:g}..{hi:g}</title>'
+    labels = ""
+    if axis == "below":
+        labels = (f'<text x="{pad}" y="{th - 1}" class="ax">{short(a)}</text>'
+                  f'<text x="{w - pad}" y="{th - 1}" class="ax" text-anchor="end">{short(b)}</text>')
+    elif axis == "left":
+        labels = f'<text x="0" y="{h / 2 + 3:.1f}" class="ax">{a.year}</text>'
+    return (f'<svg class="spark" width="{w}" height="{th}" viewBox="0 0 {w} {th}" role="img">'
+            f'<title>{len(points)} {esc(kind + " " if kind else "")}values, {a} to {d}; '
+            f'range {lo:g} to {hi:g}</title>{labels}'
             f'<polyline points="{pts}" fill="none" stroke="currentColor" stroke-width="1.5"/>'
             f'<circle cx="{sx(d):.1f}" cy="{sy(v):.1f}" r="2.5" fill="currentColor"/></svg>')
 
 
 def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
-    req = '<span class="badge b-req">required</span>' if k["required"] else ""
-    head = f'<div class="m" title="{esc(k["definition"])}">{esc(k["metric"])}{req}</div>'
+    """A metric: its name (id + definition as the tooltip), the latest value, the period
+    it is for, its source, the like-for-like change of a monthly series, the series,
+    and when the next value is due."""
+    head = (f'<div class="m" title="{esc(k["metric"])}: {esc(k["definition"])}">'
+            f'{esc(metric_label(k["section"], k["metric"], k["definition"]))}</div>')
     if k["obs"] is None:
         return (f'<div class="tile nodata">{head}<div class="v gap">—</div>'
-                f'<div class="gap">no data yet</div><div class="d">{esc(k["unit"])} · {esc(k["cadence"])}</div></div>')
+                f'<div class="gap">no data yet</div><div class="d">{esc(k["unit"])}, {esc(k["cadence"])}</div></div>')
     body = (f'<div class="v">{esc(k["value_text"])} <small>{esc(k["unit"])}</small></div>'
-            f'<div class="d">obs {esc(k["obs"])} · known {esc(k["known_at"])} · '
-            f'{link(k["source"], "source")}{badge(k["verification"])}</div>')
-    if k["year_ago_obs"] is not None:  # like-for-like first: the comparable change
-        body += (f'<div class="c">{_arrow(k["year_ago_change_text"])} vs same month a year earlier '
-                 f'({esc(k["year_ago_obs"])}: {esc(k["year_ago_value_text"])})</div>')
-    if k["prev_obs"] is not None:
-        if k["comparable"]:
-            body += (f'<div class="c">{_arrow(k["change_text"])} {esc(k["change_label"])}: '
-                     f'{esc(k["prev_value_text"])}</div>')
-        else:
-            body += (f'<div class="c nc" title="not comparable: {esc(k["caveat"])}">'
-                     f'{esc(k["change_text"])} {esc(k["change_label"])}: {esc(k["prev_value_text"])} '
-                     f'<span class="badge b-nc">not comparable: {esc(k["caveat"])}</span></div>')
+            f'<div class="d"><span title="published {esc(k["known_at"])}">{esc(fmt_period(k["obs"]))}</span> · '
+            f'{link(k["source"], "source")}{badge("legacy") if k["verification"] == "legacy" else ""}</div>')
+    if k["year_ago_obs"] is not None:  # monthly: the like-for-like change (the seasonal cycle cancels)
+        body += (f'<div class="c" title="{esc(fmt_period(k["year_ago_obs"]))}: {esc(k["year_ago_value_text"])}">'
+                 f'{_arrow(k["year_ago_change_text"])} vs {esc(fmt_period(k["year_ago_obs"]))}</div>')
     body += sparkline(*spark_points(db, k))
     if k["overdue"]:
-        body += f'<div class="gap">OVERDUE — next obs expected by {esc(k["next_expected"])}</div>'
+        body += f'<div class="gap">update overdue since {esc(fmt_date(k["next_expected"]))}</div>'
     elif k["next_expected"]:
-        body += f'<div class="d">next expected by {esc(k["next_expected"])}</div>'
+        body += f'<div class="d">next update due by {esc(fmt_date(k["next_expected"]))}</div>'
     elif k["cadence"] == "irregular":
-        body += '<div class="d">irregular releases (no schedule)</div>'
-    else:
-        body += f'<div class="d">{esc(k["cadence"])} data, no fixed release date</div>'
+        body += '<div class="d">updated irregularly</div>'
     return f'<div class="tile{" overdue" if k["overdue"] else ""}">{head}{body}</div>'
 
 
@@ -615,12 +680,16 @@ def topic_anchor(topic: str) -> str:
 
 def ev_href(sec: str, eid: str) -> str:
     return f"{log_page(sec)}#ev-{sec}-{eid}"
+REL_WORDS = {"update": "updates", "followup": "follows up on", "retraction": "retracts", "delay": "delays",
+             "confirmation": "confirms"}
 
 
 def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None = None,
              anchor: bool = True, cited: bool = False, note: str = "") -> str:
     """anchor: carry the #ev-<section>-<id> target (the event log: its first occurrence);
-    cited: the event is evidence of the assessment it is listed under; note: an extra badge."""
+    cited: the event is evidence of the assessment it is listed under; note: an extra badge.
+    names: topic -> name, and ("ev", event id) -> (date, claim) of the section's events
+    (lifecycle links show the linked event's date and claim, not its id)."""
     sig = int(e["significance"] or 0)
     chips = "".join(f'<span class="chip">{esc(names.get(t, t))}</span>' for t in json.loads(e["topics"] or "[]"))
     srcs = json.loads(e["sources"] or "[]")
@@ -628,23 +697,29 @@ def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None 
                      for i, s in enumerate(srcs, 1) if isinstance(s, dict))
     succ = succ or {}
 
+    def about(eid) -> str:  # "<date>: <claim snippet>" of a linked event (its id if unknown)
+        date, claim = names.get(("ev", eid)) or (None, None)
+        if claim is None:
+            return esc(eid)
+        return f"{esc(date)}: {esc(claim if len(claim) <= 90 else claim[:88].rsplit(' ', 1)[0] + '…')}"
+
     def target(eid) -> str:  # a superseded event is not shown: link to its effective successor
         seen, t = set(), eid
         while succ.get(t) and t not in seen:
             seen.add(t); t = succ[t]
         if t in succ:  # not effective and no successor: withdrawn (a tombstone is never shown)
-            return f"{esc(eid)} (withdrawn)"
-        label = esc(eid) + (f" (superseded by {esc(t)})" if t != eid else "")
-        return f'<a href="{esc(ev_href(e["section"], t))}">{label}</a>'
-    rels = "".join(f'<div class="rel">↳ {esc(r.get("rel"))} of {target(r.get("id"))}</div>'
+            return f'{about(eid)} <span class="mute">(since withdrawn)</span>'
+        return (f'<a href="{esc(ev_href(e["section"], t))}" title="{esc(t)}">{about(t)}</a>'
+                + (' <span class="mute">(corrected version)</span>' if t != eid else ""))
+    rels = "".join(f'<div class="rel">↳ {esc(REL_WORDS.get(r.get("rel"), r.get("rel")))} {target(r.get("id"))}</div>'
                    for r in json.loads(e["relates"] or "[]") if isinstance(r, dict))
-    rels += "".join(f'<div class="rel">↳ supersedes (corrects / adds sources to) {esc(s)}</div>'
-                    for s in json.loads(e["supersedes"] or "[]"))
+    rels += "".join(f'<div class="rel" title="{esc(s)}">↳ corrects (or adds sources to) an earlier record: '
+                    f'<s class="mute">{about(s)}</s></div>' for s in json.loads(e["supersedes"] or "[]"))
     aid = f' id="ev-{esc(e["section"])}-{esc(e["id"])}"' if anchor else ""
     return (f'<li class="ev sig{sig}"{aid}>'
             f'<div class="meta">{esc(e["date"])} · {esc(e["kind"])} · '
             f'<span title="significance {sig}/3">{"●" * sig}{"○" * (3 - sig)}</span> · '
-            f'known {esc(e["known_at"])}{badge(e["verification_status"])}'
+            f'published {esc(e["known_at"])}{badge(e["verification_status"])}'
             f'{CITED if cited else ""}{f" <span class=badge>{esc(note)}</span>" if note else ""}</div>'
             f'<div>{esc(e["claim"])}</div><div>{chips} {links}</div>{rels}</li>')
 
@@ -807,7 +882,7 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -
     n_ev = len({e["id"] for e in topic_events(db, sec, "kpi")}
                | (set(json.loads(km["evidence"] or "[]")) if km and km["assessment_id"] else set()))
     out.append(f'<details class="kpid" id="t-{esc(sec)}-kpi"><summary>{status}'
-               f'<span class="st mute">why: the assessment, its evidence and {n_ev} event(s)</span></summary>'
+               f'<span class="st mute">the reasoning, its evidence and {n_ev} related event(s)</span></summary>'
                f'<div class="more">{assessment_html(km) if km else ""}'
                f'{evidence_and_events(db, sec, "kpi", km, names, succ, shown)}</div></details>')
     # always shown: every required/gap tile; the rest of the registry folds
@@ -816,37 +891,39 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -
         main = tiles
     rest = [t for t in tiles if t not in main]
     if not tiles:
-        out.append(f'<div class="gap">no metrics registered yet (metrics/{esc(sec)}.csv)</div>')
+        out.append('<div class="gap">no KPI metric tracked yet</div>')
     elif not heads:
-        out.append('<div class="gap">no required KPI metric in the registry yet</div>')
+        out.append('<div class="mute">none of these metrics is the official KPI yet</div>')
     if main:
         out.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in main) + "</div>")
     if rest:
-        out.append(f"<details><summary>{len(rest)} more registered metric(s)</summary>"
+        out.append(f"<details><summary>{len(rest)} more metric(s) we track</summary>"
                    '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
     return "".join(out)
 
 
 def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = None, n_recent: int = 8,
-                 covered: bool = True, group: dict | None = None, head: str = "") -> str:
-    """One endeavor's pane. group: its framework group (title + intro shown on top);
-    head: extra header HTML (the at-a-glance strip)."""
+                 covered: bool = True, crumb: str = "", head: str = "", track: bool = False) -> str:
+    """One endeavor's pane, or (track) one section of a multi-section endeavor's pane
+    (Robots and Automation: Software, Hardware). crumb: a kicker over the title (a
+    supplemental section's group); head: extra header HTML (the activity strip)."""
     sec = s["section"]
     fsec = fsec or {}
     ms = db.execute("SELECT * FROM milestone_status WHERE section=? ORDER BY ord", (sec,)).fetchall()
     by_topic = {m["target"]: m for m in ms}
     names = {r["topic"]: r["name"] for r in db.execute("SELECT topic, name FROM topics WHERE section=?", (sec,))}
+    names.update({("ev", r[0]): (r[1], r[2]) for r in db.execute("SELECT id, date, claim FROM events WHERE section=?",
+                                                                 (sec,))})
     # superseded id -> its effective successor (follow chains), so links always land on a shown event
     succ = dict(db.execute("SELECT id, superseded_by FROM events WHERE section=? AND NOT effective", (sec,)).fetchall())
     framework = bool(s["kpi"] or fsec.get("milestones") or fsec.get("challenges"))
     shown: set[str] = set()
-    crumb = f'<div class="crumb">{esc(group["title"])}</div>' if group else ""
-    out = [f'<section class="pane" id="{esc(sec)}">{crumb}<h2>{icon(sec)} {esc(s["title"])}</h2>{head}']
+    crumb = f'<div class="crumb">{esc(crumb)}</div>' if crumb else ""
+    out = [f'<section class="{"track" if track else "pane"}" id="{esc(sec)}">{crumb}'
+           f'<h2>{icon(sec)} {esc(s["title"])}</h2>{head}']
     if not covered:
         out.append('<div class="note">Not covered by this period\'s bulletins: shown is the ledger '
                    'as of the cutoff, for reference.</div>')
-    if group and group.get("intro"):
-        out.append(f'<div class="gintro">{md_block(group["intro"])}</div>')
     out.append(md_block(fsec.get("intro")))
     if s["kpi"]:
         out.append(kpi_block(db, sec, s, ms, names, succ, shown))
@@ -879,8 +956,8 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
         out.append(f'<details class="news"><summary>Events under no current topic: {len(other)}</summary>'
                    f'<div class="more">{events_ul(other, names, succ, shown, TOPIC_EVENTS, log_page(sec) + "#t-other")}'
                    "</div></details>")
-    out.append(f'<details class="news"><summary>Latest events (the {min(n_recent, len(evs))} most recently '
-               f'known of {len(evs)})</summary><div class="more">{events_ul(evs[:n_recent], names, succ, shown)}'
+    out.append(f'<details class="news"><summary>Latest news: the {min(n_recent, len(evs))} most recently '
+               f'published of {len(evs)} events</summary><div class="more">{events_ul(evs[:n_recent], names, succ, shown)}'
                f'<p><a href="{esc(log_page(sec))}">All {len(evs)} events: the event log</a></p></div></details>')
     return "".join(out) + "</section>"
 
@@ -891,6 +968,8 @@ def event_log_html(db: sqlite3.Connection, s: sqlite3.Row, as_of: dt.date, fw: d
     under its first topic in framework order; under later topics a one-line link to it."""
     sec = s["section"]
     names = {r["topic"]: r["name"] for r in db.execute("SELECT topic, name FROM topics WHERE section=?", (sec,))}
+    names.update({("ev", r[0]): (r[1], r[2]) for r in db.execute("SELECT id, date, claim FROM events WHERE section=?",
+                                                                 (sec,))})
     succ = dict(db.execute("SELECT id, superseded_by FROM events WHERE section=? AND NOT effective", (sec,)).fetchall())
     topics = db.execute("SELECT topic, name FROM topics WHERE section=? ORDER BY ord", (sec,)).fetchall()
     # the front page's grouping: no KPI line -> its kpi-tagged events are under no current topic
@@ -1002,14 +1081,17 @@ def legend_html() -> str:
 
 
 ICONS = {"robots-software": "🧠", "robots-hardware": "🦾", "rockets": "🚀", "fusion": "⚡", "health": "🧬",
-         "climate": "🌍", "knowledge-beyond": "🔭", "society-cohesion": "🤝"}
-RECENT_DAYS = 30  # "new" = became known within this many days of as_of
-ACTIVITY_WEEKS = 16  # the activity histogram on the overview cards
+         "climate": "🌍", "knowledge-beyond": "🔭", "society-cohesion": "🤝", "robots-and-automation": "🤖"}
+ACTIVITY_WEEKS = 16  # the activity histogram (events per week)
 STREAM_N = 100  # events in the news stream (+ the status changes over the same span)
 
 
-def icon(sec: str) -> str:
-    return f'<span class="ic" aria-hidden="true">{ICONS.get(sec, "◆")}</span>'
+def icon(key: str) -> str:
+    return f'<span class="ic" aria-hidden="true">{ICONS.get(key, "◆")}</span>'
+
+
+def slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
 
 def plain_md(text) -> str:
@@ -1031,9 +1113,7 @@ def glance(db: sqlite3.Connection, sec: str, as_of: dt.date) -> dict:
     req = db.execute("SELECT k.* FROM latest_kpi k JOIN metrics m USING (section, metric) WHERE k.section=? "
                      "AND NOT k.retired AND (k.required OR COALESCE(m.required_from, '') != '') "
                      "ORDER BY k.required DESC, k.obs IS NULL, k.metric", (sec,)).fetchall()
-    since = str(as_of - dt.timedelta(days=RECENT_DAYS))
-    n_ev, n_new, last = db.execute("SELECT COUNT(*), SUM(known_at > ?), MAX(known_at) FROM current_events "
-                                   "WHERE section=?", (since, sec)).fetchone()
+    n_ev, last = db.execute("SELECT COUNT(*), MAX(known_at) FROM current_events WHERE section=?", (sec,)).fetchone()
     # events per week, the last ACTIVITY_WEEKS weeks to as_of (oldest first)
     weeks = [0] * ACTIVITY_WEEKS
     for (k,) in db.execute("SELECT known_at FROM current_events WHERE section=?", (sec,)):
@@ -1044,59 +1124,125 @@ def glance(db: sqlite3.Connection, sec: str, as_of: dt.date) -> dict:
     return {"km": km if km and km["assessment_id"] else None,
             "mils": [m for m in ms if m["kind"] == "milestone"],
             "n_ch": sum(m["kind"] == "challenge" for m in ms),
-            "head": req[0] if req else None,
-            "n_ev": n_ev, "n_new": n_new or 0, "last": last, "weeks": weeks}
+            "head": req[0] if req else None, "n_ev": n_ev, "last": last, "weeks": weeks}
 
 
-def activity_bars(weeks: list[int], as_of: dt.date, w: int = 110, h: int = 22) -> str:
-    """Events per week as a bar chart (the newest week at the right)."""
+def merged(gs: list[dict]) -> dict:
+    """The activity of several sections together (a multi-section endeavor)."""
+    lasts = [g["last"] for g in gs if g["last"]]
+    return {"n_ev": sum(g["n_ev"] for g in gs), "last": max(lasts) if lasts else None,
+            "weeks": [sum(w) for w in zip(*(g["weeks"] for g in gs))], "n_ch": sum(g["n_ch"] for g in gs)}
+
+
+def activity_bars(weeks: list[int], as_of: dt.date, w: int = 96, h: int = 20) -> str:
+    """News per week as a labelled bar chart (the newest week at the right)."""
+    if not any(weeks):
+        return f'<span class="actw">no news in the last {len(weeks)} weeks</span>'
     top, bw, Z = max(weeks) or 1, w / len(weeks), ' class="z"'
     bars = "".join(f'<rect x="{i * bw + .5:.1f}" y="{h - max(1.0, h * n / top):.1f}" width="{bw - 1.5:.1f}" '
                    f'height="{max(1.0, h * n / top):.1f}"{"" if n else Z}/>'
                    for i, n in enumerate(weeks))
-    return (f'<svg class="act" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img"><title>events per week, '
-            f'the {len(weeks)} weeks to {as_of}: {", ".join(map(str, weeks))}</title>{bars}</svg>')
+    return (f'<span class="actw">news per week <svg class="act" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img"><title>news per week, '
+            f'the {len(weeks)} weeks to {as_of}: {", ".join(map(str, weeks))}</title>{bars}</svg></span>')
 
 
-def _new_badge(n: int) -> str:
-    return (f'<span class="new" title="{n} event(s) became known in the last {RECENT_DAYS} days">+{n}</span>'
-            if n else "")
+def _ago(day: str, as_of: dt.date) -> str:
+    n = (as_of - D(day)).days
+    return ("today" if n <= 0 else "yesterday" if n == 1 else f"{n} days ago" if n < 14
+            else f"{n // 7} weeks ago" if n < 60 else f"{n // 30} months ago" if n < 730 else f"{n // 365} years ago")
 
 
-def _headline(db, g: dict, w: int, h: int, has_kpi: bool = True) -> str:
+def recency(last: str | None, as_of: dt.date) -> str:
+    """How fresh an endeavor's news is: the latest event's age, brighter = fresher."""
+    if not last:
+        return '<span class="rc r-cold" title="no news yet">no news</span>'
+    n = (as_of - D(last)).days
+    txt = ("today" if n <= 0 else f"{n}d ago" if n < 14 else f"{n // 7}w ago" if n < 60
+           else f"{n // 30}mo ago" if n < 730 else f"{n // 365}y ago")
+    cls = "r-hot" if n <= 7 else "r-warm" if n <= 30 else "r-cold"
+    return f'<span class="rc {cls}" title="latest news published {esc(last)} ({_ago(last, as_of)})">{txt}</span>'
+
+
+def _headline(db, g: dict, w: int, h: int, has_kpi: bool = True, axis: str = "below") -> str:
     t = g["head"]
     if not has_kpi:
         return '<span class="mute">no KPI (supplemental)</span>'
     if t is None or t["obs"] is None:
         return f'<span class="mute">{"no KPI data yet" if t is not None else "no KPI metric yet"}</span>'
-    return (f'<span class="hv"><b>{esc(t["value_text"])}</b> {esc(t["unit"])}</span>'
-            + sparkline(*spark_points(db, t), w=w, h=h, pad=2))
+    return (f'<span class="hv" title="{esc(metric_label(t["section"], t["metric"], t["definition"]))}, {esc(fmt_period(t["obs"]))}">'
+            f'<b>{esc(t["value_text"])}</b> {esc(t["unit"])}</span>'
+            + sparkline(*spark_points(db, t), w=w, h=h, pad=2, axis=axis))
 
 
-def nav_item(db, sec: str, title: str, g: dict, covered: bool, has_kpi: bool) -> str:
+def _kpi_dot(g: dict) -> str:
     km = g["km"]
-    kd = dot(km["status"], f'KPI: {km["label"]}') if km else dot(None, "KPI: not yet assessed")
+    return dot(km["status"], f'KPI: {km["label"]}') if km else dot(None, "KPI: not yet assessed")
+
+
+def nav_rows(db, sec: str, g: dict, has_kpi: bool) -> str:
+    """The KPI line (status dot, latest value, series) and the milestone dots."""
     dots = "".join(topic_dot(m) for m in g["mils"])
+    return (f'<span class="nk">{_kpi_dot(g)}{_headline(db, g, 70, 16, has_kpi, "left")}</span>'
+            + (f'<span class="nd" title="milestones">{dots}</span>' if dots else ""))
+
+
+def nav_item(db, sec: str, title: str, g: dict, covered: bool, has_kpi: bool, as_of: dt.date) -> str:
     return (f'<a class="nv{"" if covered else " ncov"}" href="#{esc(sec)}">'
-            f'<span class="nt">{icon(sec)}<span class="nn">{esc(title)}</span>{_new_badge(g["n_new"])}</span>'
-            f'<span class="nk">{kd}{_headline(db, g, 54, 16, has_kpi)}</span>'
-            + (f'<span class="nd" title="milestones">{dots}</span>' if dots else "") + "</a>")
+            f'<span class="nt">{icon(sec)}<span class="nn">{esc(title)}</span>{recency(g["last"], as_of)}</span>'
+            f'{nav_rows(db, sec, g, has_kpi)}</a>')
 
 
-def card(db, sec: str, title: str, kicker: str, kpi_line: str, g: dict, as_of: dt.date) -> str:
-    """The overview's card of an endeavor (all of it one link to its pane)."""
+def nav_group(db, gid: str, title: str, tracks: list, as_of: dt.date) -> str:
+    """A multi-section endeavor: its title, then one sub-item per section."""
+    m = merged([g for _, _, g, _, _ in tracks])
+    out = [f'<div class="nvg"><a class="nv" href="#{esc(gid)}"><span class="nt">{icon(gid)}'
+           f'<span class="nn">{esc(title)}</span>{recency(m["last"], as_of)}</span></a>']
+    for sec, stitle, g, cov, has_kpi in tracks:
+        out.append(f'<a class="nv sub{"" if cov else " ncov"}" href="#{esc(sec)}"><span class="nt">{icon(sec)}'
+                   f'<span class="nn">{esc(stitle)}</span></span>{nav_rows(db, sec, g, has_kpi)}</a>')
+    return "".join(out) + "</div>"
+
+
+def card_track(db, kpi_line: str, g: dict) -> str:
+    """A section's KPI and milestones on an overview card."""
     km = g["km"]
-    status = (f'{dot(km["status"])}<span>{esc(km["label"])}</span>' if km
-              else f'{dot(None)}<span class="mute">KPI not yet assessed</span>')
+    if not kpi_line:
+        out = '<div class="ck">no KPI (supplemental)</div>'
+    else:
+        status = (f'{dot(km["status"])}<span>{esc(km["label"])}</span>' if km
+                  else f'{dot(None)}<span class="mute">KPI not yet assessed</span>')
+        out = (f'<div class="ck">KPI: {plain_md(kpi_line)}</div><div class="cv">{_headline(db, g, 120, 26)}</div>'
+               f'<div class="cs">{status}</div>')
     mils = "".join(f'<li>{topic_dot(m)}{plain_md(m["name"])}</li>' for m in g["mils"])
-    foot = [f'{g["n_ev"]} events'] + ([f'<b>{g["n_new"]} new</b> in {RECENT_DAYS} days'] if g["n_new"] else []) \
-        + ([f'{g["n_ch"]} challenges'] if g["n_ch"] else [])
-    return (f'<a class="card" href="#{esc(sec)}"><div class="kick">{esc(kicker)}</div>'
-            f'<div class="ct">{icon(sec)} {esc(title)}</div>'
-            + (f'<div class="ck">{plain_md(kpi_line)}</div><div class="cv">{_headline(db, g, 110, 26)}</div>'
-               f'<div class="cs">{status}</div>' if kpi_line else '<div class="ck">no KPI (supplemental)</div>')
-            + (f'<ul class="cm">{mils}</ul>' if mils else "")
-            + f'<div class="cf"><span>{" · ".join(foot)}</span>{activity_bars(g["weeks"], as_of)}</div></a>')
+    return out + (f'<ul class="cm">{mils}</ul>' if mils else "")
+
+
+def card_foot(m: dict, as_of: dt.date) -> str:
+    facts = [f'{m["n_ev"]} events'] + ([f'{m["n_ch"]} open challenges'] if m["n_ch"] else [])
+    return (f'<div class="cf"><span>{" · ".join(facts)}</span>'
+            f'{activity_bars(m["weeks"], as_of)}</div>')
+
+
+def card(db, sec: str, title: str, kpi_line: str, g: dict, as_of: dt.date) -> str:
+    """The overview's card of an endeavor (all of it one link to its pane)."""
+    return (f'<a class="card" href="#{esc(sec)}"><div class="ct">{icon(sec)}<span class="nn">{esc(title)}</span>'
+            f'{recency(g["last"], as_of)}</div>{card_track(db, kpi_line, g)}{card_foot(g, as_of)}</a>')
+
+
+def group_card(db, gid: str, title: str, tracks: list, as_of: dt.date) -> str:
+    """A multi-section endeavor's card: its sections side by side."""
+    m = merged([g for _, _, g, _, _ in tracks])
+    body = "".join(f'<div class="trk"><div class="tt">{icon(sec)} {esc(stitle)}</div>{card_track(db, kl, g)}</div>'
+                   for sec, stitle, g, kl, _ in tracks)
+    return (f'<a class="card wide" href="#{esc(gid)}"><div class="ct">{icon(gid)}<span class="nn">{esc(title)}'
+            f'</span>{recency(m["last"], as_of)}</div><div class="trks">{body}</div>{card_foot(m, as_of)}</a>')
+
+
+def strip(m: dict, as_of: dt.date) -> str:
+    """A pane's activity line: event count, the latest news, news per week."""
+    return (f'<div class="strip"><span>{m["n_ev"]} events'
+            + (f' · latest news published {esc(m["last"])} ({_ago(m["last"], as_of)})' if m["last"] else "")
+            + f'</span>{activity_bars(m["weeks"], as_of, 80, 16)}</div>')
 
 
 def status_changes(db: sqlite3.Connection, since: str) -> list[dict]:
@@ -1122,39 +1268,36 @@ def status_changes(db: sqlite3.Connection, since: str) -> list[dict]:
     return out
 
 
-def _ago(day: str, as_of: dt.date) -> str:
-    n = (as_of - D(day)).days
-    return "today" if n == 0 else "yesterday" if n == 1 else f"{n} days ago" if n < 60 else ""
-
-
-def stream_html(db: sqlite3.Connection, as_of: dt.date, titles: dict[str, str], anchors: set[str]) -> str:
+def stream_html(db: sqlite3.Connection, as_of: dt.date, where: dict[str, tuple[str, str]], anchors: set[str]) -> str:
     """The news stream: the latest events by the date they became known, with the status
-    changes of the same span (all of them while there are fewer events). Only the sections
-    with a pane (titles; a period's frozen framework may lack some), so every link lands.
-    anchors: the topic anchors on the page (t-<section>-...)."""
-    secs = list(titles)
+    changes of the same span (all of them while there are fewer events). where: section ->
+    (its pane, its display title), for the sections with a pane only (a period's frozen
+    framework may lack some), so every link lands. anchors: the topic anchors on the page."""
+    secs = list(where)
     evs = db.execute(f"SELECT * FROM current_events WHERE section IN ({','.join('?' * len(secs))}) "
                      "ORDER BY known_at DESC, significance DESC, date_end DESC, id DESC LIMIT ?",
                      (*secs, STREAM_N)).fetchall()
     since = evs[-1]["known_at"] if len(evs) == STREAM_N else ""
-    changes = [c for c in status_changes(db, since) if c["section"] in titles]
+    changes = [c for c in status_changes(db, since) if c["section"] in where]
     if not evs and not changes:
         return '<aside class="stream"><h3>Latest news</h3><div class="mute">no events yet</div></aside>'
     items: list[tuple[str, int, str]] = []
     for c in changes:
         sec = c["section"]
+        pane, title = where[sec]
         a = f't-{sec}-{c["target"].replace(":", "-")}'
         frm = f'{dot(c["prev"])}→' if c["prev"] else '<span class="mute">first assessed</span> '
         items.append((c["day"], 0,
-                      f'<li class="si chg x-{esc(sec)}"><a href="#{esc(a if a in anchors else sec)}">'
-                      f'<span class="sm">{icon(sec)} {esc(titles.get(sec, sec))} · status change</span>'
+                      f'<li class="si chg x-{esc(pane)}"><a href="#{esc(a if a in anchors else sec)}">'
+                      f'<span class="sm">{icon(sec)} {esc(title)} · status change</span>'
                       f'<span class="cl">{frm}{dot(c["status"])} <b>{plain_md(c["name"])}</b>: '
                       f'{esc(c["label"])}</span></a></li>'))
     for e in evs:
         sec, sig = e["section"], int(e["significance"] or 0)
+        pane, title = where[sec]
         items.append((e["known_at"], 1,
-                      f'<li class="si sig{sig} x-{esc(sec)}"><a href="{esc(ev_href(sec, e["id"]))}">'
-                      f'<span class="sm">{icon(sec)} {esc(titles.get(sec, sec))} · {esc(e["kind"])} · '
+                      f'<li class="si sig{sig} x-{esc(pane)}"><a href="{esc(ev_href(sec, e["id"]))}">'
+                      f'<span class="sm">{icon(sec)} {esc(title)} · {esc(e["kind"])} · '
                       f'<span title="significance {sig}/3">{"●" * sig}{"○" * (3 - sig)}</span>'
                       f'{" · legacy" if e["verification_status"] == "legacy" else ""}</span>'
                       f'<span class="cl">{esc(e["claim"])}</span></a></li>'))
@@ -1165,24 +1308,25 @@ def stream_html(db: sqlite3.Connection, as_of: dt.date, titles: dict[str, str], 
             if day is not None:
                 out.append("</ul></li>")
             day = d
-            out.append(f'<li class="dg"><div class="dh">{esc(d)} <span class="mute">{_ago(d, as_of)}</span></div><ul>')
+            out.append(f'<li class="dg"><div class="dh">{esc(fmt_date(d))} <span class="mute">{_ago(d, as_of)}'
+                       f'</span></div><ul>')
         out.append(li)
     out.append("</ul></li>")
     return ('<aside class="stream"><div class="sh"><h3>Latest news</h3>'
-            '<span class="mute small">newest first, by the date it became known</span></div>'
+            '<span class="mute small">newest first, by publication date</span></div>'
             '<div class="sf"><label title="significance 3/3, and status changes"><input type="checkbox" id="f-major"> major only</label>'
             '<label class="here"><input type="checkbox" id="f-here"> this endeavor only</label></div>'
             f'<ul class="days">{"".join(out)}</ul>'
-            + (f'<p class="mute small">The {len(evs)} most recently known events and the status changes since '
+            + (f'<p class="mute small">The {len(evs)} most recently published events and the status changes since '
                f'{esc(since)}. Older: each endeavor\'s event lists.</p>' if since else
                f'<p class="mute small">All {len(evs)} events and all status changes.</p>') + "</aside>")
 
 
-def selection_css(secs: list[str]) -> str:
-    """Per-section rules for the pure-CSS pane switching (:target): highlight the nav item,
-    dim (or, on request, hide) other sections' news."""
+def selection_css(panes: list[str], tracks: list[str]) -> str:
+    """Per-pane rules for the pure-CSS pane switching (:target): highlight the nav item,
+    dim (or, on request, hide) other endeavors' news; tracks = sections inside a pane."""
     out = []
-    for s in secs:
+    for s in panes:
         on = f"body:has(#{s}:target,#{s} :target)"
         out.append(f'{on} .nv[href="#{s}"]{{background:var(--sel);border-color:var(--acc)}}'
                    f"{on} .si:not(.x-{s}){{opacity:.55}}"
@@ -1190,6 +1334,7 @@ def selection_css(secs: list[str]) -> str:
                    f"{on} .stream:has(#f-here:checked) .dg:not(:has(.x-{s})),"
                    f"{on} .stream:has(#f-here:checked):has(#f-major:checked) .dg:not(:has(.x-{s}:is(.sig3,.chg)))"
                    "{display:none}")
+    out += [f'body:has(#{s}:target,#{s} :target) .nv[href="#{s}"]{{background:var(--sel)}}' for s in tracks]
     return "@supports selector(:has(a)){" + "".join(out) + "}"
 
 
@@ -1202,31 +1347,50 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
     n_sup = one("SELECT COUNT(*) FROM events WHERE NOT effective")
     n_obs = one("SELECT COUNT(*) FROM observations")
     gaps = db.execute("SELECT * FROM gaps").fetchall()
-    gap_li = "".join(f'<li><a href="#{esc(g["section"])}">{esc(g["section"])}</a>: {esc(g["metric"])}'
-                     f'{" (required)" if g["required"] else ""} — <span class="gap">{esc(g["gap"])}</span></li>'
+    gap_li = "".join(f'<li><a href="#{esc(g["section"])}">{esc(secs[g["section"]]["title"])}</a>: '
+                     f'<span title="{esc(g["metric"])}">{esc(metric_label(g["section"], g["metric"]))}</span>'
+                     f'{" (a KPI metric)" if g["required"] else ""} — <span class="gap">{esc(g["gap"])}</span></li>'
                      for g in gaps)
-    panes, nav, cards = [], [], []
-    for fs, grp in ledger.fw_sections(fw):
-        sec = fs["id"]
-        if sec not in secs:
+    cov = lambda s: covered is None or s in covered
+    # endeavors: a section, or a group of sections shown as ONE endeavor (Robots and Automation:
+    # Software + Hardware); a supplemental group's sections are endeavors of their own, listed apart
+    panes, nav, cards, supp_nav, supp_cards = [], [], [], [], []
+    where: dict[str, tuple[str, str]] = {}
+    pane_ids, track_ids = [], []
+    for e in fw["endeavors"]:
+        if "sections" in e and not e.get("supplemental"):
+            gid = slug(e["title"])
+            tracks = [(fs["id"], fs["title"], glance(db, fs["id"], as_of), secs[fs["id"]]["kpi"], fs)
+                      for fs in e["sections"] if fs["id"] in secs]
+            if not tracks:
+                continue
+            m = merged([t[2] for t in tracks])
+            nav.append(nav_group(db, gid, e["title"],
+                                 [(s, t, g, cov(s), bool(k)) for s, t, g, k, _ in tracks], as_of))
+            cards.append(group_card(db, gid, e["title"], [(s, t, g, k, None) for s, t, g, k, _ in tracks], as_of))
+            jump = " · ".join(f'<a href="#{esc(s)}">{icon(s)} {esc(t)}</a>' for s, t, *_ in tracks)
+            panes.append(f'<div class="pane" id="{esc(gid)}"><h2>{icon(gid)} {esc(e["title"])}</h2>'
+                         f'{strip(m, as_of)}{md_block(e.get("intro"))}<div class="jump">{jump}</div>'
+                         + "".join(section_html(db, secs[s], fs, covered=cov(s), track=True, head=strip(g, as_of))
+                                   for s, _, g, _, fs in tracks) + "</div>")
+            pane_ids.append(gid)
+            for s, t, *_ in tracks:
+                where[s] = (gid, f"{e['title']} · {t}")
+                track_ids.append(s)
             continue
-        cov = covered is None or sec in covered
-        g = glance(db, sec, as_of)
-        if grp and fs is grp["sections"][0]:
-            nav.append(f'<div class="ng">{esc(grp["title"])}</div>')
-        elif not grp:
-            nav.append('<div class="ng sp"></div>')
-        nav.append(nav_item(db, sec, fs["title"], g, cov, bool(secs[sec]["kpi"])))
-        kicker = grp["title"] if grp else "Endeavor"
-        cards.append(card(db, sec, fs["title"], kicker, secs[sec]["kpi"], g, as_of))
-        strip = (f'<div class="strip"><span>{g["n_ev"]} events'
-                 + (f' · <b>{g["n_new"]} new</b> in the last {RECENT_DAYS} days' if g["n_new"] else "")
-                 + (f' · latest known {esc(g["last"])}' if g["last"] else "")
-                 + f"</span>{activity_bars(g['weeks'], as_of, 80, 16)}</div>")
-        panes.append(section_html(db, secs[sec], fs, covered=cov, group=grp, head=strip))
+        supp = e.get("supplemental")
+        for fs in (e["sections"] if "sections" in e else [e]):
+            sec = fs["id"]
+            if sec not in secs:
+                continue
+            g = glance(db, sec, as_of)
+            (supp_nav if supp else nav).append(nav_item(db, sec, fs["title"], g, cov(sec), bool(secs[sec]["kpi"]), as_of))
+            (supp_cards if supp else cards).append(card(db, sec, fs["title"], secs[sec]["kpi"], g, as_of))
+            panes.append(section_html(db, secs[sec], fs, covered=cov(sec), crumb=e["title"] if supp else "",
+                                      head=strip(g, as_of)))
+            pane_ids.append(sec)
+            where[sec] = (sec, fs["title"])
     anchors = set(re.findall(r' id="(t-[^"]+)"', "".join(panes)))
-    # sections with a pane (a period's frozen framework may lack some): the stream's scope
-    titles = {fs["id"]: secs[fs["id"]]["title"] for fs, _ in ledger.fw_sections(fw) if fs["id"] in secs}
     title = fw["title"] + (f" — {period}" if period else "")
     if period:
         when = (f'<div class="banner">Period page <b>{esc(period)}</b>: the ledger as of the period\'s cutoff '
@@ -1243,18 +1407,25 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
              f'<div class="asof">{"Frozen" if period else "Live"} ledger state as of <b>{esc(as_of)}</b> · '
              f'{n_ev} events · {len(gaps)} data gap(s)</div></div>'
              f'<div class="manifesto">{md_block(fw["manifesto"])}</div>{legend_html()}'
-             f'<h3>At a glance</h3><div class="cards">{"".join(cards)}</div></div>')
+             f'<h3>At a glance</h3><div class="cards">{"".join(cards)}</div>'
+             + (f'<h3>Supplemental</h3><div class="cards">{"".join(supp_cards)}</div>' if supp_cards else "")
+             + "</div>")
     side = (f'<nav class="side"><a class="brand" href="#intro"><b>{esc(fw["title"])}</b>'
             f'<span class="mute small">{"period " + esc(period) + ", " if period else ""}as of {esc(as_of)}</span></a>'
             f'<a class="nv ov" href="#intro"><span class="nt"><span class="ic">✦</span>'
             f'<span class="nn">Introduction &amp; overview</span></span></a>{"".join(nav)}'
-            '<div class="nleg small mute">' + "".join(f"<span>{dot(st)}{w}</span>" for st, w in (
+            + (f'<div class="ng">Supplemental</div>{"".join(supp_nav)}' if supp_nav else "")
+            + '<div class="nleg small mute">' + "".join(f"<span>{dot(st)}{w}</span>" for st, w in (
                 ("green", "on track"), ("yellow", "behind pace"), ("red", "off track"), ("achieved", "achieved"),
                 ("unknown", "unassessed"), (None, "not yet assessed")))
-            + f"<p>KPI dot + latest value; then one dot per milestone. +N: events new in {RECENT_DAYS} days.</p></div></nav>")
+            + "<p>Per endeavor: the KPI's status dot and latest value (the series since the year shown), "
+              "then one dot per milestone.</p><p>"
+            + "".join(f'<span class="rc {c}">{t}</span> ' for c, t in (("r-hot", "≤ 1 week"), ("r-warm", "≤ 1 month"),
+                                                                     ("r-cold", "older")))
+            + "<br>how long ago its latest news was published</p></div></nav>")
     return (f'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
-            f"<title>{esc(title)} (as of {esc(as_of)})</title><style>{CSS}{selection_css(list(titles))}</style>"
+            f"<title>{esc(title)} (as of {esc(as_of)})</title><style>{CSS}{selection_css(pane_ids, track_ids)}</style>"
             f"</head><body>{side}<main>{when}"
             f'{f"<div class=note>{md_inline(note)}</div>" if note else ""}'
             + intro + "".join(panes)
@@ -1266,7 +1437,7 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
               '<a href="https://github.com/pasky/grand-endeavors">code and definitions</a>'
             + ('' if period else ', <a href="ledger.sqlite">ledger.sqlite</a> for Datasette')
             + ").</p></footer></main>"
-            + stream_html(db, as_of, titles, anchors) + "</body></html>\n")
+            + stream_html(db, as_of, where, anchors) + "</body></html>\n")
 
 
 # --- pages: live, period, site ------------------------------------------------------------

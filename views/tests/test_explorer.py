@@ -337,7 +337,7 @@ def main():
         case("dashboard links rel=noopener", 'rel="noopener noreferrer"' in page)
         case("dashboard self-contained (no script/link/src)",
              not any(s in page for s in ("<script", "<link", " src=", "@import")))
-        case("dashboard gap markers", all(s in page for s in ("OVERDUE", "no data yet", "not yet assessed",
+        case("dashboard gap markers", all(s in page for s in ("update overdue since 7 Aug 2026", "no data yet", "not yet assessed",
                                                              "no events in the ledger yet")))
         case("dashboard is self-explanatory: tagline, manifesto, intros, definitions, legend",
              all(s in page for s in ("Tracking humanity&#x27;s progress.", "<p>Science has a communication problem.</p>",
@@ -373,31 +373,44 @@ def main():
              '<div>An agency' in page and '<span class="badge b-verified">verified</span>' in page)
         case("dashboard escapes attributes", "<b onclick" not in page and '" onmouseover="' not in page
              and "&quot;&gt;&lt;b onclick" in page)
-        case("dashboard change vs previous: labelled + not-comparable flag",
-             "+1.15 vs previous observation (2026-05): 428.10 " in page
-             and "not comparable: different calendar month: seasonal cycle not removed" in page)
-        case("dashboard year-ago change", "+3.25</span> vs same month a year earlier (2025-06: 426.00)" in page)
-        case("dashboard comparable change has an arrow", "\u25bc -0.08</span> vs previous observation (2024): 2.64"
-             in page)
-        case("dashboard sparkline names its granularity", "<title>3 daily obs 2026-01-10..2026-04-02" in page)
+        case("dashboard sparkline", "<svg" in page and "<polyline" in page)
+        case("dashboard tiles: no change vs the previous observation (the series shows it)",
+             "vs previous observation" not in page and "not comparable" not in page)
+        case("dashboard tiles: monthly like-for-like change vs a year earlier, human periods",
+             '<div class="c" title="Jun 2025: 426.00"><span class="up">\u25b2 +3.25</span> vs Jun 2025</div>' in page
+             and '<span title="published 2026-07-20">Jun 2026</span>' in page and ">obs " not in page
+             and "known 2026" not in page and "required</span>" not in page)
+        case("dashboard tiles: metric label (id + definition as tooltip), else the definition's first clause",
+             explore.metric_label("climate", "co2-mlo-monthly") == "CO\u2082 at Mauna Loa, monthly mean (NOAA)"
+             and '<div class="m" title="co2-monthly: Monthly mean CO2 at a fixture station for tests">'
+                 'Monthly mean CO2 at a fixture station for tests</div>' in page
+             and explore.metric_label("x", "m", "Mean of NOAA rates (Jan 1 -> Dec 31); obs = final year")
+             == "Mean of NOAA rates" and explore.metric_label("x", "m2") == "m2")
+        case("dashboard sparkline names its granularity, labels its time axis",
+             "<title>3 daily values, 2026-01-10 to 2026-04-02" in page
+             and re.search(r'class="ax">Jan 26</text><text [^>]*class="ax" text-anchor="end">Apr 26</text>', page)
+             is not None)
         case("dashboard lifecycle link", 'href="events-climate.html#ev-climate-2026-03-01-first-peak-claim"' in page)
         case("dashboard as-of excludes late event", "late announcement" not in page)
         case("dashboard hides superseded event, shows the correction",
-             "cover 90%" not in page and "cover 88%" in page and "1 superseded not shown" in page
+             page.count("cover 90%") == page.count('<s class="mute">2026-05-01: A tracker found net-zero pledges cover 90%') and "cover 88%" in page and "1 superseded not shown" in page
              and "4 events (3 verified, 1 legacy" in page)
         case("dashboard: supersedes line + relates link redirected to the successor",
-             "supersedes (corrects / adds sources to) 2026-05-01-pledge-coverage" in page
-             and 'href="events-climate.html#ev-climate-2026-05-01-pledge-coverage-corrected">2026-05-01-pledge-coverage '
-                 '(superseded by 2026-05-01-pledge-coverage-corrected)</a>' in page)
+             'corrects (or adds sources to) an earlier record: <s class="mute">2026-05-01: A tracker found net-zero '
+             'pledges cover 90%' in page
+             and 'href="events-climate.html#ev-climate-2026-05-01-pledge-coverage-corrected" title="2026-05-01-pledge-coverage-corrected">'
+                 '2026-05-01: A tracker found net-zero pledges cover 88% of global emissions (corrected).</a> '
+                 '<span class="mute">(corrected version)</span>' in page
+             and "\u21b3 follows up on <a" in page and "\u21b3 updates <a" in page)
         case("dashboard shows required + gap tiles, folds the rest",
-             page.index("co2-never") < page.index("more registered metric") < page.index("co2-nolag"))
+             page.index("co2-never") < page.index("more metric(s) we track") < page.index("co2-nolag"))
         db = sqlite3.connect(":memory:")
         explore.build_db(db, D("2026-10-10"))
         db.row_factory = sqlite3.Row
         fsec, _ = ledger.fw_section("climate")
         sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), fsec, 1)
         case("events under their topics, beyond + latest folded",
-             "Beyond the framework: 1 event(s)" in sec and "Latest events (the 1 most recently known of 5)" in sec
+             "Beyond the framework: 1 event(s)" in sec and "Latest news: the 1 most recently published of 5 events" in sec
              and "previously green on 2026-07-02" in sec and "under no current topic" not in sec)
         other = dict(fsec, milestones=[m for m in fsec["milestones"] if m["slug"] != "the-balance"])
         sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), other, 1)
@@ -428,7 +441,7 @@ def main():
         tomb = dict(db.execute("SELECT * FROM current_events LIMIT 1").fetchone())
         tomb["relates"] = '[{"id": "x", "rel": "update"}]'
         case("lifecycle link to a withdrawn record: no dangling anchor",
-             "x (withdrawn)" in explore.event_li(tomb, {}, {"x": "t", "t": None}) and '#ev-climate-"' not in page)
+             'x <span class="mute">(since withdrawn)</span>' in explore.event_li(tomb, {}, {"x": "t", "t": None}) and '#ev-climate-"' not in page)
         case("markdown: inline emphasis, escaped, http links only",
              explore.md_inline("**b** *i* <x> [t](https://a.b/?q=1&r=2) [j](javascript:x)")
              == '<b>b</b> <i>i</i> &lt;x&gt; <a href="https://a.b/?q=1&amp;r=2" target="_blank" '
@@ -443,10 +456,26 @@ def main():
              and 'body:has(#climate:target,#climate :target) .nv[href="#climate"]' in page)
         case("layout: nav item = KPI dot + headline value, then a dot per milestone",
              re.search(r'<a class="nv" href="#climate">.*?<span class="nk"><span class="dot s-none"[^>]*></span>'
-                       r'<span class="hv"><b>429.25</b> ppm</span><svg.*?<span class="nd" title="milestones">'
+                       r'<span class="hv"[^>]*><b>429.25</b> ppm</span><svg.*?<span class="nd" title="milestones">'
                        r'<span class="dot s-green" title="The Bend: Peak in sight"></span>'
                        r'<span class="dot s-red" title="The Balance: Distant"></span></span></a>', nav) is not None
-             and 'href="#knowledge-beyond"' in nav and "no KPI (supplemental)" in nav and "#intro" in nav)
+             and 'href="#knowledge-beyond"' in nav and "no KPI (supplemental)" in nav and "#intro" in nav
+             and '<span class="rc r-cold" title="latest news published 2026-08-15 (6 weeks ago)">6w ago</span>' in nav
+             and nav.index('href="#climate"') < nav.index('<div class="ng">Supplemental</div>')
+             < nav.index('href="#knowledge-beyond"'))
+        gdir = os.path.join(root, "grouped")
+        write(gdir, "framework.yaml", FRAMEWORK.replace("endeavors:\n", "endeavors:\n"
+              "  - title: Robots and Automation\n    intro: Automating labor.\n    sections:\n"
+              "      - {id: robots-software, title: Software, kpi: Task horizon}\n"
+              "      - {id: robots-hardware, title: Hardware, kpi: Fleet size}\n", 1))
+        gp = explore.dashboard(D("2026-09-28"), fw=ledger.framework(gdir))
+        gpane = gp[gp.index('<div class="pane" id="robots-and-automation">'):gp.index('<section class="pane" id="climate">')]
+        case("layout: a multi-section endeavor is ONE pane, nav item, card (its sections as tracks)",
+             "<p>Automating labor.</p>" in gpane and gpane.count('<section class="track" id="robots-') == 2
+             and '<div class="nvg"><a class="nv" href="#robots-and-automation">' in gp
+             and '<a class="nv sub" href="#robots-software">' in gp and '<a class="card wide" href="#robots-and-automation">' in gp
+             and 'body:has(#robots-software:target,#robots-software :target) .nv[href="#robots-software"]' in gp
+             and 'class="si chg x-robots' not in gp and gp.count('<a class="card') == 3)
         case("layout: overview card per section, linking to its pane",
              page.count('<a class="card" href="#') == 2  # the fixture framework's 2 sections
              and '<a class="card" href="#climate">' in page)
@@ -458,6 +487,9 @@ def main():
                        log + "ev-climate-2026-07-01-peak-update", log + "ev-climate-2026-06-01-pledge-followup",
                        "#t-climate-milestone-the-balance", log + "ev-climate-2026-03-01-first-peak-claim"])
         logpage = explore.pages(D("2026-09-28"))["events-climate.html"]
+        case("event log: lifecycle lines show the linked claim; own one-column layout",
+             "\u21b3 updates <a href=\"events-climate.html#ev-climate-2026-03-01-first-peak-claim\"" in logpage
+             and "An agency projected" in logpage and '<body class="log">' in logpage)
         case("stream: event links land in the event log, status changes on the page; superseded/late left out",
              all(f' id="{h.split("#")[1]}"' in (logpage if h.startswith("events-") else page) for h in hrefs)
              and "cover 90%" not in stream
@@ -472,11 +504,11 @@ def main():
              ch == [("2026-03-03", None, "red"), ("2026-09-02", "red", "yellow")]
              and [c["day"] for c in explore.status_changes(db, "2026-09-02")
                   if c["target"] == "milestone:the-balance"] == ["2026-09-02"])
-        only_kb = explore.stream_html(db, D("2026-10-10"), {"knowledge-beyond": "K"}, set())
+        only_kb = explore.stream_html(db, D("2026-10-10"), {"knowledge-beyond": ("knowledge-beyond", "K")}, set())
         case("stream: only sections with a pane (a frozen framework may lack some)",
              "no events yet" in only_kb and "climate" not in only_kb)
         db.execute("DELETE FROM events")
-        no_ev = explore.stream_html(db, D("2026-10-10"), {"climate": "C"}, set())
+        no_ev = explore.stream_html(db, D("2026-10-10"), {"climate": ("climate", "C")}, set())
         case("stream: status changes shown without any events, all-history footer",
              no_ev.count("· status change</span>") == 4 and "All 0 events and all status changes" in no_ev
              and 'href="#climate"' in no_ev)

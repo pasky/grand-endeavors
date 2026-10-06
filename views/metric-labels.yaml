@@ -1,0 +1,53 @@
+# Display labels of the KPI metrics on the dashboard (views/explore.py), per section.
+# Presentation only: the registry (data/metrics/<section>.csv) keeps the metric ids
+# and their full definitions (shown as the tile's tooltip). A metric without a label
+# here is shown by its id, and explore.py warns: add one when registering a metric.
+robots-software:
+  metr-80-horizon-by-release: AI task horizon at 80% success, by model release
+  metr-50-horizon-by-release: AI task horizon at 50% success, by model release
+  metr-50-horizon-frontier: AI task horizon at 50% success, frontier as evaluated
+rockets:
+  cost-to-leo-best: Cheapest launch to low Earth orbit
+  payload-mass-to-orbit: Payload mass launched to orbit in the year
+fusion:
+  elec-price-household-world-popw-real: World household electricity price (constant 2025 $)
+  elec-price-household-world-popw-nominal: World household electricity price (current $)
+  elec-price-household-gpp-avg: Household electricity price, simple country average (GlobalPetrolPrices)
+  elec-wholesale-eu: EU wholesale electricity price (IEA)
+  elec-wholesale-us: US wholesale electricity price (IEA)
+  lcoe-solar-pv-irena: Cost of new utility-scale solar power (IRENA)
+  lcoe-onshore-wind-irena: Cost of new onshore wind power (IRENA)
+  lcoe-offshore-wind-irena: Cost of new offshore wind power (IRENA)
+health:
+  hale-median-country: Healthy life expectancy, median country (WHO)
+  hale-global: Healthy life expectancy, world population-weighted (WHO)
+climate:
+  co2-mlo-monthly: CO₂ at Mauna Loa, monthly mean (NOAA)
+  co2-trend-10yr-mlo-jan-dec: CO₂ growth, 10-year average (Mauna Loa)
+  co2-trend-10yr-global-jan-dec: CO₂ growth, 10-year average (global)
+  co2-trend-5yr-mlo-jan-dec: CO₂ growth, 5-year average (Mauna Loa)
+  co2-trend-5yr-global-jan-dec: CO₂ growth, 5-year average (global)
+  co2-trend-10yr-mlo-scripps: CO₂ growth, decade average (Scripps, Mauna Loa)
+  co2-trend-2020s-mlo-scripps: CO₂ growth, 2020s average so far (Scripps, Mauna Loa)
+  co2-mlo-annual: CO₂ at Mauna Loa, annual mean (NOAA)
+  co2-mlo-daily: CO₂ at Mauna Loa, daily mean (NOAA)
+  co2-mlo-monthly-scripps: CO₂ at Mauna Loa, monthly mean (Scripps)
+  co2-global-annual: CO₂ global, annual mean (NOAA)
+  co2-global-monthly: CO₂ global, monthly mean (NOAA)
+  co2-growth-mlo-jan-dec: CO₂ growth in the year (Mauna Loa)
+  co2-growth-global-jan-dec: CO₂ growth in the year (global)
+  co2-growth-mlo-annual-mean: CO₂ annual-mean increase (Mauna Loa, NOAA)
+  co2-growth-mlo-annual-mean-scripps: CO₂ annual-mean increase (Mauna Loa, Scripps)
+  co2-growth-global-wmo: CO₂ global annual-mean increase (WMO)
+  co2-growth-mlo-yoy-monthly: CO₂ change on the same month a year earlier (Mauna Loa)
+  co2-emissions-fossil-gcb: Fossil CO₂ emissions (Global Carbon Budget)
+  co2-emissions-total-gcb: Total CO₂ emissions incl. land use (Global Carbon Budget)
+  co2-emissions-energy-iea: Energy-related CO₂ emissions (IEA)
+  co2-emissions-fossil-industry-carbon-monitor: Fossil and industry CO₂ emissions (Carbon Monitor)
+society-cohesion:
+  doomsday-clock: Doomsday Clock, seconds to midnight
+  trust-institutions-edelman: Trust in institutions (Edelman Trust Index)
+  trust-government-oecd: Trust in national government (OECD)
+  trust-government-us-pew: US adults trusting the federal government (Pew)
+  pop-in-autocracies-vdem: World population living in autocracies (V-Dem)
+  loneliness-prevalence-who: People experiencing loneliness (WHO)

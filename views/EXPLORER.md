@@ -37,19 +37,24 @@ nothing else. Every line expands to its detail.
 **Layout**: three columns (on narrow screens the news drops below, and on a
 phone the navigation becomes a strip on top).
 - **Left, the navigation**: "Introduction & overview", then one item per
-  endeavor (under its group, e.g. Robots and Automation): its icon and title;
-  the KPI status dot with the latest value of its headline metric (the first
-  required one, or one required from a later period) and a sparkline; one
-  status dot per milestone (hover: name and status label); `+N` = events that
-  became known in the last 30 days. Clicking shows that endeavor in the middle.
+  endeavor: its icon and title, and how long ago its latest news was published
+  (`8d ago`; filled = within a week, tinted = within a month, outlined =
+  older); the KPI status dot with the latest value of its headline metric (the
+  first required one, or one required from a later period) and its series
+  (labelled with the year it starts); one status dot per milestone (hover:
+  name and status label). An endeavor of several sections (Robots and
+  Automation) is one item with a sub-item per section (Software, Hardware);
+  the supplemental sections are listed apart, under "Supplemental".
+  Clicking shows that endeavor in the middle.
 - **Middle, one pane at a time**: the overview by default, or the endeavor
   clicked. Switching is pure CSS (`:target`, `:has()`; the page has no
-  JavaScript), so every pane and event has a URL (`#climate`,
+  JavaScript), so every pane, section and event has a URL
+  (`#robots-and-automation`, `#robots-software`, `#climate`,
   `#ev-climate-<id>`, `#t-climate-milestone-the-bend`): a link to an event
   opens its endeavor, unfolds the event and highlights it. A browser without
   `:has()` shows all panes one below another.
-- **Right, the news stream**: the 100 most recently *known* events across all
-  endeavors, newest first, grouped by day, plus the **status changes**
+- **Right, the news stream**: the 100 most recently *published* events across
+  all endeavors, newest first, grouped by day, plus the **status changes**
   (KPI/milestone status changed, or first assessed; a same-day flip back is
   not a change) over the same span (all of them while the ledger has fewer
   events). Only endeavors with a pane are included (a period page's frozen
@@ -60,26 +65,30 @@ phone the navigation becomes a strip on top).
 
 **Overview pane**: the tagline, the as-of date, the manifesto, a folded "How
 to read this page" (the status colours, KPI vs milestone status, verified vs
-legacy, what "as of" means), then **At a glance**: a card per endeavor (KPI
-definition, latest value + sparkline, KPI status label, milestones with their
-dots, event count, new events, and a bar chart of events per week over the
-last 16 weeks).
+legacy, what "as of" means), then **At a glance**: a card per endeavor (Robots
+and Automation: its two sections side by side) with how fresh its news is, the
+KPI definition, the latest value and its series, the KPI status label, the
+milestones with their dots, the event and challenge counts, and the news per
+week over the last 16 weeks; the supplemental sections' cards follow apart.
 
-**Endeavor pane** (groups such as Robots and Automation show their intro on
-each of their sections' panes): event count, new events, the date the latest
-became known and the weekly activity bars; the intro, then:
+**Endeavor pane**: its event count, latest news and news per week; the intro
+(Robots and Automation: the group intro, links to its sections, then each
+section with its own activity line), then:
 - **KPI**: its definition, and its status line (the latest assessment's
-  label), which expands to the assessment and the KPI-tagged events (below);
+  label), which expands to the reasoning (below) and the KPI-tagged events;
   then, always shown:
-  - **KPI tiles**, one per required metric (others fold under "more
-    registered metrics"). Each tile shows the latest value and its
-    observation period; when it became known, and a `source` link; the change
-    **vs the previous observation**, with a ⚠ when it is not comparable
-    (different calendar month: seasonal cycle not removed; different
-    granularity; same observation revised); for monthly series, the
-    like-for-like change vs the same month a year ago; a sparkline of one
-    granularity; "next expected by …", **OVERDUE**, or **no data yet**. A
-    `legacy` badge marks values from the unverified 2025 report.
+  - **KPI tiles**, one per required metric (others fold under "more metrics
+    we track"). A tile shows the metric's name (`views/metric-labels.yaml`;
+    hover: its id and full registry definition), the latest value, the period
+    it is for (hover: when it was published), a `source` link and a `legacy`
+    badge for values from the unverified 2025 report; for monthly series the
+    like-for-like change vs the same month a year earlier (the change vs the
+    previous observation is not shown: the series shows the trend, and
+    consecutive months are not comparable); the series of one granularity
+    with its first and last date under it; and "next update due by …",
+    "update overdue since …" (the tile is then dashed) or "no data yet".
+    The change vs the previous observation, with its comparability flag,
+    stays in Datasette (`latest_kpi`).
   - the **assessment** (expanded from the status line): label, rationale and
     its structured basis (assessed quantity, window, benchmark, …), its cited
     evidence, and the other KPI-tagged events.
@@ -96,14 +105,20 @@ became known and the weekly activity bars; the intro, then:
   count; expanded, the details and events. Challenges are not assessed.
 - Folded at the end: **Beyond the framework** events, **events under no
   current topic** (tags the framework no longer lists, e.g. after a change; never silently
-  dropped) and the **latest events** (with a link to the event log).
+  dropped) and the **latest news** (with a link to the event log).
+
+Every expandable line has a round ▸ button in front (it turns ▾ when open).
 
 Each event shows the claim, event date, kind (achievement, announcement,
-projection, setback, …), significance (●●○), when it became known, topic tags,
-source links and a verification badge (verified / corrected / **legacy**). It
-is listed under every topic it is tagged with. Superseded and withdrawn
-records are not shown, except as cited evidence (flagged); the current
-version is.
+projection, setback, …), significance (●●○), when it was published, topic
+tags, source links and a verification badge (verified / corrected /
+**legacy**). It is listed under every topic it is tagged with. Lifecycle
+links (`relates`: updates, follows up on, confirms, delays, retracts) show the
+linked event's date and claim and jump to its entry in the event log (to its
+corrected version if it was superseded; "since withdrawn" otherwise); a
+correction (`supersedes`) shows the claim it replaced, struck through.
+Superseded and withdrawn records are not shown, except as cited evidence
+(flagged); the current version is.
 
 **Event logs** (`events-<section>.html`, next to the page): every effective
 event of the endeavor, newest first, grouped by topic in framework order. An
@@ -114,6 +129,10 @@ the event history off the front page: it carries the assessments' cited
 evidence (uncapped, it is what the status rests on) and a few latest events per
 topic (about 580 KB, 120 KB gzipped, in October 2026). The sparklines still
 carry each tile's whole series.
+
+**Metric names**: `views/metric-labels.yaml` maps each metric id to a short
+name. A metric without one is shown by the first clause of its definition (else
+its id) and `explore.py` warns: add a label when registering a metric.
 
 **Footer** (under every pane): record counts, the metric **gaps** (overdue or
 never observed; never hidden), links to the earlier **period pages**, and the
