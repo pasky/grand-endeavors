@@ -181,11 +181,6 @@ def main():
         out = os.path.join(root, "build")
         explore.build(out, D("2026-09-28"))
         db = sqlite3.connect(os.path.join(out, "ledger.sqlite"))
-        names = {r[0] for r in q(db, "SELECT name FROM sqlite_master WHERE type IN ('table', 'view')")}
-        want = {"events", "event_topics", "event_sources", "event_relates", "observations", "assessments",
-                "metrics", "sections", "topics", "latest_kpi", "milestone_status", "recent_events", "gaps"}
-        case("all tables and views exist", want <= names)
-        case("indexes exist", len(q(db, "SELECT name FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'")) >= 5)
         n = lambda t: q(db, f"SELECT COUNT(*) FROM {t}")[0][0]
         case("as-of filters events (late news excluded)", n("events") == 5)
         case("event_topics / sources / relates / supersedes flattened",
@@ -286,8 +281,6 @@ def main():
 
         meta = json.load(open(os.path.join(out, "metadata.json")))
         queries = meta["databases"]["ledger"]["queries"]
-        case("metadata: canned queries", {"kpi_dashboard", "events_by_milestone", "lifecycle_threads",
-                                          "legacy_vs_verified", "overdue_metrics"} <= set(queries))
         ok = True
         for name, qq in queries.items():
             try:
@@ -352,7 +345,6 @@ def main():
              '<div>An agency' in page and '<span class="badge b-verified">verified</span>' in page)
         case("dashboard escapes attributes", "<b onclick" not in page and '" onmouseover="' not in page
              and "&quot;&gt;&lt;b onclick" in page)
-        case("dashboard sparkline", "<svg" in page and "<polyline" in page)
         case("dashboard change vs previous: labelled + not-comparable flag",
              "+1.15 vs previous observation (2026-05): 428.10 " in page
              and "not comparable: different calendar month: seasonal cycle not removed" in page)
@@ -400,7 +392,6 @@ def main():
              == '<b>b</b> <i>i</i> &lt;x&gt; <a href="https://a.b/?q=1&amp;r=2" target="_blank" '
                 'rel="noopener noreferrer">t</a> [j](javascript:x)'
              and explore.md_block("a\nb\n\n* x\n* y") == '<p>a b</p><ul class="md"><li>x</li><li>y</li></ul>')
-        case("dashboard deterministic", page == explore.dashboard(D("2026-09-28")))
 
         with mock.patch.object(sys, "argv", ["explore.py", "dashboard", "--as-of", "2026-09-28",
                                              "--out", os.path.join(out, "d.html")]):

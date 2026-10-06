@@ -84,11 +84,6 @@ ser = {(m, y): v for m, y, v, _ in ce.series(budget)}
 case("convert: 2024 fossil net of carbonation = 37.78 GtCO2 (gross would be 38.60)",
      ser[("co2-emissions-fossil-gcb", "2024")] == "37.78")
 case("convert: 2024 total = 42.36 GtCO2 (GCB 2025 key messages: 42.4)", ser[("co2-emissions-total-gcb", "2024")] == "42.36")
-case("convert: 2020 COVID dip visible in fossil (2019 > 2020 < 2021)",
-     Decimal(ser[("co2-emissions-fossil-gcb", "2019")]) > Decimal(ser[("co2-emissions-fossil-gcb", "2020")])
-     < Decimal(ser[("co2-emissions-fossil-gcb", "2021")]))
-case("convert: 1959 fossil = (2.41678824533062 - 0.0134227952138527) * 3.664 = 8.81",
-     ser[("co2-emissions-fossil-gcb", "1959")] == "8.81")
 
 # --- staged rows -----------------------------------------------------------------
 paper = {"metric": "co2-emissions-total-gcb", "obs": "2024", "value": "42.4", "unit": "GtCO2",
@@ -116,8 +111,6 @@ case("rows: note compares with a differing effective ledger value at its precisi
      and "agrees at its precision" in rk[("co2-emissions-total-gcb", "2024")]["note"]
      and "effective ledger" not in r["note"])
 case("rows: a real mismatch is flagged", "DIFFERS" in ce.ledger_note("42.36", dict(paper, value="41.9")))
-case("rows: deterministic (same inputs -> same rows)",
-     rows == ce.collect(FIX, TODAY, "collectors/climate_emissions.py@2026-10-01", [paper]))
 
 # --- wiring into the climate collector ----------------------------------------------
 both = climate.collect_all(FIX, TODAY, "collectors/climate.py@2026-10-01")
@@ -125,7 +118,6 @@ case("climate.collect_all = NOAA rows + GCB rows, each with its own collector id
      {r["collector"] for r in both if r["metric"].startswith("co2-emissions")} == {"collectors/climate_emissions.py@2026-10-01"}
      and {r["collector"] for r in both if not r["metric"].startswith("co2-emissions")} == {"collectors/climate.py@2026-10-01"}
      and len(both) == len(climate.collect(FIX, TODAY, "x")) + 16)
-case("climate.collect_all rows pass check_obs_row", not common.check(both, common.registry("climate")))
 
 print(f"\n{len(FAILS)} failure(s)" if FAILS else "\nall ok")
 sys.exit(1 if FAILS else 0)

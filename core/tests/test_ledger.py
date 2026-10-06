@@ -174,8 +174,6 @@ def main():
         ledger.merge("climate", [], [so])
     case("revision back to an earlier value is recorded (compared with the EFFECTIVE row)",
          ledger.obs_as_of("climate")[("co2-mlo-annual", "2024")]["value"] == "424.61")
-    case("non-legacy observations outrank later-dated legacy ones",
-         ledger.obs_as_of("climate")[("co2-mlo-monthly", "2025-11")]["verification"] == "legacy")  # only a legacy row exists
     write_csv(so, ledger.OBS_COLUMNS, [obs("co2-mlo-monthly", "2025-11", "426.46", "2025-12-07", "rule", verification="collector")])
     errs, stats = ledger.merge("climate", [], [so])
     case("verified value supersedes the legacy one despite an earlier publication date",

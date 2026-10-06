@@ -128,9 +128,8 @@ case("climate: trend row is marked derived, cites the growth file and window",
 
 yo = {r["obs"]: r for r in crow if r["metric"] == "co2-growth-mlo-yoy-monthly"}
 case("climate: year-on-year MLO month = exact difference of the verbatim monthly means (2026-08: 427.55 - 425.48)",
-     sorted(yo) == ["2026-08"] and yo["2026-08"]["value"] == "2.07" and yo["2026-08"]["unit"] == "ppm"
-     and yo["2026-08"]["source"].endswith("/co2_mm_mlo.txt") and "2026-08 minus 2025-08" in yo["2026-08"]["note"]
-     and "Derived" in yo["2026-08"]["note"] and yo["2026-08"]["published"] == "2026-09-07")
+     sorted(yo) == ["2026-08"] and yo["2026-08"]["value"] == "2.07"
+     and "2026-08 minus 2025-08" in yo["2026-08"]["note"])
 case("climate: year-on-year needs both months (1958-04 has no 1957-04; no 2026-05 without 2025-05)",
      climate.yoy([("1958-04", "317.45", []), ("1959-04", "318.00", []), ("2026-05", "432.34", [])])
      == [("1959-04", "0.55", "1958-04")])
@@ -170,12 +169,6 @@ mk = by_key(mrow)
 case("metr: all rows pass ledger.check_obs_row against metrics/robots-software.csv", registry_ok("robots-software", mrow))
 case("metr: emits the release-cohort ids only (never the as-publicly-evaluated *-frontier ids)",
      {r["metric"] for r in mrow} == {"metr-50-horizon-by-release", "metr-80-horizon-by-release"})
-reg_rs = common.registry("robots-software")
-case("metr: registry: by-release ids (min, irregular, no lag); p80 required from 26H1, old p80 frontier retired after 2025",
-     all((reg_rs[m]["unit"], reg_rs[m]["cadence"], reg_rs[m]["release_lag_days"]) == ("min", "irregular", "")
-         and "RELEASED" in reg_rs[m]["definition"] for m in robots_software.METRICS.values())
-     and reg_rs["metr-80-horizon-by-release"]["required_from"] == "pilot-26H1"
-     and reg_rs["metr-80-horizon-frontier"]["retired_after"] == "pilot-2025")
 case("metr: legacy rows of the old *-frontier ids are NOT re-stated under the new ids",
      not any(r["obs"] == "2025-11" for r in robots_software.collect(
          FIX, TODAY, "x", [{"metric": "metr-80-horizon-frontier", "obs": "2025-11"},

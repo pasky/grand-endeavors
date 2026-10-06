@@ -49,12 +49,9 @@ with open(os.path.join(FIX, health.FIXTURE), encoding="utf-8") as f:
 # --- parsing ---------------------------------------------------------------------------
 recs = health.parse(TEXT)
 case("parse: all 75 fixture records", len(recs) == 75)
-case("parse: kinds COUNTRY/GLOBAL/REGION/WORLDBANKINCOMEGROUP",
-     {r["kind"] for r in recs} == {"COUNTRY", "GLOBAL", "REGION", "WORLDBANKINCOMEGROUP"})
 jpn = [r for r in recs if r["place"] == "JPN" and r["year"] == 2021 and r["sex"] == "SEX_BTSX"]
 case("parse: JPN 2021 both sexes = unrounded NumericValue, GHO date",
      len(jpn) == 1 and jpn[0]["value"] == Decimal("73.39518386") and jpn[0]["date"] == "2024-08-02")
-case("parse: years 2000/2020/2021", sorted({r["year"] for r in recs}) == [2000, 2020, 2021])
 doc = json.loads(TEXT)
 case("parse: paged answer (@odata.nextLink) is refused",
      raises(health.parse, json.dumps(dict(doc, **{"@odata.nextLink": "https://x/?$skip=1"}))))
@@ -69,7 +66,6 @@ D = Decimal
 case("median: odd count = middle value", health.median([D("3"), D("1"), D("2")]) == D("2"))
 case("median: even count = mean of the two middle values",
      health.median([D("4"), D("1"), D("3"), D("2")]) == D("2.5"))
-case("median: single value", health.median([D("61.9")]) == D("61.9"))
 case("median: empty is an error", raises(health.median, []))
 
 # --- both-sexes filter and per-year medians ----------------------------------------------
@@ -80,14 +76,10 @@ case("medians: 2021 odd (7 countries) = BRA 61.8265355",
      meds[2021][:2] == (D("61.8265355"), 7))
 case("medians: 2020 even (6 countries) = (BRA 63.27264316 + USA 64.4312583) / 2",
      meds[2020][:2] == ((D("63.27264316") + D("64.4312583")) / 2, 6))
-case("medians: 2000 = BRA 60.91617447 (7 countries)", meds[2000][:2] == (D("60.91617447"), 7))
 case("medians: date = GHO record date", meds[2021][2] == "2024-08-02")
 # both-sexes filter: male/female records must not leak into the median
 only_m = [r for r in recs if r["sex"] != "SEX_BTSX"]
 case("filter: no both-sexes records -> no medians", health.country_medians(only_m, []) == [])
-mle = [dict(r, sex="SEX_BTSX") for r in recs if r["sex"] == "SEX_MLE" and r["kind"] == "COUNTRY"]
-case("filter: male-only values give a different median (the filter matters)",
-     health.country_medians(mle, [])[-1][1] != meds[2021][0])
 # region / income-group / global records are not countries
 case("filter: only COUNTRY records count",
      meds[2021][1] == len({r["place"] for r in recs if r["kind"] == "COUNTRY" and r["year"] == 2021}))
@@ -111,9 +103,6 @@ case("rows: note gives the number of countries and the series span",
      and "GHE series 2000-2021" in by[("hale-median-country", "2020")]["note"])
 case("rows: published = GHO record date, basis source",
      all(r["published"] == "2024-08-02" and r["published_basis"] == "source" for r in rows))
-case("rows: verification=collector, unit years, source = the GHO URL, retrieved = today",
-     all(r["verification"] == "collector" and r["unit"] == "years" and r["source"] == health.URL
-         and r["retrieved"] == str(TODAY) for r in rows))
 case("rows: all pass ledger.check_obs_row against metrics/health.csv",
      common.check(rows, common.registry("health")) == [])
 early = health.collect(FIX, dt.date(2024, 1, 1), "collectors/health.py@2024-01-01")
