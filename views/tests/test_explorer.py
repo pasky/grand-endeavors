@@ -391,6 +391,14 @@ def main():
         case("superseded / unknown evidence is flagged, not dropped",
              "since superseded by 2026-05-01-pledge-coverage-corrected" in ev_sec and "cover 90%" in ev_sec
              and "nope: not in the ledger as of this date" in ev_sec and "Other events (2)" in ev_sec)
+        am = {"assessment_id": "x", "status": "yellow", "label": "Progressing: x, ETA ~2034", "made_at": "2026-10-06",
+              "prev_status": None, "prev_made_at": None, "legacy_evidence": 0, "rationale": "r", "by": "t",
+              "evidence": "[]", "basis": json.dumps({"rule": "§4", "path": "p", "eta": {
+                  "p10": 2031, "p50": 2034, "p90": None, "method": "trend", "calc": "log(31)/log(1.45)", "cruxes": "c"}})}
+        ah = explore.assessment_html(am)
+        case("rubric v2 ETA: median + 80% range, then its method/calculation, after Path order kept",
+             "<dt>ETA</dt><dd>~2034 (80% range 2031–never/after 2100)</dd><dt>ETA method</dt><dd>trend</dd>" in ah
+             and "<dt>ETA calculation</dt><dd>log(31)/log(1.45)</dd>" in ah and ah.index("ETA") < ah.index("Path"))
         tomb = dict(db.execute("SELECT * FROM current_events LIMIT 1").fetchone())
         tomb["relates"] = '[{"id": "x", "rel": "update"}]'
         case("lifecycle link to a withdrawn record: no dangling anchor",

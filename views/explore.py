@@ -587,6 +587,9 @@ BASIS_LABELS = {"eta": "ETA", "path": "Path", "blockers": "Blockers", "assessed_
                 "reason": "Reason", "change_note": "Change", "rule": "Rubric rule"}
 
 
+ETA_LABELS = {"method": "ETA method", "calc": "ETA calculation", "cruxes": "ETA cruxes"}
+
+
 def _plain(v) -> str:
     if isinstance(v, dict):
         return "; ".join(f"{k}: {_plain(x)}" for k, x in v.items() if x not in (None, "", [], {}))
@@ -612,6 +615,12 @@ def assessment_html(m: sqlite3.Row) -> str:
            f'<div>{esc(m["rationale"])}</div>']
     basis = json.loads(m["basis"] or "null") or {}
     rows = [(BASIS_LABELS[k], _plain(basis[k])) for k in BASIS_LABELS if basis.get(k) not in (None, "", [], {})]
+    eta = basis.get("eta")
+    if isinstance(eta, dict) and "p50" in eta:  # rubric v2 forecast: median + 80% range, then its reasoning
+        rng = f"{eta.get('p10')}–{eta['p90'] if eta.get('p90') is not None else 'never/after 2100'}"
+        i = next(i for i, (k, _) in enumerate(rows) if k == "ETA")
+        rows[i:i + 1] = [("ETA", f"~{eta['p50']} (80% range {rng})")] + [
+            (ETA_LABELS[k], _plain(eta[k])) for k in ETA_LABELS if eta.get(k) not in (None, "", [], {})]
     if rows:
         out.append('<dl class="basis">' + "".join(f"<dt>{esc(k)}</dt><dd>{esc(v)}</dd>" for k, v in rows) + "</dl>")
     out.append(f'<div class="mute small">by {esc(m["by"])} · {len(json.loads(m["evidence"] or "[]"))} evidence event(s)</div></div>')

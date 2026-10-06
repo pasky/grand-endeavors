@@ -53,6 +53,11 @@ def main():
         if text.startswith("#!"):  # runnable: `uv run <script>`
             case(f"{rel}: PEP 723 block declares pyyaml",
                  bool(re.search(r'^# /// script\n(#.*\n)*?# dependencies = \[[^\]]*"pyyaml"', text, re.M)))
+    # assess.sh stamps new records with the current rubric version, which ledger.py must know as current
+    sh = re.search(r"^RUBRIC=(\S+)", open(os.path.join(REPO, "gather", "assess.sh"), encoding="utf-8").read(), re.M)
+    py = re.search(r'^RUBRICS = \((.*)\)', open(os.path.join(REPO, "core", "ledger.py"), encoding="utf-8").read(), re.M)
+    case("assess.sh RUBRIC = the last of ledger.RUBRICS",
+         bool(sh and py) and sh.group(1) == re.findall(r'"(v\d+)"', py.group(1))[-1])
     print(f"\n{len(FAILS)} failure(s)")
     return 1 if FAILS else 0
 
