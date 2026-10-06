@@ -51,8 +51,10 @@ phone the navigation becomes a strip on top).
 - **Right, the news stream**: the 100 most recently *known* events across all
   endeavors, newest first, grouped by day, plus the **status changes**
   (KPI/milestone status changed, or first assessed; a same-day flip back is
-  not a change) over the same span. Each item links to the event or target
-  in its pane. "Major only" keeps significance-3 events and status changes;
+  not a change) over the same span (all of them while the ledger has fewer
+  events). Only endeavors with a pane are included (a period page's frozen
+  framework may lack some). Each item links to the event or target in its
+  pane. "Major only" keeps significance-3 events and status changes;
   while an endeavor is shown, other endeavors' news is dimmed and "this
   endeavor only" hides it.
 

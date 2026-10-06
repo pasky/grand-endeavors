@@ -1129,14 +1129,19 @@ def _ago(day: str, as_of: dt.date) -> str:
 
 def stream_html(db: sqlite3.Connection, as_of: dt.date, titles: dict[str, str], anchors: set[str]) -> str:
     """The news stream: the latest events by the date they became known, with the status
-    changes of the same span. anchors: the topic anchors on the page (t-<section>-...)."""
-    evs = db.execute("SELECT * FROM current_events ORDER BY known_at DESC, significance DESC, date_end DESC, "
-                     "id DESC LIMIT ?", (STREAM_N,)).fetchall()
-    if not evs:
-        return '<aside class="stream"><h3>Latest news</h3><div class="mute">no events yet</div></aside>'
+    changes of the same span (all of them while there are fewer events). Only the sections
+    with a pane (titles; a period's frozen framework may lack some), so every link lands.
+    anchors: the topic anchors on the page (t-<section>-...)."""
+    secs = list(titles)
+    evs = db.execute(f"SELECT * FROM current_events WHERE section IN ({','.join('?' * len(secs))}) "
+                     "ORDER BY known_at DESC, significance DESC, date_end DESC, id DESC LIMIT ?",
+                     (*secs, STREAM_N)).fetchall()
     since = evs[-1]["known_at"] if len(evs) == STREAM_N else ""
+    changes = [c for c in status_changes(db, since) if c["section"] in titles]
+    if not evs and not changes:
+        return '<aside class="stream"><h3>Latest news</h3><div class="mute">no events yet</div></aside>'
     items: list[tuple[str, int, str]] = []
-    for c in status_changes(db, since):
+    for c in changes:
         sec = c["section"]
         a = f't-{sec}-{c["target"].replace(":", "-")}'
         frm = f'{dot(c["prev"])}→' if c["prev"] else '<span class="mute">first assessed</span> '
@@ -1168,8 +1173,9 @@ def stream_html(db: sqlite3.Connection, as_of: dt.date, titles: dict[str, str], 
             '<div class="sf"><label title="significance 3/3, and status changes"><input type="checkbox" id="f-major"> major only</label>'
             '<label class="here"><input type="checkbox" id="f-here"> this endeavor only</label></div>'
             f'<ul class="days">{"".join(out)}</ul>'
-            f'<p class="mute small">The {len(evs)} most recently known events and the status changes since '
-            f'{esc(evs[-1]["known_at"])}. Older: each endeavor\'s event lists.</p></aside>')
+            + (f'<p class="mute small">The {len(evs)} most recently known events and the status changes since '
+               f'{esc(since)}. Older: each endeavor\'s event lists.</p>' if since else
+               f'<p class="mute small">All {len(evs)} events and all status changes.</p>') + "</aside>")
 
 
 def selection_css(secs: list[str]) -> str:
@@ -1181,7 +1187,9 @@ def selection_css(secs: list[str]) -> str:
         out.append(f'{on} .nv[href="#{s}"]{{background:var(--sel);border-color:var(--acc)}}'
                    f"{on} .si:not(.x-{s}){{opacity:.55}}"
                    f"{on} .stream:has(#f-here:checked) .si:not(.x-{s}),"
-                   f"{on} .stream:has(#f-here:checked) .dg:not(:has(.x-{s})){{display:none}}")
+                   f"{on} .stream:has(#f-here:checked) .dg:not(:has(.x-{s})),"
+                   f"{on} .stream:has(#f-here:checked):has(#f-major:checked) .dg:not(:has(.x-{s}:is(.sig3,.chg)))"
+                   "{display:none}")
     return "@supports selector(:has(a)){" + "".join(out) + "}"
 
 
@@ -1217,6 +1225,7 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
                  + f"</span>{activity_bars(g['weeks'], as_of, 80, 16)}</div>")
         panes.append(section_html(db, secs[sec], fs, covered=cov, group=grp, head=strip))
     anchors = set(re.findall(r' id="(t-[^"]+)"', "".join(panes)))
+    # sections with a pane (a period's frozen framework may lack some): the stream's scope
     titles = {fs["id"]: secs[fs["id"]]["title"] for fs, _ in ledger.fw_sections(fw) if fs["id"] in secs}
     title = fw["title"] + (f" — {period}" if period else "")
     if period:

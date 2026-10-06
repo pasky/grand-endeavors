@@ -472,6 +472,14 @@ def main():
              ch == [("2026-03-03", None, "red"), ("2026-09-02", "red", "yellow")]
              and [c["day"] for c in explore.status_changes(db, "2026-09-02")
                   if c["target"] == "milestone:the-balance"] == ["2026-09-02"])
+        only_kb = explore.stream_html(db, D("2026-10-10"), {"knowledge-beyond": "K"}, set())
+        case("stream: only sections with a pane (a frozen framework may lack some)",
+             "no events yet" in only_kb and "climate" not in only_kb)
+        db.execute("DELETE FROM events")
+        no_ev = explore.stream_html(db, D("2026-10-10"), {"climate": "C"}, set())
+        case("stream: status changes shown without any events, all-history footer",
+             no_ev.count("· status change</span>") == 4 and "All 0 events and all status changes" in no_ev
+             and 'href="#climate"' in no_ev)
         bars = explore.activity_bars([0, 2, 1], D("2026-09-28"))
         case("activity bars: one per week, empty weeks marked",
              bars.count("<rect") == 3 and bars.count('class="z"') == 1 and "2026-09-28: 0, 2, 1" in bars)
