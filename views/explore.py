@@ -511,7 +511,7 @@ background:var(--card);border:1px solid var(--line);transition:opacity .15s}.si 
 .pane{display:none}.pane:target,.pane:has(:target){display:block}
 body:not(:has(.pane:target,.pane :target)) #intro{display:block}
 body:not(:has(.pane:target,.pane :target)) .nv.ov,body:has(#intro:target) .nv.ov{background:var(--sel);border-color:var(--acc)}
-.here{display:none}body:has(section.pane:target,section.pane :target) .here{display:inline}
+.here{display:none}body:has(.pane:not(#intro):target,.pane:not(#intro) :target) .here{display:inline}
 .stream:has(#f-major:checked) .si:is(.sig0,.sig1,.sig2),
 .stream:has(#f-major:checked) .dg:not(:has(.sig3,.chg)){display:none}}
 @media (max-width:1280px){body{grid-template-columns:248px minmax(0,1fr)}
@@ -685,9 +685,10 @@ REL_WORDS = {"update": "updates", "followup": "follows up on", "retraction": "re
 
 
 def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None = None,
-             anchor: bool = True, cited: bool = False, note: str = "") -> str:
+             anchor: bool = True, cited: bool = False, note: str = "", replaced: bool = False) -> str:
     """anchor: carry the #ev-<section>-<id> target (the event log: its first occurrence);
-    cited: the event is evidence of the assessment it is listed under; note: an extra badge.
+    cited: the event is evidence of the assessment it is listed under; note: an extra badge;
+    replaced: the event is superseded or withdrawn (shown as cited evidence): link its successor.
     names: topic -> name, and ("ev", event id) -> (date, claim) of the section's events
     (lifecycle links show the linked event's date and claim, not its id)."""
     sig = int(e["significance"] or 0)
@@ -713,6 +714,8 @@ def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None 
                 + (' <span class="mute">(corrected version)</span>' if t != eid else ""))
     rels = "".join(f'<div class="rel">↳ {esc(REL_WORDS.get(r.get("rel"), r.get("rel")))} {target(r.get("id"))}</div>'
                    for r in json.loads(e["relates"] or "[]") if isinstance(r, dict))
+    if replaced and succ.get(e["id"]):
+        rels += f'<div class="rel">↳ since corrected: {target(e["id"])}</div>'
     rels += "".join(f'<div class="rel" title="{esc(s)}">↳ corrects (or adds sources to) an earlier record: '
                     f'<s class="mute">{about(s)}</s></div>' for s in json.loads(e["supersedes"] or "[]"))
     aid = f' id="ev-{esc(e["section"])}-{esc(e["id"])}"' if anchor else ""
@@ -757,7 +760,7 @@ ETA_LABELS = {"method": "ETA method", "calc": "ETA calculation", "cruxes": "ETA 
 
 def _plain(v) -> str:
     if isinstance(v, dict):
-        return "; ".join(f"{k}: {_plain(x)}" for k, x in v.items() if x not in (None, "", [], {}))
+        return "; ".join(f"{str(k).replace('_', ' ')}: {_plain(x)}" for k, x in v.items() if x not in (None, "", [], {}))
     if isinstance(v, list):
         return "; ".join(_plain(x) for x in v)
     return str(v)
@@ -832,9 +835,8 @@ def evidence_and_events(db, sec: str, topic: str, m: sqlite3.Row | None, names, 
                 lis.append(event_li(e, names, succ, anchor=False, cited=True))
                 shown.add(eid)
             else:
-                lis.append(event_li(e, names, succ, anchor=False, cited=True,
-                                    note=f"since superseded by {e['superseded_by']}" if e["superseded_by"]
-                                    else "since withdrawn"))
+                lis.append(event_li(e, names, succ, anchor=False, cited=True, replaced=True,
+                                    note="since corrected" if e["superseded_by"] else "since withdrawn"))
         out.append(f"<h4>Cited evidence ({len(cited)})</h4><ul>{''.join(lis)}</ul>")
     evs = [e for e in topic_events(db, sec, topic) if e["id"] not in set(cited)]
     if evs:
@@ -1346,11 +1348,7 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
         one("SELECT COUNT(*) FROM current_events WHERE verification_status='legacy'")
     n_sup = one("SELECT COUNT(*) FROM events WHERE NOT effective")
     n_obs = one("SELECT COUNT(*) FROM observations")
-    gaps = db.execute("SELECT * FROM gaps").fetchall()
-    gap_li = "".join(f'<li><a href="#{esc(g["section"])}">{esc(secs[g["section"]]["title"])}</a>: '
-                     f'<span title="{esc(g["metric"])}">{esc(metric_label(g["section"], g["metric"]))}</span>'
-                     f'{" (a KPI metric)" if g["required"] else ""} — <span class="gap">{esc(g["gap"])}</span></li>'
-                     for g in gaps)
+    gaps = db.execute("SELECT g.*, m.definition FROM gaps g JOIN metrics m USING (section, metric)").fetchall()
     cov = lambda s: covered is None or s in covered
     # endeavors: a section, or a group of sections shown as ONE endeavor (Robots and Automation:
     # Software + Hardware); a supplemental group's sections are endeavors of their own, listed apart
@@ -1391,6 +1389,14 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
             pane_ids.append(sec)
             where[sec] = (sec, fs["title"])
     anchors = set(re.findall(r' id="(t-[^"]+)"', "".join(panes)))
+    # a gap of a section without a pane (a period's frozen framework may lack it) is listed, unlinked
+    def gap(g) -> str:
+        sec = g["section"]
+        name = esc(secs[sec]["title"])
+        return (f'<li>{f"""<a href="#{esc(sec)}">{name}</a>""" if sec in where else name}: '
+                f'<span title="{esc(g["metric"])}">{esc(metric_label(sec, g["metric"], g["definition"]))}</span>'
+                f'{" (a KPI metric)" if g["required"] else ""} — <span class="gap">{esc(g["gap"])}</span></li>')
+    gap_li = "".join(gap(g) for g in gaps)
     title = fw["title"] + (f" — {period}" if period else "")
     if period:
         when = (f'<div class="banner">Period page <b>{esc(period)}</b>: the ledger as of the period\'s cutoff '

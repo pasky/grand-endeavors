@@ -420,9 +420,10 @@ def main():
              re.search(r"<b>The Balance:</b>.*?Cited evidence \(1\).*?An agency projected", page, re.S) is not None)
         ev_sec = explore.evidence_and_events(
             db, "climate", "milestone:the-balance",
-            {"assessment_id": "x", "evidence": '["2026-05-01-pledge-coverage", "nope"]'}, {}, {}, set())
+            {"assessment_id": "x", "evidence": '["2026-05-01-pledge-coverage", "nope"]'}, {},
+            {"2026-05-01-pledge-coverage": "2026-05-01-pledge-coverage-corrected"}, set())
         case("superseded / unknown evidence is flagged, not dropped",
-             "since superseded by 2026-05-01-pledge-coverage-corrected" in ev_sec and "cover 90%" in ev_sec
+             "since corrected</span>" in ev_sec and "\u21b3 since corrected: <a href=\"events-climate.html#ev-climate-2026-05-01-pledge-coverage-corrected\"" in ev_sec and "cover 90%" in ev_sec
              and "nope: not in the ledger as of this date" in ev_sec and "Other events (2)" in ev_sec)
         am = {"assessment_id": "x", "status": "yellow", "label": "Progressing: x, ETA ~2034", "made_at": "2026-10-06",
               "prev_status": None, "prev_made_at": None, "legacy_evidence": 0, "rationale": "r", "by": "t",
@@ -475,7 +476,14 @@ def main():
              and '<div class="nvg"><a class="nv" href="#robots-and-automation">' in gp
              and '<a class="nv sub" href="#robots-software">' in gp and '<a class="card wide" href="#robots-and-automation">' in gp
              and 'body:has(#robots-software:target,#robots-software :target) .nv[href="#robots-software"]' in gp
-             and 'class="si chg x-robots' not in gp and gp.count('<a class="card') == 3)
+             and 'class="si chg x-robots' not in gp and gp.count('<a class="card') == 3
+             and "body:has(.pane:not(#intro):target,.pane:not(#intro) :target) .here{display:inline}" in gp)
+        nocl = explore.dashboard(D("2026-09-28"), fw=ledger.framework(gdir) | {"endeavors": [
+            e for e in ledger.framework(gdir)["endeavors"] if e.get("id") != "climate"]})
+        case("gaps: by section title + metric name (definition fallback); unlinked without a pane",
+             "<li>climate: <span title=\"co2-never\">A required metric that was never observed at all"
+             "</span> (a KPI metric)" in nocl and 'href="#climate"' not in nocl
+             and '<li><a href="#climate">Climate and Environment</a>: ' in page)
         case("layout: overview card per section, linking to its pane",
              page.count('<a class="card" href="#') == 2  # the fixture framework's 2 sections
              and '<a class="card" href="#climate">' in page)

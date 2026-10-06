@@ -1,7 +1,8 @@
 # Display labels of the KPI metrics on the dashboard (views/explore.py), per section.
 # Presentation only: the registry (data/metrics/<section>.csv) keeps the metric ids
 # and their full definitions (shown as the tile's tooltip). A metric without a label
-# here is shown by its id, and explore.py warns: add one when registering a metric.
+# here is shown by the first clause of its definition (else its id), and explore.py
+# warns: add one when registering a metric.
 robots-software:
   metr-80-horizon-by-release: AI task horizon at 80% success, by model release
   metr-50-horizon-by-release: AI task horizon at 50% success, by model release
