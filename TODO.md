@@ -37,6 +37,13 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       (Reuters 401, Science 403). Another fetch retry will not help. They need
       re-sourcing (find a source that states the claim, then `supersedes`), or
       they stay legacy background.
+- [ ] 🤖 Re-assess every milestone under rubric v2 (forecast ETAs, RUBRIC.md §4.1):
+      `CORRECTION=1 FORCE=1 gather/assess.sh <section>` per section, then eyeball the
+      medians against the v1 bands (expected: some reds become yellow where an
+      exponential driver exists, e.g. Linux kernel patch vs METR horizons).
+- [ ] Cross-section ETA drivers: a milestone may rest on another section's series
+      (cited in basis.eta.calc), but `ledger.py stale` does not re-assess it when
+      that driver updates, and its evidence list cannot cite foreign event ids.
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
       `DATA_URL` in `gather/collectors/climate_emissions.py`. Same for the
       edition URLs in `gather/sources/` (`grep -n 'Edition URL' gather/sources/*.yaml`:

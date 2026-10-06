@@ -69,6 +69,8 @@ $SPEC
   elsewhere, e.g. METR task horizons in robots-software): ledger/events/<section>.jsonl,
   and the registered series (same "series <section> <metric>" command):
 $METRICS
+  Cite such data in basis.eta.calc (metric, values, event ids); the evidence list holds
+  only $SECTION event ids.
 $CORR
 Judge each milestone on its OWN quantity as the framework wording defines it (e.g.
 total greenhouse-gas emissions, not CO2 alone). If only a proxy has data, name

@@ -556,6 +556,10 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
         for prev, a in zip(recs, recs[1:]):
             if a.get("rubric") not in RUBRICS:
                 continue
+            if rank(a["rubric"]) < rank(prev.get("rubric")):  # else v2 -> v1 -> v2 would allow a 2nd correction
+                errs.append(f"assessment {a['id']}: rubric {a['rubric']} is older than the previous record's "
+                            f"{prev.get('rubric')} (new records use the current rubric)")
+                continue
             if a.get("definition_change"):
                 continue  # gather/RUBRIC.md rule 6: framework definition changed -> fresh judgment
             if a.get("rubric_correction"):
