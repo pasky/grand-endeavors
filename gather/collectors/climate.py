@@ -108,16 +108,25 @@ def scripps_archive_date(text: str) -> str | None:
 
 def parse_scripps_monthly(text: str) -> list[tuple[str, str, str]]:
     """[(YYYY-MM, value, station)] from Scripps monthly_in_situ_co2_mlo.csv (column 5 = the
-    standard monthly mean, -99.99 = missing). Fails loudly on anything that is not that file."""
+    standard monthly mean, -99.99 = missing). Fails loudly unless the file has the Scripps
+    header, the known column layout and only well-formed 11-field data rows."""
+    lines = text.splitlines()
+    head = [[x.strip() for x in ln.split(",")] for ln in lines if ln.lstrip().startswith("Yr,")]
+    if "Scripps CO2 Program" not in text or not head or head[0][:2] != ["Yr", "Mn"] \
+            or head[0][4] != "CO2" or head[0][-1] != "Sta" or len(head[0]) != 11:
+        raise SystemExit("climate: the Scripps monthly MLO file lacks its header/column layout "
+                         "(moved, an HTML page, or a format change?)")
     out = []
-    for ln in text.splitlines():
+    for i, ln in enumerate(lines, 1):
         t = [x.strip() for x in ln.split(",")]
-        if len(t) < 5 or not t[0].isdigit():
+        if not t[0].isdigit():
             continue
+        if len(t) != 11 or not t[1].isdigit() or not common.kpi.VALUE_RE.match(t[4]):
+            raise SystemExit(f"climate: malformed Scripps data row {i}: {ln.strip()!r}")
         if present(t[4]):
-            out.append((f"{int(t[0]):04d}-{int(t[1]):02d}", t[4], t[10] if len(t) > 10 else ""))
-    if not out or "Scripps" not in text:
-        raise SystemExit("climate: the Scripps monthly MLO file has no data rows (moved or an HTML page?)")
+            out.append((f"{int(t[0]):04d}-{int(t[1]):02d}", t[4], t[10]))
+    if not out:
+        raise SystemExit("climate: the Scripps monthly MLO file has no data rows")
     return out
 
 
@@ -202,11 +211,11 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
     stext = common.fetch(SCRIPPS, fixture)
     archived = scripps_archive_date(stext)
     scripps = parse_scripps_monthly(stext)
+    ly, lm = map(int, scripps[-1][0].split("-"))
     for obs, value, station in scripps:
         flags = []
         if station == "MKO":
             flags.append("measured at Maunakea during the Mauna Loa eruption outage")
-        ly, lm = map(int, scripps[-1][0].split("-"))
         if (ly * 12 + lm) - (int(obs[:4]) * 12 + int(obs[5:])) < 12:
             flags.append("preliminary (last 12 months, subject to recalibration)")
         rows.append(common.row(reg, "co2-mlo-monthly-scripps", obs, value, SCRIPPS, "; ".join(

@@ -97,6 +97,11 @@ primary data file) `legacy`. `metric` and `unit` must match `metrics/<section>.c
 The registry also gives `cadence` and `release_lag_days` (enabling "expected by"
 and "overdue" in views, and `rule`-basis publication dates) and
 `required_from`/`retired_after` (KPI components; basis changes).
+The one exception to append-only: `rule`-basis dates are formula output (obs end +
+lag, capped at retrieved), not source facts, so correcting a metric's
+`release_lag_days` recomputes them in place (one data commit, values and
+`source`/`seen` dates untouched; frozen bulletins, snapshots and period pages are
+not regenerated). Done once: `co2-global-monthly` 7 → 70 d (2026-10).
 
 **Assessment** (`assessments/<section>.jsonl`): `{id, target ("kpi" |
 "milestone:<slug>"), status ("green"|"yellow"|"red"|"achieved"|"unknown"), label,
