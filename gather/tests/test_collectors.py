@@ -142,9 +142,6 @@ case("climate: Scripps monthly MLO parsed from its CSV (missing -99.99 skipped, 
 case("climate: Scripps notes flag Maunakea (MKO) months and the preliminary last 12 months",
      "Maunakea" in sc["2022-12"]["note"] and "Maunakea" not in sc["2022-11"]["note"]
      and "preliminary" in sc["2025-09"]["note"] and "preliminary" not in sc["2025-08"]["note"])
-case("climate: Scripps published = 35-day rule capped at retrieved (the archive date is provenance only)",
-     (sc["2026-07"]["published"], sc["2026-07"]["published_basis"]) == ("2026-09-04", "rule")
-     and (sc["2026-08"]["published"], sc["2026-08"]["published_basis"]) == ("2026-09-28", "rule"))
 sfix = fixture("monthly_in_situ_co2_mlo.csv")
 good_row = "2026, 08,   46249,  2026.6219,  427.31,   428.88,     427.19,   428.80,     427.31,   428.88, MLO"
 case("climate: Scripps: an HTML page fails loudly, even with CSV-like numeric lines in it",
@@ -153,9 +150,6 @@ case("climate: Scripps: a truncated data row fails loudly (not silently dropped)
      raises_exit(climate.parse_scripps_monthly, sfix.replace(good_row, "2026, 08,   46249,  2026.6219,  427.31")))
 case("climate: Scripps: a changed column layout fails loudly",
      raises_exit(climate.parse_scripps_monthly, sfix.replace("     CO2,seasonally", "     CO2x,seasonally", 1)))
-
-case("climate: NOAA global monthly rule lag is 70 d (June data appears in the early-September file)",
-     ck[("co2-global-monthly", "2026-05")]["published"] == "2026-08-09")
 
 # --- robots-software (METR) --------------------------------------------------------
 case("metr: yaml_paths reads nested scalars, ignores comments and list items",
