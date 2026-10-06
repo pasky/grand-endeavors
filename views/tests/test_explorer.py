@@ -343,9 +343,10 @@ def main():
              all(s in page for s in ("Tracking humanity&#x27;s progress.", "<p>Science has a communication problem.</p>",
                                      "<p>Fixing the past.</p>", "<b>The Bend:</b> Global emissions peak &amp; decline.",
                                      "<b>KPI:</b> Atmospheric CO₂", "How to read this page", "<h3>Milestone Countdown</h3>",
-                                     "<h3>Major Open Challenges</h3>", '<h2 class="gh">Supplemental</h2>')))
+                                     "<h3>Major Open Challenges</h3>", '<div class="crumb">Supplemental</div>')))
         case("dashboard: milestone line shows its status, detail shows rationale + evidence",
-             re.search(r'<li class="topic"><details><summary><span class="dot s-green"[^>]*></span><b>The Bend:</b>'
+             re.search(r'<li class="topic" id="t-climate-milestone-the-bend"><details><summary>'
+                       r'<span class="dot s-green"[^>]*></span><b>The Bend:</b>'
                        r'[^<]*<span class="st">Peak in sight', page) is not None
              and "cited as evidence" in page and "Emissions fell &quot;&gt;&lt;b onclick" in page)
         pgs = explore.pages(D("2026-09-28"))
@@ -433,6 +434,47 @@ def main():
              == '<b>b</b> <i>i</i> &lt;x&gt; <a href="https://a.b/?q=1&amp;r=2" target="_blank" '
                 'rel="noopener noreferrer">t</a> [j](javascript:x)'
              and explore.md_block("a\nb\n\n* x\n* y") == '<p>a b</p><ul class="md"><li>x</li><li>y</li></ul>')
+
+        # --- layout: sidebar navigation, one pane per endeavor, news stream ---------------
+        nav = page[page.index('<nav class="side">'):page.index("</nav>")]
+        case("layout: pane per section + the intro pane, switched by pure CSS (:target)",
+             '<div class="pane" id="intro">' in page and '<section class="pane" id="climate">' in page
+             and '<section class="pane" id="knowledge-beyond">' in page and ".pane:target" in page
+             and 'body:has(#climate:target,#climate :target) .nv[href="#climate"]' in page)
+        case("layout: nav item = KPI dot + headline value, then a dot per milestone",
+             re.search(r'<a class="nv" href="#climate">.*?<span class="nk"><span class="dot s-none"[^>]*></span>'
+                       r'<span class="hv"><b>429.25</b> ppm</span><svg.*?<span class="nd" title="milestones">'
+                       r'<span class="dot s-green" title="The Bend: Peak in sight"></span>'
+                       r'<span class="dot s-red" title="The Balance: Distant"></span></span></a>', nav) is not None
+             and 'href="#knowledge-beyond"' in nav and "no KPI (supplemental)" in nav and "#intro" in nav)
+        case("layout: overview card per section, linking to its pane",
+             page.count('<a class="card" href="#') == 2  # the fixture framework's 2 sections
+             and '<a class="card" href="#climate">' in page)
+        stream = page[page.index('<aside class="stream">'):page.index("</aside>")]
+        hrefs = re.findall(r'href="([^"]+)"', stream)
+        log = "events-climate.html#"
+        case("stream: events newest-known first, status changes first within their day",
+             hrefs == [log + "ev-climate-2026-05-01-pledge-coverage-corrected", "#t-climate-milestone-the-bend",
+                       log + "ev-climate-2026-07-01-peak-update", log + "ev-climate-2026-06-01-pledge-followup",
+                       "#t-climate-milestone-the-balance", log + "ev-climate-2026-03-01-first-peak-claim"])
+        logpage = explore.pages(D("2026-09-28"))["events-climate.html"]
+        case("stream: event links land in the event log, status changes on the page; superseded/late left out",
+             all(f' id="{h.split("#")[1]}"' in (logpage if h.startswith("events-") else page) for h in hrefs)
+             and "cover 90%" not in stream
+             and "late announcement" not in stream and "first assessed" in stream)
+        db.execute("INSERT INTO assessments (section, target, status, label, made_at, line) VALUES "
+                   "('climate', 'milestone:the-balance', 'yellow', 'x', '2026-09-01', 10), "
+                   "('climate', 'milestone:the-balance', 'red', 'y', '2026-09-01', 11), "
+                   "('climate', 'milestone:the-balance', 'yellow', 'z', '2026-09-02', 12)")
+        ch = [(c["day"], c["prev"], c["status"]) for c in explore.status_changes(db, "2026-01-01")
+              if c["target"] == "milestone:the-balance"]
+        case("status changes: first assessment, same-day flips collapse, since cutoff",
+             ch == [("2026-03-03", None, "red"), ("2026-09-02", "red", "yellow")]
+             and [c["day"] for c in explore.status_changes(db, "2026-09-02")
+                  if c["target"] == "milestone:the-balance"] == ["2026-09-02"])
+        bars = explore.activity_bars([0, 2, 1], D("2026-09-28"))
+        case("activity bars: one per week, empty weeks marked",
+             bars.count("<rect") == 3 and bars.count('class="z"') == 1 and "2026-09-28: 0, 2, 1" in bars)
 
         # the cap at a positive limit: newest first, exact omitted count; cited evidence exempt
         db = sqlite3.connect(":memory:")

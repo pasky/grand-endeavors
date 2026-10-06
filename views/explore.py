@@ -12,9 +12,10 @@ COMMANDS
   explore.py build     [--out build/] [--as-of YYYY-MM-DD]
         -> <out>/ledger.sqlite (tables, indexes, views) + <out>/metadata.json (Datasette)
   explore.py dashboard [--out build/index.html] [--as-of YYYY-MM-DD]
-        -> self-contained static HTML (no JS/CSS/CDN dependencies): the front page, i.e.
+        -> self-contained static HTML (no JS, no external CSS/CDN): the front page, i.e.
            the framework (framework.yaml: manifesto, definitions) with the ledger's
-           state, README-like by default, every item expands to its detail (cited
+           state: endeavor navigation | the overview or one endeavor (pure-CSS :target
+           switching) | the news stream; every item expands to its detail (cited
            evidence + the latest TOPIC_EVENTS other events per topic); plus, next to
            it, one event log per section (events-<section>.html: every event once)
   explore.py site [--out build/] [--as-of YYYY-MM-DD]
@@ -401,17 +402,54 @@ def build(out_dir: str, as_of: dt.date) -> str:
 CSS = """
 :root{color-scheme:light dark;--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mute:#6b7385;--line:#e2e5ea;--green:#1f9d55;
 --yellow:#d69e2e;--red:#d64545;--gap:#b83280;--acc:#2b6cb0;--tile:#fbfcfd;--gapbg:#fff5fa;--chip:#edf2f7;
---unk:#9aa1ad;--legacy:#975a16;--notebg:#fffaf0;--noteln:#f6e05e}
+--unk:#9aa1ad;--legacy:#975a16;--notebg:#fffaf0;--noteln:#f6e05e;--side:#eef0f4;--sel:#dde7f5;--hov:#e4e8ee}
 @media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b1f27;--ink:#e3e7ee;--mute:#949cad;--line:#2e3440;
 --green:#38b26a;--yellow:#e0ac45;--red:#e36363;--gap:#e06aaa;--acc:#6aa8ec;--tile:#20252e;--gapbg:#2a1b24;
---chip:#2c333f;--unk:#6b7280;--legacy:#e0a960;--notebg:#2a2416;--noteln:#8a7424}}
-*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;
-background:var(--bg);color:var(--ink)}header,main{max-width:1180px;margin:0 auto;padding:16px}
-header h1{margin:0 0 4px;font-size:22px}.mute{color:var(--mute)}a{color:var(--acc)}
-nav a{margin-right:10px;white-space:nowrap}section{background:var(--card);border:1px solid var(--line);
-border-radius:10px;padding:14px 18px;margin:16px 0}section h2{margin:0;font-size:19px}
-h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:16px 0 6px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+--chip:#2c333f;--unk:#6b7280;--legacy:#e0a960;--notebg:#2a2416;--noteln:#8a7424;--side:#161a21;--sel:#22324a;
+--hov:#1f2530}}
+*{box-sizing:border-box}html{scroll-padding-top:12px}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink);
+display:grid;grid-template-columns:268px minmax(0,1fr) 340px;align-items:start}
+.mute{color:var(--mute)}a{color:var(--acc)}
+/* left: endeavor navigation */
+.side{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--side);border-right:1px solid var(--line);
+padding:12px 10px 16px}
+.brand{display:block;text-decoration:none;color:var(--ink);padding:4px 8px 10px;font-size:16px}
+.brand span{display:block;font-weight:400}
+.ng{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:12px 8px 3px}
+.ng.sp{margin:6px 0 0}
+.nv{display:block;text-decoration:none;color:var(--ink);padding:6px 8px;border-radius:8px;
+border:1px solid transparent;margin:1px 0}.nv:hover{background:var(--hov)}
+.nt{display:flex;align-items:center;gap:6px;font-weight:600}.nn{flex:1}
+.nk,.nd{display:flex;align-items:center;font-size:12px;margin:2px 0 0 26px;color:var(--mute)}
+.nk .hv b{color:var(--ink)}.nk .hv{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nk .spark,.cv .spark{display:inline-block;margin:0 0 0 auto;vertical-align:middle}
+.nd .dot{width:9px;height:9px;margin-right:3px}.ncov{opacity:.55}
+.ic{display:inline-block;min-width:1.35em;text-align:center}
+.new{font-size:11px;font-weight:600;color:var(--acc);background:var(--sel);border-radius:9px;padding:0 6px}
+.nleg{margin:18px 8px 0;display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}.nleg .dot{width:9px;height:9px;margin-right:5px}
+.nleg p{grid-column:1/-1;margin:4px 0 0}
+/* center */
+main{min-width:0;max-width:1060px;width:100%;margin:0 auto;padding:18px 28px}
+.pane{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 22px;margin:0 0 18px}
+#intro{background:none;border:0;padding:0}
+.hero h1{margin:0 0 4px;font-size:28px}.tagline{font-size:17px;margin:2px 0 6px}.asof{margin:4px 0;color:var(--mute)}
+.banner{background:var(--notebg);border:1px solid var(--noteln);border-radius:8px;padding:8px 12px;margin:0 0 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.card{display:flex;flex-direction:column;gap:4px;text-decoration:none;color:var(--ink);background:var(--card);
+border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--acc);transform:translateY(-1px)}
+.kick{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+.ct{font-size:17px;font-weight:700}.ck{font-size:12px;color:var(--mute)}
+.cv{display:flex;align-items:center;gap:8px}.cv .hv b{font-size:22px}
+.cs{font-size:12.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cm{font-size:13px;margin:4px 0 0}.cm li{padding:1px 0}.cf{margin-top:auto;padding-top:6px;font-size:12px;color:var(--mute);
+display:flex;justify-content:space-between;align-items:flex-end;gap:8px}.act{flex:none;fill:var(--acc);opacity:.8}.act .z{fill:var(--line)}
+.crumb{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+.pane h2{margin:0;font-size:22px}.strip{display:flex;align-items:flex-end;gap:10px;color:var(--mute);font-size:12.5px;margin:2px 0 8px}
+.gintro{color:var(--mute);border-left:3px solid var(--line);padding-left:10px;margin:8px 0}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:20px 0 6px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:8px 0}
 .tile{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--tile)}
 .tile .m{font-weight:600;font-size:12px;word-break:break-word}.tile .v{font-size:24px;font-weight:700}
 .tile .v small{font-size:13px;color:var(--mute);font-weight:400}.tile .d,.tile .c{font-size:12px;color:var(--mute)}
@@ -421,17 +459,16 @@ h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
 border:1px solid currentColor;vertical-align:1px}.b-legacy{color:var(--legacy);background:var(--notebg)}
 .b-verified,.b-corrected,.b-collector{color:var(--green)}.b-req{color:var(--acc)}
 .nc{opacity:.75}.b-nc{color:var(--mute);font-size:10px}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
+.dot{display:inline-block;flex:none;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
 .s-green{background:var(--green)}.s-yellow{background:var(--yellow)}.s-red{background:var(--red)}.s-achieved{background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 5.2l1.8 1.8 3.3-3.6' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") center/100% no-repeat}.s-unknown{background:var(--unk)}
 .s-none{border:2px dashed var(--mute)}ul{padding-left:0;list-style:none;margin:0}
 li.ms,li.ev{padding:5px 0;border-bottom:1px solid var(--line)}li.ev .meta{font-size:12px;color:var(--mute)}
+li.ev:target{background:var(--sel);outline:2px solid var(--acc);border-radius:6px;padding:5px 8px}
 .chip{font-size:11px;background:var(--chip);border-radius:3px;padding:0 4px;margin-right:3px}
 .sig3{font-weight:600}.rel{font-size:12px;color:var(--mute);margin-left:12px}
 details summary{cursor:pointer;color:var(--acc);margin:6px 0}
-header,main{max-width:980px}.tagline{font-size:16px;margin:2px 0 6px}.asof{margin:4px 0}
 .small{font-size:12px}.note{background:var(--notebg);border:1px solid var(--noteln);border-radius:6px;padding:6px 10px;margin:8px 0}
 .manifesto p{font-size:15px;margin:8px 0}.legend{margin:8px 0 4px}.more{padding:4px 0 8px 18px}
-.group>h2.gh{margin:28px 0 4px;font-size:21px}.group>p{margin:4px 0 8px}.group section h2{font-size:17px}
 section p{margin:6px 0}.kpi{margin:10px 0 2px}
 details summary{list-style:none}details summary::-webkit-details-marker{display:none}
 details>summary::before{content:"▸ ";color:var(--mute)}details[open]>summary::before{content:"▾ "}
@@ -442,6 +479,37 @@ h4{font-size:12px;color:var(--mute);margin:10px 0 4px}.ass{margin:6px 0}
 dl.basis{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;font-size:13px;margin:6px 0}
 dl.basis dt{color:var(--mute)}dl.basis dd{margin:0}.b-cited{color:var(--acc)}
 footer{margin:24px 0}.news{margin-top:10px}li.ev.ref,li.ev.more-ev{font-size:13px;padding:3px 0}
+/* event log pages: one plain column */
+body.log{display:block}body.log header,body.log main{max-width:980px;margin:0 auto;padding:16px}
+body.log header h1{margin:0 0 4px;font-size:22px}body.log nav a{margin-right:10px;white-space:nowrap}
+/* right: news stream */
+.stream{position:sticky;top:0;height:100vh;overflow-y:auto;border-left:1px solid var(--line);background:var(--side);
+padding:12px 12px 16px}
+.stream h3{margin:4px 0 0;color:var(--ink)}.sh{margin-bottom:6px}
+.sf{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--mute);margin:0 0 6px}.sf input{margin:0 3px 0 0;vertical-align:-2px}
+.dh{position:sticky;top:-12px;background:var(--side);font-size:12px;font-weight:600;padding:8px 2px 3px;z-index:1}
+.si a{display:block;text-decoration:none;color:var(--ink);padding:6px 8px;margin:2px 0;border-radius:8px;
+background:var(--card);border:1px solid var(--line);transition:opacity .15s}.si a:hover{border-color:var(--acc)}
+.si .sm{display:block;font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.si .cl{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px}
+.si.sig3 .cl{font-weight:600}.si.chg a{border-left:3px solid var(--acc)}.si.chg .dot{width:9px;height:9px;margin:0 3px}
+.si.sig1 .cl{color:var(--mute)}
+/* pure-CSS pane switching: one endeavor at a time (browsers without :has() show them all) */
+@supports selector(:has(a)){
+.pane{display:none}.pane:target,.pane:has(:target){display:block}
+body:not(:has(.pane:target,.pane :target)) #intro{display:block}
+body:not(:has(.pane:target,.pane :target)) .nv.ov,body:has(#intro:target) .nv.ov{background:var(--sel);border-color:var(--acc)}
+.here{display:none}body:has(section.pane:target,section.pane :target) .here{display:inline}
+.stream:has(#f-major:checked) .si:is(.sig0,.sig1,.sig2),
+.stream:has(#f-major:checked) .dg:not(:has(.sig3,.chg)){display:none}}
+@media (max-width:1280px){body{grid-template-columns:248px minmax(0,1fr)}
+.stream{grid-column:2;position:static;height:auto;border-left:0;background:none;padding:0 28px 24px}
+.dh{position:static;background:none}}
+@media (max-width:780px){html{scroll-padding-top:64px}body{display:block}main{padding:12px}
+.side{position:sticky;top:0;z-index:5;height:auto;display:flex;overflow-x:auto;gap:4px;padding:6px;
+border-right:0;border-bottom:1px solid var(--line)}
+.brand,.ng,.nleg,.nk{display:none}.nv{flex:none;padding:4px 8px}.nd{margin-left:26px}
+.stream{padding:0 12px 24px}.pane{padding:12px 14px}}
 """
 
 
@@ -620,9 +688,9 @@ def _plain(v) -> str:
     return str(v)
 
 
-def dot(status) -> str:
+def dot(status, title: str | None = None) -> str:
     st = status if status in STATUS_WORDS else "none"
-    return f'<span class="dot s-{esc(st)}" title="{esc(STATUS_WORDS.get(st, "not yet assessed"))}"></span>'
+    return f'<span class="dot s-{esc(st)}" title="{esc(title or STATUS_WORDS.get(st, "not yet assessed"))}"></span>'
 
 
 def assessment_html(m: sqlite3.Row) -> str:
@@ -723,7 +791,8 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
     if kind == "milestone":
         body += assessment_html(m) if m else '<div class="gap">not yet assessed</div>'
     body += evidence_and_events(db, sec, topic, m, names, succ, shown)
-    return f'<li class="topic"><details><summary>{head}</summary><div class="more">{body}</div></details></li>'
+    return (f'<li class="topic" id="t-{esc(sec)}-{esc(kind)}-{esc(item["slug"])}"><details><summary>{head}</summary>'
+            f'<div class="more">{body}</div></details></li>')
 
 
 def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -> str:
@@ -731,36 +800,37 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -
                        "ORDER BY required DESC, metric", (sec,)).fetchall()
     km = next((m for m in ms if m["kind"] == "kpi"), None)
     out = [f'<div class="kpi"><b>KPI:</b> {md_inline(s["kpi"])}</div>']
-    # headline (default view): required metrics' latest values + the KPI status
     heads = [t for t in tiles if t["required"]]
-    vals = " · ".join(
-        f'<b>{esc(t["value_text"])}</b> {esc(t["unit"])} <span class="mute">({esc(t["metric"])}, {esc(t["obs"])})</span>'
-        if t["obs"] is not None else f'<span class="gap">{esc(t["metric"])}: no data yet</span>' for t in heads)
-    status = (f'{dot(km["status"])}{esc(km["label"])} <span class="mute">· assessed {esc(km["made_at"])}</span>'
+    status = (f'{dot(km["status"])}<b>{esc(km["label"])}</b> <span class="mute">· assessed {esc(km["made_at"])}</span>'
               if km and km["assessment_id"] else f'{dot(None)}<span class="gap">not yet assessed</span>')
-    # details: every required/gap tile, the rest of the registry, the assessment, KPI-tagged events
+    # the status line expands to the assessment (rationale, basis, evidence) and the KPI-tagged events
+    n_ev = len({e["id"] for e in topic_events(db, sec, "kpi")}
+               | (set(json.loads(km["evidence"] or "[]")) if km and km["assessment_id"] else set()))
+    out.append(f'<details class="kpid" id="t-{esc(sec)}-kpi"><summary>{status}'
+               f'<span class="st mute">why: the assessment, its evidence and {n_ev} event(s)</span></summary>'
+               f'<div class="more">{assessment_html(km) if km else ""}'
+               f'{evidence_and_events(db, sec, "kpi", km, names, succ, shown)}</div></details>')
+    # always shown: every required/gap tile; the rest of the registry folds
     main = [t for t in tiles if t["required"] or t["status"] in ("overdue", "no data")]
     if not heads:
         main = tiles
     rest = [t for t in tiles if t not in main]
-    body = []
     if not tiles:
-        body.append(f'<div class="gap">no metrics registered yet (metrics/{esc(sec)}.csv)</div>')
+        out.append(f'<div class="gap">no metrics registered yet (metrics/{esc(sec)}.csv)</div>')
     elif not heads:
-        body.append('<div class="gap">no required KPI metric in the registry yet</div>')
-    body.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in main) + "</div>")
+        out.append('<div class="gap">no required KPI metric in the registry yet</div>')
+    if main:
+        out.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in main) + "</div>")
     if rest:
-        body.append(f"<details><summary>{len(rest)} more registered metric(s)</summary>"
-                    '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
-    body.append("<h4>Assessment</h4>" + (assessment_html(km) if km else '<div class="gap">not yet assessed</div>'))
-    body.append(evidence_and_events(db, sec, "kpi", km, names, succ, shown))
-    out.append(f'<details class="kpid"><summary>{"Now: " + vals if vals else "Now: —"}<span class="st">{status}</span>'
-               f'</summary><div class="more">{"".join(body)}</div></details>')
+        out.append(f"<details><summary>{len(rest)} more registered metric(s)</summary>"
+                   '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
     return "".join(out)
 
 
 def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = None, n_recent: int = 8,
-                 covered: bool = True) -> str:
+                 covered: bool = True, group: dict | None = None, head: str = "") -> str:
+    """One endeavor's pane. group: its framework group (title + intro shown on top);
+    head: extra header HTML (the at-a-glance strip)."""
     sec = s["section"]
     fsec = fsec or {}
     ms = db.execute("SELECT * FROM milestone_status WHERE section=? ORDER BY ord", (sec,)).fetchall()
@@ -770,10 +840,13 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
     succ = dict(db.execute("SELECT id, superseded_by FROM events WHERE section=? AND NOT effective", (sec,)).fetchall())
     framework = bool(s["kpi"] or fsec.get("milestones") or fsec.get("challenges"))
     shown: set[str] = set()
-    out = [f'<section id="{esc(sec)}"><h2>{esc(s["title"])}</h2>']
+    crumb = f'<div class="crumb">{esc(group["title"])}</div>' if group else ""
+    out = [f'<section class="pane" id="{esc(sec)}">{crumb}<h2>{icon(sec)} {esc(s["title"])}</h2>{head}']
     if not covered:
         out.append('<div class="note">Not covered by this period\'s bulletins: shown is the ledger '
                    'as of the cutoff, for reference.</div>')
+    if group and group.get("intro"):
+        out.append(f'<div class="gintro">{md_block(group["intro"])}</div>')
     out.append(md_block(fsec.get("intro")))
     if s["kpi"]:
         out.append(kpi_block(db, sec, s, ms, names, succ, shown))
@@ -849,7 +922,7 @@ def event_log_html(db: sqlite3.Connection, s: sqlite3.Row, as_of: dt.date, fw: d
             if period else f"live ledger state as of <b>{esc(as_of)}</b>")
     return (f'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
-            f"<title>{esc(title)} (as of {esc(as_of)})</title><style>{CSS}</style></head><body>"
+            f"<title>{esc(title)} (as of {esc(as_of)})</title><style>{CSS}</style></head><body class=\"log\">"
             f'<header><h1>{esc(s["title"])}: event log</h1>'
             f'<div class="asof">All {len(evs)} events of this endeavor ({when}), newest first, under their '
             f'first topic; under later topics, a link. <a href="{esc(home)}#{esc(sec)}">← dashboard</a></div>'
@@ -928,6 +1001,190 @@ def legend_html() -> str:
         "“As of” means only what was public by that date is included.</p></div></details>")
 
 
+ICONS = {"robots-software": "🧠", "robots-hardware": "🦾", "rockets": "🚀", "fusion": "⚡", "health": "🧬",
+         "climate": "🌍", "knowledge-beyond": "🔭", "society-cohesion": "🤝"}
+RECENT_DAYS = 30  # "new" = became known within this many days of as_of
+ACTIVITY_WEEKS = 16  # the activity histogram on the overview cards
+STREAM_N = 100  # events in the news stream (+ the status changes over the same span)
+
+
+def icon(sec: str) -> str:
+    return f'<span class="ic" aria-hidden="true">{ICONS.get(sec, "◆")}</span>'
+
+
+def plain_md(text) -> str:
+    """Markdown inline -> escaped plain text (for places that must not contain links)."""
+    t = re.sub(r"\[([^\]]+)\]\([^)\s]+\)", r"\1", str(text or ""))
+    return esc(re.sub(r"\*\*?(\S.*?\S|\S)\*\*?", r"\1", t))
+
+
+def topic_dot(m: sqlite3.Row) -> str:
+    """A milestone's dot, its name and status label as the tooltip."""
+    st = m["status"] if m["assessment_id"] else None
+    return dot(st, f'{m["name"]}: {m["label"] if st else "not yet assessed"}')
+
+
+def glance(db: sqlite3.Connection, sec: str, as_of: dt.date) -> dict:
+    """The at-a-glance facts of a section: KPI status + headline metric, milestones, activity."""
+    ms = db.execute("SELECT * FROM milestone_status WHERE section=? ORDER BY ord", (sec,)).fetchall()
+    # headline: a required metric (with data first); else one that becomes required later
+    req = db.execute("SELECT k.* FROM latest_kpi k JOIN metrics m USING (section, metric) WHERE k.section=? "
+                     "AND NOT k.retired AND (k.required OR COALESCE(m.required_from, '') != '') "
+                     "ORDER BY k.required DESC, k.obs IS NULL, k.metric", (sec,)).fetchall()
+    since = str(as_of - dt.timedelta(days=RECENT_DAYS))
+    n_ev, n_new, last = db.execute("SELECT COUNT(*), SUM(known_at > ?), MAX(known_at) FROM current_events "
+                                   "WHERE section=?", (since, sec)).fetchone()
+    # events per week, the last ACTIVITY_WEEKS weeks to as_of (oldest first)
+    weeks = [0] * ACTIVITY_WEEKS
+    for (k,) in db.execute("SELECT known_at FROM current_events WHERE section=?", (sec,)):
+        w = (as_of - D(k)).days // 7
+        if 0 <= w < ACTIVITY_WEEKS:
+            weeks[ACTIVITY_WEEKS - 1 - w] += 1
+    km = next((m for m in ms if m["kind"] == "kpi"), None)
+    return {"km": km if km and km["assessment_id"] else None,
+            "mils": [m for m in ms if m["kind"] == "milestone"],
+            "n_ch": sum(m["kind"] == "challenge" for m in ms),
+            "head": req[0] if req else None,
+            "n_ev": n_ev, "n_new": n_new or 0, "last": last, "weeks": weeks}
+
+
+def activity_bars(weeks: list[int], as_of: dt.date, w: int = 110, h: int = 22) -> str:
+    """Events per week as a bar chart (the newest week at the right)."""
+    top, bw, Z = max(weeks) or 1, w / len(weeks), ' class="z"'
+    bars = "".join(f'<rect x="{i * bw + .5:.1f}" y="{h - max(1.0, h * n / top):.1f}" width="{bw - 1.5:.1f}" '
+                   f'height="{max(1.0, h * n / top):.1f}"{"" if n else Z}/>'
+                   for i, n in enumerate(weeks))
+    return (f'<svg class="act" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img"><title>events per week, '
+            f'the {len(weeks)} weeks to {as_of}: {", ".join(map(str, weeks))}</title>{bars}</svg>')
+
+
+def _new_badge(n: int) -> str:
+    return (f'<span class="new" title="{n} event(s) became known in the last {RECENT_DAYS} days">+{n}</span>'
+            if n else "")
+
+
+def _headline(db, g: dict, w: int, h: int, has_kpi: bool = True) -> str:
+    t = g["head"]
+    if not has_kpi:
+        return '<span class="mute">no KPI (supplemental)</span>'
+    if t is None or t["obs"] is None:
+        return f'<span class="mute">{"no KPI data yet" if t is not None else "no KPI metric yet"}</span>'
+    return (f'<span class="hv"><b>{esc(t["value_text"])}</b> {esc(t["unit"])}</span>'
+            + sparkline(*spark_points(db, t), w=w, h=h, pad=2))
+
+
+def nav_item(db, sec: str, title: str, g: dict, covered: bool, has_kpi: bool) -> str:
+    km = g["km"]
+    kd = dot(km["status"], f'KPI: {km["label"]}') if km else dot(None, "KPI: not yet assessed")
+    dots = "".join(topic_dot(m) for m in g["mils"])
+    return (f'<a class="nv{"" if covered else " ncov"}" href="#{esc(sec)}">'
+            f'<span class="nt">{icon(sec)}<span class="nn">{esc(title)}</span>{_new_badge(g["n_new"])}</span>'
+            f'<span class="nk">{kd}{_headline(db, g, 54, 16, has_kpi)}</span>'
+            + (f'<span class="nd" title="milestones">{dots}</span>' if dots else "") + "</a>")
+
+
+def card(db, sec: str, title: str, kicker: str, kpi_line: str, g: dict, as_of: dt.date) -> str:
+    """The overview's card of an endeavor (all of it one link to its pane)."""
+    km = g["km"]
+    status = (f'{dot(km["status"])}<span>{esc(km["label"])}</span>' if km
+              else f'{dot(None)}<span class="mute">KPI not yet assessed</span>')
+    mils = "".join(f'<li>{topic_dot(m)}{plain_md(m["name"])}</li>' for m in g["mils"])
+    foot = [f'{g["n_ev"]} events'] + ([f'<b>{g["n_new"]} new</b> in {RECENT_DAYS} days'] if g["n_new"] else []) \
+        + ([f'{g["n_ch"]} challenges'] if g["n_ch"] else [])
+    return (f'<a class="card" href="#{esc(sec)}"><div class="kick">{esc(kicker)}</div>'
+            f'<div class="ct">{icon(sec)} {esc(title)}</div>'
+            + (f'<div class="ck">{plain_md(kpi_line)}</div><div class="cv">{_headline(db, g, 110, 26)}</div>'
+               f'<div class="cs">{status}</div>' if kpi_line else '<div class="ck">no KPI (supplemental)</div>')
+            + (f'<ul class="cm">{mils}</ul>' if mils else "")
+            + f'<div class="cf"><span>{" · ".join(foot)}</span>{activity_bars(g["weeks"], as_of)}</div></a>')
+
+
+def status_changes(db: sqlite3.Connection, since: str) -> list[dict]:
+    """Assessments that changed a target's status (or first assessed it), made on/after `since`.
+    Same-day flips collapse to the day's final status (a re-assessment that ends where it began
+    is not a change)."""
+    names = {(r[0], r[1]): (r[2], r[3]) for r in db.execute("SELECT section, topic, name, kind FROM topics")}
+    rows = db.execute("SELECT section, target, status, label, made_at FROM assessments "
+                      "ORDER BY section, target, made_at, line").fetchall()
+    days: dict[tuple, dict] = {}
+    for r in rows:  # the status at the end of each day
+        days.setdefault((r["section"], r["target"]), {})[r["made_at"]] = r
+    out = []
+    for (sec, target), byday in days.items():
+        prev = None
+        for day in sorted(byday):
+            r = byday[day]
+            if r["status"] != prev and day >= since:
+                name, kind = names.get((sec, target), (target, None))
+                out.append({"section": sec, "target": target, "name": name, "kind": kind, "day": day,
+                            "prev": prev, "status": r["status"], "label": r["label"]})
+            prev = r["status"]
+    return out
+
+
+def _ago(day: str, as_of: dt.date) -> str:
+    n = (as_of - D(day)).days
+    return "today" if n == 0 else "yesterday" if n == 1 else f"{n} days ago" if n < 60 else ""
+
+
+def stream_html(db: sqlite3.Connection, as_of: dt.date, titles: dict[str, str], anchors: set[str]) -> str:
+    """The news stream: the latest events by the date they became known, with the status
+    changes of the same span. anchors: the topic anchors on the page (t-<section>-...)."""
+    evs = db.execute("SELECT * FROM current_events ORDER BY known_at DESC, significance DESC, date_end DESC, "
+                     "id DESC LIMIT ?", (STREAM_N,)).fetchall()
+    if not evs:
+        return '<aside class="stream"><h3>Latest news</h3><div class="mute">no events yet</div></aside>'
+    since = evs[-1]["known_at"] if len(evs) == STREAM_N else ""
+    items: list[tuple[str, int, str]] = []
+    for c in status_changes(db, since):
+        sec = c["section"]
+        a = f't-{sec}-{c["target"].replace(":", "-")}'
+        frm = f'{dot(c["prev"])}→' if c["prev"] else '<span class="mute">first assessed</span> '
+        items.append((c["day"], 0,
+                      f'<li class="si chg x-{esc(sec)}"><a href="#{esc(a if a in anchors else sec)}">'
+                      f'<span class="sm">{icon(sec)} {esc(titles.get(sec, sec))} · status change</span>'
+                      f'<span class="cl">{frm}{dot(c["status"])} <b>{plain_md(c["name"])}</b>: '
+                      f'{esc(c["label"])}</span></a></li>'))
+    for e in evs:
+        sec, sig = e["section"], int(e["significance"] or 0)
+        items.append((e["known_at"], 1,
+                      f'<li class="si sig{sig} x-{esc(sec)}"><a href="{esc(ev_href(sec, e["id"]))}">'
+                      f'<span class="sm">{icon(sec)} {esc(titles.get(sec, sec))} · {esc(e["kind"])} · '
+                      f'<span title="significance {sig}/3">{"●" * sig}{"○" * (3 - sig)}</span>'
+                      f'{" · legacy" if e["verification_status"] == "legacy" else ""}</span>'
+                      f'<span class="cl">{esc(e["claim"])}</span></a></li>'))
+    items.sort(key=lambda x: (x[0], -x[1]), reverse=True)
+    out, day = [], None
+    for d, _, li in items:
+        if d != day:
+            if day is not None:
+                out.append("</ul></li>")
+            day = d
+            out.append(f'<li class="dg"><div class="dh">{esc(d)} <span class="mute">{_ago(d, as_of)}</span></div><ul>')
+        out.append(li)
+    out.append("</ul></li>")
+    return ('<aside class="stream"><div class="sh"><h3>Latest news</h3>'
+            '<span class="mute small">newest first, by the date it became known</span></div>'
+            '<div class="sf"><label title="significance 3/3, and status changes"><input type="checkbox" id="f-major"> major only</label>'
+            '<label class="here"><input type="checkbox" id="f-here"> this endeavor only</label></div>'
+            f'<ul class="days">{"".join(out)}</ul>'
+            f'<p class="mute small">The {len(evs)} most recently known events and the status changes since '
+            f'{esc(evs[-1]["known_at"])}. Older: each endeavor\'s event lists.</p></aside>')
+
+
+def selection_css(secs: list[str]) -> str:
+    """Per-section rules for the pure-CSS pane switching (:target): highlight the nav item,
+    dim (or, on request, hide) other sections' news."""
+    out = []
+    for s in secs:
+        on = f"body:has(#{s}:target,#{s} :target)"
+        out.append(f'{on} .nv[href="#{s}"]{{background:var(--sel);border-color:var(--acc)}}'
+                   f"{on} .si:not(.x-{s}){{opacity:.55}}"
+                   f"{on} .stream:has(#f-here:checked) .si:not(.x-{s}),"
+                   f"{on} .stream:has(#f-here:checked) .dg:not(:has(.x-{s})){{display:none}}")
+    return "@supports selector(:has(a)){" + "".join(out) + "}"
+
+
 def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: str | None,
                     covered: set[str] | None, note: str, periods: list[str]) -> str:
     secs = {r["section"]: r for r in db.execute("SELECT * FROM sections ORDER BY ord")}
@@ -940,39 +1197,58 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
     gap_li = "".join(f'<li><a href="#{esc(g["section"])}">{esc(g["section"])}</a>: {esc(g["metric"])}'
                      f'{" (required)" if g["required"] else ""} — <span class="gap">{esc(g["gap"])}</span></li>'
                      for g in gaps)
-    body, nav = [], []
-    for e in fw["endeavors"]:
-        group = "sections" in e
-        sub = e["sections"] if group else [e]
-        anchor = sub[0]["id"]
-        nav.append(f'<a href="#{esc(anchor)}">{esc(e["title"])}</a>')
-        if group:
-            body.append(f'<div class="group{" supp" if e.get("supplemental") else ""}">'
-                        f'<h2 class="gh">{esc(e["title"])}</h2>{md_block(e.get("intro"))}')
-        for fs in sub:
-            if fs["id"] in secs:
-                body.append(section_html(db, secs[fs["id"]], fs, covered=covered is None or fs["id"] in covered))
-        if group:
-            body.append("</div>")
+    panes, nav, cards = [], [], []
+    for fs, grp in ledger.fw_sections(fw):
+        sec = fs["id"]
+        if sec not in secs:
+            continue
+        cov = covered is None or sec in covered
+        g = glance(db, sec, as_of)
+        if grp and fs is grp["sections"][0]:
+            nav.append(f'<div class="ng">{esc(grp["title"])}</div>')
+        elif not grp:
+            nav.append('<div class="ng sp"></div>')
+        nav.append(nav_item(db, sec, fs["title"], g, cov, bool(secs[sec]["kpi"])))
+        kicker = grp["title"] if grp else "Endeavor"
+        cards.append(card(db, sec, fs["title"], kicker, secs[sec]["kpi"], g, as_of))
+        strip = (f'<div class="strip"><span>{g["n_ev"]} events'
+                 + (f' · <b>{g["n_new"]} new</b> in the last {RECENT_DAYS} days' if g["n_new"] else "")
+                 + (f' · latest known {esc(g["last"])}' if g["last"] else "")
+                 + f"</span>{activity_bars(g['weeks'], as_of, 80, 16)}</div>")
+        panes.append(section_html(db, secs[sec], fs, covered=cov, group=grp, head=strip))
+    anchors = set(re.findall(r' id="(t-[^"]+)"', "".join(panes)))
+    titles = {fs["id"]: secs[fs["id"]]["title"] for fs, _ in ledger.fw_sections(fw) if fs["id"] in secs}
     title = fw["title"] + (f" — {period}" if period else "")
     if period:
-        when = (f'<div class="asof">Period page <b>{esc(period)}</b>: the ledger as of the period\'s cutoff '
+        when = (f'<div class="banner">Period page <b>{esc(period)}</b>: the ledger as of the period\'s cutoff '
                 f'<b>{esc(as_of)}</b>, frozen. <a href="../">→ live dashboard</a></div>')
     else:
-        when = f'<div class="asof">Live ledger state as of <b>{esc(as_of)}</b>.</div>'
+        when = ""
     stats = (f'<div class="mute small">{n_ev} events ({n_ev - n_leg} verified, {n_leg} legacy'
              f"{f'; {n_sup} superseded not shown' if n_sup else ''}) · {n_obs} observations · "
              f"{len(gaps)} metric gap(s)</div>")
     per = ("<p>Earlier periods: " + " · ".join(f'<a href="{esc(p)}/">{esc(p)}</a>' for p in periods) + "</p>"
            if periods else "")
+    intro = (f'<div class="pane" id="intro"><div class="hero"><h1>{esc(title)}</h1>'
+             f'<div class="tagline">{md_inline(fw["tagline"])}</div>'
+             f'<div class="asof">{"Frozen" if period else "Live"} ledger state as of <b>{esc(as_of)}</b> · '
+             f'{n_ev} events · {len(gaps)} data gap(s)</div></div>'
+             f'<div class="manifesto">{md_block(fw["manifesto"])}</div>{legend_html()}'
+             f'<h3>At a glance</h3><div class="cards">{"".join(cards)}</div></div>')
+    side = (f'<nav class="side"><a class="brand" href="#intro"><b>{esc(fw["title"])}</b>'
+            f'<span class="mute small">{"period " + esc(period) + ", " if period else ""}as of {esc(as_of)}</span></a>'
+            f'<a class="nv ov" href="#intro"><span class="nt"><span class="ic">✦</span>'
+            f'<span class="nn">Introduction &amp; overview</span></span></a>{"".join(nav)}'
+            '<div class="nleg small mute">' + "".join(f"<span>{dot(st)}{w}</span>" for st, w in (
+                ("green", "on track"), ("yellow", "behind pace"), ("red", "off track"), ("achieved", "achieved"),
+                ("unknown", "unassessed"), (None, "not yet assessed")))
+            + f"<p>KPI dot + latest value; then one dot per milestone. +N: events new in {RECENT_DAYS} days.</p></div></nav>")
     return (f'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
-            f"<title>{esc(title)} (as of {esc(as_of)})</title><style>{CSS}</style></head><body>"
-            f'<header><h1>{esc(title)}</h1><div class="tagline">{md_inline(fw["tagline"])}</div>{when}'
+            f"<title>{esc(title)} (as of {esc(as_of)})</title><style>{CSS}{selection_css(list(titles))}</style>"
+            f"</head><body>{side}<main>{when}"
             f'{f"<div class=note>{md_inline(note)}</div>" if note else ""}'
-            f"<nav>{''.join(nav)}</nav></header><main>"
-            f'<div class="manifesto">{md_block(fw["manifesto"])}</div>{legend_html()}'
-            + "".join(body)
+            + intro + "".join(panes)
             + '<footer>' + stats
             + (f"<details><summary>Data gaps ({len(gaps)})</summary><ul>{gap_li}</ul></details>" if gaps else "")
             + per
@@ -980,7 +1256,8 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
               '(<a href="https://github.com/pasky/grand-endeavors-data">data</a>, '
               '<a href="https://github.com/pasky/grand-endeavors">code and definitions</a>'
             + ('' if period else ', <a href="ledger.sqlite">ledger.sqlite</a> for Datasette')
-            + ").</p></footer></main></body></html>\n")
+            + ").</p></footer></main>"
+            + stream_html(db, as_of, titles, anchors) + "</body></html>\n")
 
 
 # --- pages: live, period, site ------------------------------------------------------------

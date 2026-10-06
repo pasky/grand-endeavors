@@ -32,17 +32,43 @@ uv run views/explore.py dashboard --as-of 2026-07-14    # just the pages (+ even
 The page is the **maximal source of truth** for a reader: it carries the
 framework itself (`framework.yaml`: tagline, manifesto, every endeavor's intro,
 KPI, milestone and challenge definitions), so a first-time visitor needs
-nothing else. By default it reads like the old README with a status on every
-line; every line expands to its detail.
+nothing else. Every line expands to its detail.
 
-**Header**: the tagline, the as-of date, the manifesto, and a folded "How to
-read this page" (the status colours, KPI vs milestone status, verified vs
-legacy, what "as of" means).
+**Layout**: three columns (on narrow screens the news drops below, and on a
+phone the navigation becomes a strip on top).
+- **Left, the navigation**: "Introduction & overview", then one item per
+  endeavor (under its group, e.g. Robots and Automation): its icon and title;
+  the KPI status dot with the latest value of its headline metric (the first
+  required one, or one required from a later period) and a sparkline; one
+  status dot per milestone (hover: name and status label); `+N` = events that
+  became known in the last 30 days. Clicking shows that endeavor in the middle.
+- **Middle, one pane at a time**: the overview by default, or the endeavor
+  clicked. Switching is pure CSS (`:target`, `:has()`; the page has no
+  JavaScript), so every pane and event has a URL (`#climate`,
+  `#ev-climate-<id>`, `#t-climate-milestone-the-bend`): a link to an event
+  opens its endeavor, unfolds the event and highlights it. A browser without
+  `:has()` shows all panes one below another.
+- **Right, the news stream**: the 100 most recently *known* events across all
+  endeavors, newest first, grouped by day, plus the **status changes**
+  (KPI/milestone status changed, or first assessed; a same-day flip back is
+  not a change) over the same span. Each item links to the event or target
+  in its pane. "Major only" keeps significance-3 events and status changes;
+  while an endeavor is shown, other endeavors' news is dimmed and "this
+  endeavor only" hides it.
 
-**Per endeavor** (in framework.yaml order; groups such as Robots and
-Automation carry their own intro):
-- **KPI**: its definition, and one summary line with the latest value of each
-  required metric and the KPI status. Expanded:
+**Overview pane**: the tagline, the as-of date, the manifesto, a folded "How
+to read this page" (the status colours, KPI vs milestone status, verified vs
+legacy, what "as of" means), then **At a glance**: a card per endeavor (KPI
+definition, latest value + sparkline, KPI status label, milestones with their
+dots, event count, new events, and a bar chart of events per week over the
+last 16 weeks).
+
+**Endeavor pane** (groups such as Robots and Automation show their intro on
+each of their sections' panes): event count, new events, the date the latest
+became known and the weekly activity bars; the intro, then:
+- **KPI**: its definition, and its status line (the latest assessment's
+  label), which expands to the assessment and the KPI-tagged events (below);
+  then, always shown:
   - **KPI tiles**, one per required metric (others fold under "more
     registered metrics"). Each tile shows the latest value and its
     observation period; when it became known, and a `source` link; the change
@@ -52,9 +78,9 @@ Automation carry their own intro):
     like-for-like change vs the same month a year ago; a sparkline of one
     granularity; "next expected by …", **OVERDUE**, or **no data yet**. A
     `legacy` badge marks values from the unverified 2025 report.
-  - the **assessment**: label, rationale and its structured basis (assessed
-    quantity, window, benchmark, …), its cited evidence, and the other
-    KPI-tagged events.
+  - the **assessment** (expanded from the status line): label, rationale and
+    its structured basis (assessed quantity, window, benchmark, …), its cited
+    evidence, and the other KPI-tagged events.
 - **Milestone Countdown**: per milestone its status dot, name and definition,
   then the status label, assessment date and event count. Expanded: the
   precise criteria, the assessment (rationale; ETA, path, blockers; the
@@ -87,8 +113,9 @@ evidence (uncapped, it is what the status rests on) and a few latest events per
 topic (about 580 KB, 120 KB gzipped, in October 2026). The sparklines still
 carry each tile's whole series.
 
-**Footer**: record counts, the metric **gaps** (overdue or never observed;
-never hidden), links to the earlier **period pages**, and the data/code repos.
+**Footer** (under every pane): record counts, the metric **gaps** (overdue or
+never observed; never hidden), links to the earlier **period pages**, and the
+data/code repos.
 
 **`--as-of`** applies the ledger's time rule: only records *published* by that
 date are included, and "overdue" is judged against that date. Two people
