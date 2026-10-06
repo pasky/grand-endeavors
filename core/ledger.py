@@ -396,17 +396,13 @@ def check_obs_row(r: dict, reg: dict | None, staged: bool = False) -> list[str]:
         if r["published_basis"] == "seen" and r["published"] != r["retrieved"]:
             errs.append(f"{at}: published_basis=seen means published = retrieved (first seen)")
         if r["published_basis"] == "rule":
-            meta = (reg or {}).get(r["metric"], {})
-            lag = meta.get("release_lag_days")
-            # former lags (metrics/lag-history.csv) still date the rows retrieved while they applied
-            lags = ([lag] if lag else []) + [x for x, until in meta.get("_lag_history", [])
-                                             if day(r["retrieved"]) <= until]
-            rule = lambda n: min(kpi.obs_range(r["obs"])[1] + dt.timedelta(days=int(n)), day(r["retrieved"]))
-            if not lags:
+            lag = (reg or {}).get(r["metric"], {}).get("release_lag_days")
+            if not lag:
                 errs.append(f"{at}: published_basis=rule needs release_lag_days in the registry")
-            elif day(r["published"]) not in {rule(n) for n in lags}:
-                errs.append(f"{at}: rule-basis published must be {rule(lags[0])} (obs end + {lags[0]}d, "
-                            "capped at retrieved)")
+            else:
+                want = min(kpi.obs_range(r["obs"])[1] + dt.timedelta(days=int(lag)), day(r["retrieved"]))
+                if day(r["published"]) != want:
+                    errs.append(f"{at}: rule-basis published must be {want} (obs end + {lag}d, capped at retrieved)")
     allowed = (STAGED_VERIF | OBS_VERIF) if staged else OBS_VERIF
     if r["verification"] not in allowed:
         errs.append(f"{at}: verification must be one of {sorted(allowed)}")

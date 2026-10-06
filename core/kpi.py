@@ -15,11 +15,6 @@ METRIC REGISTRY (the continuity contract; one per section, across periods)
     provably means "same measure". required_from=<period>: from then on bulletins
     must report it (KPI components). retired_after=<period>: not reported after
     that period (a basis change = new id + retire the old one; NEVER redefine).
-    metrics/lag-history.csv  columns: section,metric,release_lag_days,until
-    a corrected release_lag_days keeps the ledger's earlier rule-basis rows valid: each
-    row here = a former lag, which applied to rows retrieved on or before `until`
-    (the ledger is append-only, so those rows keep their original estimate). It is an
-    allowlist for validation, not a repair: as-of views keep the old rows' visibility.
 
 OBS LABELS  YYYY | YYYY-MM | YYYY-MM-DD | YYYY-Qn | YYYY-Hn
 PERIODS     dir name minus "pilot-": 2025, 26H1, 2026-Q2, 2026-06, 2026-W26
@@ -170,46 +165,8 @@ def load_registry(section: str) -> tuple[dict[str, dict] | None, list[str]]:
                         errs.append(f"{at}: {col} '{row[col]}' is not a period name")
             if row["_req"] and row["_ret"] and row["_ret"] < row["_req"]:
                 errs.append(f"{at}: retired_after precedes required_from")
-            row["_lag_history"] = []
             reg[m] = row
-    errs += _load_lag_history(section, reg)
     return reg, errs
-
-
-LAG_HISTORY_COLUMNS = ["section", "metric", "release_lag_days", "until"]
-
-
-def _load_lag_history(section: str, reg: dict[str, dict]) -> list[str]:
-    """Attach metrics/lag-history.csv entries as reg[metric]['_lag_history'] = [(lag, until date)]."""
-    import ledger
-    path = os.path.join(ledger.DATA, "metrics", "lag-history.csv")
-    if not os.path.exists(path):
-        return []
-    errs = []
-    with open(path, newline="", encoding="utf-8") as f:
-        r = csv.DictReader(f)
-        if r.fieldnames != LAG_HISTORY_COLUMNS:
-            return [f"{path}: header must be exactly {','.join(LAG_HISTORY_COLUMNS)}"]
-        for i, row in enumerate(r, 2):
-            if row["section"] != section:
-                continue
-            at = f"metrics/lag-history.csv:{i}"
-            if None in row or any(v is None for v in row.values()):
-                errs.append(f"{at}: wrong number of fields")
-            elif row["metric"] not in reg:
-                errs.append(f"{at}: unknown metric '{row['metric']}'")
-            elif not (row["release_lag_days"] or "").isdigit():
-                errs.append(f"{at}: release_lag_days must be a non-negative integer")
-            elif not re.fullmatch(r"\d{4}-\d{2}-\d{2}", row["until"]):
-                errs.append(f"{at}: until must be YYYY-MM-DD")
-            else:
-                try:
-                    until = dt.date.fromisoformat(row["until"])
-                except ValueError:
-                    errs.append(f"{at}: until must be YYYY-MM-DD")
-                    continue
-                reg[row["metric"]]["_lag_history"].append((row["release_lag_days"], until))
-    return errs
 
 
 def required_active(row: dict, as_of: dt.date) -> bool:
