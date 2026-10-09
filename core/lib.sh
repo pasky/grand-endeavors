@@ -14,6 +14,7 @@ D="$(cd "${GE_DATA:-$ROOT/data}" 2>/dev/null && pwd)" \
 	|| { echo "ERROR: data repo not found at ${GE_DATA:-$ROOT/data} (set GE_DATA)" >&2; exit 1; }
 export GE_DATA="$D"
 git -C "$D" rev-parse --git-dir >/dev/null 2>&1 || { echo "ERROR: $D is not a git repository" >&2; exit 1; }
+. "$ROOT/core/pipeline-lock.sh"   # one pipeline run at a time (re-executes the caller under flock)
 cd "$D"
 AGENT_DIR="${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}"
 SECTIONS="robots-software robots-hardware rockets fusion health climate knowledge-beyond society-cohesion"

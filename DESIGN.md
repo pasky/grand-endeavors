@@ -183,9 +183,9 @@ with a collector it runs `gather/collectors/run.sh <section>` (collect + merge),
 `ledger.py check`, and commits that section's observations ("collect <section>
 (<date>)"). Then it refreshes the published site (`explore.py site` → `build/`)
 and pushes the data repo. A failing section does not stop the others, but the
-script exits non-zero. It refuses to run if the data repo has uncommitted
-changes or (unless `NO_PUSH=1`) is not on `main`. Runs take well under a
-minute; there is no agent cost.
+script exits non-zero. It refuses to run if the data repo has uncommitted or
+untracked files, or (unless `NO_PUSH=1`) is not on `main`. Runs take seconds to
+minutes; there is no agent cost.
 
 It runs in the owner's main checkout (`~/projects/hai/grand-endeavors`, whose
 `build/` is published at pasky.or.cz/grand-endeavors/), from a systemd **user**
@@ -214,12 +214,23 @@ journalctl --user -u grand-endeavors-collect.service -e      # its output
 systemctl --user disable --now grand-endeavors-collect.timer # stop scheduling
 ```
 
-Nobody is notified on failure. The dashboard's gaps list is the visible
-symptom: when collection stops, the daily and monthly series show up as overdue
-within days. Concurrent runs: the per-section merge lock serialises ledger
-writes. A manual `gather.sh` started during a collect run fails its
-clean-checkout preflight; simply re-run it. The LLM stages (gather intake,
-assessments, bulletins, round-ups) are not scheduled; see TODO.md.
+**Failures are not notified.** Check `systemctl --user status` (above). The
+dashboard only helps while the site keeps being rebuilt: it computes "overdue"
+when the page is generated, so if a collector fails but the run goes on, its
+series turn up in the gaps list within days. But if the timer stops or the run
+aborts before the rebuild, the page simply freezes; the tell is its "Live
+ledger state as of <date>" line falling behind. A failed push is not visible
+there at all.
+
+**One pipeline run at a time.** Every entry point that commits to the data repo
+(`gather.sh`, `assess.sh`, `bulletin.sh`, `roundup.sh`, `collect.sh`) runs
+under a flock on `<data git dir>/ge-pipeline.lock` (`core/pipeline-lock.sh`):
+a second run waits up to `LOCK_WAIT` seconds (default 3 h, then exit 75), so a
+collect run that coincides with a 75-minute gather waits for it, and the
+gather's write-scope guard never sees the collector's commits. Nested calls
+(`gather.sh` → `assess.sh`) inherit the lock. Each worktree has its own git dir,
+hence its own lock. The LLM stages (gather intake, assessments, bulletins,
+round-ups) are not scheduled; see TODO.md.
 
 ## 5. Bulletin (`views/bulletin.sh <period-dir> <section>`)
 
@@ -269,7 +280,8 @@ tests in its own `tests/` directory:
 - `core/tests/test_ledger.py`: ledger and snapshot, including replay idempotency,
   precedence, supersedes lineage and cycles, staleness digests, frozen
   snapshots and charts;
-- `core/tests/test_guard.sh`: the write-scope guard;
+- `core/tests/test_guard.sh`: the write-scope guard; `core/tests/test_lock.sh`:
+  the pipeline lock (§4a);
 - `core/tests/test_paths.py`: every `$ROOT/...` path and module the pipeline
   scripts use exists (a broken one inside a prompt heredoc fails silently),
   and every runnable script declares `pyyaml` in its PEP 723 block (`uv run`
@@ -301,7 +313,7 @@ themselves.
   ```
   README.md DESIGN.md TODO.md   pointer to the site, design, backlog
   framework.yaml                endeavor definitions (read by the pipeline and the dashboard)
-  core/     ledger.py kpi.py lib.sh      shared by gather and views
+  core/     ledger.py kpi.py lib.sh pipeline-lock.sh   shared by gather and views
   gather/   gather.sh assess.sh RUBRIC.md collectors/   grows the ledger
             collect.sh systemd/                         daily collectors (§4a)
   views/    bulletin.sh roundup.sh validate.py explore.py

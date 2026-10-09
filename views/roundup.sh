@@ -39,6 +39,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"   # mechanism repo (code, framework.yam
 D="$(cd "${GE_DATA:-$ROOT/data}" 2>/dev/null && pwd)" \
 	|| { echo "ERROR: data repo not found at ${GE_DATA:-$ROOT/data} (set GE_DATA)" >&2; exit 1; }
 export GE_DATA="$D"
+. "$ROOT/core/pipeline-lock.sh"           # one pipeline run at a time (re-executes under flock)
 cd "$D"                                  # period dirs live in the data repo (DESIGN.md §7)
 
 PERIOD="${OUT_DIR#pilot-}"

@@ -10,5 +10,6 @@ Type=oneshot
 # uv is a pyenv shim; git pushes via gh auth (token in ~/.config/gh/hosts.yml)
 Environment=PATH=%h/.pyenv/shims:/usr/local/bin:/usr/bin:/bin
 ExecStart=/bin/sh %h/projects/hai/grand-endeavors/gather/collect.sh
-TimeoutStartSec=2h
+# may wait up to LOCK_WAIT (3 h) for a running gather/bulletin (core/pipeline-lock.sh)
+TimeoutStartSec=4h
 Nice=10

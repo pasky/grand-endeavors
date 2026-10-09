@@ -6,6 +6,9 @@
 # and commit its observations. Then refresh the published site (build/ in the checkout) and
 # push the data repo. A failing section does not stop the others; the script
 # exits non-zero if anything failed, so the systemd unit shows up as failed.
+# If a section merged but its check or commit failed, its observations stay uncommitted
+# and the next run refuses (dirty repo) until someone looks. Holds the pipeline lock
+# (core/pipeline-lock.sh), so it waits for a running gather/bulletin and vice versa.
 # Run daily by gather/systemd/grand-endeavors-collect.timer (setup: DESIGN.md §4a).
 #
 # USAGE:  gather/collect.sh [section...]   (default: every section with a collector)
@@ -18,10 +21,11 @@ if [ -z "${NO_PUSH:-}" ] && [ "$(git symbolic-ref --short -q HEAD || true)" != m
 	echo "ERROR: data repo $D is not on main (set NO_PUSH=1 to collect without pushing)" >&2
 	exit 1
 fi
-# commits are path-scoped, but a dirty observations file would be swept into ours
-if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-	echo "ERROR: data repo $D has uncommitted changes; not collecting" >&2
-	git status --short --untracked-files=no >&2
+# commits are path-scoped, but a dirty or untracked observations file would be swept into
+# ours (staging is gitignored, so it does not count)
+if [ -n "$(git status --porcelain)" ]; then
+	echo "ERROR: data repo $D has uncommitted or untracked files; not collecting" >&2
+	git status --short >&2
 	exit 1
 fi
 
@@ -35,8 +39,9 @@ failed=""
 for s in "$@"; do
 	require_section "$s"
 	echo ">>> collect $s"
-	if sh "$ROOT/gather/collectors/run.sh" "$s" && uv run "$ROOT/core/ledger.py" check "$s"; then
-		commit "collect $s ($TODAY)" "ledger/observations/$s.csv"
+	if sh "$ROOT/gather/collectors/run.sh" "$s" && uv run "$ROOT/core/ledger.py" check "$s" \
+			&& commit "collect $s ($TODAY)" "ledger/observations/$s.csv"; then
+		:
 	else
 		echo "ERROR: collect $s failed (see above)" >&2
 		failed="$failed $s"
