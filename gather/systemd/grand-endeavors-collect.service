@@ -1,0 +1,14 @@
+# Daily KPI collection for the main checkout (~/projects/hai/grand-endeavors).
+# Setup and operations: DESIGN.md §4a. Started by grand-endeavors-collect.timer.
+[Unit]
+Description=Grand Endeavors: run the KPI collectors, refresh the site, push the data repo
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# uv is a pyenv shim; git pushes via gh auth (token in ~/.config/gh/hosts.yml)
+Environment=PATH=%h/.pyenv/shims:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/sh %h/projects/hai/grand-endeavors/gather/collect.sh
+TimeoutStartSec=2h
+Nice=10

@@ -14,9 +14,11 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 
 ## Operations
 
-- [ ] Scheduling: cron or systemd timer for `gather/gather.sh <section>`, then
-      `views/bulletin.sh` + `views/roundup.sh` after each cutoff, then `git -C data push`.
-      Weekly cutoff = Sunday + 2 days.
+- [ ] Scheduling of the LLM stages: `gather/gather.sh <section>`, then
+      `views/bulletin.sh` + `views/roundup.sh` after each cutoff (weekly cutoff =
+      Sunday + 2 days); needs the scheduling-budget decision above. The
+      deterministic collectors already run daily (`gather/collect.sh`, systemd user
+      timer, DESIGN.md §4a), and so do the site refresh and the data push.
 - [ ] Gather all sections. Only climate (full), fusion (KPI) and the
       re-verification pass have run; the other sections' news is all
       2025-report history.
@@ -34,8 +36,11 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] 🤖 Re-verify the legacy KPI **observations** (pilot-2025 values); only events
       were re-verified.
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
-      `DATA_URL` in `gather/collectors/climate_emissions.py`. Watch for WHO's next GHE
-      round; health data ends in 2021, so its KPI is labelled "Stale".
+      `DATA_URL` in `gather/collectors/climate_emissions.py`.
+- [ ] Health KPI re-assessment: WHO's new GHE round (GHO record date 2026-10-01)
+      extends HALE to 2023 and revises 2000-2021 (collected 2026-10-09). The KPI
+      assessment still says "Stale (data to 2021)"; the next `gather.sh health` /
+      `assess.sh health` picks it up (`ledger.py stale`).
 - [ ] 🤖 Check The Bend's next assessment (yellow on 2026-09-30, label
       "Progressing: GHG 54.1 GtCO2e..."). Its rationale counted slowing **CO₂**
       growth as progress on a **total-GHG** milestone. It is re-assessed

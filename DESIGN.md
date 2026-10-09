@@ -14,8 +14,9 @@ known and when it became known. Everything readers see is a **view** of it:
 - **bulletins** at a fixed cadence (weekly, half-year, annual, …): a snapshot of
   the ledger at a deterministic cutoff, with a narrative on top.
 
-Data gathering therefore runs on its own schedule. Today it is ad hoc and manual;
-it becomes progressively more continuous. It is independent of bulletin frequency.
+Data gathering therefore runs on its own schedule. The deterministic collectors
+run daily (§4a); the LLM gather runs are still started by hand, and become
+progressively more continuous. It is independent of bulletin frequency.
 News (events) matters more than KPI numbers: KPIs move slowly, and most of the
 story is what happened.
 
@@ -175,6 +176,51 @@ may use them only as background context, never as this period's news.
    even if the agent crashes. The registry is APPEND_ONLY: existing rows can
    never change.
 
+## 4a. Scheduled collection (`gather/collect.sh`, daily systemd timer)
+
+`gather/collect.sh [section...]` is the LLM-free part of §4: for every section
+with a collector it runs `gather/collectors/run.sh <section>` (collect + merge),
+`ledger.py check`, and commits that section's observations ("collect <section>
+(<date>)"). Then it refreshes the published site (`explore.py site` → `build/`)
+and pushes the data repo. A failing section does not stop the others, but the
+script exits non-zero. It refuses to run if the data repo has uncommitted
+changes or (unless `NO_PUSH=1`) is not on `main`. Runs take well under a
+minute; there is no agent cost.
+
+It runs in the owner's main checkout (`~/projects/hai/grand-endeavors`, whose
+`build/` is published at pasky.or.cz/grand-endeavors/), from a systemd **user**
+timer: daily at 12:00 UTC (NOAA re-issues its daily CO₂ file around 11:00 UTC),
+`Persistent=true` so a missed run happens at the next boot. The units live in
+`gather/systemd/`. The service hard-codes the checkout path and puts the pyenv
+shims on PATH (`uv`); pushes authenticate via `gh auth` (token in
+`~/.config/gh/hosts.yml`). The user has lingering enabled, so it runs without a
+login session. Setup, once:
+
+```sh
+cd ~/projects/hai/grand-endeavors
+systemctl --user link $PWD/gather/systemd/grand-endeavors-collect.service \
+                      $PWD/gather/systemd/grand-endeavors-collect.timer
+systemctl --user enable --now grand-endeavors-collect.timer
+```
+
+The units are symlinks into the checkout, so a changed unit file needs only
+`systemctl --user daemon-reload`. Operations:
+
+```sh
+systemctl --user list-timers grand-endeavors-collect.timer   # next/last run
+systemctl --user start grand-endeavors-collect.service       # run now
+systemctl --user status grand-endeavors-collect.service      # last result ("failed" if any section failed)
+journalctl --user -u grand-endeavors-collect.service -e      # its output
+systemctl --user disable --now grand-endeavors-collect.timer # stop scheduling
+```
+
+Nobody is notified on failure. The dashboard's gaps list is the visible
+symptom: when collection stops, the daily and monthly series show up as overdue
+within days. Concurrent runs: the per-section merge lock serialises ledger
+writes. A manual `gather.sh` started during a collect run fails its
+clean-checkout preflight; simply re-run it. The LLM stages (gather intake,
+assessments, bulletins, round-ups) are not scheduled; see TODO.md.
+
 ## 5. Bulletin (`views/bulletin.sh <period-dir> <section>`)
 
 1. **snapshot** (`ledger.py snapshot`, deterministic, **self-contained**): the
@@ -257,6 +303,7 @@ themselves.
   framework.yaml                endeavor definitions (read by the pipeline and the dashboard)
   core/     ledger.py kpi.py lib.sh      shared by gather and views
   gather/   gather.sh assess.sh RUBRIC.md collectors/   grows the ledger
+            collect.sh systemd/                         daily collectors (§4a)
   views/    bulletin.sh roundup.sh validate.py explore.py
             EXPLORER.md newsletter-intro.md             reads the ledger
   */tests/  each part's regression tests

@@ -1,0 +1,12 @@
+# Daily at 12:00 UTC: NOAA re-issues co2_daily_mlo.txt around 11:00 UTC (Last-Modified,
+# checked 2026-10-09). Persistent: a run missed while the machine was off happens at boot.
+[Unit]
+Description=Grand Endeavors: daily KPI collection
+
+[Timer]
+OnCalendar=*-*-* 12:00:00 UTC
+RandomizedDelaySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
