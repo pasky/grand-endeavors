@@ -44,8 +44,13 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] 🤖 assess.sh robustness: 5 of 8 runs on 2026-10-06 were blocked by a provider
       false positive ("duplicating model outputs"), 3 of them on the final turn after a
       lint-clean assessments.jsonl (merged by hand). The robots-hardware runs had read
-      other runs' staging dirs (the retry read their eta-notes); keep agents out of other staging dirs, and consider
+      other runs' staging dirs (the retry read their eta-notes); a later run with those dirs
+      moved aside went through. Keep agents out of other staging dirs, and consider
       merging a lint-clean staged file when only the final turn failed.
+- [ ] Owner: other milestones that may deserve an `assumes:` gate (RUBRIC.md §4.2),
+      e.g. robotaxi permits, Fukushima disaster-zone access. The §4.1 calibration
+      amendment (50% horizon, no stacking) reaches the other milestones only on new
+      evidence or a definition change.
 - [ ] Cross-section ETA drivers: a milestone may rest on another section's series
       (cited in basis.eta.calc), but `ledger.py stale` does not re-assess it when
       that driver updates, and its evidence list cannot cite foreign event ids.
