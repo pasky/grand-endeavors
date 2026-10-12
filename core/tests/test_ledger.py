@@ -50,12 +50,17 @@ def main():
     bad_fw = {"title": "t", "tagline": "t", "manifesto": "m", "endeavors": [
         {"id": "x", "title": "X", "milestones": [{"slug": "a", "name": "A", "description": "d"},
                                                 {"slug": "a", "name": "B", "description": "d"},
-                                                {"slug": "Bad Slug", "name": "C", "description": "d"}],
+                                                {"slug": "Bad Slug", "name": "C", "description": "d"},
+                                                {"slug": "g", "name": "G", "description": "d", "assumes": ""}],
          "challenges": [{"slug": "c", "name": "C"}]}, {"id": "x", "title": "X again"}]}
     errs = ledger.check_framework(bad_fw)
     case("framework check: duplicate section/slug, bad slug, missing description",
          has(errs, "duplicate section id") and has(errs, "duplicate milestones slug")
          and has(errs, "bad slug 'Bad Slug'") and has(errs, "name and description required"))
+    case("framework check: assumes must be a non-empty string", has(errs, "g: assumes must be"))
+    case("an assumed gate is shown as the last description line",
+         ledger.fw_description({"description": "P.", "details": ["x"], "assumes": "policy yields"})
+         == "P.\n- x\n- *ETA assumes:* policy yields")
 
     # --- periods / cutoffs ------------------------------------------------------
     case("26H1 cutoff = period end + 14d", str(ledger.cutoff("26H1")) == "2026-07-14")
@@ -278,6 +283,13 @@ def main():
     case("rubric v2: an achieved milestone needs no ETA forecast",
          not has(ledger.check_assessment(V2("done", status="achieved", label="Achieved: x"), topics, evs), "basis.eta"))
     case("rubric v1 records keep their free-text ETA", ledger.check_assessment(A(), topics, evs) == [])
+    na = V2(eta, id="n", target="milestone:the-nature-author", status="yellow", label="Progressing: x, ETA ~2032")
+    na_ok = V2(dict(eta, assumes="journals credit AI"), id="n2", target="milestone:the-nature-author",
+               status="yellow", label="Progressing: x, ETA ~2032*", made_at="2026-08-01")
+    case("assumed gate: the latest assessment of a gated milestone needs eta.assumes + 'ETA ~YYYY*' (warning)",
+         has(ledger.check_assumed_gates("robots-software", [na]), "assumed gate")
+         and ledger.check_assumed_gates("robots-software", [na, na_ok]) == []
+         and ledger.check_assumed_gates("climate", [dict(na, target="milestone:the-bend")]) == [])
     unk = dict(A(id="u", target="kpi", status="unknown", label="Unassessed: no series"), evidence=[],
                basis={k: "x" for k in ledger.BASIS_UNKNOWN})
     case("rubric: 'unknown' needs no evidence and its own basis", ledger.check_assessment(unk, topics, evs) == [])

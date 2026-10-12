@@ -130,6 +130,8 @@ def check_framework(fw: dict) -> list[str]:
                     errs.append(f"{s.get('id')}: bad slug {t.get('slug')!r}")
                 if not t.get("name") or not t.get("description"):
                     errs.append(f"{s.get('id')}: {t.get('slug')}: name and description required")
+                if "assumes" in t and not (isinstance(t["assumes"], str) and t["assumes"].strip()):
+                    errs.append(f"{s.get('id')}: {t.get('slug')}: assumes must be a non-empty string")
     return errs
 
 
@@ -153,8 +155,10 @@ def fw_section(section: str, fw: dict | None = None) -> tuple[dict, dict | None]
 
 
 def fw_description(item: dict) -> str:
-    """A milestone/challenge description incl. its details as '\\n- <text>' lines."""
-    return item["description"] + "".join(f"\n- {d}" for d in item.get("details") or [])
+    """A milestone/challenge description incl. its details as '\\n- <text>' lines, and the
+    gate its ETA assumes away (gather/RUBRIC.md §4.2) as a last '\\n- *ETA assumes:* ...' line."""
+    return (item["description"] + "".join(f"\n- {d}" for d in item.get("details") or [])
+            + (f"\n- *ETA assumes:* {item['assumes']}" if item.get("assumes") else ""))
 
 
 def framework_topics(section: str, fw: dict | None = None) -> dict[str, list[tuple[str, str]]]:
@@ -527,7 +531,34 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
             errs.append(f"assessment {a.get('id')}: duplicate id")
         aids.add(a.get("id"))
     errs += check_hysteresis(section, ass, ids, obs)
+    warns += check_assumed_gates(section, ass)
     return errs, warns
+
+
+def check_assumed_gates(section: str, ass: list[dict]) -> list[str]:
+    """gather/RUBRIC.md §4.2: the LATEST assessment of a milestone whose framework entry `assumes:`
+    a gate away carries basis.eta.assumes and an asterisked ETA in its label. A warning, not an
+    error: adding `assumes:` to framework.yaml must not invalidate the ledger until re-assessment."""
+    try:
+        sec, _ = fw_section(section)
+    except KeyError:
+        return []
+    gated = {f"milestone:{t['slug']}" for t in sec.get("milestones") or [] if t.get("assumes")}
+    latest: dict[str, dict] = {}
+    for a in sorted((a for a in ass if _valid_day(a.get("made_at", ""))), key=lambda a: a["made_at"]):
+        latest[a.get("target")] = a
+    warns = []
+    for t in sorted(gated & set(latest)):
+        a = latest[t]
+        if a.get("rubric") in (None, "v1") or a.get("status") in ("unknown", "achieved"):
+            continue
+        eta = (a.get("basis") or {}).get("eta")
+        if not (isinstance(eta, dict) and str(eta.get("assumes") or "").strip()) \
+                or not re.search(r"ETA ~\d{4}\*", str(a.get("label"))):
+            warns.append(f"assessment {a.get('id')}: {t} has an assumed gate in framework.yaml; its latest assessment "
+                         "needs basis.eta.assumes and 'ETA ~YYYY*' in the label (gather/RUBRIC.md §4.2; re-assess "
+                         "with DEFCHANGE)")
+    return warns
 
 
 def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: list[dict] | None = None) -> list[str]:

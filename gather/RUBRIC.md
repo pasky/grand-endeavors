@@ -15,8 +15,9 @@ sections and runs and does not flap.
 
 Co-designed 2026-09-30 (v1). v2 (2026-10-06): milestone ETAs are reasoned
 forecasts with a median and an 80% range (§4.1), no longer a status bucket
-restated; KPI rules are unchanged. Any change in meaning is a new rubric
-version (rule 4).
+restated, and gates that the framework `assumes:` away never block a
+milestone (§4.2). KPI rules are unchanged. Any change in meaning is a new
+rubric version (rule 4).
 
 ## 1. What the colours mean
 
@@ -133,7 +134,8 @@ evidence behind the path:
   - stalled (no progress over two windows);
   - regressing;
   - structurally blocked (policy, legal or definitional), whatever the
-    technical readiness. Name the block and its type.
+    technical readiness. Name the block and its type. A gate that the
+    milestone's framework `assumes:` away never blocks it (§4.2).
 - Events of kind `announcement` or `projection` never lift a status by
   themselves.
 
@@ -178,6 +180,17 @@ straight line or sounds cautious. Work through these steps:
      the floor, starting from when the step could begin.
    Use linear extrapolation only when the quantity really is additive (e.g.
    one-off construction projects with no learning).
+   Calibrate the driver to what the milestone actually needs:
+   - **reliability level**: when one success is enough and attempts can be
+     repeated or selected (one accepted patch, one paper, one demo), use the
+     50 % horizon or success rate. Use 80 % or higher only when the milestone
+     needs sustained reliability (full shifts, unattended operation).
+   - **central rate**: the currently measured rate (the KPI window) is the
+     median case unless a named constraint will slow it down. The slower
+     long-run rate is the p90 case, not the median.
+   - **no stacking**: each adjustment (benchmark-to-reality gap, review lag,
+     adoption lag) needs its own evidence. Do not put every pessimistic
+     adjustment in the median and leave the optimistic ones for p10.
 4. **Cross-check.** Compare with a reference class (how long comparable
    transitions took from first demonstration to the milestone's level), with
    proponents' dates (historically optimistic: discount them, e.g. 1.5–3× on
@@ -191,6 +204,19 @@ straight line or sounds cautious. Work through these steps:
    show the calculation that puts it there.
 6. **Name the cruxes**: what observation would move the ETA earlier or later.
    Gather can look for exactly those next time.
+
+### 4.2 Assumed gates (`assumes:` in framework.yaml)
+
+A milestone may stand for a capability, while its wording also passes through
+a gate that is not the point: an editorial policy, or a project's rules on
+AI-submitted code. The framework then names that gate in the milestone's
+`assumes:` field. In that case:
+- the ETA and the status are judged **as if the assumption held**. The gate
+  never makes the milestone "Blocked", and it adds no policy lag to the ETA;
+- `basis.eta.assumes` repeats the assumption, the label marks the ETA with an
+  asterisk ("ETA ~2030*"), and `basis.blockers` reports the gate's real state;
+- `achieved` still needs an event that meets the literal wording. An event
+  that meets everything except the assumed gate supports green, not achieved.
 
 ETAs come from trend extrapolation, not roadmaps: a roadmap is not a trend,
 and projections alone never move a status (rule 5). But a measured
@@ -236,5 +262,8 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   10 years. `method` names the model (trend, driver trend, learning curve,
   S-curve, structural floor, reference class, discounted proponent date, or a
   combination). `calc` gives the numbers and arithmetic. `cruxes` says what
-  would move the ETA earlier or later.
-- The milestone **label** quotes the median: "..., ETA ~2034".
+  would move the ETA earlier or later. For a milestone with `assumes:`, it
+  also has `assumes` (§4.2).
+- The milestone **label** quotes the median: "..., ETA ~2034", or "ETA
+  ~2034*" under an assumed gate. `ledger.py check` warns when the latest
+  assessment of a gated milestone lacks the asterisk or `basis.eta.assumes`.

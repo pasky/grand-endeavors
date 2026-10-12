@@ -116,7 +116,9 @@ expected content, but it is not checked:
   benchmark may be null). Under rubric v2, `eta` of a milestone that is neither
   achieved nor unknown is a checked forecast `{p10, p50, p90, method, calc, cruxes}`:
   years with p10 ≤ p50 ≤ p90 (p90 may be null), and the status agrees with
-  p50 (RUBRIC.md §4.1, §6). Under v1 it was free text;
+  p50 (RUBRIC.md §4.1, §6); a milestone whose framework entry `assumes:` a
+  gate away also has `eta.assumes` and "ETA ~YYYY*" in its label (§4.2;
+  `check` warns). Under v1 it was free text;
 - unknown: `rule, reason, prev, change_note`.
 
 `made_at` is the as-of date of the evidence that was considered, not the
