@@ -49,20 +49,14 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       (Reuters 401, Science 403). Another fetch retry will not help. They need
       re-sourcing (find a source that states the claim, then `supersedes`), or
       they stay legacy background.
-- [ ] Owner review of the rubric v2 ETAs (all milestones re-assessed 2026-10-06; working
-      in each run's ledger/staging/assess-*/eta-notes.md, gitignored). Red→yellow:
-      Linux kernel patch, Dark Line, Fukushima, all resting on METR-horizon drivers and
-      an assumed ~11-month "embodied doubling" for robots.
-- [ ] 🤖 assess.sh robustness: 5 of 8 runs on 2026-10-06 were blocked by a provider
-      false positive ("duplicating model outputs"), 3 of them on the final turn after a
-      lint-clean assessments.jsonl (merged by hand). The robots-hardware runs had read
-      other runs' staging dirs (the retry read their eta-notes); a later run with those dirs
-      moved aside went through. Keep agents out of other staging dirs, and consider
-      merging a lint-clean staged file when only the final turn failed.
-- [ ] Owner: other milestones that may deserve an `assumes:` gate (RUBRIC.md §4.2),
-      e.g. robotaxi permits, Fukushima disaster-zone access. The §4.1 calibration
-      amendment (50% horizon, no stacking) reaches the other milestones only on new
-      evidence or a definition change.
+- [ ] Owner review of the rubric v3 ETAs (all milestones re-assessed 2026-10-12; working
+      notes in each run's ledger/staging/assess-*/eta-notes.md, gitignored). The robot
+      capability ETAs (2028–2030) now rest on a measured ~7.6-month failure-rate halving,
+      but its central value is ONE customer deployment (Dyna napkin folding, 2025–2026);
+      more dated reliability series would firm it up (FOCUS gather, 2026-10-12, found 55 events).
+- [ ] 🤖 Provider false-positive blocks ("duplicating model outputs") still hit assess runs
+      (2026-10-12: 2 of 8; one salvaged by assess.sh, one retried). Agents are now told to stay
+      out of other runs' staging; if blocks persist, find the trigger in the sessions.
 - [ ] 🤖 Retry the legacy events that are still unverifiable, **sequentially with
       backoff**. The 2026-10-01 Wayback pass recovered 45 (21 verified, 22
       corrected, 2 refuted), but 8 parallel agents hit archive.org rate limits;
