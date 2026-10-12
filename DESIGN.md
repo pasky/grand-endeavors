@@ -145,6 +145,14 @@ gather.sh; standalone with FORCE=1 / CORRECTION=1 after a rubric change).
 `legacy` records were converted from the pilot-2025 reports. They are useful
 history, but they were not verified at ingest. Views flag them, and bulletins
 may use them only as background context, never as this period's news.
+Re-verification replaces them: a `verified`/`corrected` record with a new id
+(`<id>-rv`, `supersedes` the legacy id) or a withdrawal tombstone (`<id>-wd`).
+`gather/reverify_legacy.py` does it for the legacy events still standing:
+sequential fetching (live + Wayback captures, one request at a time, archive.org
+paced and backed off) into a cache, LLM judges per batch on the cache only
+(`gather/reverify-judge.md`), a mechanical audit (every quote verbatim in a fetched
+document, every figure and year of a new claim in a quote), then `ledger.py merge`.
+Per-event results: `ledger/reverify/<section>.<date>[-<pass>].jsonl`.
 
 ## 4. Gather (`gather/gather.sh <section>`; env UNTIL, SINCE, ITEMS, OVERLAP_DAYS)
 
@@ -338,6 +346,7 @@ themselves.
   gather/   gather.sh assess.sh RUBRIC.md collectors/   grows the ledger
             sources/ sources.py                         reference sources per watch item
             collect.sh systemd/                         daily collectors (§4a)
+            reverify_legacy.py reverify-judge*          legacy re-verification (§3)
   views/    bulletin.sh roundup.sh validate.py explore.py quickref.py
             EXPLORER.md newsletter-intro.md             reads the ledger
   */tests/  each part's regression tests

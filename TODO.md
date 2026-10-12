@@ -28,10 +28,15 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 
 ## Data quality
 
-- [ ] 🤖 Retry the legacy events that are still unverifiable, **sequentially with
-      backoff**. The 2026-10-01 Wayback pass recovered 45 (21 verified, 22
-      corrected, 2 refuted), but 8 parallel agents hit archive.org rate limits;
-      rockets got none.
+- [ ] 🤖 103 legacy events are still unverifiable after the sequential retry of
+      2026-10-12 (`gather/reverify_legacy.py`; 44 verified + 130 corrected of
+      277; logs `ledger/reverify/*-wayback2.jsonl`). Left: climate 14, fusion 16,
+      health 10, knowledge-beyond 8, robots-hardware 7, robots-software 17,
+      rockets 11, society-cohesion 20. Mostly the cited page was fetched but does
+      not state the claim, or states other figures; a few are paywalled or dead
+      (Reuters 401, Science 403). Another fetch retry will not help. They need
+      re-sourcing (find a source that states the claim, then `supersedes`), or
+      they stay legacy background.
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
       `DATA_URL` in `gather/collectors/climate_emissions.py`. Same for the
       edition URLs in `gather/sources/` (`grep -n 'Edition URL' gather/sources/*.yaml`:
