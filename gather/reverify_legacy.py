@@ -717,7 +717,8 @@ def build_records(section: str, results: list[dict], by: str, today: str) -> tup
                 docs.append(q["doc"])
         caps = [man[n]["url"] for n in docs if "wayback" in man[n]["kind"]]
         fetched = [{"doc": m["n"], "url": m["url"], "status": m.get("status"), "ok": bool(m.get("ok")),
-                    "fetched_at": m.get("fetched_at")} for m in man.values() if not m["url"].startswith("cdx:")]
+                    "fetched_at": m.get("fetched_at")} | ({"sha256": _sha(section, r["id"], m["n"])} if m.get("ok") else {})
+                   for m in man.values() if not m["url"].startswith("cdx:")]
         note = r["note"].strip()
         if caps and not all(c in note for c in caps):
             note += " Capture: " + ", ".join(caps)
@@ -770,6 +771,13 @@ def build_records(section: str, results: list[dict], by: str, today: str) -> tup
         taken.add(rid)
         recs.append(rec)
     return log_rows, recs
+
+
+def _sha(section: str, eid: str, n: int) -> str:
+    """Hash of a cached document's text, so the log pins what the judge read."""
+    import hashlib
+    with open(doc_path(section, eid, n), "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
 
 
 def _dedup(srcs: list[dict]) -> list[dict]:
