@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 
 GATHER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(GATHER), "core", "tests"))
@@ -70,15 +71,32 @@ def main():
          r["id"] == legacy["id"] + "-rv" and r["supersedes"] == [legacy["id"]] and r["verification"]["status"] == "corrected"
          and [s["url"] for s in r["sources"]] == [src, cap] and r["collector"] == "reverify:backfill:pilot-2025/climate.md")
     moved = good | {"date": "2025-03-03"}
+    mrec = rv.build_records("climate", [moved], "b", "2026-10-12")[1][0]
     case("a corrected event date (quoted) moves the replacement's id", rv.cmd_audit("climate", [moved]) == []
-         and rv.build_records("climate", [moved], "b", "2026-10-12")[1][0]["id"] == "2025-03-03-acme-plant-rv")
+         and mrec["id"] == "2025-03-03-acme-plant-rv")
+    case("a documented date after the legacy publication date becomes the published date (no hindsight)",
+         (mrec["published"], mrec["published_basis"]) == ("2025-03-03", "source"))
     case("audit: an unquoted corrected date fails",
          any("corrected date" in e for e in rv.cmd_audit("climate", [good | {"date": "2024-12"}])))
+    case("audit: every part of a full corrected date must be quoted (not just its year)",
+         [e for e in rv._date_errs("2025-12-31", "in 2025") if "month" in e or "day" in e] and
+         rv._date_errs("2025-03-03", "Madrid, 3 March 2025") == [] and rv._date_errs("2026-04-03", "04/03/2026") == [])
+    case("audit: a month-only date after the legacy publication needs the full day",
+         any("full YYYY-MM-DD" in e for e in rv.cmd_audit("climate", [good | {"date": "2025-04"}])))
+    case("a judged kind replaces the legacy kind; a bad one fails the audit",
+         rv.build_records("climate", [good | {"kind": "projection"}], "b", "2026-10-12")[1][0]["kind"] == "projection"
+         and any("bad kind" in e for e in rv.cmd_audit("climate", [good | {"kind": "retraction"}])))
+    case("audit: a positive figure never matches a negative quote",
+         rv._figure_errs("x", "Sales rose +2.5% in March", [{"quote": "sales: −2.5% in March"}]) != [])
     mets = [{"metric": "m", "obs": "2024", "value": 450}, {"metric": "m", "obs": "2025", "value": 500}]
     write_jsonl(f"{root}/ledger/events/climate.jsonl", [legacy | {"metrics": mets}])
     case("a corrected claim that dropped a linked value drops the metric links (450 recurring is no backing)",
          "metrics" not in rv.build_records("climate", [good], "b", "2026-10-12")[1][0])
     case("a verified claim keeps them", rv.build_records("climate", [res(result="verified")], "b", "2026-10-12")[1][0]["metrics"] == mets)
+    other = good | {"evidence": good["evidence"] + [{"doc": 2, "quote": "a 500 MW plant elsewhere"}]}
+    write_jsonl(f"{root}/ledger/events/climate.jsonl", [legacy | {"metrics": mets[1:]}])
+    case("a value in a quote but not in the corrected claim backs no metric link",
+         "metrics" not in rv.build_records("climate", [other], "b", "2026-10-12")[1][0])
     write_jsonl(f"{root}/ledger/events/climate.jsonl", [legacy])
     tomb = res(result="refuted", claim="Withdrawn after re-verification: Acme's Spanish solar plant - the capture says 450 MW, not 500 MW.")
     case("audit: a tombstone may restate the legacy figure", rv.cmd_audit("climate", [tomb]) == [])
@@ -91,7 +109,30 @@ def main():
         case(f"the {name} validates as a ledger record", errs == [])
 
     # fetch plumbing
-    case("gzip-encoded raw captures are decoded", rv._decode(gzip.compress(b"<p>hi</p>"), "") == b"<p>hi</p>")
+    case("gzip-encoded raw captures are decoded", rv._decode(gzip.compress(b"<p>hi</p>"), "") == (b"<p>hi</p>", False))
+    big = gzip.compress(b"x" * (rv.MAX_BYTES + 10))
+    out, trunc = rv._decode(big, "gzip")
+    case("decompression is bounded and flags truncation", len(out) == rv.MAX_BYTES and trunc)
+
+    # network discipline (fake transport, no network): redirects are paced hops; a 429's
+    # Retry-After becomes a shared deadline that another process (a new Net) honours
+    rv.ARCHIVE_GAP, calls = 0.2, []
+    replies = [({"status": 302, "location": "/web/2id_/x"}, None), ({"status": 200, "body": b"ok", "ctype": ""}, None),
+               ({"status": 429, "error": "HTTP 429"}, 0.6), ({"status": 200, "body": b"ok", "ctype": ""}, None)]
+
+    def fake_once(self, url):
+        calls.append((time.time(), url))
+        return replies[len(calls) - 1]
+    rv.Net._once = fake_once
+    with open(os.path.join(rv.CACHE, ".pacer.json"), "w") as f:
+        json.dump({"last": 0.0, "gap": 0.2}, f)
+    a = rv.Net()
+    res = a.get("https://web.archive.org/web/1id_/x")
+    case("a redirect is followed as a separate, paced archive.org request",
+         res.get("body") == b"ok" and calls[1][1] == "https://web.archive.org/web/2id_/x" and calls[1][0] - calls[0][0] >= 0.2)
+    a.get("https://web.archive.org/web/3id_/y", tries=1, breaker=False)   # 429, Retry-After 0.6
+    rv.Net().get("https://web.archive.org/web/4id_/z")
+    case("a 429's Retry-After is a shared deadline for every process", calls[3][0] - calls[2][0] >= 0.6)
     case("archive.org rate-limit page is an interstitial (retry)",
          rv.Net._interstitial("https://web.archive.org/web/1id_/x", b"<html><title>429 Too Many Requests</title>") == "retry")
     txt = rv.html_text(b'<html><head><title>T</title><script type="application/ld+json">'

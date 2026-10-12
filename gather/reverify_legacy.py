@@ -39,7 +39,9 @@ Results file (one JSON per event, written by the judge):
    "sources": [{"url", "title", "primary"}]   original or alternative source URLs
                                                (must have been fetched for this event),
    "evidence": [{"doc": NN, "quote": "verbatim text from that document"}],
-   "date": optional corrected event date (verified/corrected; the new id takes it),
+   "date": optional corrected event date (verified/corrected; the new id takes it; a date
+           after the legacy published date must be a full day and becomes the published date),
+   "kind": optional corrected event kind (e.g. an "achievement" that is really a "projection"),
    "note": "..."}   (notes may cite "doc NN"; the log lists every fetched document by number)
 """
 from __future__ import annotations
@@ -120,7 +122,7 @@ class Net:
     @staticmethod
     def _interstitial(url: str, body: bytes) -> str | None:
         """archive.org error/rate-limit pages served instead of a capture."""
-        if "archive.org" not in urllib.parse.urlsplit(url).netloc:
+        if not _is_archive(url):
             return None
         head = body[:4000].lower()
         if b"too many requests" in head or b"rate limit" in head:
@@ -132,36 +134,51 @@ class Net:
             return "fail"
         return None
 
-    def get(self, url: str, tries: int = MAX_TRIES, breaker: bool = True) -> dict:
+    def get(self, url: str, tries: int = MAX_TRIES, breaker: bool = True, hops: int = 5) -> dict:
         """{status, final_url, ctype, body | error}. Never raises for HTTP/network errors.
-        breaker: count a request that exhausts its retries towards the abort (3 in a row)."""
-        archive = "archive.org" in urllib.parse.urlsplit(url).netloc
+        Redirects are followed here, hop by hop, so every hop is paced (and an
+        archive.org hop gets the archive treatment). breaker: count an archive.org
+        request that exhausts its retries towards the abort (3 in a row)."""
+        archive = _is_archive(url)
         last_err = ""
         for attempt in range(tries):
             with open(self.lock_p, "a") as lk:
                 fcntl.flock(lk, fcntl.LOCK_EX)
                 p = self._pacer()
-                gap = p["gap"] if archive else OTHER_GAP
-                last = p["last"] if archive else p.get("last_other", 0.0)
-                wait = last + gap - time.time()
+                if archive:   # shared state: every process honours the spacing AND any backoff deadline
+                    wait = max(p["last"] + p["gap"], p.get("not_before", 0.0)) - time.time()
+                else:
+                    wait = p.get("last_other", 0.0) + OTHER_GAP - time.time()
                 if wait > 0:
                     time.sleep(wait)
                 res, retry_after = self._once(url)
-                p[("last" if archive else "last_other")] = time.time()
+                now = time.time()
+                p["last" if archive else "last_other"] = now
                 transient = res.get("status") in (429, 500, 502, 503, 504, 520, 522, 524) or \
                     ("error" in res and not res.get("status")) or res.get("interstitial") == "retry"
-                if archive and res.get("status") == 429:
-                    p["gap"] = min(p["gap"] * 1.5, 30.0)
-                elif archive and not transient and p["gap"] > ARCHIVE_GAP:
+                backoff = min(MAX_WAIT, max(retry_after or 0, (ARCHIVE_GAP if archive else 2) * 2 ** attempt))
+                if archive and transient:
+                    p["not_before"] = max(p.get("not_before", 0.0), now + backoff)
+                    if res.get("status") == 429:
+                        p["gap"] = min(p["gap"] * 1.5, 30.0)
+                elif archive and p["gap"] > ARCHIVE_GAP:
                     p["gap"] = max(ARCHIVE_GAP, p["gap"] * 0.95)
                 self._save_pacer(p)
             if not transient:
-                self.fail_streak = 0
+                if archive:
+                    self.fail_streak = 0
+                loc = res.pop("location", None)
+                if loc and hops > 0:
+                    nxt = urllib.parse.urljoin(url, loc)
+                    out = self.get(nxt, tries, breaker, hops - 1)
+                    out.setdefault("final_url", nxt)
+                    return out
+                if loc:
+                    return {"status": res["status"], "error": "too many redirects"}
                 return res
             last_err = res.get("error") or f"HTTP {res.get('status')}"
             if (not archive and attempt >= 2) or attempt == tries - 1:
                 break
-            backoff = min(MAX_WAIT, max(retry_after or 0, (ARCHIVE_GAP if archive else 2) * 2 ** attempt))
             log(f"    transient ({last_err}) on {url[:120]}; backing off {backoff:.0f}s")
             time.sleep(backoff)
         if archive and breaker:
@@ -172,15 +189,16 @@ class Net:
         return {"status": None, "error": f"gave up after retries: {last_err}"}
 
     def _once(self, url: str) -> tuple[dict, float | None]:
-        ua = UA_ARCHIVE if "archive.org" in urllib.parse.urlsplit(url).netloc else UA_BROWSER
+        """One HTTP request, redirects NOT followed (a 3xx comes back with its location)."""
+        ua = UA_ARCHIVE if _is_archive(url) else UA_BROWSER
         req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "*/*",
                                                    "Accept-Language": "en"})
         try:
-            with urllib.request.urlopen(req, timeout=90) as r:
-                body = _decode(r.read(MAX_BYTES + 1), r.headers.get("Content-Encoding", ""))
+            with _OPENER.open(req, timeout=90) as r:
+                body, truncated = _decode(r.read(MAX_BYTES + 1), r.headers.get("Content-Encoding", ""))
                 res = {"status": r.status, "final_url": r.geturl(),
-                       "ctype": r.headers.get("Content-Type", ""), "body": body[:MAX_BYTES]}
-                if len(body) > MAX_BYTES:
+                       "ctype": r.headers.get("Content-Type", ""), "body": body}
+                if truncated:
                     res["truncated"] = True
                 kind = self._interstitial(r.geturl(), body)
                 if kind:
@@ -188,27 +206,49 @@ class Net:
                     res["error"] = "archive.org interstitial"
                 return res, None
         except urllib.error.HTTPError as e:
+            if e.code in (301, 302, 303, 307, 308) and e.headers and e.headers.get("Location"):
+                return {"status": e.code, "location": e.headers["Location"]}, None
             ra = e.headers.get("Retry-After") if e.headers else None
             return {"status": e.code, "error": f"HTTP {e.code}"}, _retry_after(ra)
         except Exception as e:  # noqa: BLE001 - network errors of every kind are data here
             return {"status": None, "error": f"{type(e).__name__}: {e}"[:300]}, None
 
 
-def _decode(body: bytes, enc: str) -> bytes:
-    """Raw (id_) captures keep the original Content-Encoding; undo gzip/deflate/br."""
+def _is_archive(url: str) -> bool:
+    host = urllib.parse.urlsplit(url).netloc.lower()
+    return host == "archive.org" or host.endswith(".archive.org")
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **kw):
+        return None   # urllib then raises HTTPError(3xx); Net.get follows it, paced
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
+def _decode(body: bytes, enc: str) -> tuple[bytes, bool]:
+    """(bytes, truncated). Raw (id_) captures keep the original Content-Encoding;
+    undo gzip/deflate/br, never producing more than MAX_BYTES."""
     import zlib
     enc = (enc or "").lower()
+    truncated = len(body) > MAX_BYTES
     try:
-        if body[:2] == b"\x1f\x8b" or "gzip" in enc:
-            return zlib.decompressobj(16 + zlib.MAX_WBITS).decompress(body, MAX_BYTES)
-        if "deflate" in enc:
-            return zlib.decompressobj().decompress(body, MAX_BYTES)
+        if body[:2] == b"\x1f\x8b" or "gzip" in enc or "deflate" in enc:
+            d = zlib.decompressobj(16 + zlib.MAX_WBITS if body[:2] == b"\x1f\x8b" or "gzip" in enc else zlib.MAX_WBITS)
+            out = d.decompress(body, MAX_BYTES)
+            return out, truncated or bool(d.unconsumed_tail)
         if "br" in enc:
             import brotli
-            return brotli.decompress(body)[:MAX_BYTES]
+            d, out = brotli.Decompressor(), b""
+            for i in range(0, len(body), 4096):   # small chunks, so the output stays bounded
+                out += d.process(body[i:i + 4096])
+                if len(out) > MAX_BYTES:
+                    return out[:MAX_BYTES], True
+            return out, truncated
     except Exception:  # noqa: BLE001 - mislabelled encoding: keep the bytes
         pass
-    return body
+    return body[:MAX_BYTES], truncated
 
 
 def _retry_after(v: str | None) -> float | None:
@@ -564,10 +604,15 @@ def audit_one(section: str, r: dict, ev: dict | None) -> list[str]:
             d = str(r["date"])
             if not ledger._valid_date(d):
                 errs.append(f"{r['id']}: bad date {d!r} (YYYY, YYYY-MM or YYYY-MM-DD)")
-            elif d[:4] not in norm(" | ".join(str(q.get("quote", "")) for q in ev_q)):
-                errs.append(f"{r['id']}: the year of the corrected date {d} is in no evidence quote")
-    elif r.get("date") is not None:
-        errs.append(f"{r['id']}: only a verified/corrected result may move the event date")
+            else:
+                errs += [f"{r['id']}: {e}" for e in _date_errs(d, " | ".join(str(q.get("quote", "")) for q in ev_q))]
+                if d != ev["date"] and len(d) < 10 and ledger.day(_day(d)) > ledger.day(ev["published"]):
+                    errs.append(f"{r['id']}: the corrected date {d} is after the legacy published date "
+                                f"{ev['published']}: give the full YYYY-MM-DD date (it becomes the published date)")
+        if r.get("kind") is not None and r["kind"] not in ledger.EVENT_KINDS - {"retraction"}:
+            errs.append(f"{r['id']}: bad kind {r['kind']!r}")
+    elif r.get("date") is not None or r.get("kind") is not None:
+        errs.append(f"{r['id']}: only a verified/corrected result may move the event date or change its kind")
     if res == "refuted":
         claim = str(r.get("claim") or "")
         if not claim.startswith("Withdrawn after re-verification: "):
@@ -577,15 +622,45 @@ def audit_one(section: str, r: dict, ev: dict | None) -> list[str]:
     return errs
 
 
+MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august",
+          "september", "october", "november", "december"]
+
+
+def _day(d: str) -> str:
+    """First day of a YYYY / YYYY-MM / YYYY-MM-DD date."""
+    return d + "-01-01"[len(d) - 4:] if len(d) < 10 else d
+
+
+def _date_errs(d: str, quotes: str) -> list[str]:
+    """Each part of a corrected date (year, month, day) must appear in a quote: the month
+    as a name, abbreviation or YYYY-MM / numeric m/d form, the day as a number."""
+    q, errs = norm(quotes), []
+    if d[:4] not in q:
+        errs.append(f"the year of the corrected date {d} is in no evidence quote")
+    if len(d) >= 7:
+        m = int(d[5:7])
+        forms = [MONTHS[m - 1], MONTHS[m - 1][:3] + ".", MONTHS[m - 1][:3] + " ", d[:7]]
+        if not (any(f in q for f in forms) or re.search(rf"(?<!\d)0?{m}[/.]\d|\d[/.]0?{m}(?!\d)", q)):
+            errs.append(f"the month of the corrected date {d} is in no evidence quote")
+    if len(d) == 10 and not re.search(rf"(?<!\d)0?{int(d[8:])}(?!\d)", q.replace(d[:4], " ")):
+        errs.append(f"the day of the corrected date {d} is in no evidence quote")
+    return errs
+
+
 def _figure_errs(eid: str, claim: str, ev_q: list[dict], also: str = "") -> list[str]:
+    """Every figure of the claim must be in a quote, sign included (kpi.kpi_traceable:
+    a negative value may match its unsigned magnitude, "fell 0.5%"; a positive value never
+    matches a negative one), and every year."""
     errs = []
     quotes = " | ".join(str(q.get("quote", "")) for q in ev_q)
-    pool = {abs(x) for x in kpi.quantities(quotes + " | " + also)}
+    pool = kpi.quantities(quotes + " | " + also)
     qn = norm(quotes + " | " + also)
+    # a claim worded as a decrease ("reduced by 1.2") may state a negative quoted value unsigned
+    decrease = re.search(r"\b(reduc|decreas|declin|fell|fall|drop|lower|down|cut|less)", claim.lower())
     for v in sorted(kpi.quantities(claim)):
         # a year read as a quantity ("2 June 2025 Clairity...") is backed by the year in a quote
         year = v.is_integer() and 1900 <= v <= 2100 and str(int(v)) in qn
-        if abs(v) not in pool and not year:
+        if not kpi.kpi_traceable(str(v), pool) and not (decrease and -v in pool) and not year:
             errs.append(f"{eid}: figure {v:g} of the claim is in no evidence quote")
     for y in sorted(set(YEAR_RE.findall(claim))):
         if y not in qn:
@@ -641,12 +716,13 @@ def build_records(section: str, results: list[dict], by: str, today: str) -> tup
             if q["doc"] not in docs:
                 docs.append(q["doc"])
         caps = [man[n]["url"] for n in docs if "wayback" in man[n]["kind"]]
-        fetched = [{"doc": m["n"], "url": m["url"], "status": m.get("status"), "ok": bool(m.get("ok"))}
-                   for m in man.values() if not m["url"].startswith("cdx:")]
+        fetched = [{"doc": m["n"], "url": m["url"], "status": m.get("status"), "ok": bool(m.get("ok")),
+                    "fetched_at": m.get("fetched_at")} for m in man.values() if not m["url"].startswith("cdx:")]
         note = r["note"].strip()
         if caps and not all(c in note for c in caps):
             note += " Capture: " + ", ".join(caps)
-        log_rows.append({"id": r["id"], "result": r["result"], "note": note, "fetched": fetched})
+        log_rows.append({"id": r["id"], "result": r["result"], "note": note, "fetched": fetched}
+                        | ({"evidence": r["evidence"]} if r.get("evidence") else {}))
         if r["result"] == "unverifiable":
             continue
         cap_srcs = [{"url": c, "title": "Wayback capture " + re.search(r"/web/(\d+)", c).group(1), "primary": False}
@@ -674,13 +750,19 @@ def build_records(section: str, results: list[dict], by: str, today: str) -> tup
                     for s in r["sources"]]
             claim = ev["claim"] if r["result"] == "verified" else r["claim"].strip()
             rec = {k: ev[k] for k in ("id", "date", "published", "published_basis", "retrieved", "kind", "topics")}
-            rec |= {"id": rid, "date": date, "claim": claim, "sources": _dedup(srcs + cap_srcs), "significance": ev["significance"]}
-            quotes = " | ".join(q["quote"] for q in r.get("evidence") or [])
-            pool = {abs(x) for x in kpi.quantities(quotes)}
-            # metric links survive only if the judged claim kept every linked value (a value
-            # merely recurring in a quote, e.g. another year's, does not back its link)
+            rec |= {"id": rid, "date": date, "kind": r.get("kind") or ev["kind"], "claim": claim,
+                    "sources": _dedup(srcs + cap_srcs), "significance": ev["significance"]}
+            if ledger.day(_day(date)) > ledger.day(ev["published"]):
+                # the documents date it after the legacy publication date: that date was
+                # hindsight-wrong; publication = the documented (full, audited) date
+                rec |= {"published": date, "published_basis": "source"}
+            # metric links survive a correction only if the new claim itself states every
+            # linked value and its period's year (a value merely recurring in a quote does not
+            # back a link); a verified claim is the legacy claim, links and all
             mets = ev.get("metrics") or []
-            if mets and (r["result"] == "verified" or all(abs(float(m["value"])) in pool for m in mets)):
+            cq = kpi.quantities(claim)
+            if mets and (r["result"] == "verified" or all(
+                    kpi.kpi_traceable(str(m["value"]), cq) and str(m["obs"])[:4] in claim for m in mets)):
                 rec["metrics"] = mets
             if ev.get("relates"):
                 rec["relates"] = ev["relates"]

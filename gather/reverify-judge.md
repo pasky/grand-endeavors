@@ -68,7 +68,11 @@ passages; a note must say specifically what the documents do and do not say):
   unverifiable, not corrected.
   If the documents date the event differently from the event's `date` (e.g. the claim
   is really about an October milestone, not the December date it was filed under), set
-  `"date"` to the documented date (YYYY-MM-DD, YYYY-MM or YYYY) and quote it.
+  `"date"` to the documented date (YYYY-MM-DD, YYYY-MM or YYYY) and quote it (year,
+  month and day as far as given). A date after the event's `published` date must be a
+  full YYYY-MM-DD: it also becomes the publication date. If the correction changes
+  what kind of event it is (an "achievement" that is really a plan or forecast), set
+  `"kind"` (achievement, announcement, projection, setback, data, analysis, policy).
 - **refuted**: a document clearly contradicts the core of the claim (it did not happen,
   happened in a different year than the event's date, or the key figure is materially
   different such that the claim is wrong rather than imprecise). Give a tombstone claim
@@ -109,6 +113,7 @@ Write `{OUT}`, exactly one JSON object per line for each of your events:
                   "title": "<publisher: title>", "primary": true|false}],
      "evidence": [{"doc": <doc number, integer>, "quote": "<verbatim text>"}],
      "date": "<only if corrected: the documented event date>",
+     "kind": "<only if corrected and the kind changed>",
      "note": "<what was checked and found: which document/capture, key quotes in “”,
                what was dropped and why; for unverifiable: what was fetched and what it lacked>"}
 
