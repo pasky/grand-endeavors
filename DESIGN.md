@@ -152,7 +152,8 @@ sequential fetching (live + Wayback captures, one request at a time, archive.org
 paced and backed off) into a cache, LLM judges per batch on the cache only
 (`gather/reverify-judge.md`), a mechanical audit (every quote verbatim in a fetched
 document, every figure and year of a new claim in a quote), then `ledger.py merge`.
-Per-event results: `ledger/reverify/<section>.<date>[-<pass>].jsonl`.
+Per-event results: `ledger/reverify/<section>.<date>[-<pass>].jsonl`, with the judges'
+quotes and the fetched documents (URL, status, fetch time, sha256 of the cached text).
 
 ## 4. Gather (`gather/gather.sh <section>`; env UNTIL, SINCE, ITEMS, OVERLAP_DAYS)
 
