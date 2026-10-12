@@ -156,7 +156,10 @@ may use them only as background context, never as this period's news.
 3. **intake** (one web-capable agent per watch item): find developments
    published in the item's window, and stage event records and observations.
    Windows are per item: from the item's last UNTIL minus OVERLAP_DAYS (default
-   3, because sources publish and index late) to UNTIL. It is shown the
+   3, because sources publish and index late) to UNTIL. It is given the curated
+   **reference sources** tagged with its item (`gather/sources/<section>.yaml`:
+   URL, what it covers, release cadence, tier primary/secondary/news; listed by
+   `gather/sources.py list`) as a starting point, not a whitelist. It is shown the
    section's effective events so that it **dedups**:
    - a status change becomes a new event linked via `relates`;
    - a correction, or a better source for a known event, becomes a replacement
@@ -304,6 +307,8 @@ tests in its own `tests/` directory:
   installs only what the script itself lists; the core reads framework.yaml);
 - `gather/tests/test_collector*.py`: the collectors, on trimmed real fixtures
   (they read the metric registry, so they need the data repo);
+- `gather/tests/test_sources.py`: the reference source lists match framework.yaml
+  (every watch item has sources, no unknown tags or duplicate URLs);
 - `views/tests/test_validate.py` (the bulletin and round-up gate) and
   `views/tests/test_explorer.py`.
 
@@ -331,6 +336,7 @@ themselves.
   framework.yaml                endeavor definitions (read by the pipeline and the dashboard)
   core/     ledger.py kpi.py lib.sh pipeline-lock.sh   shared by gather and views
   gather/   gather.sh assess.sh RUBRIC.md collectors/   grows the ledger
+            sources/ sources.py                         reference sources per watch item
             collect.sh systemd/                         daily collectors (§4a)
   views/    bulletin.sh roundup.sh validate.py explore.py quickref.py
             EXPLORER.md newsletter-intro.md             reads the ledger

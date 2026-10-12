@@ -17,7 +17,7 @@ The initial purpose of this project is using AI to automatically compose a regul
 * [ ] *(work in progress)* We are piloting the reporting structure on a summary 2025 report.
 * [ ] *(work in progress)* We are building an automatic report drafting harness.
 * [ ] We have the weekly report cadence running.
-* [ ] We have a reference list of sources to follow for each endeavor.
+* [x] We have a reference list of sources to follow for each endeavor ([gather/sources/](gather/sources/)).
 * [ ] We have a publishing infrastructure set up (most likely Substack and automated Twitter account).
 * [ ] We have a drafting / feedback infrastructure for early expert reviews and errata.
 

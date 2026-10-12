@@ -1,0 +1,187 @@
+# robots-software: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
+sources:
+  # --- KPI: METR time horizon -----------------------------------------------------------------
+  - name: METR — task-completion time horizons
+    url: https://metr.org/time-horizons/
+    items: [kpi]
+    covers: 50%/80% time horizons of frontier models (the KPI); the data file benchmark_results_*.yaml behind it.
+    cadence: as models are evaluated (days to weeks after a frontier release)
+    tier: primary
+    collector: true
+  - name: METR — research and notes
+    url: https://metr.org/research
+    items: [kpi, challenge:reliability, challenge:agency]
+    covers: METR evaluation reports of new models, methodology changes to the time-horizon suite, agent failure analyses.
+    cadence: irregular
+    tier: primary
+  - name: Epoch AI — benchmarking hub
+    url: https://epoch.ai/benchmarks
+    items: [kpi, challenge:reliability, challenge:agency, challenge:novelty]
+    covers: Independent runs of frontier models on SWE-bench Verified, FrontierMath, GPQA etc., plus METR horizons in one place.
+    cadence: continuous
+    tier: secondary
+  - name: Epoch AI — Gradient Updates newsletter
+    url: https://epoch.ai/gradient-updates
+    items: [kpi, beyond]
+    covers: Weekly analyses of AI capability trends, compute and economics.
+    cadence: weekly
+    tier: secondary
+  # --- The Linux Kernel Patch -----------------------------------------------------------------------
+  - name: LWN.net — kernel coverage
+    url: https://lwn.net/Kernel/
+    items: [milestone:the-linux-kernel-patch]
+    covers: Authoritative reporting on kernel development, merge windows, and maintainer debates incl. AI-generated contributions.
+    cadence: weekly edition (Thursday); daily briefs
+    tier: news
+  - name: Linux kernel — guidance for AI coding assistants
+    url: https://docs.kernel.org/process/coding-assistants.html
+    items: [milestone:the-linux-kernel-patch]
+    covers: The kernel's policy for AI-assisted contributions ("Assisted-by:" tag, no AI Signed-off-by); changes here signal acceptance rules.
+    cadence: changes with kernel releases
+    tier: primary
+  - name: lore.kernel.org — LKML archive
+    url: https://lore.kernel.org/lkml/
+    items: [milestone:the-linux-kernel-patch]
+    covers: The mailing-list record of patch series and maintainer acceptance (search e.g. "Assisted-by:" to find AI-assisted series).
+    cadence: continuous
+    tier: primary
+  - name: Phoronix — Linux kernel
+    url: https://www.phoronix.com/linux/Linux+Kernel
+    items: [milestone:the-linux-kernel-patch]
+    covers: Fast news on kernel merges and notable patch series (incl. AI-written ones).
+    cadence: daily
+    tier: news
+  # --- The Nature Author --------------------------------------------------------------------------
+  - name: Nature Portfolio — AI editorial policy
+    url: https://www.nature.com/nature-portfolio/editorial-policies/ai
+    items: [milestone:the-nature-author]
+    covers: Nature's rules on AI use (accountability "cannot be delegated to AI systems", so no AI authors); a policy change is a precondition of the milestone.
+    cadence: changes rarely
+    tier: primary
+  - name: Nature — research articles
+    url: https://www.nature.com/nature/research-articles
+    items: [milestone:the-nature-author, challenge:novelty]
+    covers: Nature's research papers (AI-driven discoveries, AI-generated papers).
+    cadence: continuous; weekly issues
+    tier: primary
+    note: bot-blocked
+  - name: Science — current issue
+    url: https://www.science.org/toc/science/current
+    items: [milestone:the-nature-author, challenge:novelty]
+    covers: Science's research papers and editorial policy news.
+    cadence: weekly (Thursday)
+    tier: primary
+    note: bot-blocked
+  - name: Sakana AI — blog
+    url: https://sakana.ai/blog/
+    items: [milestone:the-nature-author, challenge:novelty]
+    covers: Sakana's "AI Scientist" (end-to-end AI-generated papers passing peer review) and other automated-research results.
+    cadence: irregular
+    tier: primary
+  # --- The $10M Solopreneur -----------------------------------------------------------------------
+  - name: TrustMRR — verified startup revenue
+    url: https://trustmrr.com/
+    items: [milestone:the-10m-solopreneur]
+    covers: Leaderboard of startups with Stripe-verified MRR and their founders; verifies revenue, not team size or hours.
+    cadence: continuous
+    tier: secondary
+  - name: Indie Hackers
+    url: https://www.indiehackers.com/
+    items: [milestone:the-10m-solopreneur]
+    covers: Self-reported solo-founder revenue stories and interviews (claims need independent confirmation).
+    cadence: continuous
+    tier: news
+    note: bot-blocked
+  - name: GetLatka — SaaS revenue database
+    url: https://getlatka.com/
+    items: [milestone:the-10m-solopreneur]
+    covers: Founder-interview-based ARR and team-size figures for SaaS companies (self-reported).
+    cadence: continuous
+    tier: secondary
+  # --- Challenges -------------------------------------------------------------------------------------
+  - name: SWE-bench — leaderboards
+    url: https://www.swebench.com/
+    items: [challenge:reliability, challenge:agency]
+    covers: Resolution rates on real GitHub issues (Verified, Multimodal, Bash-only).
+    cadence: continuous
+    tier: primary
+  - name: Vectara — hallucination leaderboard
+    url: https://github.com/vectara/hallucination-leaderboard
+    items: [challenge:reliability]
+    covers: Grounded-summarization hallucination rates of current LLMs (HHEM), updated as models release.
+    cadence: continuous
+    tier: secondary
+  - name: OSWorld — computer-use benchmark
+    url: https://os-world.github.io/
+    items: [challenge:agency]
+    covers: Success rates of agents on open-ended desktop tasks vs the human baseline.
+    cadence: leaderboard updates as submissions arrive
+    tier: primary
+  - name: ARC Prize — leaderboard
+    url: https://arcprize.org/leaderboard
+    items: [challenge:novelty, challenge:continuous-learning]
+    covers: "ARC-AGI-1/2/3 scores and cost per task: skill acquisition on novel tasks, the standard test of generalization beyond training data."
+    cadence: continuous; competition results annually (December)
+    tier: primary
+  - name: Epoch AI — FrontierMath
+    url: https://epoch.ai/frontiermath
+    items: [challenge:novelty]
+    covers: Research-level math benchmark (incl. Tier 4); scores of frontier models.
+    cadence: as models are evaluated
+    tier: primary
+  - name: Erdős Problems
+    url: https://www.erdosproblems.com/
+    items: [challenge:novelty]
+    covers: Database of Erdős problems and their status; status changes show newly solved problems, incl. AI-assisted solutions.
+    cadence: continuous
+    tier: primary
+  - name: arXiv — cs.LG recent
+    url: https://arxiv.org/list/cs.LG/recent
+    items: [challenge:continuous-learning]
+    covers: ML preprints (continual learning, test-time training, memory, catastrophic forgetting).
+    cadence: weekdays
+    tier: primary
+  - name: arXiv — cs.AI recent
+    url: https://arxiv.org/list/cs.AI/recent
+    items: [challenge:reliability, challenge:agency, challenge:novelty]
+    covers: AI preprints (agents, planning, self-correction, automated discovery).
+    cadence: weekdays
+    tier: primary
+  - name: arXiv — cs.CL recent
+    url: https://arxiv.org/list/cs.CL/recent
+    items: [challenge:reliability, challenge:continuous-learning]
+    covers: LLM preprints (hallucination, long-context memory, reasoning).
+    cadence: weekdays
+    tier: primary
+  # --- Labs and section-wide ---------------------------------------------------------------------------
+  - name: OpenAI — news
+    url: https://openai.com/news/
+    items: [kpi, challenge:agency, beyond]
+    covers: Model releases, system cards (incl. METR/AISI evaluations), agent products.
+    cadence: continuous
+    tier: primary
+    note: bot-blocked
+  - name: Anthropic — news
+    url: https://www.anthropic.com/news
+    items: [kpi, challenge:agency, beyond]
+    covers: Claude model releases, system cards, agentic-coding results, research.
+    cadence: continuous
+    tier: primary
+  - name: Google DeepMind — blog
+    url: https://deepmind.google/blog/
+    items: [kpi, challenge:novelty, beyond]
+    covers: Gemini releases, AI-for-science results (AlphaEvolve, AlphaProof), agents.
+    cadence: continuous
+    tier: primary
+  - name: Import AI (Jack Clark)
+    url: https://jack-clark.net/
+    items: ["*"]
+    covers: Weekly digest of notable AI research papers and capability evaluations.
+    cadence: weekly (Monday)
+    tier: news
+  - name: Simon Willison's weblog
+    url: https://simonwillison.net/
+    items: [challenge:agency, challenge:reliability, beyond]
+    covers: Hands-on, fast coverage of model releases, coding agents and their failure modes (prompt injection).
+    cadence: daily
+    tier: news

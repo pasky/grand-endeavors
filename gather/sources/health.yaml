@@ -1,0 +1,183 @@
+# health: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
+sources:
+  # --- KPI: median-country HALE ---------------------------------------------------------------
+  - name: WHO Global Health Observatory API — HALE at birth (WHOSIS_000002)
+    url: https://ghoapi.azureedge.net/api/WHOSIS_000002
+    items: [kpi]
+    covers: Country-level HALE at birth by sex and year, the KPI series (median across countries).
+    cadence: with each WHO Global Health Estimates round (multi-year; last 2026-10, data to 2023)
+    tier: primary
+    collector: true
+  - name: WHO — Global Health Estimates
+    url: https://www.who.int/data/global-health-estimates
+    items: [kpi, beyond]
+    covers: "WHO's life expectancy, HALE, cause-of-death and DALY estimates: release notes and methods of each round."
+    cadence: every few years
+    tier: primary
+  - name: WHO — HALE dashboard
+    url: https://data.who.int/dashboards/global-progress/hale
+    items: [kpi]
+    covers: Country HALE values and rankings, for cross-checking the collected series.
+    cadence: with WHO data refreshes
+    tier: primary
+  - name: WHO — World Health Statistics
+    url: https://www.who.int/data/gho/publications/world-health-statistics
+    items: [kpi, beyond]
+    covers: "Annual WHO report: life expectancy and HALE headlines, SDG health indicators."
+    cadence: annual, May
+    tier: primary
+  - name: IHME — Global Burden of Disease
+    url: https://www.healthdata.org/research-analysis/gbd
+    items: [kpi, milestone:unbroken-mind, beyond]
+    covers: The independent HALE / life-expectancy series (GBD, published in The Lancet) and dementia prevalence estimates by age.
+    cadence: major rounds every 1-3 years
+    tier: primary
+  - name: UN — World Population Prospects
+    url: https://population.un.org/wpp/
+    items: [kpi]
+    covers: UN life-expectancy estimates and projections for all countries (context for HALE; no HALE itself).
+    cadence: biennial, July (2024, 2026)
+    tier: primary
+  # --- Taming Cancer ----------------------------------------------------------------------------
+  - name: FDA — oncology / hematologic malignancies approval notifications
+    url: https://www.fda.gov/drugs/resources-information-approved-drugs/oncology-cancerhematologic-malignancies-approval-notifications
+    items: [milestone:taming-cancer, challenge:programmable-immunity]
+    covers: Every FDA oncology approval (new drugs, new indications, cell therapies) with the pivotal trial's survival data.
+    cadence: continuous (several per month)
+    tier: primary
+  - name: NCI SEER — cancer statistics
+    url: https://seer.cancer.gov/statistics/
+    items: [milestone:taming-cancer]
+    covers: US cancer incidence, 5-year relative survival by site and stage (the best long-run survival series), Cancer Stat Facts.
+    cadence: annual data release, April
+    tier: primary
+  - name: American Cancer Society — Cancer Facts & Statistics
+    url: https://www.cancer.org/research/cancer-facts-statistics.html
+    items: [milestone:taming-cancer]
+    covers: "Annual US \"Cancer Statistics\" (CA Cancer J Clin): survival trends, mortality decline since 1991."
+    cadence: annual, January
+    tier: secondary
+  - name: CONCORD programme (LSHTM) — global cancer survival
+    url: https://csg.lshtm.ac.uk/research/themes/concord-programme/
+    items: [milestone:taming-cancer]
+    covers: Worldwide population-based cancer survival surveillance (CONCORD-4 under way); the only global survival comparison.
+    cadence: multi-year rounds
+    tier: primary
+    note: bot-blocked
+  - name: IARC — Global Cancer Observatory
+    url: https://gco.iarc.who.int/en
+    items: [milestone:taming-cancer, milestone:precise-screening]
+    covers: GLOBOCAN incidence and mortality by country and cancer site; survival (SURVCAN) and projections.
+    cadence: GLOBOCAN every ~2 years
+    tier: primary
+  - name: NCI — Cancer Currents blog
+    url: https://www.cancer.gov/news-events/cancer-currents-blog
+    items: [milestone:taming-cancer, milestone:precise-screening]
+    covers: NCI's own summaries of notable cancer trials and screening studies (incl. the Vanguard multi-cancer detection study).
+    cadence: weekly-ish
+    tier: primary
+  # --- Precise Screening / Predictive Biomarkers --------------------------------------------------
+  - name: USPSTF — published recommendations
+    url: https://www.uspreventiveservicestaskforce.org/uspstf/topic_search_results?topic_status=P
+    items: [milestone:precise-screening]
+    covers: "US screening recommendations (grades) and drafts: which early-detection tests become standard care."
+    cadence: continuous (a few per month)
+    tier: primary
+  - name: FDA — recently approved devices
+    url: https://www.fda.gov/medical-devices/device-approvals-and-clearances/recently-approved-devices
+    items: [milestone:precise-screening, challenge:predictive-biomarkers]
+    covers: PMA approvals incl. screening and diagnostic tests (blood-based cancer screening, Alzheimer's blood tests).
+    cadence: continuous
+    tier: primary
+  - name: GRAIL — news center
+    url: https://grail.com/news-center/
+    items: [milestone:precise-screening, challenge:predictive-biomarkers]
+    covers: "Galleri multi-cancer early detection: NHS-Galleri and PATHFINDER 2 results, FDA PMA status."
+    cadence: continuous
+    tier: primary
+  - name: Biomarkers of Aging Consortium
+    url: https://www.agingconsortium.org/
+    items: [challenge:predictive-biomarkers, milestone:the-long-middle-age]
+    covers: Consensus and validation standards for aging biomarkers and epigenetic clocks; annual conference.
+    cadence: irregular; conference annually (autumn)
+    tier: secondary
+  # --- Unbroken Mind / Brain Preservation -----------------------------------------------------------
+  - name: Alzforum — news
+    url: https://www.alzforum.org/
+    items: [milestone:unbroken-mind, challenge:brain-preservation, challenge:predictive-biomarkers]
+    covers: "The specialist news service for Alzheimer's and neurodegeneration research: trials, blood biomarkers, conference coverage (AAIC, CTAD)."
+    cadence: daily
+    tier: news
+    note: bot-blocked
+  - name: WHO — Global Dementia Observatory
+    url: https://www.who.int/data/gho/data/themes/global-dementia-observatory-gdo
+    items: [milestone:unbroken-mind]
+    covers: WHO dementia prevalence, policy and care indicators by country.
+    cadence: irregular
+    tier: primary
+  - name: Alzheimer's Disease International — World Alzheimer Report
+    url: https://www.alzint.org/what-we-do/research/world-alzheimer-report/
+    items: [milestone:unbroken-mind]
+    covers: Annual global dementia report (topic varies; global prevalence estimates).
+    cadence: annual, September
+    tier: secondary
+  - name: Alzheimer's Association — Facts and Figures
+    url: https://www.alz.org/alzheimers-dementia/facts-figures
+    items: [milestone:unbroken-mind]
+    covers: US Alzheimer's prevalence by age group (incl. 85+), incidence and mortality; US only, not CDR-based.
+    cadence: annual, March/April
+    tier: secondary
+  - name: National Institute on Aging — news
+    url: https://www.nia.nih.gov/news
+    items: [milestone:unbroken-mind, challenge:brain-preservation, challenge:causal-model-of-aging]
+    covers: NIA research highlights (dementia, aging biology) and Interventions Testing Program results.
+    cadence: continuous
+    tier: primary
+    note: bot-blocked
+  # --- The Long Middle Age / aging biology -------------------------------------------------------
+  - name: XPRIZE Healthspan
+    url: https://www.xprize.org/competitions/healthspan
+    items: [milestone:the-long-middle-age, challenge:safe-in-vivo-rejuvenation]
+    covers: $101M competition to restore ≥10 years of muscle, cognitive and immune function; semifinalist/finalist trial results.
+    cadence: milestone announcements (finals ~2030)
+    tier: primary
+  - name: Nature Aging — research articles
+    url: https://www.nature.com/nataging/research-articles
+    items: [milestone:the-long-middle-age, challenge:causal-model-of-aging, challenge:safe-in-vivo-rejuvenation, challenge:predictive-biomarkers]
+    covers: "The leading geroscience journal: aging clocks, interventions, mechanisms."
+    cadence: continuous
+    tier: primary
+  - name: bioRxiv — aging collection
+    url: https://www.biorxiv.org/collection/aging
+    items: [challenge:causal-model-of-aging, challenge:safe-in-vivo-rejuvenation]
+    covers: Aging-biology preprints (reprogramming, senolytics, clocks) before peer review.
+    cadence: daily
+    tier: primary
+    note: bot-blocked
+  - name: Fight Aging!
+    url: https://www.fightaging.org/
+    items: [milestone:the-long-middle-age, challenge:causal-model-of-aging, challenge:safe-in-vivo-rejuvenation]
+    covers: Daily curated digest of rejuvenation research and longevity-biotech news (advocacy viewpoint; follow its links to primary papers).
+    cadence: daily; weekly newsletter
+    tier: news
+  # --- Immunity / clinical translation --------------------------------------------------------------
+  - name: FDA — approved cellular and gene therapy products
+    url: https://www.fda.gov/vaccines-blood-biologics/cellular-gene-therapy-products/approved-cellular-and-gene-therapy-products
+    items: [challenge:programmable-immunity, challenge:safe-in-vivo-rejuvenation]
+    covers: Licensed CAR-T, gene and cell therapies (new entries = new approvals).
+    cadence: updated on approval
+    tier: primary
+  - name: Nature Medicine — research articles
+    url: https://www.nature.com/nm/research-articles
+    items: [challenge:programmable-immunity, challenge:predictive-biomarkers, milestone:taming-cancer]
+    covers: "Clinical and translational studies: cancer vaccines, in-vivo CAR-T, early-detection biomarkers."
+    cadence: continuous
+    tier: primary
+  # --- Section-wide -------------------------------------------------------------------------------
+  - name: NIH — news releases
+    url: https://www.nih.gov/news-events/news-releases
+    items: ["*"]
+    covers: NIH-funded research results and programme announcements across all institutes.
+    cadence: continuous
+    tier: primary
+    note: bot-blocked

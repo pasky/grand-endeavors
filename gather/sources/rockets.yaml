@@ -1,0 +1,179 @@
+# rockets: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
+sources:
+  # --- KPI: cost to LEO ($/kg) ----------------------------------------------------------------
+  - name: SpaceX — rideshare
+    url: https://www.spacex.com/rideshare
+    items: [kpi]
+    covers: Published Falcon 9 rideshare price per kg to SSO (the only public per-kg list price of a major provider).
+    cadence: updated on price changes
+    tier: primary
+  - name: SpaceX — updates
+    url: https://www.spacex.com/updates/
+    items: [kpi, milestone:the-deluge]
+    covers: Starship flight tests (orbit, booster/ship reuse, payload deployment), Falcon cadence and reuse records.
+    cadence: continuous
+    tier: primary
+  - name: Rocket Lab — updates
+    url: https://rocketlabcorp.com/updates/
+    items: [kpi, milestone:the-deluge]
+    covers: Electron launches and Neutron (medium-lift, reusable) development and first flights.
+    cadence: continuous
+    tier: primary
+  - name: BryceTech — publications
+    url: https://brycetech.com/reports
+    items: [kpi, milestone:the-deluge]
+    covers: Quarterly "Global Space Activity" briefings and the annual "Orbital Launches Year in Review" (launches, upmass by vehicle and country).
+    cadence: quarterly (~2 months after quarter end); year in review ~March/April
+    tier: secondary
+  - name: NASA Small Spacecraft Technology State of the Art — launch
+    url: https://www.nasa.gov/smallsat-institute/sst-soa/integration-launch-and-deployment/
+    items: [kpi]
+    covers: Survey of launch vehicles and services incl. published prices; a reference for list-price-per-kg comparisons.
+    cadence: annual revision
+    tier: secondary
+  - name: Our World in Data — cost of space launches to LEO
+    url: https://ourworldindata.org/grapher/cost-space-launches-low-earth-orbit
+    items: [kpi]
+    covers: Historical $/kg to LEO by vehicle (CSIS Aerospace Security Project data); background for the KPI series, not current prices.
+    cadence: irregular
+    tier: secondary
+  - name: ESA — Space Transportation
+    url: https://www.esa.int/Enabling_Support/Space_Transportation
+    items: [kpi, beyond]
+    covers: Ariane 6, Vega-C and European Launcher Challenge (new commercial launchers) news.
+    cadence: continuous
+    tier: primary
+  # --- The Deluge: mass to orbit ---------------------------------------------------------------
+  - name: Jonathan's Space Report — annual payload statistics
+    url: https://planet4589.org/space/stats/out/msatannual.txt
+    items: [milestone:the-deluge]
+    covers: Payload mass launched to orbit per year (the payload-mass-to-orbit series), by J. McDowell.
+    cadence: continuous; year totals settle in January
+    tier: primary
+    collector: true
+  - name: FAA — commercial space data
+    url: https://www.faa.gov/data_research/commercial_space_data
+    items: [milestone:the-deluge]
+    covers: FAA-licensed US launches and reentries by year and operator.
+    cadence: continuous
+    tier: primary
+  - name: Spaceflight Now — launch schedule
+    url: https://spaceflightnow.com/launch-schedule/
+    items: [milestone:the-deluge]
+    covers: Upcoming and completed orbital launches worldwide, with results.
+    cadence: continuous
+    tier: news
+  # --- The Homestead / ISRU / life support / radiation ------------------------------------------
+  - name: NASA — news releases
+    url: https://www.nasa.gov/news/
+    items: [milestone:the-homestead, challenge:radiation-shielding, challenge:closed-loop-life-support, challenge:isru-at-scale]
+    covers: Artemis schedule, lunar surface contracts, ISS research results, technology awards.
+    cadence: continuous
+    tier: primary
+  - name: NASA — Moon to Mars Architecture
+    url: https://www.nasa.gov/moontomarsarchitecture/
+    items: [milestone:the-homestead]
+    covers: NASA's architecture definition documents for sustained lunar presence and Mars (habitats, surface power, ISRU).
+    cadence: annual revision cycle
+    tier: primary
+  - name: NASA — Commercial Lunar Payload Services
+    url: https://www.nasa.gov/commercial-lunar-payload-services/
+    items: [milestone:the-homestead, challenge:isru-at-scale]
+    covers: CLPS lander missions and their payloads (incl. ISRU and resource-prospecting demonstrations).
+    cadence: per mission / task order
+    tier: primary
+  - name: NASA — Lunar Surface Technology
+    url: https://www.nasa.gov/lunar-surface-technology/
+    items: [challenge:isru-at-scale]
+    covers: NASA lunar ISRU (oxygen extraction, regolith processing) and surface power technology projects.
+    cadence: irregular
+    tier: primary
+  - name: ESA — Human and Robotic Exploration
+    url: https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration
+    items: [milestone:the-homestead, challenge:isru-at-scale, challenge:closed-loop-life-support]
+    covers: ESA exploration news (Argonaut lander, Gateway modules, MELiSSA life support, ISRU demos).
+    cadence: continuous
+    tier: primary
+  - name: Intuitive Machines — news
+    url: https://www.intuitivemachines.com/news
+    items: [milestone:the-homestead, challenge:isru-at-scale]
+    covers: Lunar lander missions (IM-series) and lunar terrain vehicle work.
+    cadence: continuous
+    tier: primary
+    note: bot-blocked
+  - name: Blue Origin — news
+    url: https://www.blueorigin.com/news
+    items: [milestone:the-homestead, challenge:isru-at-scale, beyond]
+    covers: Blue Moon landers (Artemis HLS), New Glenn, Blue Alchemist (solar cells from regolith).
+    cadence: continuous
+    tier: primary
+    note: bot-blocked
+  - name: Sierra Space — press releases
+    url: https://www.sierraspace.com/news/
+    items: [challenge:closed-loop-life-support, challenge:isru-at-scale]
+    covers: Dream Chaser, LIFE inflatable habitat tests, oxygen-from-regolith (carbothermal) demonstrations.
+    cadence: continuous
+    tier: primary
+    note: bot-blocked
+  - name: NASA Human Research Program — space radiation
+    url: https://www.nasa.gov/hrp/radiation/
+    items: [challenge:radiation-shielding]
+    covers: NASA's space-radiation risk research and countermeasures (the risk baseline for long missions).
+    cadence: irregular
+    tier: primary
+  - name: NASA Space Radiation Laboratory (Brookhaven)
+    url: https://www.bnl.gov/nsrl/
+    items: [challenge:radiation-shielding]
+    covers: Galactic-cosmic-ray simulator facility; shielding-material and biological-countermeasure experiment campaigns.
+    cadence: irregular (campaign news)
+    tier: primary
+  - name: NASA — Environmental Control and Life Support Systems
+    url: https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/
+    items: [challenge:closed-loop-life-support]
+    covers: "ISS ECLSS status: water recovery (~98%), oxygen generation, CO₂ removal; the baseline for closing the loop."
+    cadence: reference page, irregular updates
+    tier: primary
+  # --- The Export ---------------------------------------------------------------------------------
+  - name: Varda Space Industries — media
+    url: https://www.varda.com/media
+    items: [milestone:the-export]
+    covers: In-orbit pharmaceutical processing capsules (W-series) and return missions; commercial customers.
+    cadence: per mission
+    tier: primary
+  - name: Space Forge — updates
+    url: https://www.spaceforge.com/updates
+    items: [milestone:the-export]
+    covers: In-orbit semiconductor-crystal manufacturing (ForgeStar) missions and return.
+    cadence: irregular
+    tier: primary
+  - name: Redwire — newsroom
+    url: https://rdw.com/newsroom/
+    items: [milestone:the-export, challenge:closed-loop-life-support]
+    covers: In-space manufacturing (PIL-BOX pharma crystals, bioprinting) and ISS payloads.
+    cadence: continuous
+    tier: primary
+  - name: Factories in Space — in-space manufacturing database
+    url: https://www.factoriesinspace.com/
+    items: [milestone:the-export]
+    covers: Database of in-space manufacturing companies, missions and products.
+    cadence: irregular
+    tier: secondary
+  # --- Section-wide ---------------------------------------------------------------------------------
+  - name: SpaceNews
+    url: https://spacenews.com/
+    items: ["*"]
+    covers: "Space-industry trade news: launch market and prices, contracts, policy, exploration."
+    cadence: daily
+    tier: news
+  - name: Payload
+    url: https://payloadspace.com/
+    items: ["*"]
+    covers: Space-business news and daily newsletter (launch economics, funding, in-space manufacturing).
+    cadence: daily newsletter
+    tier: news
+  - name: Ars Technica — space
+    url: https://arstechnica.com/space/
+    items: [kpi, milestone:the-deluge, milestone:the-homestead, beyond]
+    covers: In-depth launch-industry reporting (Starship, New Glenn, launch costs, Artemis).
+    cadence: daily
+    tier: news

@@ -1,0 +1,139 @@
+# knowledge-beyond: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
+# No fixed KPI yet: "kpi" = quantitative indicators (connectivity, quantum hardware);
+# everything else is section-wide ("*").
+sources:
+  # --- Indicators -----------------------------------------------------------------------------
+  - name: ITU — Facts and Figures 2026
+    url: https://www.itu.int/itu-d/reports/statistics/facts-figures-2026/
+    items: [kpi]
+    covers: Share of the world population online / offline, mobile broadband coverage, affordability. Edition URL; the next edition replaces the year.
+    cadence: annual, November
+    tier: primary
+  - name: ITU — ICT statistics
+    url: https://www.itu.int/en/ITU-D/Statistics/pages/stat/default.aspx
+    items: [kpi]
+    covers: ITU's country-level ICT indicators database (internet use, subscriptions), the source of the World Bank series.
+    cadence: data updates mid-year and November
+    tier: primary
+  - name: GSMA — State of Mobile Internet Connectivity
+    url: https://www.gsma.com/somic/
+    items: [kpi]
+    covers: Mobile internet coverage and usage gaps in low- and middle-income countries.
+    cadence: annual, autumn
+    tier: secondary
+    note: bot-blocked
+  - name: Ookla — Speedtest Global Index
+    url: https://www.speedtest.net/global-index
+    items: [kpi]
+    covers: Median fixed and mobile broadband speeds by country.
+    cadence: monthly
+    tier: secondary
+    note: bot-blocked
+  - name: Quantum Computing Report
+    url: https://quantumcomputingreport.com/
+    items: [kpi]
+    covers: "Industry tracker: qubit counts, gate fidelities and logical-qubit demonstrations per vendor, roadmaps, funding."
+    cadence: daily news; tracker tables continuous
+    tier: secondary
+  # --- Quantum computing ------------------------------------------------------------------------
+  - name: Google Quantum AI — research
+    url: https://quantumai.google/research
+    items: ["*"]
+    covers: Error-correction milestones (below-threshold logical qubits), verifiable quantum advantage results.
+    cadence: irregular
+    tier: primary
+  - name: IBM Quantum — blog
+    url: https://www.ibm.com/quantum/blog
+    items: ["*"]
+    covers: Processor roadmap (Starling fault-tolerant system by 2029), qLDPC codes, quantum-advantage claims.
+    cadence: irregular
+    tier: primary
+  - name: Quantinuum — news
+    url: https://www.quantinuum.com/news/news
+    items: ["*"]
+    covers: Trapped-ion systems (Helios), logical-qubit and fidelity records.
+    cadence: irregular
+    tier: primary
+  - name: arXiv — quant-ph recent
+    url: https://arxiv.org/list/quant-ph/recent
+    items: ["*"]
+    covers: Quantum information and hardware preprints (where error-correction results appear first).
+    cadence: weekdays
+    tier: primary
+  # --- Nanotechnology / materials -----------------------------------------------------------------
+  - name: Nature Nanotechnology
+    url: https://www.nature.com/nnano/
+    items: ["*"]
+    covers: Peer-reviewed nanoscale materials, devices, molecular machines and nanomedicine.
+    cadence: continuous; monthly issues
+    tier: primary
+  - name: National Nanotechnology Initiative — news
+    url: https://www.nano.gov/news-impact/
+    items: ["*"]
+    covers: US federal nanotechnology programme news and agency highlights.
+    cadence: irregular
+    tier: primary
+  - name: C&EN — nanomaterials
+    url: https://cen.acs.org/topics/materials/nanomaterials.html
+    items: ["*"]
+    covers: Chemistry-trade reporting on nanomaterials research and commercialization.
+    cadence: continuous
+    tier: news
+  # --- Mathematics ---------------------------------------------------------------------------------
+  - name: Quanta Magazine
+    url: https://www.quantamagazine.org/
+    items: ["*"]
+    covers: High-signal reporting on major results in mathematics, physics, biology and computer science (incl. AI-assisted proofs).
+    cadence: several articles per week
+    tier: news
+  - name: Terence Tao — "What's new"
+    url: https://terrytao.wordpress.com/
+    items: ["*"]
+    covers: Research blog of a leading mathematician; first-hand assessments of AI in mathematics (formal proofs, Erdős problems).
+    cadence: irregular
+    tier: primary
+  - name: Google DeepMind — blog
+    url: https://deepmind.google/blog/
+    items: ["*"]
+    covers: AI-for-science results (AlphaFold, AlphaProof, AlphaEvolve, fusion control, weather).
+    cadence: continuous
+    tier: primary
+  # --- Neuroscience / brain-computer interfaces -----------------------------------------------------
+  - name: Nature Neuroscience — articles
+    url: https://www.nature.com/neuro/articles
+    items: ["*"]
+    covers: Peer-reviewed neuroscience (connectomics, neural recording, neurotechnology).
+    cadence: continuous
+    tier: primary
+  - name: Neuralink — updates
+    url: https://neuralink.com/updates/
+    items: ["*"]
+    covers: Implanted BCI trial participants, capabilities (cursor, speech, robotic arm), device revisions.
+    cadence: irregular
+    tier: primary
+  - name: Synchron — news
+    url: https://synchron.com/news
+    items: ["*"]
+    covers: Endovascular BCI trials and FDA pivotal-trial progress.
+    cadence: irregular
+    tier: primary
+  - name: Paradromics — news
+    url: https://paradromics.com/news/
+    items: ["*"]
+    covers: High-bandwidth BCI (Connexus) first-in-human and clinical-trial milestones.
+    cadence: irregular
+    tier: primary
+  # --- Fundamental physics / general science --------------------------------------------------------
+  - name: CERN — news
+    url: https://home.cern/news/
+    items: ["*"]
+    covers: LHC results and run schedule, High-Luminosity LHC, Future Circular Collider decisions.
+    cadence: continuous
+    tier: primary
+  - name: Nature — research articles
+    url: https://www.nature.com/nature/research-articles
+    items: ["*"]
+    covers: Nature's research papers across all fields (the main venue for paradigm-level results).
+    cadence: continuous; weekly issues (Wednesday/Thursday)
+    tier: primary
+    note: bot-blocked

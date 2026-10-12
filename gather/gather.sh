@@ -88,6 +88,7 @@ while IFS='|' read -r topic name desc <&3; do
 	fi
 	DONE_ITEMS="$DONE_ITEMS $topic"
 	ev="$STAGE/$slug.events.jsonl"; ob="$STAGE/$slug.obs.csv"
+	SRC_TEXT="$(uv run $ROOT/gather/sources.py list "$SECTION" "$topic")"   # (assignment: aborts on error)
 	pi_run "intake-$slug" "$(cat <<EOF
 You are a news-intake researcher for "Grand Endeavors", a live tracker of
 humanity's progress. Section "$SECTION", watch item "$topic" ($name):
@@ -99,6 +100,14 @@ WINDOW: developments whose source was PUBLISHED between $ISINCE and $UNTIL
 (inclusive). Use your web-search and visit-webpage skills; prefer PRIMARY
 sources (agencies, papers, companies, official data) and deep links. VISIT every
 source to confirm it states the claim. Stay strictly on this watch item.$( [ "$topic" = beyond ] && printf '\n"beyond" = significant developments for this endeavor that fit NONE of the framework milestones/challenges.' )
+
+REFERENCE SOURCES curated for this item ($ROOT/gather/sources/$SECTION.yaml). Check
+them for releases in the window, especially those whose cadence makes one due, and
+cite the specific release or article (deep link), not the listing page. They are a
+starting point, NOT a limit: search the open web as well. Sources marked
+"already fetched by the section collector" feed observations automatically; use them
+for news and context, not to re-stage their numbers.
+$SRC_TEXT
 
 THE LEDGER ALREADY CONTAINS these $SECTION events (id [kind; topics; verification] claim):
 $RECENT

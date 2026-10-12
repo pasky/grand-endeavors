@@ -1,0 +1,232 @@
+# climate: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
+sources:
+  # --- KPI: atmospheric CO2 -------------------------------------------------------------
+  - name: NOAA GML — Trends in Atmospheric CO₂
+    url: https://gml.noaa.gov/ccgg/trends/
+    items: [kpi]
+    covers: Mauna Loa and global marine-surface monthly CO₂ means, daily Mauna Loa values, annual means and growth rates (the KPI series).
+    cadence: monthly (~5th of the following month), daily file re-issued ~11:00 UTC; annual growth rate in early January
+    tier: primary
+    collector: true
+  - name: Scripps CO₂ Program (Keeling curve)
+    url: https://scrippsco2.ucsd.edu/
+    items: [kpi]
+    covers: Scripps' independent Mauna Loa in-situ CO₂ record (monthly, daily) and the Keeling curve.
+    cadence: monthly; daily values
+    tier: primary
+    collector: true
+  - name: NOAA GML — Annual Greenhouse Gas Index (AGGI)
+    url: https://gml.noaa.gov/aggi/aggi.html
+    items: [kpi, milestone:the-ceiling]
+    covers: Radiative forcing of all long-lived greenhouse gases and CO₂-equivalent abundance; global CH₄ and N₂O growth.
+    cadence: annual, spring
+    tier: primary
+  - name: WMO — Greenhouse Gas Bulletin
+    url: https://wmo.int/publication-series/greenhouse-gas-bulletin
+    items: [kpi]
+    covers: WMO Global Atmosphere Watch global annual mean CO₂, CH₄, N₂O and their growth rates (the WMO global series).
+    cadence: annual, October/November (before COP)
+    tier: primary
+  # --- The Bend / The Balance: emissions -----------------------------------------------
+  - name: Global Carbon Project — Global Carbon Budget data hub
+    url: https://globalcarbonbudget.org/datahub/
+    items: [milestone:the-bend, milestone:the-balance, challenge:net-zero-transition]
+    covers: Annual fossil and land-use CO₂ emissions, ocean/land sinks and the current-year projection (Global Carbon Budget).
+    cadence: annual, November (at COP); the collector's DATA_URL needs the new year's file
+    tier: primary
+    collector: true
+  - name: European Commission JRC — EDGAR
+    url: https://edgar.jrc.ec.europa.eu/
+    items: [milestone:the-bend, milestone:the-balance, challenge:net-zero-transition]
+    covers: Total GHG emissions (CO₂, CH₄, N₂O, F-gases) by country and sector; the total-GHG basis for The Bend.
+    cadence: annual report, around September (e.g. report_2026)
+    tier: primary
+  - name: IEA — Global Energy Review 2026
+    url: https://www.iea.org/reports/global-energy-review-2026
+    items: [milestone:the-bend, challenge:net-zero-transition]
+    covers: Previous year's energy-related CO₂ emissions by fuel and region, with drivers. Each year has its own URL (global-energy-review-<year>).
+    cadence: annual, March
+    tier: primary
+  - name: Carbon Monitor
+    url: https://carbonmonitor.org/
+    items: [milestone:the-bend]
+    covers: Near-real-time daily fossil and industry CO₂ emissions by country and sector; the earliest signal of a year-on-year decline.
+    cadence: daily data, updated roughly monthly
+    tier: secondary
+  - name: Climate TRACE — data
+    url: https://climatetrace.org/data
+    items: [milestone:the-bend, challenge:net-zero-transition]
+    covers: Independent, satellite- and model-based facility-level GHG emissions, by country and sector.
+    cadence: monthly updates, ~2-month lag
+    tier: secondary
+  - name: Our World in Data — CO₂ and GHG emissions explorer
+    url: https://ourworldindata.org/explorers/co2
+    items: [milestone:the-bend, milestone:the-balance]
+    covers: Harmonized national and global emissions series (from GCB, EDGAR and others), convenient for cross-checks.
+    cadence: after the underlying releases, mostly annual
+    tier: secondary
+  - name: UNFCCC — NDC registry
+    url: https://unfccc.int/NDCREG
+    items: [milestone:the-balance, challenge:net-zero-transition]
+    covers: Official national climate plans (NDCs) as submitted under the Paris Agreement.
+    cadence: continuous submissions; new round every five years (NDC 3.0 in 2025-26)
+    tier: primary
+  - name: Climate Action Tracker
+    url: https://climateactiontracker.org/global/cat-net-zero-target-evaluations/
+    items: [milestone:the-balance, milestone:the-ceiling, challenge:net-zero-transition]
+    covers: Independent ratings of national targets and policies and the implied warming of current policies and pledges.
+    cadence: country updates continuous; global update at COP (November)
+    tier: secondary
+  - name: Net Zero Tracker
+    url: https://zerotracker.net/
+    items: [milestone:the-balance]
+    covers: Net-zero pledges of countries, regions, cities and large companies, with integrity criteria.
+    cadence: continuous; stocktake reports ~annually
+    tier: secondary
+  # --- The Ceiling: warming -------------------------------------------------------------
+  - name: Copernicus C3S — monthly climate bulletins
+    url: https://climate.copernicus.eu/climate-bulletin
+    items: [milestone:the-ceiling]
+    covers: Monthly global surface air temperature anomaly vs 1850-1900 (ERA5), sea ice, and the annual Global Climate Highlights.
+    cadence: monthly, ~6th-8th of the following month; annual highlights in January
+    tier: primary
+  - name: NOAA NCEI — monthly global climate report
+    url: https://www.ncei.noaa.gov/access/monitoring/monthly-report/global/
+    items: [milestone:the-ceiling]
+    covers: NOAAGlobalTemp monthly and year-to-date global temperature anomalies and rankings.
+    cadence: monthly, ~2nd week of the following month
+    tier: primary
+  - name: NASA GISS — GISTEMP v4
+    url: https://data.giss.nasa.gov/gistemp/
+    items: [milestone:the-ceiling]
+    covers: NASA's global surface temperature analysis (monthly and annual anomalies).
+    cadence: monthly, mid-month
+    tier: primary
+  - name: Berkeley Earth — temperature updates
+    url: https://berkeleyearth.org/whats-new/?cat=temperature-updates
+    items: [milestone:the-ceiling]
+    covers: Independent monthly global temperature updates and the annual Global Temperature Report, incl. the odds of the year's ranking.
+    cadence: monthly; annual report in January
+    tier: primary
+  - name: WMO — State of the Global Climate
+    url: https://wmo.int/publication-series/state-of-global-climate
+    items: [milestone:the-ceiling]
+    covers: WMO's consolidated assessment of the global temperature (multi-dataset) and long-term warming level.
+    cadence: annual, March (provisional update at COP in November)
+    tier: primary
+  - name: IPCC — reports
+    url: https://www.ipcc.ch/reports/
+    items: [milestone:the-ceiling, milestone:the-balance]
+    covers: Assessment and special reports (AR7 cycle under way), the consensus baselines for carbon budgets and warming pathways.
+    cadence: multi-year cycle; approval sessions announced in advance
+    tier: primary
+  - name: UNEP — Emissions Gap Report
+    url: https://www.unep.org/resources/emissions-gap-report-2025
+    items: [milestone:the-ceiling, milestone:the-bend]
+    covers: Projected warming of current policies and pledges, and the gap to 1.5/2 °C pathways (includes total-GHG estimates). Edition URL; the next edition replaces the year.
+    cadence: annual, October/November (before COP)
+    tier: primary
+  - name: Earth System Science Data (ESSD)
+    url: https://essd.copernicus.org/
+    items: [milestone:the-bend, milestone:the-ceiling]
+    covers: Where the Global Carbon Budget and the annual Indicators of Global Climate Change (warming, remaining carbon budget) are published.
+    cadence: continuous; IGCC annually in June, GCB in November
+    tier: primary
+  # --- Challenges ------------------------------------------------------------------------
+  - name: Ember — insights
+    url: https://ember-energy.org/insights/
+    items: [challenge:net-zero-transition, milestone:the-bend]
+    covers: "Global and national power-sector data (Global Electricity Review, monthly electricity data): clean generation, coal/gas, power-sector CO₂."
+    cadence: continuous; Global Electricity Review annually in April
+    tier: secondary
+  - name: CDR.fyi — carbon removal market data
+    url: https://www.cdr.fyi/
+    items: [challenge:permanent-removal]
+    covers: Durable carbon-removal purchases, deliveries, prices and suppliers; quarterly market reports.
+    cadence: continuous; quarterly reports
+    tier: secondary
+  - name: Frontier — carbon removal offtakes
+    url: https://frontierclimate.com/
+    items: [challenge:permanent-removal]
+    covers: "Advance market commitment (Stripe, Google, Shopify, …): offtake agreements, prices per tonne, supplier selections."
+    cadence: continuous announcements
+    tier: primary
+  - name: Isometric — registry
+    url: https://registry.isometric.com/
+    items: [challenge:permanent-removal]
+    covers: "Public registry of verified carbon-removal credits: delivered tonnes per project and pathway."
+    cadence: continuous (as credits are issued)
+    tier: primary
+  - name: Puro.earth — registry
+    url: https://puro.earth/
+    items: [challenge:permanent-removal]
+    covers: Certification and CO₂ Removal Certificate (CORC) issuance for engineered removals (biochar, BECCS, mineralization).
+    cadence: continuous
+    tier: primary
+  - name: Climeworks — newsroom
+    url: https://climeworks.com/newsroom
+    items: [challenge:permanent-removal]
+    covers: Direct-air-capture plants (Orca, Mammoth), capacity, delivered tonnes, costs.
+    cadence: continuous (press releases)
+    tier: primary
+  - name: Heirloom — news
+    url: https://www.heirloomcarbon.com/news
+    items: [challenge:permanent-removal]
+    covers: Direct-air-capture facilities (US), capacity and offtake deals.
+    cadence: continuous (press releases)
+    tier: primary
+  - name: US DOE — Carbon Dioxide Removal
+    url: https://www.energy.gov/hgeo/carbon-dioxide-removal-0
+    items: [challenge:permanent-removal]
+    covers: US DAC hubs, CDR purchase prize and program funding decisions.
+    cadence: continuous; funding rounds episodic
+    tier: primary
+  - name: CarbonPlan — research
+    url: https://carbonplan.org/research
+    items: [challenge:permanent-removal, challenge:sunlight-management]
+    covers: Independent analyses of carbon-removal permanence, MRV and offsets quality, and climate interventions.
+    cadence: irregular
+    tier: secondary
+  - name: ARIA — Exploring Climate Cooling programme
+    url: https://aria.org.uk/opportunity-spaces/resilient-climate-and-ecosystems/exploring-climate-cooling
+    items: [challenge:sunlight-management]
+    covers: UK-funded SRM research programme, including small controlled outdoor experiments; project announcements.
+    cadence: irregular (programme updates)
+    tier: primary
+  - name: US EPA — geoengineering, government action
+    url: https://www.epa.gov/geoengineering/government-action
+    items: [challenge:sunlight-management]
+    covers: US federal and state actions on solar geoengineering (reporting rules, state bans).
+    cadence: updated as actions occur
+    tier: primary
+  - name: Royal Society — Solar Radiation Modification
+    url: https://royalsociety.org/news-resources/projects/solar-radiation-modification/
+    items: [challenge:sunlight-management]
+    covers: Scientific assessment and governance recommendations on SRM.
+    cadence: episodic
+    tier: primary
+  - name: SRM360
+    url: https://srm360.org/
+    items: [challenge:sunlight-management]
+    covers: Neutral explainers and news digest on SRM research, experiments and governance.
+    cadence: continuous
+    tier: secondary
+  - name: Geoengineering Monitor
+    url: https://www.geoengineeringmonitor.org/
+    items: [challenge:sunlight-management]
+    covers: Critical (advocacy) tracker of geoengineering projects, experiments and policy; useful for finding experiments, not for framing.
+    cadence: continuous
+    tier: news
+  # --- Section-wide -----------------------------------------------------------------------
+  - name: Nature Climate Change
+    url: https://www.nature.com/nclimate/
+    items: [milestone:the-ceiling, challenge:net-zero-transition, challenge:permanent-removal, challenge:sunlight-management, beyond]
+    covers: Peer-reviewed research on mitigation pathways, carbon removal, impacts and SRM.
+    cadence: continuous; monthly issues
+    tier: primary
+  - name: Carbon Brief
+    url: https://www.carbonbrief.org/
+    items: ["*"]
+    covers: Specialist climate science and policy reporting; data analyses (e.g. China emissions), Daily and Weekly Briefing newsletters.
+    cadence: continuous; daily and weekly newsletters
+    tier: news

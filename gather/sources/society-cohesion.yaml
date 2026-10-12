@@ -1,0 +1,189 @@
+# society-cohesion: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
+# No fixed KPI yet: "kpi" = the registered indicators (metrics/society-cohesion.csv) and
+# their siblings; the "beyond" sweep covers the great filters (WMD, AI alignment and
+# governance), polarization, information integrity and the digital commons.
+sources:
+  # --- Indicators -----------------------------------------------------------------------------
+  - name: Bulletin of the Atomic Scientists — Doomsday Clock
+    url: https://thebulletin.org/doomsday-clock/
+    items: [kpi, beyond]
+    covers: The annual Doomsday Clock setting (doomsday-clock metric) and its statement on nuclear, climate, bio and AI risk.
+    cadence: annual, late January
+    tier: primary
+  - name: Edelman — Trust Barometer
+    url: https://www.edelman.com/trust/trust-barometer
+    items: [kpi]
+    covers: Trust Index across ~28 countries (trust-institutions-edelman metric), grievance and polarization findings.
+    cadence: annual, January (Davos)
+    tier: primary
+    note: bot-blocked
+  - name: OECD — Trust Survey
+    url: https://www.oecd.org/en/data/datasets/oecd-trust-survey-data.html
+    items: [kpi]
+    covers: Trust in national government and institutions across OECD countries (trust-government-oecd metric).
+    cadence: biennial waves (2021, 2023, 2025), results the following summer
+    tier: primary
+    note: bot-blocked
+  - name: Pew Research Center — trust in government
+    url: https://www.pewresearch.org/topic/politics-policy/trust-in-government/
+    items: [kpi]
+    covers: US trust in the federal government, long-run series since 1958 (trust-government-us-pew metric).
+    cadence: irregular, ~annual
+    tier: primary
+  - name: V-Dem Institute — Democracy Report
+    url: https://www.v-dem.net/publications/democracy-reports/
+    items: [kpi]
+    covers: Share of the world population living in autocracies (pop-in-autocracies-vdem metric), autocratization trends.
+    cadence: annual, March
+    tier: primary
+  - name: Freedom House — reports
+    url: https://freedomhouse.org/reports
+    items: [kpi]
+    covers: Freedom in the World (global freedom decline, consecutive years) and Freedom on the Net.
+    cadence: annual; Freedom in the World in February/March, Freedom on the Net in October
+    tier: secondary
+  - name: International IDEA — Global State of Democracy Indices
+    url: https://www.idea.int/data-tools/tools/global-state-democracy-indices
+    items: [kpi]
+    covers: Country democratic-performance indices (representation, rights, rule of law, participation).
+    cadence: annual (with the Global State of Democracy report, autumn)
+    tier: secondary
+  - name: WHO — Commission on Social Connection report
+    url: https://www.who.int/groups/commission-on-social-connection/report
+    items: [kpi]
+    covers: Global loneliness prevalence estimate (loneliness-prevalence-who metric) and social-isolation evidence.
+    cadence: one-off 2025 report; follow-ups irregular
+    tier: primary
+  - name: World Happiness Report
+    url: https://www.worldhappiness.report/
+    items: [kpi]
+    covers: Gallup World Poll life evaluations by country; recurring chapters on trust, social connection, benevolence.
+    cadence: annual, March (around 20 March)
+    tier: secondary
+  - name: World Values Survey
+    url: https://www.worldvaluessurvey.org/wvs.jsp
+    items: [kpi]
+    covers: Cross-national values and generalized interpersonal trust ("most people can be trusted").
+    cadence: multi-year waves (wave 8 2024-2026)
+    tier: primary
+  - name: Polarization Research Lab — America's Political Pulse
+    url: https://polarizationresearchlab.org/americas-political-pulse/
+    items: [kpi, beyond]
+    covers: Ongoing US survey tracking affective polarization (partisan animosity) and support for political violence and norm violations.
+    cadence: continuous survey, dashboards updated regularly
+    tier: primary
+  # --- Weapons of mass destruction -------------------------------------------------------------------
+  - name: SIPRI — world nuclear forces
+    url: https://www.sipri.org/research/armament-and-disarmament/weapons-mass-destruction/world-nuclear-forces
+    items: [beyond]
+    covers: Global nuclear warhead inventory and modernization (SIPRI Yearbook).
+    cadence: annual, June
+    tier: primary
+  - name: FAS — Status of World Nuclear Forces
+    url: https://fas.org/initiative/status-world-nuclear-forces/
+    items: [beyond]
+    covers: Country-by-country warhead estimates and Nuclear Notebook updates.
+    cadence: several updates a year
+    tier: secondary
+  - name: IAEA — press centre
+    url: https://www.iaea.org/press
+    items: [beyond]
+    covers: Safeguards and verification (Iran), nuclear safety at war-zone plants (Zaporizhzhia).
+    cadence: continuous
+    tier: primary
+    note: bot-blocked
+  - name: Johns Hopkins Center for Health Security — news
+    url: https://centerforhealthsecurity.org/news
+    items: [beyond]
+    covers: Biosecurity and pandemic-preparedness analysis, incl. AI-enabled biological risk.
+    cadence: continuous
+    tier: secondary
+    note: bot-blocked
+  # --- AI safety and governance -------------------------------------------------------------------------
+  - name: International AI Safety Report
+    url: https://internationalaisafetyreport.org/
+    items: [beyond]
+    covers: The international expert synthesis of AI capabilities and risks (chaired by Yoshua Bengio).
+    cadence: annual report (early in the year) plus interim key updates
+    tier: primary
+  - name: UK AI Security Institute — research
+    url: https://www.aisi.gov.uk/research
+    items: [beyond]
+    covers: Government pre-deployment evaluations, Frontier AI Trends Report, safeguards and alignment research.
+    cadence: irregular
+    tier: primary
+  - name: NIST — CAISSI (US AI standards centre)
+    url: https://www.nist.gov/caissi
+    items: [beyond]
+    covers: The US government's AI testing and standards centre (the page now hosting CAISI's model evaluations, e.g. of PRC open-weight models), guidelines.
+    cadence: irregular
+    tier: primary
+  - name: European Commission — AI Act
+    url: https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai
+    items: [beyond]
+    covers: "AI Act implementation: application dates, codes of practice, AI Office guidance and enforcement."
+    cadence: continuous
+    tier: primary
+  - name: Stanford HAI — AI Index
+    url: https://hai.stanford.edu/ai-index
+    items: [beyond]
+    covers: Annual data compendium on AI research, investment, incidents, public opinion and policy.
+    cadence: annual, April
+    tier: secondary
+  - name: Center for AI Safety — research
+    url: https://safe.ai/work/research
+    items: [beyond]
+    covers: AI safety research and benchmarks (Humanity's Last Exam, WMDP), catastrophic-risk analyses.
+    cadence: irregular
+    tier: secondary
+  - name: Anthropic — news
+    url: https://www.anthropic.com/news
+    items: [beyond]
+    covers: Frontier-lab safety policy (Responsible Scaling Policy), alignment research, societal-impact studies (Economic Index).
+    cadence: continuous
+    tier: primary
+  - name: OpenAI — safety and alignment
+    url: https://openai.com/news/safety-alignment/
+    items: [beyond]
+    covers: Preparedness Framework updates, alignment research, system-card risk findings.
+    cadence: continuous
+    tier: primary
+    note: bot-blocked
+  - name: arXiv — cs.CY recent
+    url: https://arxiv.org/list/cs.CY/recent
+    items: [beyond]
+    covers: Computers and society preprints (AI governance, misinformation, platform effects).
+    cadence: weekdays
+    tier: primary
+  # --- Information integrity, polarization ----------------------------------------------------------------
+  - name: HKS Misinformation Review
+    url: https://misinforeview.hks.harvard.edu/
+    items: [beyond]
+    covers: Peer-reviewed short research on misinformation and interventions.
+    cadence: continuous
+    tier: primary
+  - name: Atlantic Council DFRLab — research
+    url: https://dfrlab.org/research/
+    items: [beyond]
+    covers: Investigations of influence operations and online disinformation campaigns.
+    cadence: continuous
+    tier: secondary
+  # --- Digital commons ------------------------------------------------------------------------------------
+  - name: Wikimedia Foundation — news
+    url: https://wikimediafoundation.org/news/
+    items: [beyond]
+    covers: "Wikipedia's health: editor and traffic trends (incl. AI-crawler and AI-summary effects), policy and legal threats."
+    cadence: continuous
+    tier: primary
+  - name: GitHub — Octoverse
+    url: https://github.blog/news-insights/octoverse/
+    items: [beyond]
+    covers: Annual open-source statistics (developers, contributions, AI use in open source).
+    cadence: annual, October/November
+    tier: primary
+  - name: Linux Foundation — research
+    url: https://www.linuxfoundation.org/research
+    items: [beyond]
+    covers: Open-source ecosystem reports (maintainer sustainability, open-source AI, funding).
+    cadence: irregular
+    tier: secondary

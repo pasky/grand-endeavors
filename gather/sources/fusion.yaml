@@ -1,0 +1,211 @@
+# fusion: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
+sources:
+  # --- KPI: worldwide household electricity price ------------------------------------------
+  - name: GlobalPetrolPrices — household electricity prices
+    url: https://www.globalpetrolprices.com/electricity_prices/
+    items: [kpi]
+    covers: Household retail electricity prices for ~150 countries (US$/kWh) and the world average; the KPI's country basis.
+    cadence: quarterly
+    tier: secondary
+    collector: true
+  - name: World Bank — population indicator (API)
+    url: https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json
+    items: [kpi]
+    covers: Country populations, the weights of the KPI's population-weighted world average.
+    cadence: annual (WDI updates)
+    tier: primary
+    collector: true
+  - name: US BLS — CPI time series
+    url: https://download.bls.gov/pub/time.series/cu/
+    items: [kpi]
+    covers: US CPI-U all items, the deflator for the KPI's real-$ series.
+    cadence: monthly, mid-month
+    tier: primary
+    collector: true
+    note: bot-blocked (the collector sends a contact User-Agent)
+  - name: IEA — End-use Energy Prices
+    url: https://www.iea.org/data-and-statistics/data-product/end-use-energy-prices
+    items: [kpi]
+    covers: Household and industry electricity prices by country (IEA/OECD members and others); subscription data, free highlights.
+    cadence: quarterly / annual editions
+    tier: primary
+  - name: Eurostat — household electricity prices (nrg_pc_204)
+    url: https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_204/default/table?lang=en
+    items: [kpi]
+    covers: EU household electricity prices by country and consumption band, with and without taxes; semi-annual.
+    cadence: twice a year (data for H1 published ~October/November, H2 ~April/May)
+    tier: primary
+  - name: US EIA — Electric Power Monthly
+    url: https://www.eia.gov/electricity/monthly/
+    items: [kpi]
+    covers: US average retail electricity price by sector (residential, Table 5.6.A) and by state.
+    cadence: monthly, ~4th week (two-month lag)
+    tier: primary
+  - name: IEA — news
+    url: https://www.iea.org/news
+    items: [kpi, beyond]
+    covers: "IEA press releases: Electricity report (and mid-year update), World Energy Outlook, energy-price analyses."
+    cadence: continuous; Electricity report in February, mid-year update in July, WEO in October/November
+    tier: primary
+  # --- The First Watt / Grid Parity ---------------------------------------------------------
+  - name: Commonwealth Fusion Systems — news
+    url: https://cfs.energy/news-and-media/
+    items: [milestone:the-first-watt, milestone:grid-parity, challenge:d-t-fusion]
+    covers: SPARC (first plasma, Q>1 target) and ARC (first grid plant, Virginia, early 2030s) milestones, magnet results, offtake deals.
+    cadence: continuous (press releases)
+    tier: primary
+  - name: Helion — newsroom
+    url: https://www.helionenergy.com/newsroom
+    items: [milestone:the-first-watt, milestone:grid-parity, challenge:aneutronic-fusion]
+    covers: Polaris results and the Orion plant for Microsoft's 2028 power purchase agreement (permits, construction).
+    cadence: continuous (press releases)
+    tier: primary
+  - name: TAE Technologies — press releases
+    url: https://tae.com/category/press-releases/
+    items: [milestone:the-first-watt, challenge:aneutronic-fusion]
+    covers: Norm/Copernicus devices, p-B11 programme, power-plant plans and financing.
+    cadence: continuous (press releases)
+    tier: primary
+  - name: Zap Energy — updates
+    url: https://www.zapenergy.com/updates
+    items: [challenge:d-t-fusion]
+    covers: Sheared-flow Z-pinch results (FuZE-Q, Century power-handling platform).
+    cadence: continuous
+    tier: primary
+  - name: Tokamak Energy — news
+    url: https://tokamakenergy.com/latest-news/
+    items: [challenge:d-t-fusion]
+    covers: Spherical tokamak and HTS magnet programme, public-private (DOE milestone) projects.
+    cadence: continuous
+    tier: primary
+  - name: General Fusion — news
+    url: https://generalfusion.com/news-insights/
+    items: [challenge:d-t-fusion, milestone:the-first-watt]
+    covers: Magnetized target fusion (LM26) results, financing and setbacks.
+    cadence: continuous
+    tier: primary
+  - name: ITER — news hub
+    url: https://www.iter.org/news-hub
+    items: [challenge:d-t-fusion, beyond]
+    covers: ITER assembly, schedule/baseline changes (research operations 2034, D-T 2039), component and blanket test-module news.
+    cadence: continuous; weekly newsline
+    tier: primary
+  - name: UK Atomic Energy Authority
+    url: https://www.gov.uk/government/organisations/uk-atomic-energy-authority
+    items: [challenge:d-t-fusion, milestone:the-first-watt]
+    covers: STEP prototype plant (West Burton), LIBRTI tritium-breeding facility, materials and robotics research.
+    cadence: continuous (news and announcements)
+    tier: primary
+  - name: Lawrence Livermore National Laboratory — news
+    url: https://www.llnl.gov/news
+    items: [challenge:d-t-fusion]
+    covers: National Ignition Facility shots (target gain records), inertial fusion energy programme.
+    cadence: continuous
+    tier: primary
+  - name: US DOE — Fusion Energy Sciences
+    url: https://science.osti.gov/fes
+    items: [milestone:the-first-watt, challenge:d-t-fusion]
+    covers: "US fusion programme: Milestone-Based Fusion Development Program awards, FIRE collaboratives, INFUSE, roadmap."
+    cadence: continuous; budget and funding calls annual
+    tier: primary
+  - name: US DOE — Fusion Energy
+    url: https://www.energy.gov/fusion/fusion-energy
+    items: [milestone:the-first-watt, milestone:grid-parity]
+    covers: DOE commercial-fusion strategy and public-private announcements.
+    cadence: irregular
+    tier: primary
+  - name: US NRC — fusion machines regulation
+    url: https://www.nrc.gov/materials/fusion/vision-strategy
+    items: [milestone:the-first-watt]
+    covers: NRC's byproduct-material framework for fusion machines (rulemaking status, guidance); licensing is a precondition of grid plants.
+    cadence: irregular (rulemaking steps)
+    tier: primary
+    note: bot-blocked
+  - name: Fusion Industry Association — news and annual industry report
+    url: https://www.fusionindustryassociation.org/news/
+    items: [milestone:the-first-watt, milestone:grid-parity, beyond]
+    covers: Industry policy news; the annual "global fusion industry" report (company count, cumulative funding, timelines).
+    cadence: continuous; report annually in July
+    tier: secondary
+  - name: Lazard — Levelized Cost of Energy+
+    url: https://www.lazard.com/research-insights/levelized-cost-of-energyplus-lcoeplus/
+    items: [milestone:grid-parity]
+    covers: "Unsubsidized LCOE ranges for gas combined cycle, nuclear, wind, solar, storage: the comparison benchmark for fusion's $100/MWh."
+    cadence: annual, June
+    tier: secondary
+  - name: IRENA — Renewable Power Generation Costs
+    url: https://www.irena.org/Publications/2026/Jul/Renewable-Power-Generation-Costs-in-2025
+    items: [milestone:grid-parity]
+    covers: Global LCOE of solar PV, onshore and offshore wind (the registered lcoe-*-irena metrics). Edition URL; the next edition replaces the years.
+    cadence: annual, July
+    tier: primary
+    note: bot-blocked
+  # --- Tech tree ---------------------------------------------------------------------------
+  - name: Nuclear Fusion (IOP / IAEA journal)
+    url: https://iopscience.iop.org/journal/0029-5515
+    items: [challenge:d-t-fusion, challenge:aneutronic-fusion]
+    covers: "The main peer-reviewed fusion journal: confinement, burning plasma, heat exhaust, materials, breeding blankets."
+    cadence: continuous; monthly issues
+    tier: primary
+    note: bot-blocked
+  - name: arXiv — plasma physics (physics.plasm-ph)
+    url: https://arxiv.org/list/physics.plasm-ph/recent
+    items: [challenge:d-t-fusion, challenge:aneutronic-fusion]
+    covers: Plasma and fusion preprints (magnetic and inertial confinement, p-B11 and D-He3 physics).
+    cadence: weekdays
+    tier: primary
+  - name: Quaise Energy — press releases
+    url: https://www.quaise.com/news/category/press-releases
+    items: [challenge:deep-geothermal]
+    covers: Millimeter-wave drilling field tests (depths reached), first superhot geothermal plant plans.
+    cadence: irregular
+    tier: primary
+  - name: GA Drilling — media
+    url: https://www.gadrilling.com/media
+    items: [challenge:deep-geothermal]
+    covers: Plasma-pulse drilling (PLASMABIT), field trials and partnerships.
+    cadence: irregular
+    tier: primary
+  - name: Fervo Energy — news
+    url: https://fervoenergy.com/news/
+    items: [challenge:deep-geothermal]
+    covers: "Enhanced geothermal (Cape Station, Utah): drilling speed/cost records, MW online, offtake deals; the commercial benchmark for deep geothermal."
+    cadence: continuous
+    tier: primary
+  - name: US DOE — Office of Geothermal
+    url: https://www.energy.gov/hgeo/geothermal/office-geothermal
+    items: [challenge:deep-geothermal]
+    covers: Utah FORGE, superhot-rock and EGS funding and results.
+    cadence: irregular
+    tier: primary
+  - name: ThinkGeoEnergy
+    url: https://www.thinkgeoenergy.com/
+    items: [challenge:deep-geothermal]
+    covers: Specialist geothermal industry news, worldwide (projects, drilling, policy).
+    cadence: daily
+    tier: news
+  # --- Section-wide -------------------------------------------------------------------------
+  - name: World Nuclear News — fusion
+    url: https://world-nuclear-news.org/fusion
+    items: [milestone:the-first-watt, challenge:d-t-fusion, challenge:aneutronic-fusion, beyond]
+    covers: Specialist news on fusion projects, policy and regulation, incl. China, Japan and Europe.
+    cadence: daily
+    tier: news
+  - name: ANS Nuclear Newswire — inertial confinement fusion
+    url: https://www.ans.org/news/tag-inertial+confinement+fusion/
+    items: [challenge:d-t-fusion]
+    covers: Specialist coverage of NIF and inertial fusion energy companies (Xcimer, Focused Energy, Pacific Fusion, …).
+    cadence: continuous
+    tier: news
+  - name: Fusion Energy Base — news
+    url: https://www.fusionenergybase.com/news
+    items: ["*"]
+    covers: Curated fusion-company news, funding rounds and company database.
+    cadence: continuous
+    tier: secondary
+  - name: Ember — insights
+    url: https://ember-energy.org/insights/
+    items: [beyond]
+    covers: Global electricity data and analyses (clean-power share, coal/gas generation); context for the energy side of the endeavor.
+    cadence: continuous; Global Electricity Review in April
+    tier: secondary

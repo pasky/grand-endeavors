@@ -1,0 +1,180 @@
+# robots-hardware: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
+# No public series tracks the KPI (largest single-site humanoid fleet): it is assembled from
+# company deployment announcements (unit counts per customer site) and analyst trackers.
+sources:
+  # --- KPI: humanoid fleets (company announcements) --------------------------------------------
+  - name: Agility Robotics — press releases
+    url: https://www.agilityrobotics.com/press-releases
+    items: [kpi, milestone:the-blue-collar-shift]
+    covers: Digit commercial deployments (GXO, Schaeffler, …), units per site, uptime and shift claims.
+    cadence: continuous
+    tier: primary
+  - name: Figure AI — news
+    url: https://www.figure.ai/news
+    items: [kpi, milestone:the-blue-collar-shift, milestone:the-wozniak-test, challenge:generalization]
+    covers: Figure robots at customer sites (BMW Spartanburg), home pilots, Helix model results.
+    cadence: continuous
+    tier: primary
+  - name: UBTECH Robotics — news
+    url: https://www.ubtrobot.com/en/news-list
+    items: [kpi, milestone:the-blue-collar-shift, milestone:the-dark-line]
+    covers: Walker S humanoids in car and electronics factories (fleet orders and deliveries; HKEX-listed, so order sizes are disclosed).
+    cadence: continuous
+    tier: primary
+  - name: Tesla — investor relations
+    url: https://ir.tesla.com/
+    items: [kpi, milestone:robotaxi-saturation, milestone:the-blue-collar-shift]
+    covers: Quarterly update decks and earnings calls (Optimus units in Tesla factories, robotaxi fleet and cities).
+    cadence: quarterly (late Jan/Apr/Jul/Oct)
+    tier: primary
+    note: bot-blocked
+  - name: Apptronik — press releases
+    url: https://apptronik.com/company/press-releases
+    items: [kpi, milestone:the-blue-collar-shift]
+    covers: Apollo humanoid deployments (Mercedes-Benz, GXO, Jabil manufacturing) and funding.
+    cadence: continuous
+    tier: primary
+  - name: Unitree Robotics — news
+    url: https://www.unitree.com/news/
+    items: [kpi, challenge:power-efficiency-cost]
+    covers: "Humanoid and quadruped launches with list prices (the low-cost end: G1, R1), shipment figures."
+    cadence: continuous
+    tier: primary
+  - name: Boston Dynamics — blog
+    url: https://bostondynamics.com/blog/
+    items: [kpi, milestone:the-blue-collar-shift, milestone:the-fukushima-test]
+    covers: Electric Atlas at Hyundai plants; Spot industrial inspection fleets.
+    cadence: irregular
+    tier: primary
+  - name: 1X — discover
+    url: https://www.1x.tech/discover
+    items: [milestone:the-wozniak-test, challenge:generalization]
+    covers: "NEO home humanoid: consumer deliveries, autonomy vs teleoperation share, world-model results."
+    cadence: irregular
+    tier: primary
+  - name: Sanctuary AI — news
+    url: https://sanctuary.ai/news/
+    items: [challenge:dexterous-manipulation]
+    covers: Hydraulic dexterous hands with tactile sensing, Phoenix general-purpose robot pilots.
+    cadence: irregular
+    tier: primary
+  - name: IFR — press releases (World Robotics)
+    url: https://ifr.org/ifr-press-releases
+    items: [kpi, milestone:the-dark-line, beyond]
+    covers: Official industrial/service robot installations and operational stock (World Robotics), robot density; humanoid market notes.
+    cadence: continuous; World Robotics annually in late September
+    tier: primary
+  # --- Robotaxi Saturation -------------------------------------------------------------------------
+  - name: Waymo — blog
+    url: https://waymo.com/blog/
+    items: [milestone:robotaxi-saturation]
+    covers: Paid rides per week, fleet size, new cities, freeway/airport service, safety-impact data.
+    cadence: continuous
+    tier: primary
+  - name: CPUC — autonomous vehicle quarterly reporting
+    url: https://www.cpuc.ca.gov/regulatory-services/licensing/transportation-licensing-and-analysis-branch/autonomous-vehicle-programs/quarterly-reporting
+    items: [milestone:robotaxi-saturation]
+    covers: California permit holders' quarterly trip data (driverless passenger trips, vehicles, miles); compare with ride-hail/taxi counts.
+    cadence: quarterly (with a lag of a few months)
+    tier: primary
+    note: bot-blocked
+  - name: California DMV — autonomous vehicles
+    url: https://www.dmv.ca.gov/portal/vehicle-industry-services/autonomous-vehicles/
+    items: [milestone:robotaxi-saturation]
+    covers: Driverless testing/deployment permits, collision reports, annual disengagement reports.
+    cadence: continuous; disengagement reports annually (early in the year)
+    tier: primary
+  - name: NHTSA — Standing General Order crash reporting
+    url: https://www.nhtsa.gov/laws-regulations/standing-general-order-crash-reporting
+    items: [milestone:robotaxi-saturation]
+    covers: Crash reports of automated driving systems by operator (US-wide).
+    cadence: monthly data releases
+    tier: primary
+    note: bot-blocked
+  - name: Baidu — press releases (Apollo Go)
+    url: https://ir.baidu.com/news-releases
+    items: [milestone:robotaxi-saturation]
+    covers: Apollo Go fully driverless rides per quarter, fleet size and cities (in quarterly results); Wuhan is the densest robotaxi city.
+    cadence: quarterly results; continuous releases
+    tier: primary
+    note: bot-blocked
+  - name: Pony.ai — press releases
+    url: https://ir.pony.ai/news-events/press-releases
+    items: [milestone:robotaxi-saturation]
+    covers: Robotaxi fleet size, cities (Guangzhou, Shenzhen, Beijing, abroad), robotaxi revenue.
+    cadence: continuous; quarterly results
+    tier: primary
+    note: bot-blocked
+  - name: WeRide — news releases
+    url: https://ir.weride.ai/news-events/news-releases/
+    items: [milestone:robotaxi-saturation]
+    covers: Robotaxi/robobus fleets and permits (China, Middle East, Europe), quarterly results.
+    cadence: continuous; quarterly results
+    tier: primary
+    note: bot-blocked
+  - name: Zoox — journal
+    url: https://zoox.com/journal
+    items: [milestone:robotaxi-saturation]
+    covers: Purpose-built robotaxi service launches (Las Vegas, San Francisco) and NHTSA exemptions.
+    cadence: irregular
+    tier: primary
+  # --- Fukushima Test ----------------------------------------------------------------------------------
+  - name: NIST — standard test methods for response robots
+    url: https://www.nist.gov/el/intelligent-systems-division-73500/standard-test-methods-response-robots
+    items: [milestone:the-fukushima-test]
+    covers: ASTM test methods for response robots (mobility, manipulation, valve turning), the yardstick for "within human time limits".
+    cadence: irregular
+    tier: primary
+  - name: ANYbotics — news
+    url: https://www.anybotics.com/news/
+    items: [milestone:the-fukushima-test]
+    covers: Autonomous legged inspection robots in hazardous industrial sites (ATEX), first manipulation capabilities.
+    cadence: irregular
+    tier: primary
+    note: bot-blocked
+  # --- Research: manipulation, generalization ------------------------------------------------------
+  - name: Google DeepMind — Gemini Robotics
+    url: https://deepmind.google/models/gemini-robotics/
+    items: [challenge:generalization, challenge:dexterous-manipulation, milestone:the-wozniak-test]
+    covers: Vision-language-action models for general-purpose robots (Gemini Robotics releases, generalization benchmarks).
+    cadence: per release
+    tier: primary
+  - name: Physical Intelligence — blog
+    url: https://www.pi.website/blog
+    items: [challenge:generalization, challenge:dexterous-manipulation, milestone:the-wozniak-test]
+    covers: π-series robot foundation models; results in unseen homes (cleaning, laundry), cross-embodiment transfer.
+    cadence: irregular
+    tier: primary
+    note: bot-blocked
+  - name: Toyota Research Institute — robotics
+    url: https://www.tri.global/our-work/robotics
+    items: [challenge:generalization, challenge:dexterous-manipulation]
+    covers: Large behavior models, diffusion policy, dexterous manipulation research.
+    cadence: irregular
+    tier: primary
+  - name: Science Robotics — research
+    url: https://www.science.org/journal/scirobotics/research
+    items: [challenge:dexterous-manipulation, challenge:generalization, challenge:power-efficiency-cost, milestone:the-fukushima-test]
+    covers: "Peer-reviewed robotics: tactile sensing, actuators, hands, legged locomotion, field robots."
+    cadence: continuous; monthly issues
+    tier: primary
+    note: bot-blocked
+  - name: arXiv — cs.RO recent
+    url: https://arxiv.org/list/cs.RO/recent
+    items: [challenge:dexterous-manipulation, challenge:generalization, challenge:power-efficiency-cost]
+    covers: Robotics preprints (manipulation, robot learning, VLA models, hardware).
+    cadence: weekdays
+    tier: primary
+  # --- Section-wide ---------------------------------------------------------------------------------
+  - name: The Robot Report — humanoids
+    url: https://www.therobotreport.com/category/robots-platforms/humanoids/
+    items: ["*"]
+    covers: "Trade news on humanoid companies: deployments, funding, unit numbers."
+    cadence: daily
+    tier: news
+  - name: IEEE Spectrum — robotics
+    url: https://spectrum.ieee.org/topic/robotics/
+    items: ["*"]
+    covers: Engineering-level reporting on robots and research; weekly "Video Friday" of new demos.
+    cadence: continuous; Video Friday weekly
+    tier: news
