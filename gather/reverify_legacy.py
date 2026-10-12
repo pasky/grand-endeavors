@@ -580,10 +580,12 @@ def _figure_errs(eid: str, claim: str, ev_q: list[dict], also: str = "") -> list
     errs = []
     quotes = " | ".join(str(q.get("quote", "")) for q in ev_q)
     pool = {abs(x) for x in kpi.quantities(quotes + " | " + also)}
-    for v in sorted(kpi.quantities(claim)):
-        if abs(v) not in pool:
-            errs.append(f"{eid}: figure {v:g} of the claim is in no evidence quote")
     qn = norm(quotes + " | " + also)
+    for v in sorted(kpi.quantities(claim)):
+        # a year read as a quantity ("2 June 2025 Clairity...") is backed by the year in a quote
+        year = v.is_integer() and 1900 <= v <= 2100 and str(int(v)) in qn
+        if abs(v) not in pool and not year:
+            errs.append(f"{eid}: figure {v:g} of the claim is in no evidence quote")
     for y in sorted(set(YEAR_RE.findall(claim))):
         if y not in qn:
             errs.append(f"{eid}: year {y} of the claim is in no evidence quote")
