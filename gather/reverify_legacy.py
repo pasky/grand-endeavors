@@ -130,11 +130,12 @@ class Net:
             return "fail"
         return None
 
-    def get(self, url: str) -> dict:
-        """{status, final_url, ctype, body | error}. Never raises for HTTP/network errors."""
+    def get(self, url: str, tries: int = MAX_TRIES, breaker: bool = True) -> dict:
+        """{status, final_url, ctype, body | error}. Never raises for HTTP/network errors.
+        breaker: count a request that exhausts its retries towards the abort (3 in a row)."""
         archive = "archive.org" in urllib.parse.urlsplit(url).netloc
         last_err = ""
-        for attempt in range(MAX_TRIES):
+        for attempt in range(tries):
             with open(self.lock_p, "a") as lk:
                 fcntl.flock(lk, fcntl.LOCK_EX)
                 p = self._pacer()
@@ -156,12 +157,12 @@ class Net:
                 self.fail_streak = 0
                 return res
             last_err = res.get("error") or f"HTTP {res.get('status')}"
-            if not archive and attempt >= 2:
+            if (not archive and attempt >= 2) or attempt == tries - 1:
                 break
             backoff = min(MAX_WAIT, max(retry_after or 0, (ARCHIVE_GAP if archive else 2) * 2 ** attempt))
             log(f"    transient ({last_err}) on {url[:120]}; backing off {backoff:.0f}s")
             time.sleep(backoff)
-        if archive:
+        if archive and breaker:
             self.fail_streak += 1
             if self.fail_streak >= 3:
                 raise SystemExit("archive.org keeps failing (3 requests exhausted their retries); "
@@ -374,9 +375,9 @@ def _ts(day: str) -> str:
 def cdx(net: Net, url: str, target: str, limit: int = 8) -> tuple[list[dict], str | None]:
     q = urllib.parse.urlencode({"url": url, "output": "json", "fl": "timestamp,original,statuscode,mimetype,digest,length",
                                 "filter": "statuscode:[23]..", "sort": "closest", "closest": target, "limit": str(limit)})
-    res = net.get("https://web.archive.org/cdx/search/cdx?" + q)
+    res = net.get("https://web.archive.org/cdx/search/cdx?" + q, tries=3, breaker=False)
     if res.get("status") != 200:
-        return [], res.get("error") or f"CDX HTTP {res.get('status')}"
+        return available(net, url, target, res.get("error") or f"CDX HTTP {res.get('status')}")
     try:
         rows = json.loads(res["body"].decode("utf-8") or "[]")
     except ValueError:
@@ -385,6 +386,24 @@ def cdx(net: Net, url: str, target: str, limit: int = 8) -> tuple[list[dict], st
         return [], None
     hdr = rows[0]
     return [dict(zip(hdr, r)) for r in rows[1:]], None
+
+
+def available(net: Net, url: str, target: str, cdx_err: str) -> tuple[list[dict], str | None]:
+    """Fallback when the CDX server is down (it goes 'Temporarily Offline' while the
+    rest of the Wayback Machine works): the availability API's closest capture."""
+    q = urllib.parse.urlencode({"url": url, "timestamp": target})
+    res = net.get("https://archive.org/wayback/available?" + q)
+    if res.get("status") != 200:
+        return [], f"{cdx_err}; availability API: {res.get('error') or res.get('status')}"
+    try:
+        snap = json.loads(res["body"].decode("utf-8")).get("archived_snapshots", {}).get("closest") or {}
+    except ValueError:
+        return [], f"{cdx_err}; availability API: unparsable response"
+    m = re.match(r"https?://web\.archive\.org/web/(\d+)/(.+)", snap.get("url", ""))
+    if not snap.get("available") or not m:
+        return [], None
+    return [{"timestamp": m.group(1), "original": m.group(2), "statuscode": snap.get("status", ""),
+             "mimetype": "", "digest": "ts:" + m.group(1), "length": ""}], None
 
 
 def fetch_source(net: Net, section: str, ev: dict, url: str, alt: bool = False, retry_failed: bool = False):
