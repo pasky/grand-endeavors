@@ -16,7 +16,7 @@ cache, a mechanical audit of the (LLM-judged) results, and ledger records.
         fetch an alternative source (live + Wayback) for one event into its cache
   reverify_legacy.py show <section> <event-id>
         the event and its cached documents (manifest)
-  reverify_legacy.py audit <section> <results.jsonl>
+  reverify_legacy.py audit <section> <results.jsonl> [--partial]
         mechanical audit of judged results (quotes verbatim in a cached document,
         every figure and year of a new claim inside a quote, sources fetched)
   reverify_legacy.py stage <section> <results.jsonl> --tag T --by B [--today D]
@@ -39,7 +39,8 @@ Results file (one JSON per event, written by the judge):
    "sources": [{"url", "title", "primary"}]   original or alternative source URLs
                                                (must have been fetched for this event),
    "evidence": [{"doc": NN, "quote": "verbatim text from that document"}],
-   "note": "..."}
+   "date": optional corrected event date (verified/corrected; the new id takes it),
+   "note": "..."}   (notes may cite "doc NN"; the log lists every fetched document by number)
 """
 from __future__ import annotations
 
@@ -534,6 +535,14 @@ def audit_one(section: str, r: dict, ev: dict | None) -> list[str]:
         if res == "verified" and r.get("claim") and norm(r["claim"]) != norm(ev["claim"]):
             errs.append(f"{r['id']}: verified must keep the legacy claim (reworded -> corrected)")
         errs += _figure_errs(r["id"], claim, ev_q)
+        if r.get("date") is not None:
+            d = str(r["date"])
+            if not ledger._valid_date(d):
+                errs.append(f"{r['id']}: bad date {d!r} (YYYY, YYYY-MM or YYYY-MM-DD)")
+            elif d[:4] not in norm(" | ".join(str(q.get("quote", "")) for q in ev_q)):
+                errs.append(f"{r['id']}: the year of the corrected date {d} is in no evidence quote")
+    elif r.get("date") is not None:
+        errs.append(f"{r['id']}: only a verified/corrected result may move the event date")
     if res == "refuted":
         claim = str(r.get("claim") or "")
         if not claim.startswith("Withdrawn after re-verification: "):
@@ -569,7 +578,7 @@ def load_results(p: str) -> list[dict]:
     return out
 
 
-def cmd_audit(section: str, results: list[dict]) -> list[str]:
+def cmd_audit(section: str, results: list[dict], partial: bool = False) -> list[str]:
     evs = {e["id"]: e for e in pending(section)}
     errs = []
     seen = set()
@@ -579,7 +588,7 @@ def cmd_audit(section: str, results: list[dict]) -> list[str]:
         seen.add(r.get("id"))
         errs += audit_one(section, r, evs.get(r.get("id")))
     missing = sorted(set(evs) - seen)
-    if missing:
+    if missing and not partial:
         errs.append(f"no result for {len(missing)} event(s): {', '.join(missing)}")
     return errs
 
@@ -605,7 +614,7 @@ def build_records(section: str, results: list[dict], by: str, today: str) -> tup
             if q["doc"] not in docs:
                 docs.append(q["doc"])
         caps = [man[n]["url"] for n in docs if "wayback" in man[n]["kind"]]
-        fetched = [{"url": m["url"], "status": m.get("status"), "ok": bool(m.get("ok"))}
+        fetched = [{"doc": m["n"], "url": m["url"], "status": m.get("status"), "ok": bool(m.get("ok"))}
                    for m in man.values() if not m["url"].startswith("cdx:")]
         note = r["note"].strip()
         if caps and not all(c in note for c in caps):
@@ -628,14 +637,17 @@ def build_records(section: str, results: list[dict], by: str, today: str) -> tup
                    "sources": _dedup(live + cap_srcs), "significance": ev["significance"],
                    "supersedes": [ev["id"]], "withdrawn": True, "verification": verification, "collector": collector}
         else:
-            rid = _new_id(ev["id"], "rv", taken)
+            date = str(r.get("date") or ev["date"])
+            base = ev["id"] if date == ev["date"] else \
+                (date + "-01-01"[len(date) - 4:] if len(date) < 10 else date) + ev["id"][10:]
+            rid = _new_id(base, "rv", taken)
             titles = {s["url"]: s for s in ev["sources"]}
             srcs = [{"url": s["url"], "title": s.get("title") or titles.get(s["url"], {}).get("title", ""),
                      "primary": bool(s.get("primary", titles.get(s["url"], {}).get("primary", False)))}
                     for s in r["sources"]]
             claim = ev["claim"] if r["result"] == "verified" else r["claim"].strip()
             rec = {k: ev[k] for k in ("id", "date", "published", "published_basis", "retrieved", "kind", "topics")}
-            rec |= {"id": rid, "claim": claim, "sources": _dedup(srcs + cap_srcs), "significance": ev["significance"]}
+            rec |= {"id": rid, "date": date, "claim": claim, "sources": _dedup(srcs + cap_srcs), "significance": ev["significance"]}
             quotes = " | ".join(q["quote"] for q in r.get("evidence") or [])
             pool = {abs(x) for x in kpi.quantities(quotes)}
             mets = [m for m in ev.get("metrics") or [] if abs(float(m["value"])) in pool]
@@ -696,6 +708,7 @@ def main() -> int:
     a = sub.add_parser("audit")
     a.add_argument("section", choices=ledger.SECTIONS)
     a.add_argument("results")
+    a.add_argument("--partial", action="store_true", help="a batch: do not require a result for every event")
     st = sub.add_parser("stage")
     st.add_argument("section", choices=ledger.SECTIONS)
     st.add_argument("results")
@@ -730,7 +743,7 @@ def main() -> int:
                 print(f"doc {m['n']:02d} {m['kind']:<12} ok={m.get('ok')} chars={m.get('chars', 0):>7} {m['url']}"
                       + (f"  ({m.get('error')})" if not m.get("ok") else ""))
     elif args.cmd == "audit":
-        errs = cmd_audit(args.section, load_results(args.results))
+        errs = cmd_audit(args.section, load_results(args.results), args.partial)
         print("\n".join(errs) if errs else "audit OK")
         return 1 if errs else 0
     elif args.cmd == "stage":

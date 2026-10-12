@@ -69,6 +69,11 @@ def main():
     case("corrected -> -rv replacement superseding the legacy id, capture cited",
          r["id"] == legacy["id"] + "-rv" and r["supersedes"] == [legacy["id"]] and r["verification"]["status"] == "corrected"
          and [s["url"] for s in r["sources"]] == [src, cap] and r["collector"] == "reverify:backfill:pilot-2025/climate.md")
+    moved = good | {"date": "2025-03-03"}
+    case("a corrected event date (quoted) moves the replacement's id", rv.cmd_audit("climate", [moved]) == []
+         and rv.build_records("climate", [moved], "b", "2026-10-12")[1][0]["id"] == "2025-03-03-acme-plant-rv")
+    case("audit: an unquoted corrected date fails",
+         any("corrected date" in e for e in rv.cmd_audit("climate", [good | {"date": "2024-12"}])))
     tomb = res(result="refuted", claim="Withdrawn after re-verification: Acme's Spanish solar plant - the capture says 450 MW, not 500 MW.")
     case("audit: a tombstone may restate the legacy figure", rv.cmd_audit("climate", [tomb]) == [])
     _, recs2 = rv.build_records("climate", [tomb], "b", "2026-10-12")
