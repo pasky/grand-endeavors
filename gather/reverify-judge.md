@@ -49,7 +49,8 @@ passages; a note must say specifically what the documents do and do not say):
 - Time matters: a page that changes over time (dashboard, company profile, running
   total, "latest" figures) supports a dated claim only in a capture from around the
   event's date (check the doc's Wayback timestamp; live = fetched today), unless the
-  text itself dates the figure.
+  text itself dates the figure. META/LD dates can be a later re-publication or
+  update; a date stated in the text wins.
 - Quotes are copied exactly from the NN.txt file (whitespace and quote-mark style
   may differ; at least 15 characters). Quote enough context to show the metric scope.
 
