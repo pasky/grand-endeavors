@@ -78,6 +78,7 @@ OTHER_GAP = 1.0
 MAX_TRIES = 7              # 5+10+20+40+80+160 s of backoff before giving up on a request
 MAX_WAIT = 600
 CAPTURES_PER_URL = 2       # distinct captures fetched per source URL
+CDX_PAUSE = 900            # after a CDX failure, use the availability API for 15 min
 MIN_TEXT = 1500            # a capture with less text than this triggers one more capture
 
 
@@ -101,6 +102,7 @@ class Net:
         self.lock_p = os.path.join(cache, ".net.lock")
         self.pacer_p = os.path.join(cache, ".pacer.json")
         self.fail_streak = 0
+        self.cdx_down_until = 0.0
 
     def _pacer(self) -> dict:
         try:
@@ -375,8 +377,11 @@ def _ts(day: str) -> str:
 def cdx(net: Net, url: str, target: str, limit: int = 8) -> tuple[list[dict], str | None]:
     q = urllib.parse.urlencode({"url": url, "output": "json", "fl": "timestamp,original,statuscode,mimetype,digest,length",
                                 "filter": "statuscode:[23]..", "sort": "closest", "closest": target, "limit": str(limit)})
+    if time.time() < net.cdx_down_until:
+        return available(net, url, target, "CDX server down (skipped)")
     res = net.get("https://web.archive.org/cdx/search/cdx?" + q, tries=3, breaker=False)
     if res.get("status") != 200:
+        net.cdx_down_until = time.time() + CDX_PAUSE
         return available(net, url, target, res.get("error") or f"CDX HTTP {res.get('status')}")
     try:
         rows = json.loads(res["body"].decode("utf-8") or "[]")
