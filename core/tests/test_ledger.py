@@ -338,6 +338,8 @@ def main():
          has(ledger.check_assumed_gates("robots-software", [na]), "assumed gate")
          and ledger.check_assumed_gates("robots-software", [na, na_ok]) == []
          and ledger.check_assumed_gates("climate", [dict(na, target="milestone:the-bend")]) == [])
+    case("assumed gate: a malformed basis is reported, not a crash",
+         has(ledger.check_assumed_gates("robots-software", [dict(na, basis="not an object")]), "assumed gate"))
     write_csv(f"{kpi.ROOT}/metrics/robots-software.csv", kpi.REG_COLUMNS,
               [["metr-50-horizon", "min", "irregular", "", "", "", "d"], ["metr-50-horizon-by-release", "min", "irregular", "", "", "", "d"]])
     drv = V2(dict(eta, calc="driver robots-software metr-50-horizon-by-release: 17 h; x"), id="dv", status="yellow",

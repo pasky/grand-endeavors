@@ -33,7 +33,12 @@ if [ -n "${ONLY:-}" ]; then  # restrict to the given targets (space-separated)
 	TARGETS="$(printf '%s\n' "$TARGETS" | while IFS='|' read -r t id; do
 		case " $ONLY " in *" $t "*) echo "$t|$id" ;; esac; done)"
 fi
-[ -n "$TARGETS" ] || { echo ">>> [$RUN_NAME] nothing to assess"; exit 0; }
+warn_drivers() {  # KNOWN GAP (TODO.md, deferred): cross-section ETA drivers are not tracked by `ledger.py stale`
+	uv run $ROOT/core/ledger.py drivers "$SECTION" | while IFS='|' read -r t s m; do
+		echo "WARN: $SECTION $t: its ETA rests on $s/$m, but a new $m observation will NOT re-assess it (cross-section staleness is not implemented, TODO.md)" >&2
+	done
+}
+[ -n "$TARGETS" ] || { warn_drivers; echo ">>> [$RUN_NAME] nothing to assess"; exit 0; }
 SPEC="$(awk -F, -v s="$SECTION" 'NR==1 || $1==s' metrics/kpi-assessment.csv)"
 case "$SPEC" in *"
 $SECTION,"*) : ;; *) SPEC="(no KPI spec for $SECTION: do NOT assess its 'kpi' target; skip it)" ;; esac
@@ -115,17 +120,15 @@ if [ "$PI_RC" != 0 ]; then
 	SALVAGE=" (salvaged: the assess agent exited $PI_RC after staging a complete, lint-clean file)"
 fi
 [ -s "$AS" ] || { echo "ERROR: assess wrote no $AS" >&2; exit 1; }
-want_ids="$(printf '%s\n' "$TARGETS" | cut -d'|' -f2 | sort)"
-got_ids="$(uv run python -c 'import json,sys; [print(json.loads(l)["id"]) for l in open(sys.argv[1]) if l.strip()]' "$AS" | sort)"
-[ "$want_ids" = "$got_ids" ] || { echo "ERROR: $AS ids differ from the targets:" >&2
+# exactly one record per target, with its given id (target|id pairs, not just ids)
+want_ids="$(printf '%s\n' "$TARGETS" | sort)"
+got_ids="$(uv run python -c 'import json,sys; [print(r.get("target"), r.get("id"), sep="|") for r in map(json.loads, filter(str.strip, open(sys.argv[1])))]' "$AS" | sort)"
+[ "$want_ids" = "$got_ids" ] || { echo "ERROR: $AS target|id pairs differ from the targets:" >&2
 	printf 'want:\n%s\ngot:\n%s\n' "$want_ids" "$got_ids" >&2; exit 1; }
 uv run $ROOT/core/ledger.py lint "$SECTION" --assessments "$AS" || { echo "ERROR: $AS does not lint clean" >&2; exit 1; }
 uv run $ROOT/core/ledger.py merge "$SECTION" --assessments "$AS"
 uv run $ROOT/core/ledger.py check "$SECTION"
 commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')$SALVAGE" \
 	"ledger/assessments/$SECTION.jsonl"
-# KNOWN GAP (TODO.md, deferred): cross-section ETA drivers are not tracked by `ledger.py stale`
-uv run $ROOT/core/ledger.py drivers "$SECTION" | while IFS='|' read -r t s m; do
-	echo "WARN: $SECTION $t: its ETA rests on $s/$m, but a new $m observation will NOT re-assess it (cross-section staleness is not implemented, TODO.md)" >&2
-done
+warn_drivers
 echo ">>> done: assess $SECTION as of $UNTIL"

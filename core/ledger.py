@@ -565,7 +565,8 @@ def check_assumed_gates(section: str, ass: list[dict]) -> list[str]:
         a = latest[t]
         if a.get("rubric") in (None, "v1") or a.get("status") in ("unknown", "achieved"):
             continue
-        eta = (a.get("basis") or {}).get("eta")
+        basis = a.get("basis")
+        eta = basis.get("eta") if isinstance(basis, dict) else None  # (a malformed basis is check_assessment's error)
         if not (isinstance(eta, dict) and str(eta.get("assumes") or "").strip()) \
                 or not re.search(r"ETA ~\d{4}\*", str(a.get("label"))):
             warns.append(f"assessment {a.get('id')}: {t} has an assumed gate in framework.yaml; its latest assessment "
