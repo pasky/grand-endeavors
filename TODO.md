@@ -70,19 +70,16 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] 🤖 Re-verify the legacy KPI **observations** (pilot-2025 values); only events
       were re-verified.
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
-      `DATA_URL` in `gather/collectors/climate_emissions.py`. Same for the
-      edition URLs in `gather/sources/` (`grep -n 'Edition URL' gather/sources/*.yaml`:
-      UNEP Emissions Gap, IEA Global Energy Review, IRENA costs).
-- [ ] Health KPI re-assessment: WHO's new GHE round (GHO record date 2026-10-01)
-      extends HALE to 2023 and revises 2000-2021 (collected 2026-10-09). The KPI
-      assessment still says "Stale (data to 2021)"; the next `gather.sh health` /
-      `assess.sh health` picks it up (`ledger.py stale`).
-- [ ] 🤖 Check The Bend's next assessment (yellow on 2026-09-30, label
-      "Progressing: GHG 54.1 GtCO2e..."). Its rationale counted slowing **CO₂**
-      growth as progress on a **total-GHG** milestone. It is re-assessed
-      automatically once new Bend evidence arrives (`ledger.py stale`), and the
-      assess prompt now asks for the milestone's own quantity or a named proxy.
-      Verify that the new record judges it on total GHG (EDGAR).
+      `DATA_URL` in `gather/collectors/climate_emissions.py`. Watch for WHO's next GHE
+      round; health data ends in 2021, so its KPI is labelled "Stale".
+- [ ] Fusion KPI caveats (independent spot-check of 2025-Q4 matched exactly;
+      2021-Q4 couldn't be independently parsed):
+      - exchange-rate swings move the series;
+      - it is deflated with US CPI only;
+      - it is weighted by population, not by consumption;
+      - coverage is about 94%.
+
+      Consider adding a local-currency or PPP variant.
 - [ ] Rockets KPI: a `cost-to-leo-best` history (only one point). Needs a
       sourcing decision: list prices are sparse and inconsistent.
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
