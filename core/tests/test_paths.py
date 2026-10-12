@@ -14,6 +14,7 @@ empty or broken prompt. So every "$ROOT/<path>" and every `cd "$ROOT[/dir]" &&
 import glob
 import os
 import re
+import subprocess
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -35,6 +36,10 @@ def main():
     for script in SCRIPTS:
         rel = os.path.relpath(script, REPO)
         text = open(script, encoding="utf-8").read()
+        # syntax, with the interpreter of its shebang (sh = POSIX: no arrays, no [[ ]])
+        shell = "bash" if text.startswith("#!/usr/bin/env bash") or text.startswith("#!/bin/bash") else "sh"
+        r = subprocess.run([shell, "-n", script], capture_output=True, text=True)
+        case(f"{rel}: {shell} -n syntax ok{(': ' + r.stderr.strip()) if r.returncode else ''}", r.returncode == 0)
         for m in sorted(set(PATH_RE.findall(text))):
             path = m.rstrip(".")
             if path in ("data",):  # the default data repo location, not code

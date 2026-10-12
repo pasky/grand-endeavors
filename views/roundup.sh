@@ -187,10 +187,10 @@ if [ -e "$OUT_DIR/index.html" ]; then
 else
 	echo ">>> [roundup/$OUT_DIR] period page"
 	uv run $ROOT/views/explore.py period "$OUT_DIR"
-	page=("$OUT_DIR/index.html" "$OUT_DIR/framework.yaml")
-	for f in "$OUT_DIR"/events-*.html; do [ -e "$f" ] && page+=("$f"); done
-	git add -- "${page[@]}"
-	git commit -q -m "$OUT_DIR: period page (dashboard + event logs as of the cutoff)" -- "${page[@]}"
+	set -- "$OUT_DIR/index.html" "$OUT_DIR/framework.yaml"
+	for f in "$OUT_DIR"/events-*.html; do [ -e "$f" ] && set -- "$@" "$f"; done
+	git add -- "$@"
+	git commit -q -m "$OUT_DIR: period page (dashboard + event logs as of the cutoff)" -- "$@"
 	# publish it: refresh the site ($ROOT/build/; best effort, the page is committed)
 	uv run $ROOT/views/explore.py site >/dev/null || echo "WARN: site refresh failed (see above)" >&2
 fi

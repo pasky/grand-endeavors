@@ -82,9 +82,10 @@ event of the endeavor, newest first, grouped by topic in framework order. An
 event is shown in full under its first topic, with its `#ev-<section>-<id>`
 anchor, and as a one-line link under later ones. Lifecycle links (`relates`,
 `supersedes`) on both pages land there (or say "withdrawn"). The split keeps
-the front page bounded as the ledger grows: it carries the assessments' cited
-evidence and a few latest events per topic, not the history (about 580 KB,
-120 KB gzipped, in October 2026).
+the event history off the front page: it carries the assessments' cited
+evidence (uncapped, it is what the status rests on) and a few latest events per
+topic (about 580 KB, 120 KB gzipped, in October 2026). The sparklines still
+carry each tile's whole series.
 
 **Footer**: record counts, the metric **gaps** (overdue or never observed;
 never hidden), links to the earlier **period pages**, and the data/code repos.

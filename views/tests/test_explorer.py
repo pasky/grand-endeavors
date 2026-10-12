@@ -355,7 +355,7 @@ def main():
              sorted(i for i in ids if i.startswith("ev-")) == sorted(
                  f"ev-climate-{r[0]}" for r in q_page_db(D("2026-09-28")))
              and len(ids) == len(set(ids)) and log.count("Updated data &lt;script&gt;") >= 2
-             and '<li class="ev ref">' in log and 'href="./#climate"' in log)
+             and '<li class="ev ref">' in log and 'href="index.html#climate"' in log)
         case("front page: no event anchors (they live in the event log), events still under each topic",
              ' id="ev-' not in page and page.count("Updated data &lt;script&gt;") >= 2
              and pgs[explore.PAGE] == page and set(pgs) == {"index.html", "events-climate.html"})
@@ -420,10 +420,33 @@ def main():
                 'rel="noopener noreferrer">t</a> [j](javascript:x)'
              and explore.md_block("a\nb\n\n* x\n* y") == '<p>a b</p><ul class="md"><li>x</li><li>y</li></ul>')
 
+        # the cap at a positive limit: newest first, exact omitted count; cited evidence exempt
+        db = sqlite3.connect(":memory:")
+        explore.build_db(db, D("2026-09-28"))
+        db.row_factory = sqlite3.Row
+        topic, tevs = next((t, e) for t in ("kpi", "milestone:the-bend", "milestone:the-balance")
+                           if len(e := explore.topic_events(db, "climate", t)) >= 2)
+        with mock.patch.object(explore, "TOPIC_EVENTS", 1):
+            one = explore.evidence_and_events(db, "climate", topic, None, {}, {}, set())
+            allcited = explore.evidence_and_events(
+                db, "climate", topic, {"assessment_id": "x", "evidence": json.dumps([e["id"] for e in tevs])},
+                {}, {}, set())
+        claim = lambda e: explore.esc(e["claim"])
+        case("cap 1: the newest event shown, the rest counted and linked",
+             claim(tevs[0]) in one and claim(tevs[1]) not in one
+             and f'#{explore.topic_anchor(topic)}">+{len(tevs) - 1} older event(s)' in one)
+        case("cap does not apply to cited evidence",
+             all(claim(e) in allcited for e in tevs) and "older event(s)" not in allcited)
+        db.close()
+
+        write(out, "events-personal.html", "not ours")
         with mock.patch.object(sys, "argv", ["explore.py", "dashboard", "--as-of", "2026-09-28",
                                              "--out", os.path.join(out, "d.html")]):
             rc = explore.main()
         case("CLI dashboard", rc == 0 and open(os.path.join(out, "d.html"), encoding="utf-8").read() == page)
+        case("CLI dashboard: event logs link back to the named page; unrelated files kept",
+             'href="d.html#climate"' in open(os.path.join(out, "events-climate.html"), encoding="utf-8").read()
+             and os.path.exists(os.path.join(out, "events-personal.html")))
 
         # --- period pages and the published site ------------------------------------------
         pdir = os.path.join(root, "pilot-26H1")
@@ -457,7 +480,7 @@ def main():
         explore.period_page(fresh)
         case("period page: first run freezes the current framework.yaml",
              open(os.path.join(fresh, "framework.yaml")).read() == FRAMEWORK)
-        site_dir = os.path.join(root, "site")
+        site_dir = os.path.join(out, "site")   # not in the data dir (it would look like a period dir)
         explore.site(site_dir, D("2026-09-28"))
         live = open(os.path.join(site_dir, "index.html"), encoding="utf-8").read()
         case("site: live page links the period pages (newest first), copies them",
@@ -481,6 +504,11 @@ def main():
         dangling = [(f, t) for f, t in links if target(f, t)[1] not in anchors.get(target(f, t)[0], set())]
         case("site: every internal #anchor link resolves (front pages, event logs, period pages)",
              links and not dangling)
+        os.remove(os.path.join(pdir, "events-climate.html"))   # e.g. regenerated with no climate events
+        explore.site(site_dir, D("2026-09-28"))
+        case("site: published period dir mirrors the data repo (stale event log dropped)",
+             not os.path.exists(os.path.join(site_dir, "pilot-26H1", "events-climate.html"))
+             and os.path.exists(os.path.join(site_dir, "pilot-26H1", "index.html")))
         case("site: ledger.sqlite + old dashboard.html redirects",
              os.path.exists(os.path.join(site_dir, "ledger.sqlite"))
              and 'url=./' in open(os.path.join(site_dir, "dashboard.html")).read())
