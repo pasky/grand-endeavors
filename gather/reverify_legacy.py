@@ -12,8 +12,9 @@ cache, a mechanical audit of the (LLM-judged) results, and ledger records.
         fetch every source of those events into the cache: the live URL, then
         Wayback captures (CDX API, closest to the event's retrieved/published
         dates, raw id_ captures). Resumable: cached documents are kept.
-  reverify_legacy.py fetch-url <section> <event-id> <url>
+  reverify_legacy.py fetch-url <section> <event-id> <url> [--any]
         fetch an alternative source (live + Wayback) for one event into its cache
+        (--any: also for an already re-verified legacy event, for a follow-up correction)
   reverify_legacy.py show <section> <event-id>
         the event and its cached documents (manifest)
   reverify_legacy.py audit <section> <results.jsonl> [--partial]
@@ -660,7 +661,10 @@ def _figure_errs(eid: str, claim: str, ev_q: list[dict], also: str = "") -> list
     for v in sorted(kpi.quantities(claim)):
         # a year read as a quantity ("2 June 2025 Clairity...") is backed by the year in a quote
         year = v.is_integer() and 1900 <= v <= 2100 and str(int(v)) in qn
-        if not kpi.kpi_traceable(str(v), pool) and not (decrease and -v in pool) and not year:
+        # a claim may round a quoted value to its own stated precision ("85.6 minutes" for 85.556627)
+        dec = len(repr(v).split(".")[1].rstrip("0")) if "." in repr(v) else 0
+        rounded = {round(x, dec) for x in pool}
+        if not kpi.kpi_traceable(str(v), pool | rounded) and not (decrease and -v in pool | rounded) and not year:
             errs.append(f"{eid}: figure {v:g} of the claim is in no evidence quote")
     for y in sorted(set(YEAR_RE.findall(claim))):
         if y not in qn:
@@ -821,6 +825,8 @@ def main() -> int:
     fu.add_argument("section", choices=ledger.SECTIONS)
     fu.add_argument("id")
     fu.add_argument("url")
+    fu.add_argument("--any", action="store_true",
+                    help="any legacy event of the section, also an already re-verified one (follow-up evidence)")
     sh = sub.add_parser("show")
     sh.add_argument("section", choices=ledger.SECTIONS)
     sh.add_argument("id")
@@ -841,9 +847,11 @@ def main() -> int:
     elif args.cmd == "fetch":
         cmd_fetch(args.section, args.ids, args.retry_failed)
     elif args.cmd == "fetch-url":
-        ev = next((e for e in pending(args.section) if e["id"] == args.id), None)
+        pool = [ledger.clean(e) for e in ledger.events(args.section) if e["verification"]["status"] == "legacy"] \
+            if args.any else pending(args.section)
+        ev = next((e for e in pool if e["id"] == args.id), None)
         if not ev:
-            raise SystemExit(f"{args.id}: not a still-unverifiable legacy event of {args.section}")
+            raise SystemExit(f"{args.id}: not a {'' if args.any else 'still-unverifiable '}legacy event of {args.section}")
         if not ledger.URL_RE.match(args.url) or "archive.org" in args.url:
             raise SystemExit("give the source's own http(s) URL (Wayback captures are looked up automatically)")
         fetch_source(Net(), args.section, ev, args.url, alt=args.url not in {s["url"] for s in ev["sources"]})

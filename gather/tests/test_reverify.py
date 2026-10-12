@@ -86,6 +86,9 @@ def main():
     case("a judged kind replaces the legacy kind; a bad one fails the audit",
          rv.build_records("climate", [good | {"kind": "projection"}], "b", "2026-10-12")[1][0]["kind"] == "projection"
          and any("bad kind" in e for e in rv.cmd_audit("climate", [good | {"kind": "retraction"}])))
+    case("audit: a claim may round a quoted value to its stated precision, not beyond it",
+         rv._figure_errs("x", "a p50 horizon of 85.6 minutes", [{"quote": "estimate: 85.556627"}]) == []
+         and rv._figure_errs("x", "a p50 horizon of 85.7 minutes", [{"quote": "estimate: 85.556627"}]) != [])
     case("audit: a positive figure never matches a negative quote",
          rv._figure_errs("x", "Sales rose +2.5% in March", [{"quote": "sales: −2.5% in March"}]) != [])
     mets = [{"metric": "m", "obs": "2024", "value": 450}, {"metric": "m", "obs": "2025", "value": 500}]
