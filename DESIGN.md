@@ -283,7 +283,8 @@ round-ups) are not scheduled; see TODO.md.
 before. Its Quick Reference table is not written by the agent but generated
 from the snapshots (`views/quickref.py`: KPI headline values, KPI status and
 milestone statuses as of the cutoff, with a link to the period page); the gate
-requires it to match the snapshots exactly. Then the script freezes the **period page** `<period-dir>/index.html`: the
+requires it to match the snapshots exactly. Then the script freezes the **period page** `<period-dir>/index.html`
+(with its per-section event logs `events-<section>.html`): the
 dashboard as of the cutoff, with the period's framework
 (`<period-dir>/framework.yaml`). It is committed rather than regenerated, because
 an as-of view drifts as later corrections enter the ledger (views/EXPLORER.md).

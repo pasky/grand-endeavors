@@ -8,7 +8,7 @@ There are two views over the same data:
 
 | | Dashboard (`build/index.html`) | Datasette (`build/ledger.sqlite`) |
 |---|---|---|
-| What it is | One curated, self-contained HTML page: the project's front page | A browsable database with a web UI |
+| What it is | One curated, self-contained HTML page: the project's front page (plus a per-endeavor event log) | A browsable database with a web UI |
 | Best for | A first-time visitor; "where do we stand?" at a glance; sharing | Digging, auditing, ad-hoc questions, exports |
 | Needs | Any browser; works offline; email it or host it anywhere | A local server (`uvx datasette ...`) |
 | Interaction | Read; every line expands to its detail | Filter, facet, sort, run SQL, export CSV/JSON |
@@ -24,8 +24,8 @@ git clone https://github.com/pasky/grand-endeavors-data.git data   # or set GE_D
 ## Dashboard
 
 ```sh
-uv run views/explore.py site                            # -> build/: index.html, period pages, ledger.sqlite (gather.sh runs this)
-uv run views/explore.py dashboard --as-of 2026-07-14    # just the page, as the ledger knew the world on that date
+uv run views/explore.py site                            # -> build/: index.html, event logs, period pages, ledger.sqlite (gather.sh runs this)
+uv run views/explore.py dashboard --as-of 2026-07-14    # just the pages (+ event logs), as the ledger knew the world on that date
 (cd data && uv run ../views/explore.py period pilot-26H1)  # freeze a period page (roundup.sh runs this)
 ```
 
@@ -60,22 +60,31 @@ Automation carry their own intro):
   precise criteria, the assessment (rationale; ETA, path, blockers; the
   previous status), the **cited evidence** (every event the assessment cites,
   whatever its topic tags; one superseded or withdrawn since is flagged), then
-  the milestone's other events. Statuses follow
+  the milestone's latest 5 other events, with a link to the rest in the event
+  log. Statuses follow
   gather/RUBRIC.md: 🟢 green, 🟡 yellow, 🔴 red, ✅ achieved (a green dot with a
   check mark), ⚪ unknown ("Unassessed"), dashed = not yet assessed.
 - **Open challenges** (or fusion's Tech Tree): name, definition and event
   count; expanded, the details and events. Challenges are not assessed.
 - Folded at the end: **Beyond the framework** events, **events under no
   current topic** (tags the framework no longer lists, e.g. after a change; never silently
-  dropped) and the **latest events**.
+  dropped) and the **latest events** (with a link to the event log).
 
 Each event shows the claim, event date, kind (achievement, announcement,
 projection, setback, …), significance (●●○), when it became known, topic tags,
 source links and a verification badge (verified / corrected / **legacy**). It
-is listed under every topic it is tagged with; lifecycle links (`relates`,
-`supersedes`) jump to its first occurrence (or say "withdrawn"). Superseded
-and withdrawn records are not shown, except as cited evidence (flagged); the
-current version is.
+is listed under every topic it is tagged with. Superseded and withdrawn
+records are not shown, except as cited evidence (flagged); the current
+version is.
+
+**Event logs** (`events-<section>.html`, next to the page): every effective
+event of the endeavor, newest first, grouped by topic in framework order. An
+event is shown in full under its first topic, with its `#ev-<section>-<id>`
+anchor, and as a one-line link under later ones. Lifecycle links (`relates`,
+`supersedes`) on both pages land there (or say "withdrawn"). The split keeps
+the front page bounded as the ledger grows: it carries the assessments' cited
+evidence and a few latest events per topic, not the history (about 580 KB,
+120 KB gzipped, in October 2026).
 
 **Footer**: record counts, the metric **gaps** (overdue or never observed;
 never hidden), links to the earlier **period pages**, and the data/code repos.
@@ -87,8 +96,8 @@ That makes it the right way to answer "what did we know on date X?"
 
 ### Period pages
 
-`explore.py period <period-dir>` freezes `<period-dir>/index.html` in the data
-repo (published as `build/<period-dir>/index.html`): the dashboard as of the
+`explore.py period <period-dir>` freezes `<period-dir>/index.html` and its event
+logs in the data repo (published as `build/<period-dir>/`): the dashboard as of the
 period's cutoff, rendered with the framework in force for that period
 (`<period-dir>/framework.yaml`, copied from the mechanism repo on the first run
 and kept). An existing page is never replaced silently: a re-run of roundup.sh
@@ -96,8 +105,14 @@ keeps it, and `--force` (with a `--note` saying why) regenerates it. Sections wi
 covered". The page is frozen because a regenerated as-of view drifts: later
 corrections of facts that were public by the cutoff, and assessments written
 retrospectively, enter it. pilot-2025 and pilot-26H1 were reconstructed this
-way on 2026-10-02 (with the framework of 2026-01-05) and say so; W38, a
-pipeline test run, has no page.
+way on 2026-10-02 (with the framework of 2026-01-05) and say so; they predate
+the event logs (one page, every event under each topic). W38, a pipeline test
+run, has no page.
+
+Size: a weekly period page with its event logs is about 1.2 MB, but consecutive
+weeks differ little, so git stores them as deltas: twelve weekly pages measured
+9.4 MB on disk and 240 KB packed (snapshots: 12 weeks of all eight sections,
+5 MB on disk, 150 KB packed). Keep both as plain text; gzip would defeat the deltas.
 
 ## Datasette
 

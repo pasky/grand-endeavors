@@ -162,6 +162,16 @@ def q(db, sql, *args):
     return db.execute(sql, args).fetchall()
 
 
+def q_page_db(as_of):
+    """(id,) of the effective climate events as of a date."""
+    db = sqlite3.connect(":memory:")
+    explore.build_db(db, as_of)
+    try:
+        return q(db, "SELECT id FROM current_events WHERE section='climate'")
+    finally:
+        db.close()
+
+
 def main():
     # pure date math
     ne = explore.next_expected
@@ -338,9 +348,26 @@ def main():
              re.search(r'<li class="topic"><details><summary><span class="dot s-green"[^>]*></span><b>The Bend:</b>'
                        r'[^<]*<span class="st">Peak in sight', page) is not None
              and "cited as evidence" in page and "Emissions fell &quot;&gt;&lt;b onclick" in page)
-        ids = re.findall(r' id="([^"]+)"', page)
-        case("dashboard: each event anchor once although events repeat under topics",
-             len(ids) == len(set(ids)) and page.count("Updated data &lt;script&gt;") >= 2)
+        pgs = explore.pages(D("2026-09-28"))
+        log = pgs.get("events-climate.html", "")
+        ids = re.findall(r' id="([^"]+)"', log)
+        case("event log: every effective event once with its anchor; later topics link to it",
+             sorted(i for i in ids if i.startswith("ev-")) == sorted(
+                 f"ev-climate-{r[0]}" for r in q_page_db(D("2026-09-28")))
+             and len(ids) == len(set(ids)) and log.count("Updated data &lt;script&gt;") >= 2
+             and '<li class="ev ref">' in log and 'href="./#climate"' in log)
+        case("front page: no event anchors (they live in the event log), events still under each topic",
+             ' id="ev-' not in page and page.count("Updated data &lt;script&gt;") >= 2
+             and pgs[explore.PAGE] == page and set(pgs) == {"index.html", "events-climate.html"})
+        hrefs = re.findall(r'href="events-climate\.html#([^"]+)"', page + log) + re.findall(r'href="#([^"]+)"', log)
+        case("every event-log link (front page and log) lands on an anchor in the log",
+             hrefs and all(f' id="{h}"' in log for h in hrefs))
+        with mock.patch.object(explore, "TOPIC_EVENTS", 0):
+            capped = explore.dashboard(D("2026-09-28"))
+        more = re.findall(r'<li class="ev more-ev"><a href="events-climate\.html#([^"]+)">\+(\d+) older', capped)
+        case("front page caps each topic's other events, linking the rest in the event log",
+             more and all(f' id="{h}"' in log for h, _ in more) and capped.count("Updated data &lt;script&gt;") < page.count("Updated data &lt;script&gt;")
+             and "cited as evidence" in capped)
         case("dashboard legacy/verified badges", '<span class="badge b-legacy">legacy</span></div>'
              '<div>An agency' in page and '<span class="badge b-verified">verified</span>' in page)
         case("dashboard escapes attributes", "<b onclick" not in page and '" onmouseover="' not in page
@@ -352,14 +379,14 @@ def main():
         case("dashboard comparable change has an arrow", "\u25bc -0.08</span> vs previous observation (2024): 2.64"
              in page)
         case("dashboard sparkline names its granularity", "<title>3 daily obs 2026-01-10..2026-04-02" in page)
-        case("dashboard lifecycle link", 'href="#ev-climate-2026-03-01-first-peak-claim"' in page)
+        case("dashboard lifecycle link", 'href="events-climate.html#ev-climate-2026-03-01-first-peak-claim"' in page)
         case("dashboard as-of excludes late event", "late announcement" not in page)
         case("dashboard hides superseded event, shows the correction",
              "cover 90%" not in page and "cover 88%" in page and "1 superseded not shown" in page
              and "4 events (3 verified, 1 legacy" in page)
         case("dashboard: supersedes line + relates link redirected to the successor",
              "supersedes (corrects / adds sources to) 2026-05-01-pledge-coverage" in page
-             and 'href="#ev-climate-2026-05-01-pledge-coverage-corrected">2026-05-01-pledge-coverage '
+             and 'href="events-climate.html#ev-climate-2026-05-01-pledge-coverage-corrected">2026-05-01-pledge-coverage '
                  '(superseded by 2026-05-01-pledge-coverage-corrected)</a>' in page)
         case("dashboard shows required + gap tiles, folds the rest",
              page.index("co2-never") < page.index("more registered metric") < page.index("co2-nolag"))
@@ -386,7 +413,7 @@ def main():
         tomb = dict(db.execute("SELECT * FROM current_events LIMIT 1").fetchone())
         tomb["relates"] = '[{"id": "x", "rel": "update"}]'
         case("lifecycle link to a withdrawn record: no dangling anchor",
-             "x (withdrawn)" in explore.event_li(tomb, {}, {"x": "t", "t": None}) and 'href="#ev-climate-"' not in page)
+             "x (withdrawn)" in explore.event_li(tomb, {}, {"x": "t", "t": None}) and '#ev-climate-"' not in page)
         case("markdown: inline emphasis, escaped, http links only",
              explore.md_inline("**b** *i* <x> [t](https://a.b/?q=1&r=2) [j](javascript:x)")
              == '<b>b</b> <i>i</i> &lt;x&gt; <a href="https://a.b/?q=1&amp;r=2" target="_blank" '
@@ -410,6 +437,10 @@ def main():
         case("period page: as of the cutoff, with the period's frozen framework",
              "cutoff <b>2026-07-14</b>" in pg and "OLD bend wording." in pg and "peak &amp; decline" not in pg
              and "Reconstructed <i>later</i>." in pg and 'href="../"' in pg and "ledger.sqlite" not in pg)
+        plog = open(os.path.join(pdir, "events-climate.html"), encoding="utf-8").read()
+        case("period page: its event log is frozen next to it, as of the cutoff",
+             "pilot-26H1" in plog and "2026-07-14" in plog and "late announcement" not in plog)
+        write(root, "pilot-26H1/events-gone.html", "stale")
         case("period page: sections without a bulletin are marked",
              pg.count("Not covered by this period") == 1 and "late announcement" not in pg)
         try:
@@ -432,7 +463,24 @@ def main():
         case("site: live page links the period pages (newest first), copies them",
              'Earlier periods: <a href="pilot-26H1/">pilot-26H1</a> · <a href="pilot-2025/">pilot-2025</a>' in live
              and open(os.path.join(site_dir, "pilot-26H1", "index.html"), encoding="utf-8").read() == pg
+             and os.path.exists(os.path.join(site_dir, "pilot-26H1", "events-climate.html"))
+             and not os.path.exists(os.path.join(site_dir, "pilot-26H1", "events-gone.html"))
+             and os.path.exists(os.path.join(site_dir, "events-climate.html"))
              and not os.path.exists(os.path.join(site_dir, "pilot-2026-W38")))
+        anchors, links = {}, []
+        for dp, _, fs in os.walk(site_dir):
+            for f in fs:
+                if f.endswith(".html"):
+                    h = open(os.path.join(dp, f), encoding="utf-8").read()
+                    anchors[os.path.join(dp, f)] = set(re.findall(r' id="([^"]+)"', h))
+                    links += [(os.path.join(dp, f), t) for t in re.findall(r'href="([^":]*#[^"]*)"', h)]
+        def target(f, href):  # (page path, anchor) of a relative link
+            page, frag = href.split("#", 1)
+            p = os.path.normpath(os.path.join(os.path.dirname(f), page)) if page else f
+            return (p if p.endswith(".html") else os.path.join(p, "index.html")), frag
+        dangling = [(f, t) for f, t in links if target(f, t)[1] not in anchors.get(target(f, t)[0], set())]
+        case("site: every internal #anchor link resolves (front pages, event logs, period pages)",
+             links and not dangling)
         case("site: ledger.sqlite + old dashboard.html redirects",
              os.path.exists(os.path.join(site_dir, "ledger.sqlite"))
              and 'url=./' in open(os.path.join(site_dir, "dashboard.html")).read())

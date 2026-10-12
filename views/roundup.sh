@@ -24,7 +24,7 @@
 # Same conventions as bulletin.sh: clean-worktree preflight (ALLOW_DIRTY=1 to
 # override), scoped commit of this stage's own artifacts only, saved pi session
 # under <out-dir>/.sessions/, fatal gate (STRICT=0 for report-only).
-# Finally freezes the period page <out-dir>/index.html (explore.py period: the
+# Finally freezes the period page <out-dir>/index.html + event logs (explore.py period: the
 # dashboard as of the cutoff, with the framework copied to <out-dir>/framework.yaml;
 # once: a re-run keeps it) and refreshes the published site.
 # Provenance: <out-dir>/MANIFEST-roundup.txt (separate from the per-section
@@ -187,8 +187,10 @@ if [ -e "$OUT_DIR/index.html" ]; then
 else
 	echo ">>> [roundup/$OUT_DIR] period page"
 	uv run $ROOT/views/explore.py period "$OUT_DIR"
-	git add "$OUT_DIR/index.html" "$OUT_DIR/framework.yaml"
-	git commit -q -m "$OUT_DIR: period page (dashboard as of the cutoff)" -- "$OUT_DIR/index.html" "$OUT_DIR/framework.yaml"
+	page=("$OUT_DIR/index.html" "$OUT_DIR/framework.yaml")
+	for f in "$OUT_DIR"/events-*.html; do [ -e "$f" ] && page+=("$f"); done
+	git add -- "${page[@]}"
+	git commit -q -m "$OUT_DIR: period page (dashboard + event logs as of the cutoff)" -- "${page[@]}"
 	# publish it: refresh the site ($ROOT/build/; best effort, the page is committed)
 	uv run $ROOT/views/explore.py site >/dev/null || echo "WARN: site refresh failed (see above)" >&2
 fi

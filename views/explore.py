@@ -12,14 +12,16 @@ COMMANDS
   explore.py build     [--out build/] [--as-of YYYY-MM-DD]
         -> <out>/ledger.sqlite (tables, indexes, views) + <out>/metadata.json (Datasette)
   explore.py dashboard [--out build/index.html] [--as-of YYYY-MM-DD]
-        -> one self-contained static HTML page (no JS/CSS/CDN dependencies): the
-           framework (framework.yaml: manifesto, definitions) with the ledger's state;
-           README-like by default, every item expands to its detail
+        -> self-contained static HTML (no JS/CSS/CDN dependencies): the front page, i.e.
+           the framework (framework.yaml: manifesto, definitions) with the ledger's
+           state, README-like by default, every item expands to its detail (cited
+           evidence + the latest TOPIC_EVENTS other events per topic); plus, next to
+           it, one event log per section (events-<section>.html: every event once)
   explore.py site [--out build/] [--as-of YYYY-MM-DD]
-        -> the published directory: index.html (live) + <period>/index.html (frozen
+        -> the published directory: index.html + event logs (live) + <period>/ (frozen
            period pages from the data repo) + ledger.sqlite + metadata.json
   explore.py period <period-dir> [--note TEXT] [--force]
-        -> <period-dir>/index.html, frozen: the page as of the period's cutoff, with
+        -> <period-dir>/index.html + event logs, frozen: the pages as of the period's cutoff, with
            the period's framework (<period-dir>/framework.yaml, copied on first run);
            an existing page is kept unless --force
 
@@ -439,7 +441,7 @@ li.topic{border-bottom:1px solid var(--line)}ul.topics{margin:0 0 4px}
 h4{font-size:12px;color:var(--mute);margin:10px 0 4px}.ass{margin:6px 0}
 dl.basis{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;font-size:13px;margin:6px 0}
 dl.basis dt{color:var(--mute)}dl.basis dd{margin:0}.b-cited{color:var(--acc)}
-footer{margin:24px 0}.news{margin-top:10px}
+footer{margin:24px 0}.news{margin-top:10px}li.ev.ref,li.ev.more-ev{font-size:13px;padding:3px 0}
 """
 
 
@@ -530,11 +532,26 @@ def spark_points(db: sqlite3.Connection, k: sqlite3.Row) -> tuple[list[tuple[dt.
 
 
 CITED = '<span class="badge b-cited">cited as evidence</span>'
+TOPIC_EVENTS = 5   # front page: latest non-evidence events per topic; the rest are in the event log
+
+
+def log_page(sec: str) -> str:
+    """The section's event log (next to index.html): every effective event once, with its
+    #ev-<section>-<id> anchor, grouped by topic (#t-<topic>)."""
+    return f"events-{sec}.html"
+
+
+def topic_anchor(topic: str) -> str:
+    return "t-" + re.sub(r"[^a-z0-9-]+", "-", topic.lower())
+
+
+def ev_href(sec: str, eid: str) -> str:
+    return f"{log_page(sec)}#ev-{sec}-{eid}"
 
 
 def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None = None,
              anchor: bool = True, cited: bool = False, note: str = "") -> str:
-    """anchor: carry the #ev-<section>-<id> target (the event's first occurrence on the page);
+    """anchor: carry the #ev-<section>-<id> target (the event log: its first occurrence);
     cited: the event is evidence of the assessment it is listed under; note: an extra badge."""
     sig = int(e["significance"] or 0)
     chips = "".join(f'<span class="chip">{esc(names.get(t, t))}</span>' for t in json.loads(e["topics"] or "[]"))
@@ -550,7 +567,7 @@ def event_li(e: sqlite3.Row, names: dict[str, str], succ: dict[str, str] | None 
         if t in succ:  # not effective and no successor: withdrawn (a tombstone is never shown)
             return f"{esc(eid)} (withdrawn)"
         label = esc(eid) + (f" (superseded by {esc(t)})" if t != eid else "")
-        return f'<a href="#ev-{esc(e["section"])}-{esc(t)}">{label}</a>'
+        return f'<a href="{esc(ev_href(e["section"], t))}">{label}</a>'
     rels = "".join(f'<div class="rel">↳ {esc(r.get("rel"))} of {target(r.get("id"))}</div>'
                    for r in json.loads(e["relates"] or "[]") if isinstance(r, dict))
     rels += "".join(f'<div class="rel">↳ supersedes (corrects / adds sources to) {esc(s)}</div>'
@@ -629,13 +646,15 @@ def topic_events(db: sqlite3.Connection, sec: str, topic: str) -> list[sqlite3.R
                       "ORDER BY e.date_end DESC, e.known_at DESC, e.id DESC", (sec, topic)).fetchall()
 
 
-def events_ul(evs, names, succ, shown: set, cited: set | None = None) -> str:
-    """An event list. Each event appears under every topic it is tagged with; the
-    #ev-<section>-<id> anchor (lifecycle links) goes on its first occurrence."""
-    out = []
-    for e in evs:
-        out.append(event_li(e, names, succ, anchor=e["id"] not in shown, cited=bool(cited and e["id"] in cited)))
-        shown.add(e["id"])
+def events_ul(evs, names, succ, shown: set, limit: int | None = None, more: str = "") -> str:
+    """A front-page event list (no anchors: those are in the event log): the first
+    `limit` events, then a link (`more`) to the rest in the event log. Every listed
+    event, shown or not, counts as placed under a topic (`shown`)."""
+    shown.update(e["id"] for e in evs)
+    out = [event_li(e, names, succ, anchor=False) for e in evs[:limit]]
+    if limit is not None and len(evs) > limit:
+        out.append(f'<li class="ev more-ev"><a href="{esc(more)}">+{len(evs) - limit} older event(s): '
+                   "the section's event log</a></li>")
     return "<ul>" + "".join(out) + "</ul>"
 
 
@@ -653,7 +672,7 @@ def evidence_and_events(db, sec: str, topic: str, m: sqlite3.Row | None, names, 
             if e is None:
                 lis.append(f'<li class="ev"><span class="gap">{esc(eid)}: not in the ledger as of this date</span></li>')
             elif e["effective"]:
-                lis.append(event_li(e, names, succ, anchor=eid not in shown, cited=True))
+                lis.append(event_li(e, names, succ, anchor=False, cited=True))
                 shown.add(eid)
             else:
                 lis.append(event_li(e, names, succ, anchor=False, cited=True,
@@ -662,7 +681,8 @@ def evidence_and_events(db, sec: str, topic: str, m: sqlite3.Row | None, names, 
         out.append(f"<h4>Cited evidence ({len(cited)})</h4><ul>{''.join(lis)}</ul>")
     evs = [e for e in topic_events(db, sec, topic) if e["id"] not in set(cited)]
     if evs:
-        out.append(f"<h4>{'Other events' if cited else 'Events'} ({len(evs)})</h4>" + events_ul(evs, names, succ, shown))
+        out.append(f"<h4>{'Other events' if cited else 'Events'} ({len(evs)})</h4>"
+                   + events_ul(evs, names, succ, shown, TOPIC_EVENTS, f"{log_page(sec)}#{topic_anchor(topic)}"))
     elif not cited:
         out.append('<div class="mute">no events tagged yet</div>')
     return "".join(out)
@@ -764,31 +784,106 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
     beyond = topic_events(db, sec, "beyond")
     if beyond:
         out.append(f'<details class="news"><summary>Beyond the framework: {len(beyond)} event(s)</summary>'
-                   f'<div class="more">{events_ul(beyond, names, succ, shown)}</div></details>')
+                   f'<div class="more">{events_ul(beyond, names, succ, shown, TOPIC_EVENTS, log_page(sec) + "#t-beyond")}'
+                   "</div></details>")
     # events no framework topic lists (e.g. tags of a since-changed framework): never silently dropped
     other = [e for e in evs if e["id"] not in shown]
     if other:
         out.append(f'<details class="news"><summary>Events under no current topic: {len(other)}</summary>'
-                   f'<div class="more">{events_ul(other, names, succ, shown)}</div></details>')
+                   f'<div class="more">{events_ul(other, names, succ, shown, TOPIC_EVENTS, log_page(sec) + "#t-other")}'
+                   "</div></details>")
     out.append(f'<details class="news"><summary>Latest events (the {min(n_recent, len(evs))} most recently '
                f'known of {len(evs)})</summary><div class="more">{events_ul(evs[:n_recent], names, succ, shown)}'
-               "</div></details>")
+               f'<p><a href="{esc(log_page(sec))}">All {len(evs)} events: the event log</a></p></div></details>')
     return "".join(out) + "</section>"
 
 
-def dashboard(as_of: dt.date, fw: dict | None = None, period: str | None = None,
-              covered: set[str] | None = None, note: str = "", periods: list[str] = ()) -> str:
-    """The published page: the framework (what we track and why) with the ledger's
-    state as of `as_of`. period: a period page (frozen at its cutoff, `covered` =
+def event_log_html(db: sqlite3.Connection, s: sqlite3.Row, as_of: dt.date, fw: dict,
+                   period: str | None) -> str:
+    """A section's event log: every effective event once (in full, with its anchor)
+    under its first topic in framework order; under later topics a one-line link to it."""
+    sec = s["section"]
+    names = {r["topic"]: r["name"] for r in db.execute("SELECT topic, name FROM topics WHERE section=?", (sec,))}
+    succ = dict(db.execute("SELECT id, superseded_by FROM events WHERE section=? AND NOT effective", (sec,)).fetchall())
+    topics = db.execute("SELECT topic, name FROM topics WHERE section=? ORDER BY ord", (sec,)).fetchall()
+    # the front page's grouping: no KPI line -> its kpi-tagged events are under no current topic
+    groups = [(t["topic"], t["name"], topic_events(db, sec, t["topic"])) for t in topics
+              if t["topic"] != "kpi" or s["kpi"]]
+    listed = {e["id"] for _, _, evs in groups for e in evs}
+    evs = db.execute("SELECT * FROM current_events WHERE section=? "
+                     "ORDER BY date_end DESC, known_at DESC, id DESC", (sec,)).fetchall()
+    groups.append(("other", "Under no current topic", [e for e in evs if e["id"] not in listed]))
+    shown: set[str] = set()
+    body, toc = [], []
+    for topic, name, tevs in groups:
+        if not tevs:
+            continue
+        lis = []
+        for e in tevs:
+            if e["id"] in shown:
+                claim = e["claim"] or ""
+                lis.append(f'<li class="ev ref">{esc(e["date"])} · <a href="#ev-{esc(sec)}-{esc(e["id"])}">'
+                           f'{esc(claim[:140] + ("…" if len(claim) > 140 else ""))}</a></li>')
+            else:
+                lis.append(event_li(e, names, succ, anchor=True))
+                shown.add(e["id"])
+        aid = topic_anchor(topic)
+        toc.append(f'<a href="#{esc(aid)}">{md_inline(name)} ({len(tevs)})</a>')
+        body.append(f'<h3 id="{esc(aid)}">{md_inline(name)} ({len(tevs)})</h3><ul>{"".join(lis)}</ul>')
+    title = f'{fw["title"]}{f" — {period}" if period else ""}: {s["title"]}, event log'
+    when = (f"period page <b>{esc(period)}</b>, the ledger as of its cutoff <b>{esc(as_of)}</b>, frozen"
+            if period else f"live ledger state as of <b>{esc(as_of)}</b>")
+    return (f'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+            f'<meta name="viewport" content="width=device-width,initial-scale=1">'
+            f"<title>{esc(title)} (as of {esc(as_of)})</title><style>{CSS}</style></head><body>"
+            f'<header><h1>{esc(s["title"])}: event log</h1>'
+            f'<div class="asof">All {len(evs)} events of this endeavor ({when}), newest first, under their '
+            f'first topic; under later topics, a link. <a href="./#{esc(sec)}">← dashboard</a></div>'
+            f'<nav>{"".join(toc)}</nav></header><main><section id="{esc(sec)}">{"".join(body)}</section>'
+            '<footer><p class="mute small">Generated by views/explore.py from the Grand Endeavors ledger.</p>'
+            "</footer></main></body></html>\n")
+
+
+def pages(as_of: dt.date, fw: dict | None = None, period: str | None = None,
+          covered: set[str] | None = None, note: str = "", periods: list[str] = ()) -> dict[str, str]:
+    """The published pages by file name: index.html (the dashboard: the framework, what we
+    track and why, with the ledger's state as of `as_of`) and one event log per section
+    with events (log_page). period: period pages (frozen at its cutoff, `covered` =
     sections with a bulletin); periods: period pages to link from the live page."""
     fw = fw or ledger.framework()
     db = sqlite3.connect(":memory:")
     try:
         build_db(db, as_of, fw)
         db.row_factory = sqlite3.Row
-        return _dashboard_html(db, as_of, fw, period, covered, note, periods)
+        out = {PAGE: _dashboard_html(db, as_of, fw, period, covered, note, periods)}
+        for s in db.execute("SELECT * FROM sections ORDER BY ord").fetchall():
+            if db.execute("SELECT 1 FROM current_events WHERE section=?", (s["section"],)).fetchone():
+                out[log_page(s["section"])] = event_log_html(db, s, as_of, fw, period)
+        return out
     finally:
         db.close()
+
+
+def dashboard(as_of: dt.date, fw: dict | None = None, period: str | None = None,
+              covered: set[str] | None = None, note: str = "", periods: list[str] = ()) -> str:
+    """The front page alone (pages()[PAGE])."""
+    return pages(as_of, fw, period, covered, note, periods)[PAGE]
+
+
+def write_pages(out_dir: str, pgs: dict[str, str]) -> list[str]:
+    """Write rendered pages (each replaced atomically) and drop stale event logs."""
+    os.makedirs(out_dir, exist_ok=True)
+    written = []
+    for name, page in pgs.items():
+        p = os.path.join(out_dir, name)
+        with open(p + ".tmp", "w", encoding="utf-8") as f:
+            f.write(page)
+        os.replace(p + ".tmp", p)
+        written.append(p)
+    for name in os.listdir(out_dir):
+        if re.fullmatch(r"events-.+\.html", name) and name not in pgs:
+            os.remove(os.path.join(out_dir, name))
+    return written
 
 
 def legend_html() -> str:
@@ -899,34 +994,30 @@ def period_page(period_dir: str, note: str = "", force: bool = False) -> str:
     fw = ledger.framework(period_dir)
     covered = {s for s in ledger.SECTIONS
                if os.path.isfile(p := os.path.join(period_dir, f"{s}.md")) and os.path.getsize(p) > 0}
-    page = dashboard(cut, fw, period=name, covered=covered, note=note)  # render first, then replace atomically
-    with open(out + ".tmp", "w", encoding="utf-8") as f:
-        f.write(page)
-    os.replace(out + ".tmp", out)
+    pgs = pages(cut, fw, period=name, covered=covered, note=note)  # render first, then replace atomically
+    write_pages(period_dir, dict(sorted(pgs.items(), key=lambda kv: kv[0] == PAGE)))  # index.html last
     return out
 
 
 def site(out_dir: str, as_of: dt.date) -> list[str]:
-    """The published directory: index.html (live), the frozen period pages
-    (<period>/index.html, copied from the data repo), ledger.sqlite + metadata.json,
-    and dashboard.html redirecting to the old URL's successor."""
+    """The published directory: index.html + event logs (live), the frozen period pages
+    (<period>/index.html + its event logs, copied from the data repo), ledger.sqlite +
+    metadata.json, and dashboard.html redirecting to the old URL's successor."""
     import shutil
     os.makedirs(out_dir, exist_ok=True)
     periods = period_dirs()
     written = []
     for d in periods:
         os.makedirs(os.path.join(out_dir, d), exist_ok=True)
-        shutil.copy(os.path.join(ledger.DATA, d, PAGE), os.path.join(out_dir, d, PAGE))
-        written.append(os.path.join(out_dir, d, PAGE))
-    page = dashboard(as_of, periods=periods)
-    tmp = os.path.join(out_dir, PAGE + ".tmp")
-    with open(tmp, "w", encoding="utf-8") as f:
-        f.write(page)
-    os.replace(tmp, os.path.join(out_dir, PAGE))
+        for name in sorted(os.listdir(os.path.join(ledger.DATA, d))):
+            if name == PAGE or re.fullmatch(r"events-.+\.html", name):
+                shutil.copy(os.path.join(ledger.DATA, d, name), os.path.join(out_dir, d, name))
+                written.append(os.path.join(out_dir, d, name))
+    written += write_pages(out_dir, pages(as_of, periods=periods))
     with open(os.path.join(out_dir, "dashboard.html"), "w", encoding="utf-8") as f:
         f.write('<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=./">'
                 '<title>Moved</title><a href="./">Grand Endeavors dashboard</a>\n')
-    written += [os.path.join(out_dir, PAGE), build(out_dir, as_of)]
+    written.append(build(out_dir, as_of))
     return written
 
 
@@ -953,10 +1044,10 @@ def main() -> int:
             db.close()
             print(f"wrote {p} (+ metadata.json) as of {a.as_of}: {counts}")
         elif a.cmd == "dashboard":
-            os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
-            with open(a.out, "w", encoding="utf-8") as f:
-                f.write(dashboard(a.as_of, periods=period_dirs()))
-            print(f"wrote {a.out} as of {a.as_of}")
+            pgs = pages(a.as_of, periods=period_dirs())
+            pgs[os.path.basename(a.out)] = pgs.pop(PAGE)
+            for p in write_pages(os.path.dirname(os.path.abspath(a.out)), pgs):
+                print(f"wrote {p} as of {a.as_of}")
         elif a.cmd == "site":
             for p in site(a.out, a.as_of):
                 print(f"wrote {p}")

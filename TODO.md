@@ -49,14 +49,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
       needs a definition that can actually be observed.
 
-## Views / checks
-
-- [ ] Snapshot size (~136 KB per weekly section): gzip, or pin + regenerate.
-- [ ] Dashboard size grows with the ledger (~830 KB live; events repeat under each
-      of their topics), and every period page is a frozen copy (~650-700 KB each,
-      committed to the data repo): fine for half-years, too much for weekly
-      periods. Split per section, or gzip/trim period pages, before weekly roundups.
-
 ## Roadmap
 
 - [ ] weekly cadence running · [ ] reference source list per endeavor (it
