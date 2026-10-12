@@ -46,6 +46,10 @@ passages; a note must say specifically what the documents do and do not say):
   "five missions") in a verified or corrected claim must be backed by a verbatim quote
   from a cached document of that event. The audit checks digits and years mechanically;
   you are responsible for the rest (spelled-out numbers, superlatives, attributions).
+- Time matters: a page that changes over time (dashboard, company profile, running
+  total, "latest" figures) supports a dated claim only in a capture from around the
+  event's date (check the doc's Wayback timestamp; live = fetched today), unless the
+  text itself dates the figure.
 - Quotes are copied exactly from the NN.txt file (whitespace and quote-mark style
   may differ; at least 15 characters). Quote enough context to show the metric scope.
 
@@ -57,6 +61,10 @@ passages; a note must say specifically what the documents do and do not say):
   factual sentence (at least 6 words) with its numbers AND their metric scope, in the
   style of the legacy claim. Drop unsupported figures; if the source states a different
   value for the same quantity, use the source's value and say so in the note.
+  A correction keeps the legacy claim's subject and metric: if the documents only
+  support a different metric (e.g. an annual value for a long-term-average claim), a
+  side remark, or something too vague to be useful on its own, the result is
+  unverifiable, not corrected.
   If the documents date the event differently from the event's `date` (e.g. the claim
   is really about an October milestone, not the December date it was filed under), set
   `"date"` to the documented date (YYYY-MM-DD, YYYY-MM or YYYY) and quote it.

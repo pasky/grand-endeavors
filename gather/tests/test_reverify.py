@@ -74,6 +74,12 @@ def main():
          and rv.build_records("climate", [moved], "b", "2026-10-12")[1][0]["id"] == "2025-03-03-acme-plant-rv")
     case("audit: an unquoted corrected date fails",
          any("corrected date" in e for e in rv.cmd_audit("climate", [good | {"date": "2024-12"}])))
+    mets = [{"metric": "m", "obs": "2024", "value": 450}, {"metric": "m", "obs": "2025", "value": 500}]
+    write_jsonl(f"{root}/ledger/events/climate.jsonl", [legacy | {"metrics": mets}])
+    case("a corrected claim that dropped a linked value drops the metric links (450 recurring is no backing)",
+         "metrics" not in rv.build_records("climate", [good], "b", "2026-10-12")[1][0])
+    case("a verified claim keeps them", rv.build_records("climate", [res(result="verified")], "b", "2026-10-12")[1][0]["metrics"] == mets)
+    write_jsonl(f"{root}/ledger/events/climate.jsonl", [legacy])
     tomb = res(result="refuted", claim="Withdrawn after re-verification: Acme's Spanish solar plant - the capture says 450 MW, not 500 MW.")
     case("audit: a tombstone may restate the legacy figure", rv.cmd_audit("climate", [tomb]) == [])
     _, recs2 = rv.build_records("climate", [tomb], "b", "2026-10-12")

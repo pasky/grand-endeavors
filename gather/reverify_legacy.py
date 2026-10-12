@@ -650,8 +650,10 @@ def build_records(section: str, results: list[dict], by: str, today: str) -> tup
             rec |= {"id": rid, "date": date, "claim": claim, "sources": _dedup(srcs + cap_srcs), "significance": ev["significance"]}
             quotes = " | ".join(q["quote"] for q in r.get("evidence") or [])
             pool = {abs(x) for x in kpi.quantities(quotes)}
-            mets = [m for m in ev.get("metrics") or [] if abs(float(m["value"])) in pool]
-            if mets:
+            # metric links survive only if the judged claim kept every linked value (a value
+            # merely recurring in a quote, e.g. another year's, does not back its link)
+            mets = ev.get("metrics") or []
+            if mets and (r["result"] == "verified" or all(abs(float(m["value"])) in pool for m in mets)):
                 rec["metrics"] = mets
             if ev.get("relates"):
                 rec["relates"] = ev["relates"]
