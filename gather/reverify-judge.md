@@ -74,7 +74,8 @@ passages; a note must say specifically what the documents do and do not say):
   different such that the claim is wrong rather than imprecise). Give a tombstone claim
   starting exactly `Withdrawn after re-verification: ` then a short description of the
   event, ` - ` and the reason (e.g. "the archived report gives approx. 0.187 g, not 0.69 g").
-  Absence of evidence is NOT refutation.
+  Absence of evidence is NOT refutation. Never refute from an alternative source: a
+  different document may describe a different (earlier/later) event or paper.
 - **unverifiable**: anything else (no usable document, the documents do not address the
   claim, paywall/JS shell, ambiguity).
 
