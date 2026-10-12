@@ -85,6 +85,9 @@ discounted proponent dates, prev ETA) and the cruxes. Put the result in basis.et
 Do not restate a status band ("5-10 years") as an ETA, and do not answer "not estimable"
 or ">10 years" for lack of a series: tie the milestone to a driver or a reference class.
 Exponential quantities must be extrapolated exponentially.
+A milestone with an "assumes:" entry in framework.yaml is judged as if that assumption held
+(RUBRIC.md §4.2): the gate never blocks it, basis.eta.assumes repeats it, the label says
+"ETA ~YYYY*", and basis.blockers reports the gate's real state.
 If the rubric cannot judge a target (e.g. its KPI series does not cover the
 window), write status "unknown" with the label "Unassessed: <reason>" and the
 basis keys rule, reason, prev and change_note (evidence may be empty). Never
