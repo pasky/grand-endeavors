@@ -15,7 +15,7 @@ sources:
     covers: What it publishes, concretely (dataset, kind of announcements).
     cadence: monthly (~5th of the following month)   # release rhythm / typical month
     tier: primary              # primary | secondary | news
-    collector: true            # optional: already fetched by gather/collectors/<section>.py
+    collector: true            # optional: some of its data is fetched by gather/collectors/<section>.py
     note: bot-blocked          # optional: e.g. the page blocks plain fetches
 ```
 
@@ -31,6 +31,7 @@ Curation rules:
 - One entry per URL; tag it with every item it serves. Use `*` sparingly.
 - Every URL was visited when added (header: review date). `note: bot-blocked` marks pages
   that refuse plain fetches but were confirmed otherwise (search results, a reader proxy).
-- Tags must match framework.yaml's slugs; a new milestone/challenge needs its sources
-  here, a removed one must be untagged (`uv run gather/sources.py check`; `gather/tests/test_sources.py` fails
+- Tags must match framework.yaml's slugs; every milestone and challenge needs at least
+  one source tagged with it (section-wide `*` entries don't count), and a removed one
+  must be untagged (`uv run gather/sources.py check`; `gather/tests/test_sources.py` fails
   otherwise).

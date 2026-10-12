@@ -104,9 +104,10 @@ source to confirm it states the claim. Stay strictly on this watch item.$( [ "$t
 REFERENCE SOURCES curated for this item ($ROOT/gather/sources/$SECTION.yaml). Check
 them for releases in the window, especially those whose cadence makes one due, and
 cite the specific release or article (deep link), not the listing page. They are a
-starting point, NOT a limit: search the open web as well. Sources marked
-"already fetched by the section collector" feed observations automatically; use them
-for news and context, not to re-stage their numbers.
+starting point, NOT a limit: search the open web as well. Sources marked "partly
+fetched by the section collector" feed some registered metrics automatically (the
+collector's values are in the ledger): do not re-stage those series; their other
+content (projections, other figures, announcements) is fair game.
 $SRC_TEXT
 
 THE LEDGER ALREADY CONTAINS these $SECTION events (id [kind; topics; verification] claim):

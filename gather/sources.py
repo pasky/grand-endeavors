@@ -29,25 +29,30 @@ def path(section: str) -> str:
     return os.path.join(DIR, f"{section}.yaml")
 
 
-def load(section: str) -> list[dict]:
-    """The section's entries ([] if it has no file)."""
+def load(section: str) -> list:
+    """The section's entries ([] if it has no file). ValueError on a malformed file
+    (anything but a mapping whose only key is a non-empty `sources` list)."""
     import yaml
     p = path(section)
     if not os.path.exists(p):
         return []
     with open(p, encoding="utf-8") as f:
-        return (yaml.safe_load(f) or {}).get("sources") or []
+        try:
+            doc = yaml.safe_load(f)
+        except yaml.YAMLError as ex:
+            raise ValueError(f"{p}: invalid YAML: {ex}") from None
+    if not (isinstance(doc, dict) and list(doc) == ["sources"]
+            and isinstance(doc["sources"], list) and doc["sources"]):
+        raise ValueError(f"{p}: expected a mapping with one key, `sources:`, a non-empty list")
+    return doc["sources"]
 
 
 def check(section: str, entries: list[dict] | None = None) -> list[str]:
-    import yaml
     if entries is None:
         try:
             entries = load(section)
-        except yaml.YAMLError as ex:
-            return [f"{path(section)}: invalid YAML: {ex}"]
-    if not isinstance(entries, list):
-        return [f"{section}: 'sources' must be a list"]
+        except ValueError as ex:
+            return [str(ex)]
     topics = {t for t, _, _ in ledger.framework_items(section)} | {"*"}
     errs, seen = [], set()
     for i, e in enumerate(entries):
@@ -84,7 +89,7 @@ def for_item(section: str, topic: str, entries: list[dict] | None = None) -> lis
 
 
 def line(e: dict) -> str:
-    extra = "; already fetched by the section collector" if e.get("collector") else ""
+    extra = "; partly fetched by the section collector" if e.get("collector") else ""
     return f"- {e['name']}: {e['url']} [{e['tier']}; {e['cadence']}{extra}] {e['covers']}"
 
 
@@ -102,7 +107,8 @@ def main() -> int:
         errs = [x for s in sections for x in check(s)]
         for x in errs:
             print("ERROR", x)
-        print(f"{sum(len(load(s)) for s in sections)} sources in {len(sections)} section(s), {len(errs)} error(s)")
+        n = sum(len(load(s)) for s in sections) if not errs else "?"
+        print(f"{n} sources in {len(sections)} section(s), {len(errs)} error(s)")
         return 1 if errs else 0
     topics = {t for t, _, _ in ledger.framework_items(a.section)}
     if a.topic not in topics:

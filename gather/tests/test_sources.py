@@ -9,6 +9,7 @@ Run:  uv run gather/tests/test_sources.py      (no network, no data repo)
 import os
 import subprocess
 import sys
+import tempfile
 
 GATHER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, GATHER)
@@ -39,8 +40,11 @@ for s in ledger.SECTIONS:
     case(f"{s}: list is valid against framework.yaml", not errs)
     for x in errs[:5]:
         print("     ", x)
-    # every watch item gets at least one source (a new milestone/challenge needs its sources)
-    empty = [t for t, _, _ in ledger.framework_items(s) if not sources.for_item(s, t)]
+    # every milestone/challenge has its own tagged sources ("*" entries don't count);
+    # kpi and beyond may rely on section-wide ones
+    lst = sources.load(s) if os.path.exists(sources.path(s)) else []
+    empty = [t for t, _, _ in ledger.framework_items(s)
+             if not (any(t in e["items"] for e in lst) or (t in ("kpi", "beyond") and sources.for_item(s, t, lst)))]
     case(f"{s}: every watch item has a source", not empty)
     if empty:
         print("      no sources for:", ", ".join(empty))
@@ -60,6 +64,23 @@ case("check: unknown field", any("unknown field" in x for x in errs_of(entry(itm
 case("check: items must be a non-empty list", bool(errs_of(entry(items="kpi"))) and bool(errs_of(entry(items=[]))))
 case("check: non-http url", any("bad url" in x for x in errs_of(entry(url="example.org"))))
 
+# malformed files fail loudly instead of reading as an empty list
+real_dir = sources.DIR
+with tempfile.TemporaryDirectory() as tmp:
+    sources.DIR = tmp
+    bad = {"sources: {}\n": "non-list", "sources: false\n": "false", "sources: []\n": "empty",
+           "source:\n  - name: X\n": "misspelled key", "- name: X\n": "top-level list",
+           "sources: [\n": "invalid YAML"}
+    for text, what in bad.items():
+        with open(sources.path("climate"), "w") as f:
+            f.write(text)
+        case(f"check: malformed file ({what}) is an error", bool(sources.check("climate")))
+    p = subprocess.run([sys.executable, "-c", f"import sys; sys.argv=['sources.py','list','climate','kpi']; "
+                        f"sys.path.insert(0, {GATHER!r}); import sources; sources.DIR={tmp!r}; sys.exit(sources.main())"],
+                       capture_output=True, text=True)
+    case("cli list: a malformed file fails (gather.sh aborts)", p.returncode != 0)
+sources.DIR = real_dir
+
 # --- selection for one watch item --------------------------------------------------------------
 lst = [entry(name="A", url="https://a", items=["kpi"]),
        entry(name="W", url="https://w", items=["*"]),
@@ -68,7 +89,7 @@ lst = [entry(name="A", url="https://a", items=["kpi"]),
 case("for_item: tagged entries in file order, then section-wide ones",
      [e["name"] for e in sources.for_item("climate", "kpi", lst)] == ["A", "B", "W"])
 case("line: collector-fed sources are marked",
-     "already fetched by the section collector" in sources.line(entry(collector=True))
+     "fetched by the section collector" in sources.line(entry(collector=True))
      and "collector" not in sources.line(entry()))
 
 # --- CLI (what gather.sh calls) ------------------------------------------------------------------

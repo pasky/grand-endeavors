@@ -31,7 +31,7 @@ sources:
   - name: Global Carbon Project — Global Carbon Budget data hub
     url: https://globalcarbonbudget.org/datahub/
     items: [milestone:the-bend, milestone:the-balance, challenge:net-zero-transition]
-    covers: Annual fossil and land-use CO₂ emissions, ocean/land sinks and the current-year projection (Global Carbon Budget).
+    covers: Annual fossil and land-use CO₂ emissions, ocean/land sinks and the current-year projection (Global Carbon Budget); the collector takes only the historical fossil and total emissions.
     cadence: annual, November (at COP); the collector's DATA_URL needs the new year's file
     tier: primary
     collector: true
@@ -44,8 +44,8 @@ sources:
   - name: IEA — Global Energy Review 2026
     url: https://www.iea.org/reports/global-energy-review-2026
     items: [milestone:the-bend, challenge:net-zero-transition]
-    covers: Previous year's energy-related CO₂ emissions by fuel and region, with drivers. Each year has its own URL (global-energy-review-<year>).
-    cadence: annual, March
+    covers: Previous year's energy-related CO₂ emissions by fuel and region, with drivers. Edition URL; the next edition replaces the year.
+    cadence: annual, March/April (2026 edition 20 April)
     tier: primary
   - name: Carbon Monitor
     url: https://carbonmonitor.org/

@@ -3,10 +3,10 @@
 # everything else is section-wide ("*").
 sources:
   # --- Indicators -----------------------------------------------------------------------------
-  - name: ITU — Facts and Figures 2026
-    url: https://www.itu.int/itu-d/reports/statistics/facts-figures-2026/
+  - name: ITU — Facts and Figures (series)
+    url: https://www.itu.int/en/ITU-D/Statistics/Pages/facts/default.aspx
     items: [kpi]
-    covers: Share of the world population online / offline, mobile broadband coverage, affordability. Edition URL; the next edition replaces the year.
+    covers: Links each annual edition (2025 the latest public one at review) with the share of the world population online / offline, mobile broadband coverage, affordability.
     cadence: annual, November
     tier: primary
   - name: ITU — ICT statistics

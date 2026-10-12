@@ -35,7 +35,7 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
       `DATA_URL` in `gather/collectors/climate_emissions.py`. Same for the
       edition URLs in `gather/sources/` (`grep -n 'Edition URL' gather/sources/*.yaml`:
-      UNEP Emissions Gap, IEA Global Energy Review, IRENA costs, ITU Facts and Figures).
+      UNEP Emissions Gap, IEA Global Energy Review, IRENA costs).
 - [ ] Health KPI re-assessment: WHO's new GHE round (GHO record date 2026-10-01)
       extends HALE to 2023 and revises 2000-2021 (collected 2026-10-09). The KPI
       assessment still says "Stale (data to 2021)"; the next `gather.sh health` /
