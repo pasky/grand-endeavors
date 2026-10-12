@@ -62,6 +62,11 @@ Choices:
   - A value that differs from the effective ledger value (population or CPI
     revision, provisional deflator replaced, a different capture selected) is a
     revision dated first seen (published = retrieved = today).
+
+Accepted caveats (owner decision 2026-10: no local-currency/PPP variant): the
+series moves with exchange rates (GPP's USD conversion), is deflated with US CPI
+only, is weighted by population rather than consumption, and covers ~94% of
+world population. An independent spot-check of 2025-Q4 matched exactly.
 """
 from __future__ import annotations
 

@@ -103,8 +103,14 @@ STRUCTURE (follow the reference format):
   challenge and milestone exactly as framework.yaml does.)
 - Beyond the Framework: the "beyond" new events.
 - Reference Data: dataset links from the snapshot sources.
-- Footnotes: wiki-style [^ref] citations; each points to a source URL of the
-  snapshot record it states.
+- Footnotes: wiki-style citations whose label is the ID OF THE SNAPSHOT RECORD
+  they cite: [^<event id>] for an event, [^<metric id>] for a KPI/metric value
+  (e.g. [^2026-09-18-greensand-operational], [^co2-mlo-monthly]). The
+  definition links that record's source URL(s) only, e.g.
+      [^co2-mlo-monthly]: [NOAA GML: Mauna Loa monthly mean CO₂](<its source URL>)
+  A footnote covers the text from its sentence start (or the previous
+  footnote) up to the marker: every number there must be in the records it
+  cites. Cite each fact where it is stated, with one footnote per record.
 
 HARD RULES:
 - Every number must appear VERBATIM in the snapshot (no rounding, no arithmetic
@@ -127,7 +133,7 @@ ledger snapshot $SNAP). This is EDITORIAL review, not research.
    reference $REF_TEMPLATE: structure, clarity, bottom-line-up-front, and
    whether the milestone statuses follow from the cited evidence.
 2. Dispatch a fidelity subagent. It checks every sentence against the snapshot
-   record it cites:
+   record it cites (the footnote label is the record id):
    - the claim, numbers, scope labels and dates match the record;
    - new vs background framing is right (legacy and background items must not
      read as this period's news);

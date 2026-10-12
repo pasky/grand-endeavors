@@ -43,9 +43,11 @@ def main():
     os.makedirs(os.path.dirname(sp), exist_ok=True)
     json.dump(snap, open(sp, "w"))
     names = [n for items in ledger.framework_topics("climate").values() for _, n in items]
-    doc = (f"# Climate\n\nCO2 was 431.43 ppm in June 2026[^a].\n\n{chart}\n\n"
+    doc = (f"# Climate\n\nCO2 was 431.43 ppm in June 2026[^co2-mlo-monthly]. The GCB final paper puts "
+           "2025 fossil CO2 at 38.1 GtCO2, up 1.0%[^2026-05-13-gcb-final].\n\n{chart}\n\n"
            + "\n".join(f"### {n}\nNo significant developments." for n in names)
-           + "\n\n[^a]: [GCB](https://x.org/2026-05-13-gcb-final)\n")
+           + "\n\n[^co2-mlo-monthly]: [NOAA](https://x.org/data)\n"
+           "[^2026-05-13-gcb-final]: [GCB](https://x.org/2026-05-13-gcb-final)\n")
     dp = f"{pdir}/climate.md"
 
     def gate(text):
@@ -57,6 +59,16 @@ def main():
     case("bulletin gate: number not in snapshot is caught", has(gate(doc.replace("431.43 ppm", "431.43 ppm (about 432)")), "number 432"))
     case("bulletin gate: URL outside the snapshot is caught", has(gate(doc.replace("https://x.org/2026-05-13-gcb-final", "https://evil.org/x")), "not a source"))
     case("bulletin gate: unreported KPI headline is caught", has(gate(doc.replace("431.43 ppm", "high")), "not reported"))
+    case("bulletin gate: a footnote label must be a snapshot record id",
+         has(gate(doc.replace("2026-05-13-gcb-final]", "gcb]")), "[^gcb] is not a snapshot record id"))
+    case("bulletin gate: a footnote URL must be a source of its record",
+         has(gate(doc.replace("[GCB](https://x.org/2026-05-13-gcb-final)", "[GCB](https://x.org/data)")),
+             "not a source of record 2026-05-13-gcb-final"))
+    case("bulletin gate: a number must be in the record its footnote cites, not just in the snapshot",
+         has(gate(doc.replace("38.1 GtCO2, up 1.0%", "38.1 GtCO2 (CO2 at 431.43 ppm)")),
+             "number 431.43 is not in the record(s) it cites (2026-05-13-gcb-final)"))
+    case("bulletin gate: a footnote covers its own sentence only (an uncited sentence is checked snapshot-wide)",
+         gate(doc.replace("[^co2-mlo-monthly]. The GCB", ". The GCB")) == [])
     case("bulletin gate: uncovered milestone is caught", has(gate(doc.replace("### The Bend", "### Something")), "The Bend"))
     case("bulletin gate: a name only in prose (no heading) does not count as coverage",
          has(gate(doc.replace("### The Bend\n", "The Bend is mentioned.\n")), "The Bend"))
@@ -65,6 +77,27 @@ def main():
                     [list(r.values())[:11] for r in ledger.observations("climate")]
                     + [obs("co2-mlo-annual", "2020", "414.21", "2021-01-10", "rule")]) or True)
          and gate(doc) == [])
+    # --- round-up Quick Reference (generated from the snapshots) -------------------------
+    import quickref
+    gate(doc)  # leaves a faithful climate.md next to the snapshot
+    qr = quickref.block(pdir)
+    case("quickref: KPI headline value and every milestone come from the snapshot",
+         "431.43 ppm (2026-06)" in qr and all(n in qr for n in names[:3]))
+    rp = f"{pdir}/README.md"
+    readme = "# Report\n\n## Climate\nCO2 was 431.43 ppm.\n\n[Full Report](climate.md)\n\n<!-- quick-reference -->\n\nBye.\n"
+
+    def roundup(text):
+        validate.ERRORS.clear(); validate.WARNS.clear()
+        validate.check_roundup(rp, text)
+        return list(validate.ERRORS)
+    filled = quickref.insert(readme, qr)
+    case("quickref: --insert replaces the placeholder, and again replaces its own block",
+         "<!-- quick-reference -->\n" not in filled and filled.endswith("Bye.\n")
+         and quickref.insert(filled, qr) == filled)
+    case("roundup gate: generated Quick Reference passes (its numbers come from the snapshots)", roundup(filled) == [])
+    case("roundup gate: missing Quick Reference is caught", has(roundup(readme), "no generated Quick Reference"))
+    case("roundup gate: hand-edited Quick Reference is caught",
+         has(roundup(filled.replace("431.43 ppm (2026-06)", "432 ppm (2026-06)")), "differs from the snapshots"))
     old = {k: v for k, v in snap.items() if k not in ("series", "framework")}
     json.dump(old, open(sp, "w"))
     case("pre-freeze snapshots fail explicitly (no silent live-ledger fallback)",

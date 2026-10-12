@@ -94,7 +94,14 @@ metrics/<section>.csv                metric registry = schema/contract for obser
 **Observation** (`observations/<section>.csv`): `metric,obs,value,unit,source,
 published,published_basis,retrieved,collector,verification,note`.
 `verification` ∈ `verified` `corrected` `collector` (deterministic parse of a
-primary data file) `legacy`. `metric` and `unit` must match `metrics/<section>.csv`.
+primary data file) `legacy` `withdrawn`. `metric` and `unit` must match `metrics/<section>.csv`.
+A `withdrawn` row is a **withdrawal record**: its value for that metric@obs is
+wrong (the `note` says why, `source` shows it; added with `ledger.py
+withdraw-obs`, known_at = the withdrawal date). Once it is known, every row with
+that value drops out (whatever its own date, so a collector re-fetching it is a
+no-op at merge), and the next-best row is effective again; with none left, the
+metric@obs has no value. Before it is known, as-of views still show the value.
+It must withdraw a value recorded no later than itself.
 The registry also gives `cadence` and `release_lag_days` (enabling "expected by"
 and "overdue" in views, and `rule`-basis publication dates) and
 `required_from`/`retired_after` (KPI components; basis changes).
@@ -260,6 +267,11 @@ round-ups) are not scheduled; see TODO.md.
 4. **gate** (`validate.py --snapshot`), fatal by default (`STRICT=0` =
    report-only). It checks that:
    - every cited URL is a snapshot source;
+   - every footnote is labelled with the id of the snapshot record it cites
+     (an event id, or a metric id for KPI/metric values), its URLs are that
+     record's sources, and every number from the start of its sentence (or
+     the previous footnote) up to the marker occurs in the cited records
+     (bare years excepted);
    - every prose number occurs in the snapshot's typed evidence text (claims,
      values, labels, dates; not ids or metadata);
    - the KPI headlines are reported;
@@ -268,7 +280,10 @@ round-ups) are not scheduled; see TODO.md.
    - plus the usual link, footnote and mermaid checks.
 
 `views/roundup.sh <period-dir>` compiles the bulletins into the period README, as
-before, and then freezes the **period page** `<period-dir>/index.html`: the
+before. Its Quick Reference table is not written by the agent but generated
+from the snapshots (`views/quickref.py`: KPI headline values, KPI status and
+milestone statuses as of the cutoff, with a link to the period page); the gate
+requires it to match the snapshots exactly. Then the script freezes the **period page** `<period-dir>/index.html`: the
 dashboard as of the cutoff, with the period's framework
 (`<period-dir>/framework.yaml`). It is committed rather than regenerated, because
 an as-of view drifts as later corrections enter the ledger (views/EXPLORER.md).
@@ -316,7 +331,7 @@ themselves.
   core/     ledger.py kpi.py lib.sh pipeline-lock.sh   shared by gather and views
   gather/   gather.sh assess.sh RUBRIC.md collectors/   grows the ledger
             collect.sh systemd/                         daily collectors (§4a)
-  views/    bulletin.sh roundup.sh validate.py explore.py
+  views/    bulletin.sh roundup.sh validate.py explore.py quickref.py
             EXPLORER.md newsletter-intro.md             reads the ledger
   */tests/  each part's regression tests
   ```
@@ -344,10 +359,14 @@ Views of the ledger are described in **views/EXPLORER.md** (the dashboard vs Dat
 
 ## 8. Known limits / open questions
 
-- Dedup is LLM-driven. The deterministic backstop is a warning heuristic:
-  claim word overlap (Jaccard) ≥ 0.6 within 7 days, skipping pairs with
-  different figures or pairs linked via relates/supersedes. Reworded
-  near-duplicates can slip through; fix them later with `supersedes`.
+- Dedup is LLM-driven. The deterministic backstop is a warning heuristic
+  over events dated within 7 days: claim word overlap (Jaccard) ≥ 0.6, or a
+  reworded claim with a second signal (≥ 0.45 and a shared source URL; ≥ 0.3
+  and the same figures, as magnitudes without bare years). Pairs with
+  different figures or linked via relates/supersedes are skipped. `lint`
+  prints the warnings that involve staged records, and the verifier must
+  resolve each one (reject the duplicate, or link it). Duplicates found later
+  are withdrawn with a tombstone, or merged with `supersedes`.
 - The `rule`-basis publication date is an estimate. Revisions made before our
   first retrieval are invisible. `known_at` reconstructs public history; it is
   not proof of what we held at the time.
@@ -355,11 +374,10 @@ Views of the ledger are described in **views/EXPLORER.md** (the dashboard vs Dat
   renaming it to `as_of` and adding a separate creation/version time; git
   history holds the creation time for now). Evidence-date checks cannot prove
   that the judgment itself is free of hindsight.
-- The bulletin gate is lexical: a number must occur somewhere in the snapshot's
-  typed evidence text, and a URL must be a snapshot source. It does not prove
-  that the cited record supports the sentence; the edit stage's fidelity
-  reviewer does that.
-- Observations have no withdrawal record yet: a wrong value can only be
-  outranked by a better row.
+- The bulletin gate is lexical. Footnotes are tied to records (the label is
+  the record id) and a cited sentence's numbers must occur in the cited
+  records, but it does not prove that the record supports the sentence's
+  wording; the edit stage's fidelity reviewer does that. Uncited text is only
+  checked against the whole snapshot.
 - Git as the database is fine at current volumes (thousands of records). The
   SQLite build is a derived artifact.

@@ -5,7 +5,9 @@
 # Compiles the per-endeavor section files of one reporting period into the
 # period's front page, <out-dir>/README.md (cf. pilot-2025/README.md): per
 # endeavor a KPI headline, good/bad-news summary, milestone status table and a
-# link to the full section report, then a Quick Reference table.
+# link to the full section report, then a Quick Reference table generated from
+# the period's ledger snapshots (views/quickref.py: KPI values, KPI and milestone
+# statuses as of the cutoff; not from the bulletin prose).
 #
 # USAGE:
 #   views/roundup.sh <out-dir>          e.g.  views/roundup.sh pilot-26H1
@@ -134,8 +136,13 @@ Structure (as in $REF_TEMPLATE):
   - on its own line, the section link:
         📄 **[Full Report: <Endeavor>](<section>.md)**
   - separate endeavors with "---" lines
-- A "## Quick Reference" table (Endeavor | KPI | Key $PERIOD Number | Status) for
-  the present endeavors, then the status legend line.
+- After the last endeavor, a line containing exactly
+      <!-- quick-reference -->
+  The Quick Reference table and the status legend are GENERATED from the
+  snapshots; do not write them yourself. Fill it in with
+      uv run $ROOT/views/quickref.py $OUT_DIR --insert $OUT_FILE
+  and do not edit the generated block. Re-run the command after any change
+  that removes it.
 
 HARD RULES:
 - Summarize only. Every fact and number MUST come from the linked section
@@ -159,6 +166,8 @@ EOF
 )" </dev/null
 
 [ -s "$OUT_FILE" ] || { echo "ERROR: round-up stage wrote no $OUT_FILE" >&2; exit 1; }
+# the Quick Reference comes from the snapshots, whatever the agent left there
+uv run $ROOT/views/quickref.py "$OUT_DIR" --insert "$OUT_FILE"
 
 # Scoped commit: only this stage's own artifacts (the pi agent may already have
 # committed them itself; that's fine).

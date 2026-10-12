@@ -143,7 +143,8 @@ TABLE_DOCS = {
                         "drops out of every view once event_id is known).",
     "observations": "KPI datapoints incl. source revisions (ledger/observations); known_at = published. "
                     "tier: 0 legacy, 1 otherwise; effective=1 marks the row ledger.obs_as_of picks per "
-                    "(metric, obs): highest (tier, known_at, retrieved).",
+                    "(metric, obs): highest (tier, known_at, retrieved). verification='withdrawn' rows are "
+                    "withdrawal records: their value (for that metric, obs) is never effective once known.",
     "assessments": "Timestamped milestone/KPI status judgments; known_at = made_at.",
     "metrics": "Metric registry (metrics/*.csv) + derived: latest obs, next_expected "
                "(latest obs end + cadence + release_lag_days), overdue vs as_of.",

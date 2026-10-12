@@ -20,6 +20,8 @@ COMMANDS
   ledger.py state <section> [--get-item T | --record JSON]  per-item gather watermarks
   ledger.py cutoff <period>                        bulletin cutoff date (+ previous period's cutoff)
   ledger.py snapshot <period-dir> <section>        write <period-dir>/snapshot/<section>.json
+  ledger.py withdraw-obs <section> <metric> <obs> <value> --reason R --source URL [--date D]
+                                                   append a withdrawal record (a wrong value drops out)
 """
 from __future__ import annotations
 
@@ -42,7 +44,9 @@ EVENT_KINDS = {"achievement", "announcement", "projection", "setback", "data",
                "analysis", "policy", "retraction"}
 RELS = {"update", "retraction", "confirmation", "delay", "followup"}
 EV_VERIF = {"verified", "corrected", "legacy"}
-OBS_VERIF = {"verified", "corrected", "collector", "legacy"}
+# 'withdrawn' = a withdrawal record: its value (for its metric@obs) is wrong and drops out of
+# every view once the withdrawal is known (DESIGN.md §3); the rows themselves stay
+OBS_VERIF = {"verified", "corrected", "collector", "legacy", "withdrawn"}
 STAGED_VERIF = {"verified", "corrected", "collector", "rejected", "unverified"}
 BASES = {"source", "rule", "seen"}
 OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
@@ -406,6 +410,8 @@ def check_obs_row(r: dict, reg: dict | None, staged: bool = False) -> list[str]:
     allowed = (STAGED_VERIF | OBS_VERIF) if staged else OBS_VERIF
     if r["verification"] not in allowed:
         errs.append(f"{at}: verification must be one of {sorted(allowed)}")
+    if r["verification"] == "withdrawn" and not (r["note"] or "").strip():
+        errs.append(f"{at}: a withdrawal record needs a note saying why the value is wrong")
     if not r["collector"]:
         errs.append(f"{at}: empty collector (provenance)")
     return errs
@@ -480,6 +486,13 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
         seen_claim.setdefault(c, eid)
     warns += near_duplicates([e for e in evs if e.get("id") not in superseded_by])
     keys = set()
+    for w in obs:  # a withdrawal must withdraw a value that was known by then
+        if w.get("verification") == "withdrawn" and _valid_day(w.get("published")) and kpi.VALUE_RE.match(w.get("value") or "") \
+                and not any(r is not w and r.get("verification") != "withdrawn" and r.get("metric") == w["metric"]
+                            and r.get("obs") == w["obs"] and _same_value(r, w)
+                            and _valid_day(r.get("published")) and known_at(r) <= known_at(w) for r in obs):
+            errs.append(f"obs {w['metric']}@{w['obs']} (line {w.get('_line')}): withdrawal of value {w['value']}, "
+                        "but no such row was known by its date")
     for r in obs:
         errs += check_obs_row(r, reg, staged=staged_statuses)
         k = (r.get("metric"), r.get("obs"), r.get("published"), r.get("value"), r.get("verification"))
@@ -545,15 +558,27 @@ def _words(text: str) -> set[str]:
     return {w for w in re.findall(r"[a-z0-9.]+", text.lower()) if len(w) > 2}
 
 
-def near_duplicates(evs: list[dict], threshold: float = 0.6, days: int = 7) -> list[str]:
-    """Warn on likely duplicate events: claim word-overlap (Jaccard) >= threshold
-    and dates within `days`, unless linked via relates/supersedes or stating
-    different figures."""
+def _figures(claim: str) -> set[float]:
+    """A claim's figures for dedup: magnitudes ("10-20%" = "10–20%"), bare years dropped."""
     import kpi
+    return {abs(n) for n in kpi.kpi_numbers(claim) if not (n.is_integer() and 1900 <= abs(n) <= 2100)}
+
+
+def _urls(e: dict) -> set[str]:
+    return {str(s.get("url", "")).rstrip("/") for s in e.get("sources") or [] if isinstance(s, dict)}
+
+
+def near_duplicates(evs: list[dict], threshold: float = 0.6, days: int = 7) -> list[str]:
+    """Warn on likely duplicate events dated within `days` of each other, unless
+    linked via relates/supersedes or stating different figures. Claim word
+    overlap (Jaccard) must reach `threshold`, or less for a reworded claim with
+    a second signal: 0.45 with a shared source URL, 0.3 with the same
+    (non-empty) figures."""
     out = []
     items = sorted(((date_end(str(e["date"])), e) for e in evs if _valid_date(e.get("date", ""))),
                    key=lambda t: t[0])
     words = {e["id"]: _words(str(e.get("claim", ""))) for _, e in items}
+    figs = {e["id"]: _figures(str(e.get("claim", ""))) for _, e in items}
     for i, (d1, a) in enumerate(items):
         for d2, b in items[i + 1:]:
             if (d2 - d1).days > days:
@@ -561,11 +586,13 @@ def near_duplicates(evs: list[dict], threshold: float = 0.6, days: int = 7) -> l
             wa, wb = words[a["id"]], words[b["id"]]
             linked = {r.get("id") for r in (a.get("relates") or []) + (b.get("relates") or [])} \
                 | set(a.get("supersedes") or []) | set(b.get("supersedes") or [])
-            na, nb = kpi.kpi_numbers(str(a.get("claim", ""))), kpi.kpi_numbers(str(b.get("claim", "")))
-            if na and nb and na != nb:
+            na, nb = figs[a["id"]], figs[b["id"]]
+            if (na and nb and na != nb) or not (wa and wb) or linked & {a["id"], b["id"]}:
                 continue  # parallel claims with different figures (e.g. solar vs wind LCOE)
-            if wa and wb and len(wa & wb) / len(wa | wb) >= threshold and not linked & {a["id"], b["id"]}:
-                out.append(f"events {a['id']} / {b['id']}: near-identical claims — duplicate? (supersede, or link with relates)")
+            j = len(wa & wb) / len(wa | wb)
+            if j >= threshold or (j >= 0.45 and _urls(a) & _urls(b)) or (j >= 0.3 and na and na == nb):
+                out.append(f"events {a['id']} / {b['id']}: near-identical claims — duplicate? "
+                           "(withdraw or supersede one, or link them with relates)")
     return out
 
 
@@ -625,12 +652,30 @@ def _rank(r: dict) -> tuple:
     return (tier(r), known_at(r), r["retrieved"])
 
 
+def _same_value(a: dict, b: dict) -> bool:
+    try:
+        return float(a["value"]) == float(b["value"])
+    except (ValueError, TypeError):
+        return False
+
+
+def withdrawn(row: dict, withdrawals: list[dict]) -> bool:
+    """Is this value of its metric@obs withdrawn by one of `withdrawals`? (Whatever
+    the row's own date: a re-fetch of a withdrawn value stays withdrawn.)"""
+    return any(w["metric"] == row["metric"] and w["obs"] == row["obs"] and _same_value(w, row)
+               for w in withdrawals)
+
+
 def obs_as_of(section: str, when: dt.date | None = None, rows: list[dict] | None = None) -> dict[tuple[str, str], dict]:
     """{(metric, obs): effective row} as of `when` (None = everything): among rows
-    known by then, the highest-ranked (non-legacy first, then latest known)."""
+    known by then, the highest-ranked (non-legacy first, then latest known),
+    skipping values withdrawn by a withdrawal record known by then. A metric@obs
+    whose every known value is withdrawn has no effective row."""
     out: dict[tuple[str, str], dict] = {}
-    for r in observations(section) if rows is None else rows:
-        if when is None or known_at(r) <= when:
+    known = [r for r in (observations(section) if rows is None else rows) if when is None or known_at(r) <= when]
+    wds = [r for r in known if r["verification"] == "withdrawn"]
+    for r in known:
+        if r["verification"] != "withdrawn" and not (wds and withdrawn(r, wds)):
             k = (r["metric"], r["obs"])
             if k not in out or _rank(r) >= _rank(out[k]):
                 out[k] = r
@@ -869,6 +914,41 @@ def snapshot_evidence_text(snap: dict) -> str:
     return "\n".join(p for p in parts if p)
 
 
+def _date_text(d: str) -> str:
+    """A record date plus its parts, so prose like "18 September" traces to 2026-09-18."""
+    parts = str(d).split("-")
+    return " ".join([str(d)] + [str(int(p)) for p in parts[1:] if p.isdigit()])
+
+
+def snapshot_records(snap: dict) -> dict[str, dict]:
+    """The citable records of a snapshot, by footnote label (DESIGN.md §5 gate):
+    every event (its id) and every metric (its registry id), each with its source
+    URLs and its typed evidence text (as in snapshot_evidence_text)."""
+    out: dict[str, dict] = {}
+    for e in snap["new_events"] + snap["background_events"]:
+        text = [e["claim"], e.get("note", ""), _date_text(e["date"]), _date_text(e["published"])]
+        text += [f"{m['obs']} {m['value']}" for m in e.get("metrics", []) or []]
+        out[e["id"]] = {"urls": {s["url"] for s in e["sources"]}, "text": "\n".join(t for t in text if t)}
+    metrics = [(k["metric"], k.get("definition", ""), k.get("unit", ""), [k["current"], k["previous"]], k)
+               for k in snap["kpi_headlines"]]
+    metrics += [(o["metric"], o.get("definition", ""), o.get("unit", ""), [o["latest"]], None)
+                for o in snap["other_metrics"]]
+    for m, definition, unit, rows, k in metrics:
+        rec = out.setdefault(m, {"urls": set(), "text": ""})
+        text = [rec["text"], definition, unit]
+        for r in rows:
+            if r:
+                rec["urls"].add(r["source"])
+                text += [_date_text(r["obs"]), r["value"], _date_text(r["published"]), r.get("note", "")]
+        if k and k["change"]:
+            text += [k["change"]["value"], k["change"]["from_obs"], k["change"]["to_obs"]]
+        if k and k["year_ago"]:
+            text += [k["year_ago"]["obs"], k["year_ago"]["value"], k["year_ago"]["change"]]
+        text += [f"{o} {v}" for o, v in snap.get("series", {}).get(m, [])]
+        rec["text"] = "\n".join(t for t in text if t)
+    return out
+
+
 def snapshot_text(snap: dict) -> str:  # backwards-compatible name
     return snapshot_evidence_text(snap)
 
@@ -908,7 +988,7 @@ def prepare(section: str, ev_files=(), obs_files=(), ass_files=(), allow_legacy:
         | ({"unverified"} if lint_mode else set())
     plan = {"events": [], "obs": [], "ass": [], "rejected": [], "stats": dict.fromkeys(
         ["events_in", "events_rejected", "events_replayed", "obs_in", "obs_rejected", "obs_dup",
-         "assessments_in", "assessments_replayed"], 0)}
+         "obs_withdrawn", "assessments_in", "assessments_replayed"], 0)}
     st = plan["stats"]
     staged_ids: dict[str, dict] = {}
     for f in ev_files:
@@ -942,6 +1022,7 @@ def prepare(section: str, ev_files=(), obs_files=(), ass_files=(), allow_legacy:
             else:
                 errs.append(f"event {eid}: status '{status}' cannot be merged")
     effective = obs_as_of(section)  # current effective row per (metric, obs)
+    wds = [r for r in cur_obs if r["verification"] == "withdrawn"]
     have_rows = {tuple(r[c] for c in OBS_COLUMNS) for r in cur_obs}
     for f in obs_files:
         for r in load_obs(f):
@@ -954,9 +1035,17 @@ def prepare(section: str, ev_files=(), obs_files=(), ass_files=(), allow_legacy:
             if es:
                 errs += [f"{os.path.basename(f)}: {x}" for x in es]
                 continue
-            if r["verification"] in {"verified", "corrected", "collector"} | ({"legacy"} if allow_legacy else set()) \
+            if r["verification"] == "withdrawn":
+                plan["obs"].append(r)
+                wds.append(r)
+                effective = obs_as_of(section, rows=cur_obs + plan["obs"])
+                st["obs_in"] += 1
+            elif r["verification"] in {"verified", "corrected", "collector"} | ({"legacy"} if allow_legacy else set()) \
                     | ({"unverified"} if lint_mode else set()):
                 k = (r["metric"], r["obs"])
+                if withdrawn(r, wds):  # e.g. a collector re-fetching a withdrawn value: no-op
+                    st["obs_withdrawn"] += 1
+                    continue
                 eff = effective.get(k)
                 # no-op iff the EFFECTIVE value is numerically equal and not outranked
                 if eff and float(eff["value"]) == float(r["value"]) and tier(eff) >= tier(r):
@@ -1051,7 +1140,12 @@ def lint(section: str, ev_files=(), obs_files=(), ass_files=(), allow_legacy: bo
          final: bool = False) -> list[str]:
     """Validate staged files as if merged (nothing written). final=True: no
     'unverified' record may remain (run after the verifier)."""
-    errs, _, _ = prepare(section, ev_files, obs_files, ass_files, allow_legacy, lint_mode=not final)
+    errs, warns, _ = prepare(section, ev_files, obs_files, ass_files, allow_legacy, lint_mode=not final)
+    staged = {e.get("id") for f in ev_files for e in load_jsonl(f)}
+    # likely duplicates involving a staged record (the verifier resolves them)
+    for w in warns:
+        if any(re.search(rf"\b{re.escape(str(i))}\b", w) for i in staged):
+            print(f"  WARN  {w}")
     if final:
         for f in ev_files:
             errs += [f"event {e.get('id')}: still unverified" for e in load_jsonl(f)
@@ -1084,6 +1178,12 @@ def main() -> int:
     stt = sub.add_parser("state"); stt.add_argument("section", choices=SECTIONS)
     stt.add_argument("--get-item", help="last_until of one watch item"); stt.add_argument("--record", help="JSON object of a finished run")
     s = sub.add_parser("snapshot"); s.add_argument("period_dir"); s.add_argument("section", choices=SECTIONS)
+    wd = sub.add_parser("withdraw-obs"); wd.add_argument("section", choices=SECTIONS)
+    wd.add_argument("metric"); wd.add_argument("obs"); wd.add_argument("value", help="the wrong value")
+    wd.add_argument("--reason", required=True, help="why the value is wrong (stored as the note)")
+    wd.add_argument("--source", required=True, help="URL showing it (e.g. the source's corrected page)")
+    wd.add_argument("--date", default=str(dt.date.today()), help="withdrawal date = known_at (default today)")
+    wd.add_argument("--by", default=os.environ.get("USER", "owner"), help="who withdraws it (collector field)")
     a = ap.parse_args()
     try:
         if a.cmd == "check":
@@ -1110,6 +1210,22 @@ def main() -> int:
             for e in errs:
                 print(f"  ERROR {e}")
             print(f"merge {a.section}: {'ABORTED (nothing written)' if errs else 'ok'} {stats}")
+            return 1 if errs else 0
+        elif a.cmd == "withdraw-obs":
+            import tempfile
+            import kpi
+            unit = ((kpi.load_registry(a.section)[0] or {}).get(a.metric) or {}).get("unit", "")
+            row = dict(zip(OBS_COLUMNS, [a.metric, a.obs, a.value, unit, a.source, a.date, "seen", a.date,
+                                         f"withdraw:{a.by}@{a.date}", "withdrawn", a.reason]))
+            with tempfile.TemporaryDirectory() as d:
+                f = os.path.join(d, "withdraw.csv")
+                with open(f, "w", newline="", encoding="utf-8") as fh:
+                    w = csv.DictWriter(fh, fieldnames=OBS_COLUMNS, lineterminator="\n")
+                    w.writeheader(); w.writerow(row)
+                errs, stats = merge(a.section, obs_files=[f])
+            for e in errs:
+                print(f"  ERROR {e}")
+            print(f"withdraw-obs {a.section} {a.metric}@{a.obs}={a.value}: {'ABORTED' if errs else 'ok'} {stats}")
             return 1 if errs else 0
         elif a.cmd == "lint":
             errs = lint(a.section, a.events, a.obs, a.assessments, a.legacy, a.final)

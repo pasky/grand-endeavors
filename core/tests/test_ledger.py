@@ -101,6 +101,13 @@ def main():
     par = [ev("2024-01-01-a", "2024-06-30", "IRENA global weighted-average LCOE of solar PV in 2024 was 43 USD/MWh."),
            ev("2024-01-01-b", "2024-06-30", "IRENA global weighted-average LCOE of onshore wind in 2024 was 34 USD/MWh.")]
     case("parallel claims with different figures are not duplicates", ledger.near_duplicates(par) == [])
+    rew = [ev("2024-12-27-a", "2024-12-27", "Geoffrey Hinton estimated a 10-20% chance that AI leads to human extinction within the next 30 years."),
+           ev("2024-12-27-b", "2024-12-27", "The Guardian reported that Geoffrey Hinton estimated a 10–20% chance of AI causing human extinction within 30 years.")]
+    case("reworded duplicate with the same figures (10-20% = 10–20%) is flagged", len(ledger.near_duplicates(rew)) == 1)
+    rep = [ev("2026-05-13-c", "2026-05-13", "The Global Carbon Budget 2025 final paper put the remaining 1.5C budget at 170 GtC."),
+           ev("2026-05-13-d", "2026-05-13", "The Global Carbon Budget 2025 final paper found that total CO2 emissions grew 0.3% per year.")]
+    rep[1]["sources"] = rep[0]["sources"]
+    case("two findings of one report (shared URL, different figures) are not duplicates", ledger.near_duplicates(rep) == [])
 
     # --- assessments ---------------------------------------------------------------
     evs = {e["id"]: e for e in ledger.events("climate")}
@@ -178,6 +185,34 @@ def main():
     errs, stats = ledger.merge("climate", [], [so])
     case("verified value supersedes the legacy one despite an earlier publication date",
          errs == [] and stats["obs_in"] == 1 and ledger.obs_as_of("climate")[("co2-mlo-monthly", "2025-11")]["value"] == "426.46")
+
+    # --- observation withdrawal ------------------------------------------------------------
+    def wd(o, v, when, note="the source never published this value"):
+        r = obs("co2-mlo-annual", o, v, when, "seen", verification="withdrawn", retrieved=when)
+        r[10] = note
+        return r
+    write_csv(so, ledger.OBS_COLUMNS, [wd("2024", "424.61", "2026-09-10")])   # the effective value (revision chain above)
+    errs, stats = ledger.merge("climate", [], [so])
+    t = ledger.obs_as_of("climate")
+    case("withdrawn value drops out; the next-best non-withdrawn row is effective again",
+         errs == [] and stats["obs_in"] == 1 and t[("co2-mlo-annual", "2024")]["value"] == "425")
+    case("withdrawal is as-of: before it was known, the value still shows",
+         ledger.obs_as_of("climate", ledger.day("2026-09-09"))[("co2-mlo-annual", "2024")]["value"] == "424.61")
+    write_csv(so, ledger.OBS_COLUMNS, [obs("co2-mlo-annual", "2024", "424.61", "2026-09-11", "seen",
+                                           verification="collector", retrieved="2026-09-11")])
+    errs, stats = ledger.merge("climate", [], [so])
+    case("a re-fetch of a withdrawn value is a no-op (not re-admitted daily)",
+         errs == [] and stats["obs_withdrawn"] == 1 and stats["obs_in"] == 0)
+    write_csv(so, ledger.OBS_COLUMNS, [wd("2024", "425", "2026-09-12")])
+    errs, _ = ledger.merge("climate", [], [so])
+    case("withdrawing every value leaves the metric@obs without an effective row",
+         errs == [] and ("co2-mlo-annual", "2024") not in ledger.obs_as_of("climate")
+         and ledger.check_section("climate")[0] == [])
+    write_csv(so, ledger.OBS_COLUMNS, [wd("2024", "999", "2026-09-13")])
+    case("withdrawal of a value that was never recorded is an error",
+         has(ledger.merge("climate", [], [so])[0], "no such row was known"))
+    write_csv(so, ledger.OBS_COLUMNS, [wd("2023", "421.08", "2026-09-13", note="")])
+    case("withdrawal needs a note", has(ledger.merge("climate", [], [so])[0], "needs a note"))
 
     # --- verification-review regressions -----------------------------------------------------
     fixture()

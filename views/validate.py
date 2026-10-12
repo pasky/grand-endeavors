@@ -249,6 +249,7 @@ def check_roundup(doc_path: str, text: str) -> None:
     round-up must summarize, never add facts)."""
     base = os.path.dirname(os.path.abspath(doc_path))
     me = os.path.basename(doc_path)
+    text = check_quickref(base, text)
     sections = sorted(
         f for f in os.listdir(base)
         if f.endswith(".md") and f != me and f[0].islower()
@@ -296,6 +297,29 @@ def check_roundup(doc_path: str, text: str) -> None:
             err(f"roundup: number '{n}' (outside any section block) not found in any section of this period")
 
 
+def check_quickref(base: str, text: str) -> str:
+    """The Quick Reference block must be exactly what quickref.py generates from
+    the period's snapshots (no hand edits). Returns the text without it (its
+    numbers come from the snapshots, not from the section files)."""
+    import quickref
+    if not os.path.isdir(os.path.join(base, "snapshot")):
+        return text  # pre-ledger period (no snapshots)
+    if quickref.QR_START not in text or quickref.QR_END not in text:
+        err("roundup: no generated Quick Reference (uv run views/quickref.py <period-dir> --insert README.md)")
+        return text
+    a, rest = text.split(quickref.QR_START, 1)
+    have, b = rest.split(quickref.QR_END, 1)
+    try:
+        want = quickref.block(base)
+    except ValueError as e:
+        err(f"roundup: Quick Reference: {e}")
+        return a + b
+    if (quickref.QR_START + have + quickref.QR_END).strip() != want.strip():
+        err("roundup: the Quick Reference differs from the snapshots (edited by hand?); "
+            "regenerate it with views/quickref.py --insert")
+    return a + "\n" * have.count("\n") + b
+
+
 # --- bulletin vs ledger snapshot -------------------------------------------------
 DEF_LINE_RE = re.compile(r"^ {0,3}\[\^?[^\]]+\]:.*$", re.M)  # footnote / reference definitions
 
@@ -318,6 +342,9 @@ def check_snapshot(doc_path: str, text: str, snap_path: str) -> None:
     missing = sorted(n for n in kpi.kpi_numbers(body) if not (n in pool or (n < 0 and -n in pool)))
     for n in missing:
         err(f"snapshot: number {n:g} in the prose does not occur in the snapshot (use snapshot values verbatim)")
+    # 2b. citations are tied to records: each footnote is labelled with the id of the
+    #     snapshot record it cites, and its URLs are that record's sources
+    check_citations(prose, snap)
     # 3. KPI headlines reported (or explicitly unavailable)
     nums = kpi.kpi_numbers(body)
     for k in snap["kpi_headlines"]:
@@ -343,6 +370,59 @@ def check_snapshot(doc_path: str, text: str, snap_path: str) -> None:
         if f["topic"].startswith(("milestone:", "challenge:")) and f["name"].lower() not in heads:
             err(f"snapshot: {f['topic'].split(':')[0]} '{f['name']}' has no heading of its own "
                 "(say 'no significant developments' under it if none)")
+
+
+FN_RUN_RE = re.compile(r"(?:\[\^[^\[\]]+\])+")
+SENT_END_RE = re.compile(r"(?<=[.!?])\s+(?=[^\s\[])")
+
+
+def cited_spans(body: str) -> list[tuple[str, list[str]]]:
+    """(text, [footnote labels]) for every run of footnote markers: the text from
+    the start of its sentence (or the previous marker run) up to the run."""
+    out = []
+    for line in body.splitlines():
+        for sent in SENT_END_RE.split(line):
+            pos = 0
+            for m in FN_RUN_RE.finditer(sent):
+                out.append((sent[pos:m.start()], re.findall(r"\[\^([^\[\]]+)\]", m.group())))
+                pos = m.end()
+    return out
+
+
+def check_citations(prose: str, snap: dict) -> None:
+    """Footnote labels are record ids (an event id, or a metric id for KPI/metric
+    values); a footnote's URLs must be sources of its record; and every number in
+    the text a footnote marks (from the sentence start or the previous footnote)
+    must occur in the records it cites, not just somewhere in the snapshot.
+    Numbers after a sentence's last footnote are only checked snapshot-wide."""
+    import kpi
+    import ledger
+    recs = {norm_label(k): v for k, v in ledger.snapshot_records(snap).items()}
+    text = strip_code_spans(prose)
+    for m in FN_DEF_RE.finditer(text):
+        label = m.group(2)
+        rec = recs.get(norm_label(label))
+        if rec is None:
+            err(f"snapshot: footnote [^{label}] is not a snapshot record id (label each footnote with the "
+                "id of the event, or the metric, it cites)")
+            continue
+        definition = text[m.end():].split("\n", 1)[0]
+        for url in extract_urls(definition):
+            if url not in rec["urls"]:
+                err(f"snapshot: footnote [^{label}] cites {url}, which is not a source of record {label}")
+    pools = {k: kpi.kpi_numbers(v["text"]) for k, v in recs.items()}
+    body = re.sub(r"https?://\S+", " ", DEF_LINE_RE.sub(" ", text))
+    for span, labels in cited_spans(body):
+        keys = [norm_label(lb) for lb in labels]
+        if not all(k in pools for k in keys):
+            continue  # unknown label: reported above
+        pool = set().union(*(pools[k] for k in keys))
+        for n in sorted(kpi.kpi_numbers(span)):
+            if n.is_integer() and 1900 <= abs(n) <= 2100:
+                continue  # bare years label the claim (they are checked against the whole snapshot)
+            if not (n in pool or (n < 0 and -n in pool)):
+                err(f"snapshot: number {n:g} is not in the record(s) it cites ({', '.join(labels)}): "
+                    f"\"{span.strip()[-120:]}\"")
 
 
 def main() -> int:

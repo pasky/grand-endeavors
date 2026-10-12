@@ -163,7 +163,10 @@ For EVERY staged record: VISIT its source URL(s) and check that the source reall
 states the claim: the numbers, the metric scope, the event date, the published
 date (and basis), the kind (achieved vs announced vs projected), and that it
 falls in its item's window (published <= $UNTIL). Check it is not a duplicate of an existing ledger event
-(\`uv run $ROOT/core/ledger.py recent $SECTION\`). Then edit the staged file in place and set
+(\`uv run $ROOT/core/ledger.py recent $SECTION\`) or of another staged record: lint prints a
+"WARN ... duplicate?" line for each likely pair. Resolve every one: reject the
+staged duplicate (note: "duplicate of <id>"), or, if it is a genuine status
+change or correction, make sure it carries relates/supersedes. Then edit the staged file in place and set
 verification to {"status": "verified"|"corrected"|"rejected", "by":
 "verify:$RUN_ID", "at": "$TODAY", "note": what you checked, what you corrected,
 or why you rejected it}. For observation CSV rows, set the verification column
