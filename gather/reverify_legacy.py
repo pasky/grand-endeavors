@@ -316,8 +316,9 @@ def doc_text(body: bytes, ctype: str) -> str:
             return r.stdout.decode("utf-8", errors="replace")
         except subprocess.TimeoutExpired:
             return ""
-    if (ctype or "").startswith("text/plain") or (ctype or "").startswith("text/csv"):
-        return body.decode("utf-8", errors="replace")
+    c = (ctype or "").lower()
+    if c.startswith(("text/plain", "text/csv")) or any(x in c for x in ("yaml", "json", "xml")) and "html" not in c:
+        return body.decode("utf-8", errors="replace")   # keep the structure (YAML indentation etc.)
     return html_text(body, ctype)
 
 
