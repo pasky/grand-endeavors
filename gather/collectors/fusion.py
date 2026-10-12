@@ -551,9 +551,11 @@ def revise_derived(rows: list[dict], existing, today: dt.date) -> list[dict]:
     earlier archived capture) became known when we computed it: re-date it to first
     seen = today (common.mark_revisions only re-dates rule-basis rows)."""
     effective = ledger.obs_as_of("", rows=list(existing))
+    withdrawals = ledger.obs_withdrawals(list(existing))
     out = []
     for r in rows:
-        eff = effective.get((r["metric"], r["obs"]))
+        k = (r["metric"], r["obs"])
+        eff = effective.get(k) or withdrawals.get(k)  # all values withdrawn: a replacement is a revision
         if common.is_revision(r, eff):
             note = r["note"].replace("; " + ARCHIVED, "").replace("; published = first seen on the live page", "")
             r = dict(r, published=str(today), retrieved=str(today), published_basis="seen",

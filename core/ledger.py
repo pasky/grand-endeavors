@@ -561,7 +561,7 @@ def _words(text: str) -> set[str]:
 def _figures(claim: str) -> set[float]:
     """A claim's figures for dedup: magnitudes ("10-20%" = "10–20%"), bare years dropped."""
     import kpi
-    return {abs(n) for n in kpi.kpi_numbers(claim) if not (n.is_integer() and 1900 <= abs(n) <= 2100)}
+    return {abs(n) for n in kpi.quantities(claim)}
 
 
 def _urls(e: dict) -> set[str]:
@@ -664,6 +664,19 @@ def withdrawn(row: dict, withdrawals: list[dict]) -> bool:
     the row's own date: a re-fetch of a withdrawn value stays withdrawn.)"""
     return any(w["metric"] == row["metric"] and w["obs"] == row["obs"] and _same_value(w, row)
                for w in withdrawals)
+
+
+def obs_withdrawals(rows: list[dict]) -> dict[tuple[str, str], dict]:
+    """{(metric, obs): latest withdrawal row}. Collectors treat it like an effective
+    row when none is left, so a replacement value is dated first seen (a revision),
+    not backdated by its rule/source date into views from before the withdrawal."""
+    out: dict[tuple[str, str], dict] = {}
+    for r in rows:
+        if r["verification"] == "withdrawn":
+            k = (r["metric"], r["obs"])
+            if k not in out or known_at(r) >= known_at(out[k]):
+                out[k] = r
+    return out
 
 
 def obs_as_of(section: str, when: dt.date | None = None, rows: list[dict] | None = None) -> dict[tuple[str, str], dict]:
@@ -1024,41 +1037,43 @@ def prepare(section: str, ev_files=(), obs_files=(), ass_files=(), allow_legacy:
     effective = obs_as_of(section)  # current effective row per (metric, obs)
     wds = [r for r in cur_obs if r["verification"] == "withdrawn"]
     have_rows = {tuple(r[c] for c in OBS_COLUMNS) for r in cur_obs}
-    for f in obs_files:
-        for r in load_obs(f):
-            ident = tuple(r[c] for c in OBS_COLUMNS)
-            if ident in have_rows:        # exact replay (incl. of an admitted revision)
+    # withdrawals last, so one batch may carry a value and its withdrawal in any order
+    staged_obs = sorted(((f, r) for f in obs_files for r in load_obs(f)),
+                        key=lambda fr: fr[1]["verification"] == "withdrawn")
+    for f, r in staged_obs:
+        ident = tuple(r[c] for c in OBS_COLUMNS)
+        if ident in have_rows:        # exact replay (incl. of an admitted revision)
+            st["obs_dup"] += 1
+            continue
+        have_rows.add(ident)
+        es = check_obs_row(r, __import__("kpi").load_registry(section)[0], staged=True)
+        if es:
+            errs += [f"{os.path.basename(f)}: {x}" for x in es]
+            continue
+        if r["verification"] == "withdrawn":
+            plan["obs"].append(r)
+            wds.append(r)
+            effective = obs_as_of(section, rows=cur_obs + plan["obs"])
+            st["obs_in"] += 1
+        elif r["verification"] in {"verified", "corrected", "collector"} | ({"legacy"} if allow_legacy else set()) \
+                | ({"unverified"} if lint_mode else set()):
+            k = (r["metric"], r["obs"])
+            if withdrawn(r, wds):  # e.g. a collector re-fetching a withdrawn value: no-op
+                st["obs_withdrawn"] += 1
+                continue
+            eff = effective.get(k)
+            # no-op iff the EFFECTIVE value is numerically equal and not outranked
+            if eff and float(eff["value"]) == float(r["value"]) and tier(eff) >= tier(r):
                 st["obs_dup"] += 1
                 continue
-            have_rows.add(ident)
-            es = check_obs_row(r, __import__("kpi").load_registry(section)[0], staged=True)
-            if es:
-                errs += [f"{os.path.basename(f)}: {x}" for x in es]
-                continue
-            if r["verification"] == "withdrawn":
-                plan["obs"].append(r)
-                wds.append(r)
-                effective = obs_as_of(section, rows=cur_obs + plan["obs"])
-                st["obs_in"] += 1
-            elif r["verification"] in {"verified", "corrected", "collector"} | ({"legacy"} if allow_legacy else set()) \
-                    | ({"unverified"} if lint_mode else set()):
-                k = (r["metric"], r["obs"])
-                if withdrawn(r, wds):  # e.g. a collector re-fetching a withdrawn value: no-op
-                    st["obs_withdrawn"] += 1
-                    continue
-                eff = effective.get(k)
-                # no-op iff the EFFECTIVE value is numerically equal and not outranked
-                if eff and float(eff["value"]) == float(r["value"]) and tier(eff) >= tier(r):
-                    st["obs_dup"] += 1
-                    continue
-                plan["obs"].append(r)
-                effective[k] = r if not eff or _rank(r) >= _rank(eff) else eff
-                st["obs_in"] += 1
-            else:
-                rec = clean(r) | {"_kind": "observation"}
-                if not any(_same(rec, x) for x in rejected_now):
-                    plan["rejected"].append(rec)
-                st["obs_rejected"] += 1
+            plan["obs"].append(r)
+            effective[k] = r if not eff or _rank(r) >= _rank(eff) else eff
+            st["obs_in"] += 1
+        else:
+            rec = clean(r) | {"_kind": "observation"}
+            if not any(_same(rec, x) for x in rejected_now):
+                plan["rejected"].append(rec)
+            st["obs_rejected"] += 1
     for f in ass_files:
         for a in load_jsonl(f):
             if seal and "evidence_digest" not in a and a.get("target") and _valid_day(a.get("made_at")):

@@ -38,7 +38,9 @@ def snapshots(period_dir: str) -> list[dict]:
     out = []
     for sec in ledger.SECTIONS:
         p = os.path.join(period_dir, "snapshot", f"{sec}.json")
-        if os.path.exists(p) and os.path.exists(os.path.join(period_dir, f"{sec}.md")):
+        if os.path.exists(os.path.join(period_dir, f"{sec}.md")):
+            if not os.path.exists(p):
+                raise ValueError(f"{period_dir}: {sec}.md has no snapshot ({p})")
             with open(p, encoding="utf-8") as f:
                 out.append(json.load(f))
     return out

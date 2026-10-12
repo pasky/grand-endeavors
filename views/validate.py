@@ -374,14 +374,22 @@ def check_snapshot(doc_path: str, text: str, snap_path: str) -> None:
 
 FN_RUN_RE = re.compile(r"(?:\[\^[^\[\]]+\])+")
 SENT_END_RE = re.compile(r"(?<=[.!?])\s+(?=[^\s\[])")
+BLOCK_START_RE = re.compile(r"\s*(?:[-*+]\s|\d+[.)]\s|\||#|>)")
 
 
 def cited_spans(body: str) -> list[tuple[str, list[str]]]:
     """(text, [footnote labels]) for every run of footnote markers: the text from
     the start of its sentence (or the previous marker run) up to the run."""
+    units, cur = [], []
+    for line in body.splitlines():  # paragraphs (wrapped lines joined), list items, table rows
+        if not line.strip() or BLOCK_START_RE.match(line):
+            units.append(" ".join(cur)); cur = []
+        if line.strip():
+            cur.append(line.strip())
+    units.append(" ".join(cur))
     out = []
-    for line in body.splitlines():
-        for sent in SENT_END_RE.split(line):
+    for unit in units:
+        for sent in SENT_END_RE.split(unit):
             pos = 0
             for m in FN_RUN_RE.finditer(sent):
                 out.append((sent[pos:m.start()], re.findall(r"\[\^([^\[\]]+)\]", m.group())))
@@ -406,7 +414,15 @@ def check_citations(prose: str, snap: dict) -> None:
             err(f"snapshot: footnote [^{label}] is not a snapshot record id (label each footnote with the "
                 "id of the event, or the metric, it cites)")
             continue
-        definition = text[m.end():].split("\n", 1)[0]
+        # the definition: its first line plus indented continuation lines
+        lines = text[m.end():].split("\n")
+        n = 1
+        while n < len(lines) and (lines[n].startswith(("    ", "\t")) or (
+                not lines[n].strip() and n + 1 < len(lines) and lines[n + 1].startswith(("    ", "\t")))):
+            n += 1
+        definition = "\n".join(lines[:n])
+        if re.search(r"\]\s?\[[^\]^]*\]", definition):
+            err(f"snapshot: footnote [^{label}] uses a reference-style link; link its source URL inline")
         for url in extract_urls(definition):
             if url not in rec["urls"]:
                 err(f"snapshot: footnote [^{label}] cites {url}, which is not a source of record {label}")
@@ -417,9 +433,7 @@ def check_citations(prose: str, snap: dict) -> None:
         if not all(k in pools for k in keys):
             continue  # unknown label: reported above
         pool = set().union(*(pools[k] for k in keys))
-        for n in sorted(kpi.kpi_numbers(span)):
-            if n.is_integer() and 1900 <= abs(n) <= 2100:
-                continue  # bare years label the claim (they are checked against the whole snapshot)
+        for n in sorted(kpi.quantities(span)):  # bare years label the claim (checked snapshot-wide)
             if not (n in pool or (n < 0 and -n in pool)):
                 err(f"snapshot: number {n:g} is not in the record(s) it cites ({', '.join(labels)}): "
                     f"\"{span.strip()[-120:]}\"")

@@ -110,6 +110,20 @@ def kpi_numbers(text: str) -> set[float]:
             for m in KPI_NUM_RE.findall(text)}
 
 
+def quantities(text: str) -> set[float]:
+    """kpi_numbers minus bare calendar years: 1900-2100 unless a unit-like token
+    follows ('%', '°', '$', a capitalised word or glued letters: "2025 MW",
+    "2000kg"). "in 2025,", "2016–2025", "the 2030s", "in 2025 after" are years."""
+    text = re.sub(r"https?://\S+", " ", text)
+    out = set()
+    for m in KPI_NUM_RE.finditer(text):
+        v = float(re.sub(r"[,\u2009\u202f ]", "", m.group()).replace("\u2212", "-"))
+        if v.is_integer() and 1900 <= abs(v) <= 2100 and not re.match(r"\s?[%$\u00b0A-Z]|[a-rt-z]", text[m.end():m.end() + 2]):
+            continue
+        out.add(v)
+    return out
+
+
 def kpi_traceable(value: str, pool: set[float]) -> bool:
     """Signed match. A negative value may also match its unsigned magnitude
     (prose says "fell 0.5%"); a positive value never matches a negative."""

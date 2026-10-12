@@ -67,6 +67,12 @@ def main():
     case("bulletin gate: a number must be in the record its footnote cites, not just in the snapshot",
          has(gate(doc.replace("38.1 GtCO2, up 1.0%", "38.1 GtCO2 (CO2 at 431.43 ppm)")),
              "number 431.43 is not in the record(s) it cites (2026-05-13-gcb-final)"))
+    case("bulletin gate: a sentence wrapped over several lines is still tied to its footnote",
+         has(gate(doc.replace("38.1 GtCO2, up 1.0%", "38.1 GtCO2\n(CO2 at 431.43 ppm)")), "number 431.43 is not in the record"))
+    case("bulletin gate: URLs on a footnote's continuation lines are checked too",
+         has(gate(doc.replace("[GCB](https://x.org/2026-05-13-gcb-final)\n",
+                              "[GCB](https://x.org/2026-05-13-gcb-final)\n    and [NOAA](https://x.org/data)\n")),
+             "not a source of record 2026-05-13-gcb-final"))
     case("bulletin gate: a footnote covers its own sentence only (an uncited sentence is checked snapshot-wide)",
          gate(doc.replace("[^co2-mlo-monthly]. The GCB", ". The GCB")) == [])
     case("bulletin gate: uncovered milestone is caught", has(gate(doc.replace("### The Bend", "### Something")), "The Bend"))
@@ -96,6 +102,10 @@ def main():
          and quickref.insert(filled, qr) == filled)
     case("roundup gate: generated Quick Reference passes (its numbers come from the snapshots)", roundup(filled) == [])
     case("roundup gate: missing Quick Reference is caught", has(roundup(readme), "no generated Quick Reference"))
+    os.rename(sp, sp + ".x")
+    case("quickref: a bulletin without its snapshot is an error, not silently omitted",
+         has(roundup(filled), "has no snapshot"))
+    os.rename(sp + ".x", sp)
     case("roundup gate: hand-edited Quick Reference is caught",
          has(roundup(filled.replace("431.43 ppm (2026-06)", "432 ppm (2026-06)")), "differs from the snapshots"))
     old = {k: v for k, v in snap.items() if k not in ("series", "framework")}

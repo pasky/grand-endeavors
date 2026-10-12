@@ -108,6 +108,8 @@ def main():
            ev("2026-05-13-d", "2026-05-13", "The Global Carbon Budget 2025 final paper found that total CO2 emissions grew 0.3% per year.")]
     rep[1]["sources"] = rep[0]["sources"]
     case("two findings of one report (shared URL, different figures) are not duplicates", ledger.near_duplicates(rep) == [])
+    case("quantities: bare years drop, year-like quantities stay",
+         kpi.quantities("In 2025, from 2016–2025 (2021), the 2030s, in 2020 after 1900 MW, 2000kg") == {1900.0, 2000.0})
 
     # --- assessments ---------------------------------------------------------------
     evs = {e["id"]: e for e in ledger.events("climate")}
@@ -208,6 +210,19 @@ def main():
     case("withdrawing every value leaves the metric@obs without an effective row",
          errs == [] and ("co2-mlo-annual", "2024") not in ledger.obs_as_of("climate")
          and ledger.check_section("climate")[0] == [])
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                                    "gather", "collectors"))
+    import common
+    fresh = dict(zip(ledger.OBS_COLUMNS, obs("co2-mlo-annual", "2024", "424.9", "2025-01-10", "rule",
+                                             verification="collector", retrieved="2026-09-20")))
+    case("collector: a replacement for an all-withdrawn metric@obs is a revision dated first seen (not backdated)",
+         common.mark_revisions([fresh], ledger.observations("climate"))[0]["published"] == "2026-09-20")
+    write_csv(so, ledger.OBS_COLUMNS, [wd("2023", "421.5", "2026-09-13"),
+                                       obs("co2-mlo-annual", "2023", "421.5", "2026-09-01", "seen",
+                                           verification="collector", retrieved="2026-09-01")])
+    errs, _ = ledger.merge("climate", [], [so])
+    case("a batch may stage a value and its withdrawal in either order",
+         errs == [] and ledger.obs_as_of("climate")[("co2-mlo-annual", "2023")]["value"] == "421.08")
     write_csv(so, ledger.OBS_COLUMNS, [wd("2024", "999", "2026-09-13")])
     case("withdrawal of a value that was never recorded is an error",
          has(ledger.merge("climate", [], [so])[0], "no such row was known"))

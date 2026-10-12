@@ -101,9 +101,11 @@ def mark_revisions(rows: list[dict], existing: list[dict]) -> list[dict]:
     """Re-date rule-basis rows that revise the EFFECTIVE ledger value (see module doc).
     `existing` = the section's ledger rows (ledger.observations)."""
     effective = ledger.obs_as_of("", rows=list(existing))
+    withdrawals = ledger.obs_withdrawals(list(existing))
     out = []
     for r in rows:
-        eff = effective.get((r["metric"], r["obs"]))
+        k = (r["metric"], r["obs"])
+        eff = effective.get(k) or withdrawals.get(k)  # all values withdrawn: a replacement is a revision
         if is_revision(r, eff) and r["published_basis"] == "rule":
             r = dict(r, published=r["retrieved"], published_basis="seen",
                      note=r["note"] + f"; revises effective ledger value {eff['value']}"
