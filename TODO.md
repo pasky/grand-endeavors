@@ -32,8 +32,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       backoff**. The 2026-10-01 Wayback pass recovered 45 (21 verified, 22
       corrected, 2 refuted), but 8 parallel agents hit archive.org rate limits;
       rockets got none.
-- [ ] 🤖 Re-verify the legacy KPI **observations** (pilot-2025 values); only events
-      were re-verified.
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
       `DATA_URL` in `gather/collectors/climate_emissions.py`.
 - [ ] Health KPI re-assessment: WHO's new GHE round (GHO record date 2026-10-01)
