@@ -118,7 +118,7 @@ made_at, rationale, evidence: [event ids], by, rubric, basis}`. Optional fields:
   and 6);
 - `evidence_digest`, the staleness seal added by merge.
 
-`rubric` is the RUBRIC.md version ("v1", "v2"); records without it predate
+`rubric` is the RUBRIC.md version ("v1", "v2", "v3"); records without it predate
 rubric v1. `basis` is the structured reasoning.
 `ledger.py check` requires its top-level keys; the nested structure shown is the
 expected content, but it is not checked:
@@ -126,7 +126,7 @@ expected content, but it is not checked:
   benchmark_source, transients_discounted, data_as_of, prev: {status,
   made_at}, change_note`;
 - milestone: `rule, eta, path, blockers, prev, change_note` (window and
-  benchmark may be null). Under rubric v2, `eta` of a milestone that is neither
+  benchmark may be null). Since rubric v2, `eta` of a milestone that is neither
   achieved nor unknown is a checked forecast `{p10, p50, p90, method, calc, cruxes}`:
   years with p10 ≤ p50 ≤ p90 (p90 may be null), and the status agrees with
   p50 (RUBRIC.md §4.1, §6); a milestone whose framework entry `assumes:` a
@@ -139,7 +139,7 @@ wall-clock time of the run (`by` records the run). Every evidence event must be
 known by `made_at` (checked), so a retrospective assessment ("status as of 14 Jul given what was public then") is honest and
 reproducible. Its `known_at` is `made_at`.
 
-Statuses follow the rubric in **gather/RUBRIC.md** (v2). KPI status = pace
+Statuses follow the rubric in **gather/RUBRIC.md** (v3). KPI status = pace
 toward the goal versus what the goal needs (never the level). Milestone status =
 the median of a reasoned ETA forecast on evidence, with `achieved` as a terminal status. Records carry `rubric`,
 a structured `basis` and verdict-bound labels. Hysteresis (a status change needs
@@ -194,7 +194,12 @@ quotes and the fetched documents (URL, status, fetch time, sha256 of the cached 
    their latest assessment (effective events tagged with the target; for the
    KPI also required-metric observations), plus never-assessed targets, each
    with its next free assessment id. The trigger is stateless, so a run that
-   died before assessing is caught up by the next one.
+   died before assessing is caught up by the next one. **Known gap**: a
+   milestone whose ETA rests on another section's series (`ledger.py drivers`)
+   is not re-assessed when that series updates; assess.sh and gather.sh warn
+   about every such milestone (TODO.md). A failed assess agent's file is
+   salvaged only if it covers exactly the targets and lints clean (the commit
+   says so). Agents must not read other runs' staging files.
 7. Each step commits only its own paths. The write-scope guard (cooperative,
    not isolation) lets agents touch only staging and the registry. It checks
    committed changes, uncommitted changes and already-dirty files, and runs

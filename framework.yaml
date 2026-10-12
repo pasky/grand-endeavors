@@ -93,6 +93,11 @@ endeavors:
             description: >-
               Robot autonomously navigates a disaster zone and performs a critical repair
               (valve/switch) within human time limits.
+            details:
+              - >-
+                A realistic staged disaster site counts (unscripted, rubble, degraded comms
+                and lighting; DARPA Robotics Challenge style but autonomous); a real disaster is
+                not required.
           - slug: the-blue-collar-shift
             name: The "Blue Collar" Shift
             description: >-

@@ -126,5 +126,8 @@ pi_run() {
 	guard_paths "$m_head" "$m_dirty" "$label (mechanism repo)" "$ao_dir" "$ROOT" ""
 	APPEND_ONLY="$_ao"
 	rm -rf "$ao_dir"
-	[ "$rc" = 0 ] || { echo "ERROR: stage '$label' failed (pi exit $rc)" >&2; exit "$rc"; }
+	# PI_SOFT_FAIL=1: the caller salvages a failed stage itself (PI_RC = pi's exit code;
+	# the write-scope guard above still ran)
+	PI_RC="$rc"
+	[ "$rc" = 0 ] || [ -n "${PI_SOFT_FAIL:-}" ] || { echo "ERROR: stage '$label' failed (pi exit $rc)" >&2; exit "$rc"; }
 }

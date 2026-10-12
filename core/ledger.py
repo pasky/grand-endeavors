@@ -53,9 +53,9 @@ OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
                "published_basis", "retrieved", "collector", "verification", "note"]
 ASSESS_STATUS = {"green", "yellow", "red", "achieved", "unknown"}
 # gather/RUBRIC.md rubric versions, oldest first; new records use the last one
-RUBRICS = ("v1", "v2")
+RUBRICS = ("v1", "v2", "v3")
 RUBRIC = RUBRICS[-1]
-ETA_KEYS = {"p10", "p50", "p90", "method", "calc", "cruxes"}  # rubric v2: milestone basis.eta
+ETA_KEYS = {"p10", "p50", "p90", "method", "calc", "cruxes"}  # rubric v2+: milestone basis.eta
 # gather/RUBRIC.md: verdict words bound to each status (same in all versions)
 VERDICTS = {"green": ("Ahead", "On track"), "yellow": ("Behind pace", "Progressing"),
             "red": ("Off track", "Stalled", "Regressing", "Distant", "Blocked"), "achieved": ("Achieved",),
@@ -328,7 +328,7 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
 
 
 def check_eta(at: str, eta, status: str, made_at: str) -> list[str]:
-    """gather/RUBRIC.md v2 §4.1/§6: a milestone ETA is a forecast {p10, p50, p90 (years; p90 may be
+    """gather/RUBRIC.md v2+ §4.1/§6: a milestone ETA is a forecast {p10, p50, p90 (years; p90 may be
     null), method, calc, cruxes}, and the status agrees with its median."""
     if not isinstance(eta, dict) or ETA_KEYS - set(eta):
         return [f"{at}: basis.eta must be an object with {sorted(ETA_KEYS)}"
@@ -1240,6 +1240,25 @@ def lint(section: str, ev_files=(), obs_files=(), ass_files=(), allow_legacy: bo
     return errs
 
 
+def foreign_drivers(section: str) -> list[tuple[str, str, str]]:
+    """(target, other section, metric) for every registered series of ANOTHER section that the
+    latest assessment's basis.eta.calc cites (gather/RUBRIC.md §4.1 step 2 driver trends).
+    KNOWN GAP (TODO.md): stale_targets() ignores these, so a new observation of the driver
+    does not re-assess the milestone; assess.sh prints a warning per driver instead."""
+    import kpi
+    latest: dict[str, dict] = {}
+    for a in sorted((a for a in assessments(section) if _valid_day(a.get("made_at", ""))), key=lambda a: a["made_at"]):
+        latest[a["target"]] = a
+    regs = {s: sorted((kpi.load_registry(s)[0] or {}), key=len, reverse=True) for s in SECTIONS if s != section}
+    out = []
+    for t, a in sorted(latest.items()):
+        eta = (a.get("basis") or {}).get("eta")
+        calc = str(eta.get("calc", "")) if isinstance(eta, dict) else ""
+        for s, metrics in regs.items():
+            out += [(t, s, m) for m in metrics if re.search(rf"(?<![\w-]){re.escape(m)}(?![\w-])", calc)]
+    return out
+
+
 # --- CLI ---------------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -1258,6 +1277,7 @@ def main() -> int:
     it = sub.add_parser("items"); it.add_argument("section", choices=SECTIONS)
     sta = sub.add_parser("stale"); sta.add_argument("section", choices=SECTIONS); sta.add_argument("--until", required=True)
     sta.add_argument("--force", action="store_true", help="all targets (e.g. after a rubric change)")
+    dr = sub.add_parser("drivers"); dr.add_argument("section", choices=SECTIONS)
     se = sub.add_parser("series"); se.add_argument("section", choices=SECTIONS); se.add_argument("metric")
     se.add_argument("--as-of", required=True)
     stt = sub.add_parser("state"); stt.add_argument("section", choices=SECTIONS)
@@ -1325,6 +1345,9 @@ def main() -> int:
         elif a.cmd == "stale":
             for target, aid in stale_targets(a.section, day(a.until), a.force):
                 print(f"{target}|{aid}")
+        elif a.cmd == "drivers":
+            for t, s, m in foreign_drivers(a.section):
+                print(f"{t}|{s}|{m}")
         elif a.cmd == "series":
             import kpi
             t = obs_as_of(a.section, day(a.as_of))

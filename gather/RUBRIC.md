@@ -1,4 +1,4 @@
-# Status rubric (v2)
+# Status rubric (v3)
 
 Every KPI and milestone in framework.yaml carries a **status**: a colour plus a
 one-line label such as "Off track: 421 ppm, +2.4 ppm/yr vs ≤0 needed". This
@@ -15,9 +15,10 @@ sections and runs and does not flap.
 
 Co-designed 2026-09-30 (v1). v2 (2026-10-06): milestone ETAs are reasoned
 forecasts with a median and an 80% range (§4.1), no longer a status bucket
-restated, and gates that the framework `assumes:` away never block a
-milestone (§4.2). KPI rules are unchanged. Any change in meaning is a new
-rubric version (rule 4).
+restated. v3 (2026-10-12): drivers are calibrated to what the milestone needs
+and adjustments need evidence of their own (§4.1 step 3); gates that the
+framework `assumes:` away never block a milestone (§4.2). KPI rules are
+unchanged in both. Any change in meaning is a new rubric version (rule 4).
 
 ## 1. What the colours mean
 
@@ -64,7 +65,7 @@ delivered to orbit in a single year. Label: "Progressing: 3,194 t to orbit in
 - The milestone's own quantity, annual payload mass to orbit, grew about 45 %/yr
   over 2021–2025, up from about 11 %/yr over 2016–2020.
 - Extrapolating that trend reaches 100,000 t/yr around 2034, inside the 5–10
-  year band, so the status is yellow. As a v2 `basis.eta`: p50 2034; p10 2032
+  year band, so the status is yellow. As a `basis.eta`: p50 2034; p10 2032
   (Starship at operational cadence lifts growth to ~60 %/yr: 7.3 yr); p90
   2040 (growth halves to ~25 %/yr: 15.4 yr); method trend (log-linear);
   calc "gap 100000/3194 = 31×; log(31.3)/log(1.45) = 9.3 yr after 2025".
@@ -159,8 +160,9 @@ straight line or sounds cautious. Work through these steps:
    onto the driver's units. For example, an AI-written 10,000-line patch maps
    onto METR task horizons (robots-software KPI); robots doing a full shift
    maps onto the software autonomy trend plus hardware unit volumes. Cite
-   another section's data in `calc` (metric, values, event ids); `evidence`
-   lists only this section's events. "No
+   another section's data in `calc` (registered metric id, values, event ids);
+   `evidence` lists only this section's events. Known gap: a new observation
+   of a foreign driver does not re-assess the milestone (TODO.md). "No
    series in the ledger" is a gap to work around (a driver, a reference class,
    or a gather request in `blockers`), not an ETA.
 3. **Pick the growth model the quantity actually follows**, and justify it:
@@ -191,6 +193,12 @@ straight line or sounds cautious. Work through these steps:
    - **no stacking**: each adjustment (benchmark-to-reality gap, review lag,
      adoption lag) needs its own evidence. Do not put every pessimistic
      adjustment in the median and leave the optimistic ones for p10.
+   - **evidence that measures the adjustment**: a benchmark-to-reality
+     discount needs data on that capability gap (e.g. horizons on messier task
+     subsets, success rates on real repositories or real homes), not a
+     neighbouring quantity (e.g. a study of how fast humans work with AI
+     tools). An adjustment without such evidence stays out of the median; it
+     may only widen the range.
 4. **Cross-check.** Compare with a reference class (how long comparable
    transitions took from first demonstration to the milestone's level), with
    proponents' dates (historically optimistic: discount them, e.g. 1.5–3× on
@@ -201,7 +209,9 @@ straight line or sounds cautious. Work through these steps:
    ("maybe never, or after 2100"). Uncertainty **widens the range; it does
    not push the median later.** Do not default to ">10 years" because the
    question is hard or the data are thin. If the median is honestly far away,
-   show the calculation that puts it there.
+   show the calculation that puts it there. For a near ETA, one year is a
+   large share of the remaining time (a third of a 3-year horizon), so every
+   year added to the median needs its own line in `calc`.
 6. **Name the cruxes**: what observation would move the ETA earlier or later.
    Gather can look for exactly those next time.
 
@@ -235,7 +245,7 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
    a transient.
 4. \* Reinterpretation under a new rubric version: a record whose previous
    assessment predates this rubric version (no rubric, or an older version)
-   may re-judge it with `"rubric_correction": "v2"`, without claiming new
+   may re-judge it with `"rubric_correction": "v3"`, without claiming new
    evidence; it must say what the old assessment got wrong. A record that is
    already under the current version is never "corrected": changing it needs
    newer evidence (rule 1).
@@ -252,7 +262,7 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   It must also match the window trend: no "Worsening" when nothing worsened.
 - **rationale**: prose that is consistent with the basis.
 - **evidence**: the ids of the events relied on. Only `unknown` may have none.
-- \* **rubric** "v2" and a structured **basis**. Its keys are listed in
+- \* **rubric** "v3" and a structured **basis**. Its keys are listed in
   DESIGN.md §3 (Assessment); for KPIs it includes the window numbers, so the
   judgment can be checked.
 - \* For a milestone that is neither achieved nor unknown, **basis.eta** is an object

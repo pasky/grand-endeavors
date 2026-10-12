@@ -5,6 +5,18 @@ Architecture: DESIGN.md · status rubric: gather/RUBRIC.md · views: views/EXPLO
 data: github.com/pasky/grand-endeavors-data (`./data`).
 🤖 = can be done by agents without the owner in the loop.
 
+## ⚠ Known gaps (deferred on purpose)
+
+- [ ] **Cross-section ETA drivers are not tracked** (deferred by the owner 2026-10-12).
+      Milestone ETAs may rest on another section's series, e.g. all four robots-hardware
+      capability milestones on robots-software's METR horizons (`ledger.py drivers
+      <section>` lists them). But `ledger.py stale` ignores them, so a new METR point
+      does NOT re-assess robots-hardware. Even a manual re-run cannot change a status on
+      driver data alone (hysteresis wants in-section evidence), and the evidence list
+      cannot cite foreign event ids. Until fixed, assess.sh and gather.sh print a WARN
+      per affected milestone. Fix: milestones declare their drivers; stale + hysteresis
+      follow them.
+
 ## Owner decisions
 
 - [ ] **Scheduling budget**: how often each section's gather runs (a full
@@ -51,9 +63,12 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       e.g. robotaxi permits, Fukushima disaster-zone access. The §4.1 calibration
       amendment (50% horizon, no stacking) reaches the other milestones only on new
       evidence or a definition change.
-- [ ] Cross-section ETA drivers: a milestone may rest on another section's series
-      (cited in basis.eta.calc), but `ledger.py stale` does not re-assess it when
-      that driver updates, and its evidence list cannot cite foreign event ids.
+- [ ] 🤖 Retry the legacy events that are still unverifiable, **sequentially with
+      backoff**. The 2026-10-01 Wayback pass recovered 45 (21 verified, 22
+      corrected, 2 refuted), but 8 parallel agents hit archive.org rate limits;
+      rockets got none.
+- [ ] 🤖 Re-verify the legacy KPI **observations** (pilot-2025 values); only events
+      were re-verified.
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
       `DATA_URL` in `gather/collectors/climate_emissions.py`. Same for the
       edition URLs in `gather/sources/` (`grep -n 'Edition URL' gather/sources/*.yaml`:

@@ -338,6 +338,14 @@ def main():
          has(ledger.check_assumed_gates("robots-software", [na]), "assumed gate")
          and ledger.check_assumed_gates("robots-software", [na, na_ok]) == []
          and ledger.check_assumed_gates("climate", [dict(na, target="milestone:the-bend")]) == [])
+    write_csv(f"{kpi.ROOT}/metrics/robots-software.csv", kpi.REG_COLUMNS,
+              [["metr-50-horizon", "min", "irregular", "", "", "", "d"], ["metr-50-horizon-by-release", "min", "irregular", "", "", "", "d"]])
+    drv = V2(dict(eta, calc="driver robots-software metr-50-horizon-by-release: 17 h; x"), id="dv", status="yellow",
+             label="Progressing: x, ETA ~2032", made_at="2026-09-29")
+    write_jsonl(ledger.path("assessments", "climate"), [drv])
+    case("drivers: another section's series cited in the latest ETA calc (whole metric ids only)",
+         ledger.foreign_drivers("climate") == [("milestone:the-bend", "robots-software", "metr-50-horizon-by-release")])
+    os.remove(f"{kpi.ROOT}/metrics/robots-software.csv")
     unk = dict(A(id="u", target="kpi", status="unknown", label="Unassessed: no series"), evidence=[],
                basis={k: "x" for k in ledger.BASIS_UNKNOWN})
     case("rubric: 'unknown' needs no evidence and its own basis", ledger.check_assessment(unk, topics, evs) == [])

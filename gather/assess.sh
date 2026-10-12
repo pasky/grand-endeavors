@@ -15,7 +15,7 @@
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
-RUBRIC=v2  # current gather/RUBRIC.md version (= ledger.RUBRIC; checked by core/tests/test_paths.py)
+RUBRIC=v3  # current gather/RUBRIC.md version (= ledger.RUBRIC; checked by core/tests/test_paths.py)
 . "$(dirname "$0")/../core/lib.sh"
 require_section "$SECTION"
 require_clean
@@ -49,6 +49,7 @@ METRICS="$(for f in metrics/*.csv; do s="$(basename "$f" .csv)"; [ "$s" = kpi-as
 	printf '    %s: %s\n' "$s" "$(awk -F, 'NR>1{printf "%s%s", (n++ ? ", " : ""), $1}' "$f")"; done)"
 AS="$STAGE/assessments.jsonl"
 
+PI_SOFT_FAIL=1  # a failed agent may still have staged a complete, lint-clean file (salvaged below)
 pi_run assess "$(cat <<EOF
 Assess the status of these "$SECTION" targets as of $UNTIL under the status rubric
 in $ROOT/gather/RUBRIC.md (read it fully; it is binding). Targets (target|assessment id to use):
@@ -101,11 +102,30 @@ target, status (green|yellow|red, or achieved for milestones), label
 KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
 Validate until 0 errors:
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
+Work only in $STAGE: do not read other runs' files under ledger/staging/ or ledger/.sessions/
+(their notes are not evidence, and judgments must be independent).
 EOF
 )"
+PI_SOFT_FAIL=
+SALVAGE=""
+if [ "$PI_RC" != 0 ]; then
+	# e.g. a provider-side block of the agent's final turn after it had finished the file:
+	# salvage only a complete (all targets, exact ids) and lint-clean file
+	echo "WARN: assess agent failed (pi exit $PI_RC); salvaging $AS only if complete and lint-clean" >&2
+	SALVAGE=" (salvaged: the assess agent exited $PI_RC after staging a complete, lint-clean file)"
+fi
 [ -s "$AS" ] || { echo "ERROR: assess wrote no $AS" >&2; exit 1; }
+want_ids="$(printf '%s\n' "$TARGETS" | cut -d'|' -f2 | sort)"
+got_ids="$(uv run python -c 'import json,sys; [print(json.loads(l)["id"]) for l in open(sys.argv[1]) if l.strip()]' "$AS" | sort)"
+[ "$want_ids" = "$got_ids" ] || { echo "ERROR: $AS ids differ from the targets:" >&2
+	printf 'want:\n%s\ngot:\n%s\n' "$want_ids" "$got_ids" >&2; exit 1; }
+uv run $ROOT/core/ledger.py lint "$SECTION" --assessments "$AS" || { echo "ERROR: $AS does not lint clean" >&2; exit 1; }
 uv run $ROOT/core/ledger.py merge "$SECTION" --assessments "$AS"
 uv run $ROOT/core/ledger.py check "$SECTION"
-commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')" \
+commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')$SALVAGE" \
 	"ledger/assessments/$SECTION.jsonl"
+# KNOWN GAP (TODO.md, deferred): cross-section ETA drivers are not tracked by `ledger.py stale`
+uv run $ROOT/core/ledger.py drivers "$SECTION" | while IFS='|' read -r t s m; do
+	echo "WARN: $SECTION $t: its ETA rests on $s/$m, but a new $m observation will NOT re-assess it (cross-section staleness is not implemented, TODO.md)" >&2
+done
 echo ">>> done: assess $SECTION as of $UNTIL"

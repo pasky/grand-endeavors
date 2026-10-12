@@ -28,6 +28,10 @@
 #         OVERLAP_DAYS=3
 #         ITEMS="kpi milestone:the-bend beyond"   restrict watch items (cost control)
 #         SKIP_COLLECT=1     skip deterministic collectors
+#         FOCUS="..."        extra research brief for every intake agent (a targeted
+#                            run, e.g. quantitative data an ETA needs; still windowed)
+#         SKIP_ASSESS=1      stop after merge (a later assess.sh run judges the new
+#                            evidence: stale triggers are stateless)
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: gather.sh <section>}"
@@ -126,6 +130,7 @@ $REG_TEXT
 OPEN GAPS reported by recent bulletins (fill them if they concern this item and
 the window; otherwise ignore):
 ${GAPS_TEXT:-(none)}
+$( [ -n "${FOCUS:-}" ] && printf '\nFOCUS OF THIS RUN (prioritize it, still within the window and this watch item):\n%s\n' "$FOCUS" )
 
 OUTPUT (write only these files):
 1. $ev: one JSON object per line (write via a small python script with
@@ -209,7 +214,8 @@ commit "gather $SECTION: merge verified intake (until $UNTIL)" $LEDGER_PATHS
 
 # --- 5. assess (stateless trigger: evidence newer than the latest assessment) -------
 # assess.sh applies RUBRIC.md (current rubric version) to targets that `ledger.py stale` reports.
-UNTIL="$UNTIL" ALLOW_DIRTY=1 sh "$ROOT/gather/assess.sh" "$SECTION"
+if [ -z "${SKIP_ASSESS:-}" ]; then UNTIL="$UNTIL" ALLOW_DIRTY=1 sh "$ROOT/gather/assess.sh" "$SECTION"
+else echo ">>> [$RUN_NAME] assess skipped (SKIP_ASSESS); run gather/assess.sh $SECTION"; fi
 
 # --- 6. state ------------------------------------------------------------------------------------
 n_ev="$(cat $staged_ev /dev/null | grep -c . || true)"
@@ -220,4 +226,14 @@ uv run $ROOT/core/ledger.py check "$SECTION"
 commit "gather $SECTION: state (until $UNTIL, run $RUN_ID)" $LEDGER_PATHS
 # refresh the published site, $ROOT/build/ (derived; best effort: the ledger is already committed)
 uv run $ROOT/views/explore.py site >/dev/null || echo "WARN: site refresh failed (see above); the ledger is fine" >&2
+# KNOWN GAP (TODO.md, deferred): milestones of OTHER sections whose ETA rests on this section's
+# series are not re-assessed by this run's new observations; say so, every run
+for s in $SECTIONS; do
+	[ "$s" = "$SECTION" ] && continue
+	uv run $ROOT/core/ledger.py drivers "$s" | while IFS='|' read -r t ds m; do
+		if [ "$ds" = "$SECTION" ]; then  # (if, not &&: a false test must not fail the loop under set -e)
+			echo "WARN: $s $t: its ETA rests on $SECTION/$m, which this run may have updated; it is NOT re-assessed automatically (cross-section staleness, TODO.md)" >&2
+		fi
+	done
+done
 echo ">>> done: gather $SECTION until $UNTIL"
