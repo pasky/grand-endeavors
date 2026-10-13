@@ -48,18 +48,19 @@ phone the navigation becomes a strip on top).
   Clicking shows that endeavor in the middle.
 - **Middle, one pane at a time**: the overview by default, or the endeavor
   clicked. Switching is pure CSS (`:target`, `:has()`; the page has no
-  JavaScript), so every pane, section and event has a URL
+  JavaScript), so every pane, section and target has a URL
   (`#robots-and-automation`, `#robots-software`, `#climate`,
-  `#ev-climate-<id>`, `#t-climate-milestone-the-bend`): a link to an event
-  opens its endeavor, unfolds the event and highlights it. A browser without
-  `:has()` shows all panes one below another.
+  `#t-climate-milestone-the-bend`): a link to it opens its endeavor (and
+  unfolds the target). Events have theirs in the event logs (below,
+  `events-climate.html#ev-climate-<id>`, highlighted when linked). A browser
+  without `:has()` shows all panes one below another.
 - **Right, the news stream**: the 100 most recently *published* events across
   all endeavors, newest first, grouped by day, plus the **status changes**
   (KPI/milestone status changed, or first assessed; a same-day flip back is
   not a change) over the same span (all of them while the ledger has fewer
   events). Only endeavors with a pane are included (a period page's frozen
-  framework may lack some). Each item links to the event or target in its
-  pane. "Major only" keeps significance-3 events and status changes;
+  framework may lack some). An event links to its entry in the endeavor's
+  event log, a status change to its target in the endeavor's pane. "Major only" keeps significance-3 events and status changes;
   while an endeavor is shown, other endeavors' news is dimmed and "this
   endeavor only" hides it.
 
