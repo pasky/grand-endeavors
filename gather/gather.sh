@@ -153,7 +153,8 @@ OUTPUT (write only these files):
 Validate until 0 errors:
     uv run $ROOT/core/ledger.py lint $SECTION --events $ev $( [ -f "$ob" ] && echo "--obs $ob" )
 (if you wrote $ob, add --obs $ob). Finally list what you recorded, and anything
-important you saw that was published OUTSIDE the window.
+important you saw that was published OUTSIDE the window. Never run git add/commit (the
+pipeline commits; a commit by you aborts the run).
 EOF
 )"
 	[ -f "$ev" ] || : > "$ev"
@@ -195,7 +196,8 @@ rename an existing metric. Existing rows must be unchanged. Revert invalid
 additions and reject the rows that use them.
 Validate until 0 errors (no "unverified" may remain):
     uv run $ROOT/core/ledger.py lint $SECTION --final --events $staged_ev $( [ -n "$staged_ob" ] && echo "--obs $staged_ob" )
-Report counts: verified / corrected / rejected (with reasons).
+Report counts: verified / corrected / rejected (with reasons). Never run git add/commit
+(the pipeline commits; a commit by you aborts the run).
 EOF
 )"
 	# parsed check (not grep): every staged record must now be verified/corrected/rejected

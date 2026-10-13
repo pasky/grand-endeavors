@@ -52,6 +52,8 @@ t "committed rename of a protected file into an allowed path" block 'mkdir -p st
 git -C "$d" reset -q --hard "$INIT"
 t "agent edits the mechanism repo (code)"        block 'echo hacked >> "$ROOT/code.py"'
 git -C "$m" checkout -q -- code.py
+t "agent commits an in-scope staging file (agents never commit)" block 'mkdir -p stage; echo y > stage/x; git add -f stage/x; git commit -qm x'
+git -C "$d" reset -q --hard "$INIT"
 
 rm -rf "$d" "$m"
 echo "$FAILS failure(s)"

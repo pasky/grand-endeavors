@@ -143,6 +143,14 @@ pi_run() {
 	PI_BLOCKED=""; grep -q "This request was blocked" "$pi_out" && PI_BLOCKED=1
 	rm -f "$pi_out"
 	guard_paths "$pre_head" "$pre_dirty" "$label" "$ao_dir"
+	# agents never commit (the pipeline does): even an in-scope commit would put gitignored
+	# staging files into the data repo's history (seen 2026-10-13: a fallback-mode agent
+	# force-added its staging scripts and CSV copies)
+	if [ "$(git rev-parse HEAD)" != "$pre_head" ]; then
+		echo "ERROR: stage '$label' made git commits (agents must not commit): $(git log --format=%h "$pre_head"..HEAD | tr '\n' ' ')" >&2
+		echo "       inspect, then drop them: git rebase --onto $pre_head <last agent commit>, or git reset --hard $pre_head" >&2
+		exit 1
+	fi
 	_ao="${APPEND_ONLY:-}"; APPEND_ONLY=""   # (prefix assignments on functions are not portable)
 	guard_paths "$m_head" "$m_dirty" "$label (mechanism repo)" "$ao_dir" "$ROOT" ""
 	APPEND_ONLY="$_ao"

@@ -111,6 +111,7 @@ target, status (green|yellow|red, or achieved for milestones), label
 KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
 Validate until 0 errors:
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
+Never run git add/commit (the pipeline commits; a commit by you aborts the run).
 Work only in $STAGE: do not read other runs' files under ledger/staging/ or ledger/.sessions/
 (their notes are not evidence, and judgments must be independent).
 EOF
