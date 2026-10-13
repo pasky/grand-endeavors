@@ -118,7 +118,7 @@ made_at, rationale, evidence: [event ids], by, rubric, basis}`. Optional fields:
   and 6);
 - `evidence_digest`, the staleness seal added by merge.
 
-`rubric` is the RUBRIC.md version ("v1", "v2", "v3"); records without it predate
+`rubric` is the RUBRIC.md version ("v1" ... "v4"); records without it predate
 rubric v1. `basis` is the structured reasoning.
 `ledger.py check` requires its top-level keys; the nested structure shown is the
 expected content, but it is not checked:
@@ -131,7 +131,10 @@ expected content, but it is not checked:
   years with p10 ≤ p50 ≤ p90 (p90 may be null), and the status agrees with
   p50 (RUBRIC.md §4.1, §6); a milestone whose framework entry `assumes:` a
   gate away also has `eta.assumes` and "ETA ~YYYY*" in its label (§4.2;
-  `check` warns). Under v1 it was free text;
+  `check` warns). Since v4 it also has `p_achieved` (the chance it happens by
+  2100), and a quantile is null when that chance is below its level, so a
+  milestone that probably fails has no median and is red. Under v1 it was
+  free text;
 - unknown: `rule, reason, prev, change_note`.
 
 `made_at` is the as-of date of the evidence that was considered, not the
@@ -139,7 +142,7 @@ wall-clock time of the run (`by` records the run). Every evidence event must be
 known by `made_at` (checked), so a retrospective assessment ("status as of 14 Jul given what was public then") is honest and
 reproducible. Its `known_at` is `made_at`.
 
-Statuses follow the rubric in **gather/RUBRIC.md** (v3). KPI status = pace
+Statuses follow the rubric in **gather/RUBRIC.md** (v4). KPI status = pace
 toward the goal versus what the goal needs (never the level). Milestone status =
 the median of a reasoned ETA forecast on evidence, with `achieved` as a terminal status. Records carry `rubric`,
 a structured `basis` and verdict-bound labels. Hysteresis (a status change needs

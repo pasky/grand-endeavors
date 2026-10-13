@@ -15,7 +15,7 @@
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
-RUBRIC=v3  # current gather/RUBRIC.md version (= ledger.RUBRIC; checked by core/tests/test_paths.py)
+RUBRIC=v4  # current gather/RUBRIC.md version (= ledger.RUBRIC; checked by core/tests/test_paths.py)
 . "$(dirname "$0")/../core/lib.sh"
 require_section "$SECTION"
 require_clean
@@ -87,7 +87,11 @@ above, before choosing its status. Do the arithmetic (uv run python is fine) and
 your working per milestone to $STAGE/eta-notes.md: the gap, every data point used, the
 growth model and why, the time-to-target calculation, the cross-checks (reference class,
 discounted proponent dates, prev ETA) and the cruxes. Put the result in basis.eta
-{p10, p50, p90, method, calc, cruxes} and quote the median in the label ("ETA ~2034").
+{p_achieved, p10, p50, p90, method, calc, cruxes} (RUBRIC.md §4.1 step 5: unconditional
+quantiles, null past 2100, so a milestone that probably fails has p50 null) and quote the
+median in the label ("ETA ~2034"), or without one the chance ("P(by 2100) 20%").
+A gap since a series' last point is unmeasured, not flat; and check a faster-reporting series
+of the same outcome when the milestone's own series lags (RUBRIC.md §4.1 step 3).
 Do not restate a status band ("5-10 years") as an ETA, and do not answer "not estimable"
 or ">10 years" for lack of a series: tie the milestone to a driver or a reference class.
 Exponential quantities must be extrapolated exponentially.

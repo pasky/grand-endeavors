@@ -418,6 +418,12 @@ def main():
         case("rubric v2 ETA: median + 80% range, then its method/calculation, after Path order kept",
              "<dt>ETA</dt><dd>~2034 (80% range 2031–never/after 2100)</dd><dt>ETA method</dt><dd>trend</dd>" in ah
              and "<dt>ETA calculation</dt><dd>log(31)/log(1.45)</dd>" in ah and ah.index("ETA") < ah.index("Path"))
+        am4 = dict(am, basis=json.dumps({"eta": {"p_achieved": 0.2, "p10": 2078, "p50": None, "p90": None,
+                                                  "method": "m", "calc": "c", "cruxes": "x"}}))
+        case("rubric v4 ETA without a median: the chance, not a fake year",
+             "<dt>ETA</dt><dd>unlikely by 2100 (P 20%; 10% chance by 2078)</dd>" in explore.assessment_html(am4)
+             and "P(by 2100) 95%" in explore.assessment_html(dict(am, basis=json.dumps({"eta": {
+                 "p_achieved": 0.95, "p10": 2031, "p50": 2034, "p90": 2040, "method": "m", "calc": "c", "cruxes": "x"}}))))
         tomb = dict(db.execute("SELECT * FROM current_events LIMIT 1").fetchone())
         tomb["relates"] = '[{"id": "x", "rel": "update"}]'
         case("lifecycle link to a withdrawn record: no dangling anchor",

@@ -1,4 +1,4 @@
-# Status rubric (v3)
+# Status rubric (v4)
 
 Every KPI and milestone in framework.yaml carries a **status**: a colour plus a
 one-line label such as "Off track: 421 ppm, +2.4 ppm/yr vs ≤0 needed". This
@@ -17,8 +17,11 @@ Co-designed 2026-09-30 (v1). v2 (2026-10-06): milestone ETAs are reasoned
 forecasts with a median and an 80% range (§4.1), no longer a status bucket
 restated. v3 (2026-10-12): drivers are calibrated to what the milestone needs
 and adjustments need evidence of their own (§4.1 step 3); gates that the
-framework `assumes:` away never block a milestone (§4.2). KPI rules are
-unchanged in both. Any change in meaning is a new rubric version (rule 4).
+framework `assumes:` away never block a milestone (§4.2). v4 (2026-10-13): a
+measurement gap is not a slowdown, the most current series of the outcome
+sets the rate, and an ETA states the chance the milestone happens at all
+(`p_achieved`; quantiles past 2100 are null). KPI rules are unchanged in
+v2–v4. Any change in meaning is a new rubric version (rule 4).
 
 ## 1. What the colours mean
 
@@ -190,6 +193,17 @@ straight line or sounds cautious. Work through these steps:
    - **central rate**: the currently measured rate (the KPI window) is the
      median case unless a named constraint will slow it down. The slower
      long-run rate is the p90 case, not the median.
+   - **a measurement gap is not a slowdown**: when a series is updated
+     irregularly (benchmark evaluations) or with a lag (survival cohorts),
+     the time since its last point is unmeasured, not flat. Fit the trend
+     through the measured points and extrapolate from the last one. Count a
+     stall only if newer measurements show it.
+   - **the most current series sets the rate**: when the milestone's own
+     series lags its drivers by years (e.g. 10-year survival reported for
+     patients diagnosed a decade ago), check whether a faster-reporting series
+     of the same outcome (e.g. cancer mortality, period-analysis survival)
+     shows a different recent rate. Name it as a proxy, and say which rate
+     the median uses.
    - **no stacking**: each adjustment (benchmark-to-reality gap, review lag,
      adoption lag) needs its own evidence. Do not put every pessimistic
      adjustment in the median and leave the optimistic ones for p10.
@@ -204,9 +218,14 @@ straight line or sounds cautious. Work through these steps:
    proponents' dates (historically optimistic: discount them, e.g. 1.5–3× on
    deep-tech schedules, but do not ignore them), and with the previous ETA.
    When the methods disagree, explain which you weight and why.
-5. **Set the median and the range.** p50 is the year you think is as likely
-   to be late as early. p10 and p90 bound an 80 % interval; p90 may be null
-   ("maybe never, or after 2100"). Uncertainty **widens the range; it does
+5. **Set the chance, the median and the range.** `p_achieved` is the
+   probability that the milestone is achieved by 2100 at all. p10, p50 and
+   p90 are the years by which it is achieved with 10 %, 50 % and 90 %
+   probability (unconditional). A quantile past 2100 is null, so p90 is null
+   when `p_achieved` < 0.9, and p50 is null when it is < 0.5: a milestone
+   that will probably fail (e.g. a peak-warming limit that the trend
+   overshoots) has no median year, and must not report one conditional on
+   success. Put the conditional timing ("if achieved, ~2100") in `calc`. Uncertainty **widens the range; it does
    not push the median later.** Do not default to ">10 years" because the
    question is hard or the data are thin. If the median is honestly far away,
    show the calculation that puts it there. For a near ETA, one year is a
@@ -245,7 +264,7 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
    a transient.
 4. \* Reinterpretation under a new rubric version: a record whose previous
    assessment predates this rubric version (no rubric, or an older version)
-   may re-judge it with `"rubric_correction": "v3"`, without claiming new
+   may re-judge it with `"rubric_correction": "v4"`, without claiming new
    evidence; it must say what the old assessment got wrong. A record that is
    already under the current version is never "corrected": changing it needs
    newer evidence (rule 1).
@@ -262,18 +281,21 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   It must also match the window trend: no "Worsening" when nothing worsened.
 - **rationale**: prose that is consistent with the basis.
 - **evidence**: the ids of the events relied on. Only `unknown` may have none.
-- \* **rubric** "v3" and a structured **basis**. Its keys are listed in
+- \* **rubric** "v4" and a structured **basis**. Its keys are listed in
   DESIGN.md §3 (Assessment); for KPIs it includes the window numbers, so the
   judgment can be checked.
 - \* For a milestone that is neither achieved nor unknown, **basis.eta** is an object
-  `{p10, p50, p90, method, calc, cruxes}` (§4.1). p10 ≤ p50 ≤ p90 are
-  calendar years (p90 may be null), and p50 is not before made_at. The
-  status must agree with p50: green ≤ made_at + 5 years, yellow ≤ made_at +
-  10 years. `method` names the model (trend, driver trend, learning curve,
+  `{p_achieved, p10, p50, p90, method, calc, cruxes}` (§4.1). `p_achieved`
+  is a probability (0–1). p10 ≤ p50 ≤ p90 are calendar years, each null
+  exactly when `p_achieved` is below its level (0.1, 0.5, 0.9), and p50 is
+  not before made_at. The status must agree with p50: green ≤ made_at + 5
+  years, yellow ≤ made_at + 10 years, and a null p50 is red. `method` names
+  the model (trend, driver trend, learning curve,
   S-curve, structural floor, reference class, discounted proponent date, or a
   combination). `calc` gives the numbers and arithmetic. `cruxes` says what
   would move the ETA earlier or later. For a milestone with `assumes:`, it
   also has `assumes` (§4.2).
-- The milestone **label** quotes the median: "..., ETA ~2034", or "ETA
-  ~2034*" under an assumed gate. `ledger.py check` warns when the latest
+- The milestone **label** quotes the median: "..., ETA ~2034" ("ETA
+  ~2034*" under an assumed gate); without a median it quotes the chance:
+  "..., P(by 2100) 20%". `ledger.py check` warns when the latest
   assessment of a gated milestone lacks the asterisk or `basis.eta.assumes`.

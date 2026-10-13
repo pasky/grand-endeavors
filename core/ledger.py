@@ -53,7 +53,7 @@ OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
                "published_basis", "retrieved", "collector", "verification", "note"]
 ASSESS_STATUS = {"green", "yellow", "red", "achieved", "unknown"}
 # gather/RUBRIC.md rubric versions, oldest first; new records use the last one
-RUBRICS = ("v1", "v2", "v3")
+RUBRICS = ("v1", "v2", "v3", "v4")
 RUBRIC = RUBRICS[-1]
 ETA_KEYS = {"p10", "p50", "p90", "method", "calc", "cruxes"}  # rubric v2+: milestone basis.eta
 # gather/RUBRIC.md: verdict words bound to each status (same in all versions)
@@ -327,23 +327,41 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
     return errs
 
 
-def check_eta(at: str, eta, status: str, made_at: str) -> list[str]:
-    """gather/RUBRIC.md v2+ §4.1/§6: a milestone ETA is a forecast {p10, p50, p90 (years; p90 may be
-    null), method, calc, cruxes}, and the status agrees with its median."""
-    if not isinstance(eta, dict) or ETA_KEYS - set(eta):
-        return [f"{at}: basis.eta must be an object with {sorted(ETA_KEYS)}"
-                + (f" (missing {sorted(ETA_KEYS - set(eta))})" if isinstance(eta, dict) else "")]
+def check_eta(at: str, eta, status: str, made_at: str, rubric: str = RUBRIC) -> list[str]:
+    """gather/RUBRIC.md v2+ §4.1/§6: a milestone ETA is a forecast {p10, p50, p90, method, calc,
+    cruxes}, and the status agrees with its median. v2/v3: p10, p50 years, p90 a year or null.
+    v4: plus p_achieved (P by 2100); each quantile is null exactly when p_achieved is below its
+    level, so a milestone that probably fails has no median (and is red)."""
+    v4 = rubric not in ("v2", "v3")
+    keys = ETA_KEYS | ({"p_achieved"} if v4 else set())
+    if not isinstance(eta, dict) or keys - set(eta):
+        return [f"{at}: basis.eta must be an object with {sorted(keys)}"
+                + (f" (missing {sorted(keys - set(eta))})" if isinstance(eta, dict) else "")]
     year = lambda v: isinstance(v, int) and not isinstance(v, bool) and 1900 <= v <= 2300
-    errs = [f"{at}: basis.eta.{k} must be a calendar year" for k in ("p10", "p50") if not year(eta[k])]
-    if eta["p90"] is not None and not year(eta["p90"]):
-        errs.append(f"{at}: basis.eta.p90 must be a calendar year or null (maybe never)")
-    errs += [f"{at}: basis.eta.{k} must be a non-empty string" for k in ("method", "calc", "cruxes")
-             if not (isinstance(eta[k], str) and eta[k].strip())]
+    errs = [f"{at}: basis.eta.{k} must be a non-empty string" for k in ("method", "calc", "cruxes")
+            if not (isinstance(eta[k], str) and eta[k].strip())]
+    if v4:
+        p = eta["p_achieved"]
+        if not (isinstance(p, (int, float)) and not isinstance(p, bool) and 0 <= p <= 1):
+            return errs + [f"{at}: basis.eta.p_achieved must be a probability (0-1)"]
+        for k, level in (("p10", 0.1), ("p50", 0.5), ("p90", 0.9)):
+            if p < level and eta[k] is not None:
+                errs.append(f"{at}: basis.eta.{k} must be null: p_achieved {p} < {level} (gather/RUBRIC.md §4.1 step 5)")
+            elif p >= level and not year(eta[k]):
+                errs.append(f"{at}: basis.eta.{k} must be a calendar year (p_achieved {p} >= {level})")
+    else:
+        errs += [f"{at}: basis.eta.{k} must be a calendar year" for k in ("p10", "p50") if not year(eta[k])]
+        if eta["p90"] is not None and not year(eta["p90"]):
+            errs.append(f"{at}: basis.eta.p90 must be a calendar year or null (maybe never)")
     if errs:
         return errs
-    if not eta["p10"] <= eta["p50"] <= (eta["p90"] if eta["p90"] is not None else eta["p50"]):
+    qs = [eta[k] for k in ("p10", "p50", "p90") if eta[k] is not None]
+    if qs != sorted(qs):
         errs.append(f"{at}: basis.eta needs p10 <= p50 <= p90")
-    if _valid_day(made_at):
+    if eta["p50"] is None:
+        if status != "red":
+            errs.append(f"{at}: without a median (p_achieved < 0.5) the status must be red, not {status}")
+    elif _valid_day(made_at):
         y = int(made_at[:4])
         if eta["p50"] < y:
             errs.append(f"{at}: basis.eta.p50 {eta['p50']} is before made_at")
@@ -394,7 +412,7 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
                 errs.append(f"{at}: rubric_correction must be the record's rubric '{a['rubric']}'")
             if a["rubric"] != "v1" and str(a["target"]).startswith("milestone:") \
                     and a["status"] not in ("unknown", "achieved") and isinstance(basis, dict) and "eta" in basis:
-                errs += check_eta(at, basis["eta"], a["status"], a["made_at"])
+                errs += check_eta(at, basis["eta"], a["status"], a["made_at"], a["rubric"])
     if a["target"] not in topics - {"beyond"}:
         errs.append(f"{at}: unknown target '{a['target']}'")
     if not _valid_day(a["made_at"]):
@@ -568,7 +586,7 @@ def check_assumed_gates(section: str, ass: list[dict]) -> list[str]:
         basis = a.get("basis")
         eta = basis.get("eta") if isinstance(basis, dict) else None  # (a malformed basis is check_assessment's error)
         if not (isinstance(eta, dict) and str(eta.get("assumes") or "").strip()) \
-                or not re.search(r"ETA ~\d{4}\*", str(a.get("label"))):
+                or not re.search(r"(ETA ~\d{4}|P\(by 2100\) \d+%)\*", str(a.get("label"))):
             warns.append(f"assessment {a.get('id')}: {t} has an assumed gate in framework.yaml; its latest assessment "
                          "needs basis.eta.assumes and 'ETA ~YYYY*' in the label (gather/RUBRIC.md §4.2; re-assess "
                          "with DEFCHANGE)")

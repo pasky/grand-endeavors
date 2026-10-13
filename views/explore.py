@@ -638,10 +638,15 @@ def assessment_html(m: sqlite3.Row) -> str:
     basis = json.loads(m["basis"] or "null") or {}
     rows = [(BASIS_LABELS[k], _plain(basis[k])) for k in BASIS_LABELS if basis.get(k) not in (None, "", [], {})]
     eta = basis.get("eta")
-    if isinstance(eta, dict) and "p50" in eta:  # rubric v2 forecast: median + 80% range, then its reasoning
-        rng = f"{eta.get('p10')}–{eta['p90'] if eta.get('p90') is not None else 'never/after 2100'}"
+    if isinstance(eta, dict) and "p50" in eta:  # rubric v2+ forecast: median + 80% range (+ v4 chance), reasoning
+        yr = lambda k: eta[k] if eta.get(k) is not None else "never/after 2100"
+        p = eta.get("p_achieved")
+        pct = f"{round(100 * p)}%" if isinstance(p, (int, float)) and not isinstance(p, bool) else None
+        head = (f"~{eta['p50']} (80% range {yr('p10')}–{yr('p90')}" + (f"; P(by 2100) {pct}" if pct else "") + ")"
+                if eta.get("p50") is not None else
+                f"unlikely by 2100 (P {pct or '?'}" + (f"; 10% chance by {eta['p10']}" if eta.get("p10") is not None else "") + ")")
         i = next(i for i, (k, _) in enumerate(rows) if k == "ETA")
-        rows[i:i + 1] = [("ETA", f"~{eta['p50']} (80% range {rng})")] + [
+        rows[i:i + 1] = [("ETA", head)] + [
             (ETA_LABELS[k], _plain(eta[k])) for k in ETA_LABELS if eta.get(k) not in (None, "", [], {})]
     if rows:
         out.append('<dl class="basis">' + "".join(f"<dt>{esc(k)}</dt><dd>{esc(v)}</dd>" for k, v in rows) + "</dl>")

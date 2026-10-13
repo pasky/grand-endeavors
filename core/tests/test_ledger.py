@@ -331,6 +331,22 @@ def main():
     case("rubric v2: an achieved milestone needs no ETA forecast",
          not has(ledger.check_assessment(V2("done", status="achieved", label="Achieved: x"), topics, evs), "basis.eta"))
     case("rubric v1 records keep their free-text ETA", ledger.check_assessment(A(), topics, evs) == [])
+    e4 = dict(eta, p_achieved=0.95)
+    V4 = lambda e, **k: A(rubric="v4", basis=dict(base["basis"], eta=e), **k)
+    case("rubric v4: p_achieved is required", has(ledger.check_assessment(V4(eta), topics, evs), "p_achieved"))
+    case("rubric v4: a likely milestone has all three quantiles",
+         ledger.check_assessment(V4(e4, status="yellow", label="Progressing: x, ETA ~2032"), topics, evs) == [])
+    case("rubric v4: p90 must be null when p_achieved < 0.9",
+         has(ledger.check_assessment(V4(dict(e4, p_achieved=0.6)), topics, evs), "p90 must be null"))
+    unlikely = dict(e4, p_achieved=0.2, p50=None, p90=None)
+    case("rubric v4: a milestone that probably fails has no median and is red",
+         ledger.check_assessment(V4(unlikely, label="Distant: x, P(by 2100) 20%"), topics, evs) == []
+         and has(ledger.check_assessment(V4(unlikely, status="yellow", label="Progressing: x"), topics, evs),
+                 "must be red"))
+    case("rubric v4: a median year must not be reported conditional on success",
+         has(ledger.check_assessment(V4(dict(unlikely, p50=2100)), topics, evs), "p50 must be null"))
+    case("rubric v4: p_achieved must be a probability",
+         has(ledger.check_assessment(V4(dict(e4, p_achieved=1.5)), topics, evs), "probability"))
     na = V2(eta, id="n", target="milestone:the-nature-author", status="yellow", label="Progressing: x, ETA ~2032")
     na_ok = V2(dict(eta, assumes="journals credit AI"), id="n2", target="milestone:the-nature-author",
                status="yellow", label="Progressing: x, ETA ~2032*", made_at="2026-08-01")
