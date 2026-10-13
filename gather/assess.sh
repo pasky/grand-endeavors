@@ -54,8 +54,8 @@ METRICS="$(for f in metrics/*.csv; do s="$(basename "$f" .csv)"; [ "$s" = kpi-as
 	printf '    %s: %s\n' "$s" "$(awk -F, 'NR>1{printf "%s%s", (n++ ? ", " : ""), $1}' "$f")"; done)"
 AS="$STAGE/assessments.jsonl"
 
-PI_SOFT_FAIL=1  # a failed agent may still have staged a complete, lint-clean file (salvaged below)
-pi_run assess "$(cat <<EOF
+prompt() {  # the assess prompt; $BY names the run (and the fallback mode, if used)
+cat <<EOF
 Assess the status of these "$SECTION" targets as of $UNTIL under the status rubric
 in $ROOT/gather/RUBRIC.md (read it fully; it is binding). Targets (target|assessment id to use):
 $TARGETS
@@ -103,32 +103,54 @@ Write $AS: one JSON object per line with fields exactly: id (EXACTLY as given),
 target, status (green|yellow|red, or achieved for milestones), label
 ("<Verdict>: ..." per RUBRIC.md, at most 100 chars), made_at "$UNTIL", rationale
 (2-4 sentences, consistent with basis), evidence [event ids], by
-"assess:$RUN_ID", rubric "$RUBRIC", basis (the keys $ROOT/DESIGN.md §3 "Assessment" lists for
+"$BY", rubric "$RUBRIC", basis (the keys $ROOT/DESIGN.md §3 "Assessment" lists for
 KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
 Validate until 0 errors:
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
 Work only in $STAGE: do not read other runs' files under ledger/staging/ or ledger/.sessions/
 (their notes are not evidence, and judgments must be independent).
 EOF
-)"
-PI_SOFT_FAIL=
-SALVAGE=""
-if [ "$PI_RC" != 0 ]; then
-	# e.g. a provider-side block of the agent's final turn after it had finished the file:
-	# salvage only a complete (all targets, exact ids) and lint-clean file
-	echo "WARN: assess agent failed (pi exit $PI_RC); salvaging $AS only if complete and lint-clean" >&2
-	SALVAGE=" (salvaged: the assess agent exited $PI_RC after staging a complete, lint-clean file)"
-fi
-[ -s "$AS" ] || { echo "ERROR: assess wrote no $AS" >&2; exit 1; }
-# exactly one record per target, with its given id (target|id pairs, not just ids)
-want_ids="$(printf '%s\n' "$TARGETS" | sort)"
-got_ids="$(uv run python -c 'import json,sys; [print(r.get("target"), r.get("id"), sep="|") for r in map(json.loads, filter(str.strip, open(sys.argv[1])))]' "$AS" | sort)"
-[ "$want_ids" = "$got_ids" ] || { echo "ERROR: $AS target|id pairs differ from the targets:" >&2
-	printf 'want:\n%s\ngot:\n%s\n' "$want_ids" "$got_ids" >&2; exit 1; }
-uv run $ROOT/core/ledger.py lint "$SECTION" --assessments "$AS" || { echo "ERROR: $AS does not lint clean" >&2; exit 1; }
+}
+# complete = one record per target with its given id (target|id pairs) AND lint-clean
+as_complete() {
+	[ -s "$AS" ] || { echo "ERROR: assess wrote no $AS" >&2; return 1; }
+	want_ids="$(printf '%s\n' "$TARGETS" | sort)"
+	got_ids="$(uv run python -c 'import json,sys; [print(r.get("target"), r.get("id"), sep="|") for r in map(json.loads, filter(str.strip, open(sys.argv[1])))]' "$AS" | sort)" || return 1
+	[ "$want_ids" = "$got_ids" ] || { printf 'ERROR: %s target|id pairs differ from the targets:\nwant:\n%s\ngot:\n%s\n' "$AS" "$want_ids" "$got_ids" >&2; return 1; }
+	uv run $ROOT/core/ledger.py lint "$SECTION" --assessments "$AS" || { echo "ERROR: $AS does not lint clean" >&2; return 1; }
+}
+# Provider-side false-positive blocks ("This request was blocked ...") hit some runs at random
+# points. Salvage a complete file; otherwise retry fresh once, then once more in the fallback
+# mode (ASSESS_FALLBACK_MODE, default "deep", resolved via modes.json). Other failures abort.
+FALLBACK_MODE="${ASSESS_FALLBACK_MODE:-deep}"
+NOTE=""
+attempt=1
+while :; do
+	BY="assess:$RUN_ID"; PI_MODEL=""
+	if [ "$attempt" = 3 ]; then PI_MODEL="$(pi_mode_model "$FALLBACK_MODE")"; BY="assess:$RUN_ID:$FALLBACK_MODE"; fi
+	rm -f "$AS"   # a fresh attempt never inherits a half-written file
+	PI_SOFT_FAIL=1
+	pi_run "assess-$attempt" "$(prompt)"
+	PI_SOFT_FAIL=
+	[ "$PI_RC" = 0 ] && break
+	if as_complete 2>/dev/null; then
+		echo "WARN: assess agent failed (pi exit $PI_RC) after staging a complete, lint-clean $AS: salvaged" >&2
+		NOTE="$NOTE (attempt $attempt salvaged: the agent exited $PI_RC after staging a complete, lint-clean file)"
+		break
+	fi
+	if [ -z "$PI_BLOCKED" ] || [ "$attempt" = 3 ]; then
+		echo "ERROR: assess failed (pi exit $PI_RC, attempt $attempt$( [ -n "$PI_BLOCKED" ] && echo ', provider block'))" >&2
+		exit 1
+	fi
+	echo "WARN: assess attempt $attempt blocked by the provider; retrying$( [ "$attempt" = 2 ] && echo " in mode $FALLBACK_MODE")" >&2
+	NOTE="$NOTE (attempt $attempt blocked by the provider)"
+	attempt=$((attempt + 1))
+done
+[ "$attempt" = 3 ] && NOTE="$NOTE (fallback mode $FALLBACK_MODE: $PI_MODEL)"
+as_complete || exit 1
 uv run $ROOT/core/ledger.py merge "$SECTION" --assessments "$AS"
 uv run $ROOT/core/ledger.py check "$SECTION"
-commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')$SALVAGE" \
+commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')$NOTE" \
 	"ledger/assessments/$SECTION.jsonl"
 warn_drivers
 echo ">>> done: assess $SECTION as of $UNTIL"

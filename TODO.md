@@ -55,8 +55,11 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       but its central value is ONE customer deployment (Dyna napkin folding, 2025–2026);
       more dated reliability series would firm it up (FOCUS gather, 2026-10-12, found 55 events).
 - [ ] 🤖 Provider false-positive blocks ("duplicating model outputs") still hit assess runs
-      (2026-10-12: 2 of 8; one salvaged by assess.sh, one retried). Agents are now told to stay
-      out of other runs' staging; if blocks persist, find the trigger in the sessions.
+      (2026-10-12: 2 of 8). assess.sh now salvages a complete file, else retries, then falls
+      back to the `deep` mode; commit messages record each block. The trigger is unknown (the
+      blocked climate session had read only climate data); count blocks in the commit log and
+      report the false positive to Anthropic (example: the 2026-10-12T17-05 climate session).
+      gather.sh's intake/verify stages have no retry yet.
 - [ ] 🤖 Retry the legacy events that are still unverifiable, **sequentially with
       backoff**. The 2026-10-01 Wayback pass recovered 45 (21 verified, 22
       corrected, 2 refuted), but 8 parallel agents hit archive.org rate limits;

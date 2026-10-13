@@ -197,9 +197,13 @@ quotes and the fetched documents (URL, status, fetch time, sha256 of the cached 
    died before assessing is caught up by the next one. **Known gap**: a
    milestone whose ETA rests on another section's series (`ledger.py drivers`)
    is not re-assessed when that series updates; assess.sh and gather.sh warn
-   about every such milestone (TODO.md). A failed assess agent's file is
-   salvaged only if it covers exactly the targets and lints clean (the commit
-   says so). Agents must not read other runs' staging files.
+   about every such milestone (TODO.md). Provider-side false-positive blocks
+   ("This request was blocked ...") hit some assess runs at random: a failed
+   agent's file is salvaged if it covers exactly the targets and lints clean;
+   otherwise a blocked run is retried fresh, then once more in the fallback
+   mode (ASSESS_FALLBACK_MODE, default `deep` from modes.json; `by` gets the
+   mode suffix). The commit message records every block, salvage and fallback.
+   Agents must not read other runs' staging files.
 7. Each step commits only its own paths. The write-scope guard (cooperative,
    not isolation) lets agents touch only staging and the registry. It checks
    committed changes, uncommitted changes and already-dirty files, and runs

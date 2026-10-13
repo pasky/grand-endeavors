@@ -108,6 +108,20 @@ guard_paths() {  # $1 pre-HEAD, $2 pre-dirty "path hash" lines, $3 label, $4 app
 
 # Run one pi stage (saved, named session) under the write-scope guard. The guard
 # also runs when pi fails, so a crashed stage cannot leave unchecked edits.
+# provider/model:thinking of a named pi mode (modes.json: project .pi/ first, then ~/.pi/agent/)
+pi_mode_model() {
+	python3 - "$1" "$ROOT/.pi/modes.json" "$HOME/.pi/agent/modes.json" <<'PY'
+import json, os, sys
+for p in sys.argv[2:]:
+    if os.path.exists(p):
+        m = (json.load(open(p)).get("modes") or {}).get(sys.argv[1])
+        if m:
+            print(f"{m['provider']}/{m['modelId']}" + (f":{m['thinkingLevel']}" if m.get("thinkingLevel") else ""))
+            sys.exit(0)
+sys.exit(f"pi mode {sys.argv[1]!r} not found in modes.json")
+PY
+}
+
 pi_run() {
 	label="$1"; prompt="$2"
 	echo ">>> [$RUN_NAME] $label"
@@ -119,8 +133,15 @@ pi_run() {
 	for f in ${APPEND_ONLY:-}; do [ -f "$f" ] && cp "$f" "$ao_dir/$(echo "$f" | tr / _)"; done
 	mkdir -p "$SESS_DIR"
 	rc=0
-	# </dev/null: pi must not consume the caller's stdin (loops reading files)
-	pi -p --approve --session-dir "$SESS_DIR" --name "$RUN_NAME-$label" "$prompt" </dev/null || rc=$?
+	pi_out="$(mktemp)"
+	# </dev/null: pi must not consume the caller's stdin (loops reading files).
+	# PI_MODEL (optional): provider/model[:thinking] for this stage (e.g. a fallback, see pi_mode_model)
+	pi -p --approve --session-dir "$SESS_DIR" --name "$RUN_NAME-$label" ${PI_MODEL:+--model "$PI_MODEL"} \
+		"$prompt" </dev/null >"$pi_out" 2>&1 || rc=$?
+	cat "$pi_out"
+	# a provider-side false-positive refusal (intermittent; callers may retry, see assess.sh)
+	PI_BLOCKED=""; grep -q "This request was blocked" "$pi_out" && PI_BLOCKED=1
+	rm -f "$pi_out"
 	guard_paths "$pre_head" "$pre_dirty" "$label" "$ao_dir"
 	_ao="${APPEND_ONLY:-}"; APPEND_ONLY=""   # (prefix assignments on functions are not portable)
 	guard_paths "$m_head" "$m_dirty" "$label (mechanism repo)" "$ao_dir" "$ROOT" ""
