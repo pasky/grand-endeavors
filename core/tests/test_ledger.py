@@ -345,6 +345,9 @@ def main():
                  "must be red"))
     case("rubric v4: a median year must not be reported conditional on success",
          has(ledger.check_assessment(V4(dict(unlikely, p50=2100)), topics, evs), "p50 must be null"))
+    case("rubric v4: quantiles are capped at 2100 (later = null)",
+         has(ledger.check_assessment(V4(dict(e4, p_achieved=1, p90=2150)), topics, evs), "<= 2100")
+         and ledger.check_assessment(V4(dict(e4, p_achieved=1, p90=2100)), topics, evs) == [])
     case("rubric v4: p_achieved must be a probability",
          has(ledger.check_assessment(V4(dict(e4, p_achieved=1.5)), topics, evs), "probability"))
     na = V2(eta, id="n", target="milestone:the-nature-author", status="yellow", label="Progressing: x, ETA ~2032")

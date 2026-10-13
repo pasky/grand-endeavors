@@ -97,7 +97,7 @@ or ">10 years" for lack of a series: tie the milestone to a driver or a referenc
 Exponential quantities must be extrapolated exponentially.
 A milestone with an "assumes:" entry in framework.yaml is judged as if that assumption held
 (RUBRIC.md §4.2): the gate never blocks it, basis.eta.assumes repeats it, the label says
-"ETA ~YYYY*", and basis.blockers reports the gate's real state.
+"ETA ~YYYY*" (or "P(by 2100) NN%*" without a median), and basis.blockers reports the gate's real state.
 If the rubric cannot judge a target (e.g. its KPI series does not cover the
 window), write status "unknown" with the label "Unassessed: <reason>" and the
 basis keys rule, reason, prev and change_note (evidence may be empty). Never
@@ -137,6 +137,7 @@ while :; do
 	pi_run "assess-$attempt" "$(prompt)"
 	PI_SOFT_FAIL=
 	[ "$PI_RC" = 0 ] && break
+	[ -n "$PI_BLOCKED" ] && NOTE="$NOTE (attempt $attempt blocked by the provider)"   # recorded whatever follows
 	if as_complete 2>/dev/null; then
 		echo "WARN: assess agent failed (pi exit $PI_RC) after staging a complete, lint-clean $AS: salvaged" >&2
 		NOTE="$NOTE (attempt $attempt salvaged: the agent exited $PI_RC after staging a complete, lint-clean file)"
@@ -147,7 +148,6 @@ while :; do
 		exit 1
 	fi
 	echo "WARN: assess attempt $attempt blocked by the provider; retrying$( [ "$attempt" = 2 ] && echo " in mode $FALLBACK_MODE")" >&2
-	NOTE="$NOTE (attempt $attempt blocked by the provider)"
 	attempt=$((attempt + 1))
 done
 [ "$attempt" = 3 ] && NOTE="$NOTE (fallback mode $FALLBACK_MODE: $PI_MODEL)"

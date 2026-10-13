@@ -196,14 +196,20 @@ straight line or sounds cautious. Work through these steps:
    - **a measurement gap is not a slowdown**: when a series is updated
      irregularly (benchmark evaluations) or with a lag (survival cohorts),
      the time since its last point is unmeasured, not flat. Fit the trend
-     through the measured points and extrapolate from the last one. Count a
-     stall only if newer measurements show it.
-   - **the most current series sets the rate**: when the milestone's own
-     series lags its drivers by years (e.g. 10-year survival reported for
-     patients diagnosed a decade ago), check whether a faster-reporting series
-     of the same outcome (e.g. cancer mortality, period-analysis survival)
-     shows a different recent rate. Name it as a proxy, and say which rate
-     the median uses.
+     through the measured points and extrapolate from the last one. A gap
+     counts as a stall or a slowdown only on evidence: newer measurements
+     below trend, things that should have been measured and were not
+     (releases left unevaluated, an evaluation programme stopped), or a named
+     constraint. An expected reporting lag is not such evidence.
+   - **the most current comparable series**: when the milestone's own series
+     lags its drivers by years (e.g. 10-year survival reported for patients
+     diagnosed a decade ago), look for a faster-reporting estimate of the
+     same outcome in a comparable population (e.g. period-analysis survival).
+     A different outcome (e.g. cancer mortality, which also falls when
+     incidence falls) may only inform the rate through an explicit
+     quantitative mapping in `calc`. Say which rate the median uses and why.
+     A structural floor (e.g. 10 years of follow-up) still applies to the
+     milestone's own measurement.
    - **no stacking**: each adjustment (benchmark-to-reality gap, review lag,
      adoption lag) needs its own evidence. Do not put every pessimistic
      adjustment in the median and leave the optimistic ones for p10.
@@ -221,12 +227,16 @@ straight line or sounds cautious. Work through these steps:
 5. **Set the chance, the median and the range.** `p_achieved` is the
    probability that the milestone is achieved by 2100 at all. p10, p50 and
    p90 are the years by which it is achieved with 10 %, 50 % and 90 %
-   probability (unconditional). A quantile past 2100 is null, so p90 is null
-   when `p_achieved` < 0.9, and p50 is null when it is < 0.5: a milestone
-   that will probably fail (e.g. a peak-warming limit that the trend
-   overshoots) has no median year, and must not report one conditional on
-   success. Put the conditional timing ("if achieved, ~2100") in `calc`. Uncertainty **widens the range; it does
-   not push the median later.** Do not default to ">10 years" because the
+   probability (unconditional), and all three are ≤ 2100. A quantile past
+   2100 is null, so p90 is null when `p_achieved` < 0.9, and p50 is null
+   when it is < 0.5: a milestone that is unlikely by 2100 (e.g. a
+   peak-warming limit that the trend overshoots) has no median year by 2100,
+   and must not report one conditional on success. Derive the quantiles from
+   the whole forecast distribution, including the chance of failure: with
+   `p_achieved` 0.6 the unconditional median is later than the median of the
+   successful outcomes. Put the conditional timing ("if achieved, ~2100") in
+   `calc`. Beyond that, uncertainty **widens the range; it does not push the
+   median later**: no padding without evidence. Do not default to ">10 years" because the
    question is hard or the data are thin. If the median is honestly far away,
    show the calculation that puts it there. For a near ETA, one year is a
    large share of the remaining time (a third of a 3-year horizon), so every
@@ -243,7 +253,8 @@ AI-submitted code. The framework then names that gate in the milestone's
 - the ETA and the status are judged **as if the assumption held**. The gate
   never makes the milestone "Blocked", and it adds no policy lag to the ETA;
 - `basis.eta.assumes` repeats the assumption, the label marks the ETA with an
-  asterisk ("ETA ~2030*"), and `basis.blockers` reports the gate's real state;
+  asterisk ("ETA ~2030*", or "P(by 2100) 20%*" without a median), and
+  `basis.blockers` reports the gate's real state;
 - `achieved` still needs an event that meets the literal wording. An event
   that meets everything except the assumed gate supports green, not achieved.
 

@@ -108,9 +108,9 @@ guard_paths() {  # $1 pre-HEAD, $2 pre-dirty "path hash" lines, $3 label, $4 app
 
 # Run one pi stage (saved, named session) under the write-scope guard. The guard
 # also runs when pi fails, so a crashed stage cannot leave unchecked edits.
-# provider/model:thinking of a named pi mode (modes.json: project .pi/ first, then ~/.pi/agent/)
+# provider/model:thinking of a named pi mode (modes.json: project .pi/ first, then $AGENT_DIR)
 pi_mode_model() {
-	python3 - "$1" "$ROOT/.pi/modes.json" "$HOME/.pi/agent/modes.json" <<'PY'
+	python3 - "$1" "$ROOT/.pi/modes.json" "$AGENT_DIR/modes.json" <<'PY'
 import json, os, sys
 for p in sys.argv[2:]:
     if os.path.exists(p):

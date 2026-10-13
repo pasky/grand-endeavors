@@ -347,8 +347,9 @@ def check_eta(at: str, eta, status: str, made_at: str, rubric: str = RUBRIC) -> 
         for k, level in (("p10", 0.1), ("p50", 0.5), ("p90", 0.9)):
             if p < level and eta[k] is not None:
                 errs.append(f"{at}: basis.eta.{k} must be null: p_achieved {p} < {level} (gather/RUBRIC.md §4.1 step 5)")
-            elif p >= level and not year(eta[k]):
-                errs.append(f"{at}: basis.eta.{k} must be a calendar year (p_achieved {p} >= {level})")
+            elif p >= level and not (year(eta[k]) and eta[k] <= 2100):
+                errs.append(f"{at}: basis.eta.{k} must be a calendar year <= 2100 (p_achieved {p} >= {level}; "
+                            "a quantile past 2100 is null)")
     else:
         errs += [f"{at}: basis.eta.{k} must be a calendar year" for k in ("p10", "p50") if not year(eta[k])]
         if eta["p90"] is not None and not year(eta["p90"]):
@@ -588,7 +589,7 @@ def check_assumed_gates(section: str, ass: list[dict]) -> list[str]:
         if not (isinstance(eta, dict) and str(eta.get("assumes") or "").strip()) \
                 or not re.search(r"(ETA ~\d{4}|P\(by 2100\) \d+%)\*", str(a.get("label"))):
             warns.append(f"assessment {a.get('id')}: {t} has an assumed gate in framework.yaml; its latest assessment "
-                         "needs basis.eta.assumes and 'ETA ~YYYY*' in the label (gather/RUBRIC.md §4.2; re-assess "
+                         "needs basis.eta.assumes and 'ETA ~YYYY*' (or 'P(by 2100) NN%*') in the label (gather/RUBRIC.md §4.2; re-assess "
                          "with DEFCHANGE)")
     return warns
 

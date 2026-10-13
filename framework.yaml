@@ -233,8 +233,9 @@ endeavors:
           chronic, manageable condition.
         details:
           - >-
-            Judged at the frontier: at least one large health system (a population of 50M+)
-            gets there; worldwide diffusion is not required.
+            Judged at the frontier: the whole resident population of at least one country or
+            region of 50M+ (not a selected cohort or one insurer's members) gets there;
+            worldwide diffusion is not required.
       - slug: precise-screening
         name: Precise Screening
         description: >-
@@ -242,22 +243,26 @@ endeavors:
           neurodegeneration) caught pre-symptomatic.
         details:
           - >-
-            The share of new cases across the four classes (case-weighted), not an average
-            of the class shares.
+            The share of new diagnoses in a year across the four classes (case-weighted), not
+            an average of the class shares. Each person counts once per class, at the first
+            diagnosis of that class's disease (cancer: once per primary cancer); a small,
+            poorly screened class can be outweighed.
           - >-
             Caught = the disease itself is diagnosed before its first symptom or event (e.g.
             atherosclerosis on imaging, silent AF, type 2 diabetes by routine HbA1c, cancer by
             screening). Risk factors (hypertension, prediabetes, high cholesterol) do not count.
           - >-
-            Judged at the frontier: at least one large health system (a population of 50M+)
-            gets there; worldwide diffusion is not required.
+            Judged at the frontier: the whole resident population of at least one country or
+            region of 50M+ (not a selected cohort or one insurer's members) gets there;
+            worldwide diffusion is not required.
       - slug: unbroken-mind
         name: Unbroken Mind
         description: Dementia prevalence (CDR ≥1) after age 80 falls below 5%.
         details:
           - >-
-            Judged at the frontier: at least one large population (50M+) gets there; worldwide
-            diffusion is not required.
+            Prevalence among all residents aged 80+ of a country or region of 50M+,
+            age-standardized within 80+ (WHO standard population) so that an older 80+ mix
+            does not decide it; worldwide diffusion is not required.
       - slug: the-long-middle-age
         name: The Long Middle Age
         description: >-
