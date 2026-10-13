@@ -42,7 +42,7 @@ def main():
         case(f"{rel}: {shell} -n syntax ok{(': ' + r.stderr.strip()) if r.returncode else ''}", r.returncode == 0)
         for m in sorted(set(PATH_RE.findall(text))):
             path = m.rstrip(".")
-            if path in ("data",):  # the default data repo location, not code
+            if path in ("data", ".pi/modes.json"):  # the default data repo location; an optional project mode override
                 continue
             case(f"{rel}: $ROOT/{path} exists", os.path.exists(os.path.join(REPO, path)))
         for d, mod in sorted(set(IMPORT_RE.findall(text))):
