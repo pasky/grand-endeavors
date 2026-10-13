@@ -25,6 +25,8 @@ RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
 RUN_NAME="assess-$SECTION-$RUN_ID"
 STAGE="ledger/staging/assess-$SECTION-$RUN_ID"
 SESS_DIR="ledger/.sessions"
+NOTES_DIR="ledger/assessments/notes"  # = ledger.NOTES_DIR (checked by core/tests/test_paths.py)
+NOTES="$NOTES_DIR/$SECTION/$RUN_ID.md"  # the run's ETA working, committed with its records (by = assess:$RUN_ID[:mode])
 ALLOWED="$STAGE/"
 mkdir -p "$STAGE"
 
@@ -84,9 +86,12 @@ the proxy and why it tracks the target in basis.path, and let that uncertainty
 show in the ETA.
 Milestone ETAs: follow RUBRIC.md §4.1 step by step for EACH milestone, from all the data
 above, before choosing its status. Do the arithmetic (uv run python is fine) and write
-your working per milestone to $STAGE/eta-notes.md: the gap, every data point used, the
-growth model and why, the time-to-target calculation, the cross-checks (reference class,
-discounted proponent dates, prev ETA) and the cruxes. Put the result in basis.eta
+your working per milestone to $STAGE/eta-notes.md, one section per milestone headed
+"## milestone:<slug>": the gap, every data point used, the growth model and why, the
+time-to-target calculation, the cross-checks (reference class, discounted proponent dates,
+prev ETA) and the cruxes. The pipeline commits this file next to the records as $NOTES,
+the audit trail of basis.eta: make it self-contained (inline the numbers and the results
+of any script you ran; other staged files are not kept). Put the result in basis.eta
 {p_achieved, p10, p50, p90, method, calc, cruxes} (RUBRIC.md §4.1 step 5: unconditional
 quantiles, null past 2100, so a milestone that probably fails has p50 null) and quote the
 median in the label ("ETA ~2034"), or without one the chance ("P(by 2100) 20%").
@@ -112,8 +117,9 @@ KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correcti
 Validate until 0 errors:
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
 Never run git add/commit (the pipeline commits; a commit by you aborts the run).
-Work only in $STAGE: do not read other runs' files under ledger/staging/ or ledger/.sessions/
-(their notes are not evidence, and judgments must be independent).
+Work only in $STAGE: do not read other runs' files under ledger/staging/, ledger/.sessions/
+or $NOTES_DIR/ (their notes are not evidence, and judgments must be independent; the
+prev record's basis is what you compare against).
 EOF
 }
 # complete = one record per target with its given id (target|id pairs) AND lint-clean
@@ -123,6 +129,9 @@ as_complete() {
 	got_ids="$(uv run python -c 'import json,sys; [print(r.get("target"), r.get("id"), sep="|") for r in map(json.loads, filter(str.strip, open(sys.argv[1])))]' "$AS" | sort)" || return 1
 	[ "$want_ids" = "$got_ids" ] || { printf 'ERROR: %s target|id pairs differ from the targets:\nwant:\n%s\ngot:\n%s\n' "$AS" "$want_ids" "$got_ids" >&2; return 1; }
 	uv run $ROOT/core/ledger.py lint "$SECTION" --assessments "$AS" || { echo "ERROR: $AS does not lint clean" >&2; return 1; }
+	case "$TARGETS" in *milestone:*)  # milestone ETAs need their working (RUBRIC.md §4.1), kept as $NOTES
+		[ -s "$STAGE/eta-notes.md" ] || { echo "ERROR: assess wrote no $STAGE/eta-notes.md (the ETA working)" >&2; return 1; } ;;
+	esac
 }
 # Provider-side false-positive blocks ("This request was blocked ...") hit some runs at random
 # points. Salvage a complete file; otherwise retry fresh once, then once more in the fallback
@@ -153,9 +162,13 @@ while :; do
 done
 [ "$attempt" = 3 ] && NOTE="$NOTE (fallback mode $FALLBACK_MODE: $PI_MODEL)"
 as_complete || exit 1
+for t in $(echo "$TARGETS" | cut -d'|' -f1 | grep '^milestone:' || true); do
+	grep -qE "^## $t([^a-z0-9-]|\$)" "$STAGE/eta-notes.md" || echo "WARN: $STAGE/eta-notes.md has no '## $t' section" >&2
+done
 uv run $ROOT/core/ledger.py merge "$SECTION" --assessments "$AS"
+if [ -s "$STAGE/eta-notes.md" ]; then mkdir -p "$NOTES_DIR/$SECTION"; cp "$STAGE/eta-notes.md" "$NOTES"; fi
 uv run $ROOT/core/ledger.py check "$SECTION"
 commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')$NOTE" \
-	"ledger/assessments/$SECTION.jsonl"
+	"ledger/assessments/$SECTION.jsonl" "$NOTES"
 warn_drivers
 echo ">>> done: assess $SECTION as of $UNTIL"

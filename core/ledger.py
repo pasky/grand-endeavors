@@ -84,6 +84,22 @@ def path(kind: str, section: str) -> str:
     return os.path.join(DATA, "ledger", kind, f"{section}.{ext}")
 
 
+# gather/assess.sh commits each run's ETA working next to its records as
+# <NOTES_DIR>/<section>/<run id>.md; a record names its run in by = "assess:<run id>[:<mode>]"
+NOTES_DIR = "ledger/assessments/notes"
+ASSESS_BY_RE = re.compile(r"^assess:(\d{8}T\d{6}Z)(:[\w-]+)?$")
+
+
+def notes_path(section: str, run_id: str) -> str:
+    return os.path.join(DATA, NOTES_DIR, section, f"{run_id}.md")
+
+
+def assess_run(rec: dict) -> str | None:
+    """The assess.sh run id of an assessment record (None for backfills/manual records)."""
+    m = ASSESS_BY_RE.match(str(rec.get("by") or ""))
+    return m.group(1) if m else None
+
+
 def day(s: str) -> dt.date:
     return dt.date.fromisoformat(s)
 
@@ -637,11 +653,39 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
     return errs
 
 
+def check_notes(section: str, ass: list[dict]) -> list[str]:
+    """The ETA working behind each CURRENT milestone ETA (rubric v2+) is committed as
+    notes_path(section, run). Warnings: the notes of records predating gather/assess.sh
+    committing them were archived by hand, and an older record may stay current for good."""
+    latest: dict[str, dict] = {}
+    for a in sorted((a for a in ass if _valid_day(a.get("made_at", ""))), key=lambda a: a["made_at"]):
+        latest[a.get("target")] = a
+    warns = []
+    for t, a in sorted(latest.items(), key=lambda kv: str(kv[0])):
+        if not str(t).startswith("milestone:") or a.get("rubric") not in RUBRICS[1:] \
+                or a.get("status") in ("unknown", "achieved"):
+            continue
+        run = assess_run(a)
+        if not run:
+            warns.append(f"assessment {a.get('id')}: current {t} ETA has no assess run in by={a.get('by')!r}, "
+                         "so no committed working (notes)")
+        elif not os.path.isfile(notes_path(section, run)):
+            warns.append(f"assessment {a.get('id')}: current {t} ETA has no committed working: "
+                         f"{os.path.relpath(notes_path(section, run), DATA)} is missing")
+    runs = {assess_run(a) for a in ass}
+    d = os.path.join(DATA, NOTES_DIR, section)
+    for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        if not (f.endswith(".md") and f[:-3] in runs):
+            warns.append(f"{NOTES_DIR}/{section}/{f}: no assessment record of this section is by its run")
+    return warns
+
+
 def check_section(section: str) -> tuple[list[str], list[str]]:
     try:
-        return validate_state(section, events(section), observations(section), assessments(section))
+        errs, warns = validate_state(section, events(section), observations(section), assessments(section))
     except ValueError as e:
         return [str(e)], []
+    return errs, warns + check_notes(section, assessments(section))
 
 
 def _words(text: str) -> set[str]:

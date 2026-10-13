@@ -59,10 +59,16 @@ def main():
             case(f"{rel}: PEP 723 block declares pyyaml",
                  bool(re.search(r'^# /// script\n(#.*\n)*?# dependencies = \[[^\]]*"pyyaml"', text, re.M)))
     # assess.sh stamps new records with the current rubric version, which ledger.py must know as current
-    sh = re.search(r"^RUBRIC=(\S+)", open(os.path.join(REPO, "gather", "assess.sh"), encoding="utf-8").read(), re.M)
-    py = re.search(r'^RUBRICS = \((.*)\)', open(os.path.join(REPO, "core", "ledger.py"), encoding="utf-8").read(), re.M)
+    assess = open(os.path.join(REPO, "gather", "assess.sh"), encoding="utf-8").read()
+    ledger_py = open(os.path.join(REPO, "core", "ledger.py"), encoding="utf-8").read()
+    sh = re.search(r"^RUBRIC=(\S+)", assess, re.M)
+    py = re.search(r'^RUBRICS = \((.*)\)', ledger_py, re.M)
     case("assess.sh RUBRIC = the last of ledger.RUBRICS",
          bool(sh and py) and sh.group(1) == re.findall(r'"(v\d+)"', py.group(1))[-1])
+    # assess.sh commits a run's ETA working where ledger.check_notes looks for it
+    sh = re.search(r'^NOTES_DIR="([^"]+)"', assess, re.M)
+    py = re.search(r'^NOTES_DIR = "([^"]+)"', ledger_py, re.M)
+    case("assess.sh NOTES_DIR = ledger.NOTES_DIR", bool(sh and py) and sh.group(1) == py.group(1))
     print(f"\n{len(FAILS)} failure(s)")
     return 1 if FAILS else 0
 

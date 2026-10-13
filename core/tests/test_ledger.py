@@ -367,6 +367,18 @@ def main():
     case("drivers: another section's series cited in the latest ETA calc (whole metric ids only)",
          ledger.foreign_drivers("climate") == [("milestone:the-bend", "robots-software", "metr-50-horizon-by-release")])
     os.remove(f"{kpi.ROOT}/metrics/robots-software.csv")
+    old = dict(drv, id="dv0", made_at="2026-09-01", by="assess:20260901T000000Z")  # superseded: its notes are not required
+    cur = dict(drv, by="assess:20260929T120000Z:deep")  # the fallback-mode suffix is not part of the run id
+    missing = ledger.check_notes("climate", [old, cur])
+    note = ledger.notes_path("climate", "20260929T120000Z")
+    os.makedirs(os.path.dirname(note), exist_ok=True)
+    open(note, "w").write("## milestone:the-bend\n")
+    present = ledger.check_notes("climate", [old, cur])
+    orphan = ledger.check_notes("climate", [dict(cur, by="owner")])
+    os.remove(note)
+    case("notes: the current milestone ETA's run needs committed working; manual records and orphan notes warn",
+         len(missing) == 1 and has(missing, "20260929T120000Z.md is missing") and present == []
+         and has(orphan, "no assess run") and has(orphan, "no assessment record"))
     unk = dict(A(id="u", target="kpi", status="unknown", label="Unassessed: no series"), evidence=[],
                basis={k: "x" for k in ledger.BASIS_UNKNOWN})
     case("rubric: 'unknown' needs no evidence and its own basis", ledger.check_assessment(unk, topics, evs) == [])

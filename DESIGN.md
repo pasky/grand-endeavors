@@ -66,6 +66,7 @@ on-time run, given the same ledger.
 ledger/events/<section>.jsonl        news/claims (one JSON object per line)
 ledger/observations/<section>.csv    KPI datapoints (tabular, high volume)
 ledger/assessments/<section>.jsonl   timestamped milestone/KPI status judgments
+ledger/assessments/notes/<section>/<run id>.md   each assess run's ETA working (by = assess:<run id>)
 ledger/rejected/<section>.jsonl      staged records that failed verification (kept for audit)
 ledger/state/<section>.json          gather bookkeeping (per-watch-item watermarks, run log)
 ledger/staging/                      (gitignored) in-flight gather output
@@ -206,7 +207,14 @@ quotes and the fetched documents (URL, status, fetch time, sha256 of the cached 
    otherwise a blocked run is retried fresh, then once more in the fallback
    mode (ASSESS_FALLBACK_MODE, default `deep` from modes.json; `by` gets the
    mode suffix). The commit message records every block, salvage and fallback.
-   Agents must not read other runs' staging files.
+   The agent writes its per-milestone ETA working (RUBRIC.md §4.1: gap, data
+   points, model, calculation, cross-checks, cruxes; a `## milestone:<slug>`
+   section each) to `eta-notes.md` in its staging dir; a run with milestone
+   targets is incomplete without it. The pipeline commits it with the records
+   as `ledger/assessments/notes/<section>/<run id>.md`: `basis.eta` is the
+   summary, the notes are its audit trail (`ledger.py check` warns when a
+   current rubric v2+ milestone ETA has no notes, and on notes no record uses).
+   Agents must not read other runs' staging files or notes.
 7. Each step commits only its own paths. The write-scope guard (cooperative,
    not isolation) lets agents touch only staging and the registry. It checks
    committed changes, uncommitted changes and already-dirty files, and runs

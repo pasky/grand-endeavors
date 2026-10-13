@@ -50,7 +50,8 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       re-sourcing (find a source that states the claim, then `supersedes`), or
       they stay legacy background.
 - [ ] **Audit the ETAs before trusting them further** (next step after the 2026-10-13 merge):
-      deep-mode reviewers per section read each run's eta-notes + the ledger against a fixed
+      deep-mode reviewers per section read each run's committed ETA notes
+      (ledger/assessments/notes/<section>/<run id>.md) + the ledger against a fixed
       checklist (right quantity for the wording; definitions resolved; data recency and
       measurement gaps; ledger vs background numbers, spot-checked; meaningful median /
       p_achieved; the single assumption that moves the median most; consistency across
@@ -58,7 +59,7 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       decide the obvious ones, then ONE fix + re-run, repeat until nothing major. Then make
       it permanent: a fresh-agent review stage in assess.sh (like gather's verify).
 - [ ] Owner review of the rubric v4 ETAs (all milestones re-assessed 2026-10-13; working
-      notes in each run's ledger/staging/assess-*/eta-notes.md, gitignored). The robot
+      notes committed in ledger/assessments/notes/<section>/<run id>.md). The robot
       capability ETAs (2028–2030) now rest on a measured ~7.6-month failure-rate halving,
       but its central value is ONE customer deployment (Dyna napkin folding, 2025–2026);
       more dated reliability series would firm it up (FOCUS gather, 2026-10-12, found 55 events).
