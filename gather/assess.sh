@@ -89,7 +89,7 @@ above, before choosing its status. Do the arithmetic (uv run python is fine) and
 your working per milestone to $STAGE/eta-notes.md, one section per milestone headed
 "## milestone:<slug>": the gap, every data point used, the growth model and why, the
 time-to-target calculation, the cross-checks (reference class, discounted proponent dates,
-prev ETA) and the cruxes. The pipeline commits this file next to the records as $NOTES,
+prev ETA) and the cruxes (for an achieved or unknown milestone: briefly why). The pipeline commits this file next to the records as $NOTES,
 the audit trail of basis.eta: make it self-contained (inline the numbers and the results
 of any script you ran; other staged files are not kept). Put the result in basis.eta
 {p_achieved, p10, p50, p90, method, calc, cruxes} (RUBRIC.md §4.1 step 5: unconditional
@@ -128,6 +128,9 @@ as_complete() {
 	want_ids="$(printf '%s\n' "$TARGETS" | sort)"
 	got_ids="$(uv run python -c 'import json,sys; [print(r.get("target"), r.get("id"), sep="|") for r in map(json.loads, filter(str.strip, open(sys.argv[1])))]' "$AS" | sort)" || return 1
 	[ "$want_ids" = "$got_ids" ] || { printf 'ERROR: %s target|id pairs differ from the targets:\nwant:\n%s\ngot:\n%s\n' "$AS" "$want_ids" "$got_ids" >&2; return 1; }
+	# by names THIS attempt's run (and mode): it is the link to the committed $NOTES
+	bad_by="$(uv run python -c 'import json,sys; [print(r.get("target"), r.get("by")) for r in map(json.loads, filter(str.strip, open(sys.argv[1]))) if r.get("by") != sys.argv[2]]' "$AS" "$BY")" || return 1
+	[ -z "$bad_by" ] || { printf 'ERROR: %s records with by other than "%s":\n%s\n' "$AS" "$BY" "$bad_by" >&2; return 1; }
 	uv run $ROOT/core/ledger.py lint "$SECTION" --assessments "$AS" || { echo "ERROR: $AS does not lint clean" >&2; return 1; }
 	case "$TARGETS" in *milestone:*)  # milestone ETAs need their working (RUBRIC.md §4.1), kept as $NOTES
 		[ -s "$STAGE/eta-notes.md" ] || { echo "ERROR: assess wrote no $STAGE/eta-notes.md (the ETA working)" >&2; return 1; } ;;
@@ -142,7 +145,7 @@ attempt=1
 while :; do
 	BY="assess:$RUN_ID"; PI_MODEL=""
 	if [ "$attempt" = 3 ]; then PI_MODEL="$(pi_mode_model "$FALLBACK_MODE")"; BY="assess:$RUN_ID:$FALLBACK_MODE"; fi
-	rm -f "$AS"   # a fresh attempt never inherits a half-written file
+	rm -f "$AS" "$STAGE/eta-notes.md"   # a fresh attempt never inherits a half-written file or another attempt's working
 	PI_SOFT_FAIL=1
 	pi_run "assess-$attempt" "$(prompt)"
 	PI_SOFT_FAIL=
