@@ -75,8 +75,13 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 - [ ] 🤖 Re-verify the legacy KPI **observations** (pilot-2025 values); only events
       were re-verified.
 - [ ] Yearly upkeep: when GCB 2026 is released (around November), update
-      `DATA_URL` in `gather/collectors/climate_emissions.py`. Watch for WHO's next GHE
-      round; health data ends in 2021, so its KPI is labelled "Stale".
+      `DATA_URL` in `gather/collectors/climate_emissions.py`. Same for the
+      edition URLs in `gather/sources/` (`grep -n 'Edition URL' gather/sources/*.yaml`:
+      UNEP Emissions Gap, IEA Global Energy Review, IRENA costs).
+- [ ] Health KPI re-assessment: WHO's new GHE round (GHO record date 2026-10-01)
+      extends HALE to 2023 and revises 2000-2021 (collected 2026-10-09). The KPI
+      assessment still says "Stale (data to 2021)"; the next `gather.sh health` /
+      `assess.sh health` picks it up (`ledger.py stale`).
 - [ ] Fusion KPI caveats (independent spot-check of 2025-Q4 matched exactly;
       2021-Q4 couldn't be independently parsed):
       - exchange-rate swings move the series;
