@@ -49,15 +49,16 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       (Reuters 401, Science 403). Another fetch retry will not help. They need
       re-sourcing (find a source that states the claim, then `supersedes`), or
       they stay legacy background.
-- [ ] **Audit the ETAs before trusting them further** (next step after the 2026-10-13 merge):
-      deep-mode reviewers per section read each run's committed ETA notes
-      (ledger/assessments/notes/<section>/<run id>.md) + the ledger against a fixed
-      checklist (right quantity for the wording; definitions resolved; data recency and
-      measurement gaps; ledger vs background numbers, spot-checked; meaningful median /
-      p_achieved; the single assumption that moves the median most; consistency across
-      milestones sharing a driver). Sort findings into rubric-wide / milestone / definition;
-      decide the obvious ones, then ONE fix + re-run, repeat until nothing major. Then make
-      it permanent: a fresh-agent review stage in assess.sh (like gather's verify).
+- [ ] **Make the ETA audit permanent**: a fresh-agent review stage in assess.sh (like
+      gather's verify) that audits the run's notes + records against the checklist and the
+      round-2 severity bar (data ledger/audits/2026-10-14-r2/README.md), and feeds MAJOR
+      findings back into one fix attempt (AUDIT-style). Roughly doubles an assess run's cost.
+      The manual loop it replaces (2026-10-14, rounds r1-r4 in data ledger/audits/):
+      deep-mode reviewers per section read each run's committed ETA notes + the ledger
+      against a fixed checklist (right quantity for the wording; definitions resolved; data
+      recency and measurement gaps; ledger vs background numbers, spot-checked; meaningful
+      median / p_achieved; the single assumption that moves the median most; consistency
+      across milestones sharing a driver); fix + re-run until nothing major (r4: 0 MAJOR).
       Round 1 (2026-10-14, data ledger/audits/2026-10-14-r1/): arithmetic mostly reproduces;
       the failures are calibration and provenance (v4 re-runs moved ETAs up to a decade on the
       same evidence; assumed inputs, driver mappings and failure chances unlabelled; superseded
@@ -65,12 +66,16 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       effective-citation check, audit_correction) + a CORRECTION re-run of all milestones with
       AUDIT=2026-10-14-r1. Not fixed by v5 (deferred): calibrating assumed failure chances
       against shared reference classes; correlated shared-driver uncertainty.
-      Definition questions found (owner): see the round-1 reports' DEFINITION findings.
-- [ ] Owner review of the rubric v4 ETAs (all milestones re-assessed 2026-10-13; working
+      Rounds 2-4: 11 -> 2 -> 0 MAJOR, all milestone-level after v5's clarifications.
+- [ ] Owner: decide the open milestone definitions the audits list as DEFINITION findings
+      (data ledger/audits/2026-10-14-r2/*.md); assessors currently take the most natural
+      reading and report the alternative as a sensitivity. A wording change is a
+      framework.yaml edit + DEFCHANGE re-assessment (RUBRIC.md rule 6).
+- [ ] Owner review of the rubric v5 ETAs (all milestones audit-corrected 2026-10-14; working
       notes committed in ledger/assessments/notes/<section>/<run id>.md). The robot
-      capability ETAs (2028–2030) now rest on a measured ~7.6-month failure-rate halving,
-      but its central value is ONE customer deployment (Dyna napkin folding, 2025–2026);
-      more dated reliability series would firm it up (FOCUS gather, 2026-10-12, found 55 events).
+      capability ETAs (2027–2031) rest on the Dyna failure-rate halving (~7.6 months, ONE
+      customer deployment, 2025–2026), now an explicitly assumed transfer to robot
+      reliability; more dated reliability series would firm it up.
 - [ ] 🤖 Provider false-positive blocks ("duplicating model outputs") still hit assess runs
       (2026-10-12: 2 of 8). assess.sh now salvages a complete file, else retries, then falls
       back to the `deep` mode; commit messages record each block. The trigger is unknown (the
