@@ -12,8 +12,9 @@
 #         DEFCHANGE=<commit> the framework.yaml definition of the targets changed in that
 #                            mechanism commit (RUBRIC.md rule 6)
 #         ONLY="milestone:x kpi"   restrict to these targets
-#         AUDIT=<path>       audit report(s) (a file or a directory, e.g. ledger/audits/<round>/)
-#                            whose findings the assessor must address (RUBRIC.md rule 7 (d))
+#         AUDIT=<audit id>   the ETA audit in ledger/audits/<audit id>/ whose findings the assessor
+#                            must address; records set audit_correction (RUBRIC.md rules 7, 8).
+#                            Usually with FORCE=1 ONLY="<milestones>" (the audited targets are not stale)
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
@@ -55,10 +56,11 @@ evidence under the new rubric (no new-evidence claim). The change_note must
 say what the previous assessment got wrong under RUBRIC.md."
 AUD=""
 if [ -n "${AUDIT:-}" ]; then
-	[ -e "$AUDIT" ] || { echo "ERROR: AUDIT=$AUDIT does not exist" >&2; exit 1; }
-	AUD="An audit of the current assessments found problems: read every report in $AUDIT.
+	[ -d "ledger/audits/$AUDIT" ] || { echo "ERROR: AUDIT=$AUDIT: no directory ledger/audits/$AUDIT" >&2; exit 1; }
+	AUD="An audit of the current assessments found problems: read every report in ledger/audits/$AUDIT/.
 Address each finding about your targets, and each rubric-wide or cross-section finding that
-applies to them: fix it, or say in the change_note why it does not hold (RUBRIC.md rule 7 (d)).
+applies to them: fix it, or say in the change_note which findings you fixed and why any other
+does not hold (RUBRIC.md rules 7 (d) and 8). Set \"audit_correction\": \"$AUDIT\" on every record.
 DEFINITION findings await an owner decision: keep the most natural reading, state it in
 basis.path, and model the alternative reading as a sensitivity."
 fi

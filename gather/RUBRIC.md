@@ -180,8 +180,10 @@ straight line or sounds cautious. Work through these steps:
    Use only **effective records**: a superseded record's claim is replaced
    by its replacement's (an `-rv` correction often narrows it: "$3.5M
    revenue" where the original said "solo, $3.5M ARR"). Reason from the
-   replacement's wording and cite its id; a withdrawal tombstone means the
-   claim is wrong.
+   replacement's wording and cite its id, also in `calc` when explaining
+   what changed; a withdrawal tombstone means the claim is wrong.
+   Milestones that share a driver use the same fit of it (window, anchor
+   point, rate) unless the difference is argued in `calc`.
 3. **Pick the growth model the quantity actually follows**, and justify it:
    - capability metrics (task horizons, benchmark scores, energy gain), deployed
      fleets, launch mass and revenue usually grow **exponentially**: fit in log
@@ -230,11 +232,21 @@ straight line or sounds cautious. Work through these steps:
      interventions; offshore-wind learning and fusion plant costs). Say
      whether the mapping is measured; if it is not, give an alternative
      mapping as a sensitivity and list the mapping first among the cruxes. A
-     series that measures a different failure or outcome (rejected napkins
-     are not robot interventions) is context, not the driver's rate.
+     series of a different failure or outcome (rejected napkins are not robot
+     interventions) can set the rate only through such an explicit, labelled
+     mapping; never silently as if it measured the milestone.
    - **durations** (review, disclosure, integration, construction lags) are
      structural floors only when measured or sourced; an assumed lag is an
      assumed input like any other (step 7).
+   - **core assumptions vs optional adjustments**: a forecast needs a
+     central value for every link it cannot do without (the mapping from the
+     driver's units to the milestone's, a step that must physically happen).
+     When that link is unmeasured, use your best central estimate, label it
+     assumed and show the alternatives (step 7): an unmeasured delay is not
+     zero by default, nor is an unmeasured penalty. The two rules below are
+     about **optional adjustments** layered on a forecast that is already
+     complete (a discount on a measured driver, a safety margin): those need
+     evidence to enter the median.
    - **no stacking**: each adjustment (benchmark-to-reality gap, review lag,
      adoption lag) needs its own evidence. Do not put every pessimistic
      adjustment in the median and leave the optimistic ones for p10.
@@ -263,7 +275,8 @@ straight line or sounds cautious. Work through these steps:
    successful outcomes. Put the conditional timing ("if achieved, ~2100") in
    `calc`. The chance of failure comes from **named failure scenarios**
    (what would stop it: a programme cancelled, a physical limit, a legal
-   wall), each with a reference class or its reasoning; no generic
+   wall), each with a reference class where one exists, else its reasoning;
+   its probability is an assumed input with a sensitivity (step 7). No generic
    "non-completion" mass. p_achieved and all quantiles come from **one
    distribution**: do not report a deterministic central case as the
    median, or widen a quantile by hand outside the model. Beyond that, uncertainty **widens the range; it does not push the
@@ -305,8 +318,8 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
 
 1. \* A status change needs at least one evidence record with known_at after
    the previous assessment's made_at. For a KPI, a newer observation of its
-   assessed metric also counts. Exceptions: a rubric correction (rule 4), and
-   moves to or from `unknown`.
+   assessed metric also counts. Exceptions: a rubric correction (rule 4), an
+   audit correction (rule 8), and moves to or from `unknown`.
 2. The trigger must hold for a full window (KPI) or be a verified event
    (milestone). One observation never flips a status.
 3. Reverting to the previous status within 12 months requires naming the
@@ -324,15 +337,24 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
    sets `"definition_change": "<mechanism commit of the framework.yaml change>"` and
    judges the evidence against the new wording.
 7. **ETA stability.** A re-assessment of a milestone starts from the
-   previous assessment's model and inputs (its working notes) and updates
-   them; it does not re-derive the forecast from scratch. An input changes
-   only for (a) new evidence (cite it), (b) an error in the previous working
-   (name it), (c) a rubric change, or (d) an audit finding. The change_note
-   attributes every move of p50 by a year or more, or of p_achieved by 0.05
-   or more, to one of these, and says what the new evidence that triggered
-   the re-assessment changed (possibly nothing). Re-modelling the same
-   evidence with different judgments is noise, not an update. Without
-   previous working (a first assessment), the rule constrains nothing.
+   previous assessment's model and inputs (its working notes). First check
+   them: reproduce the previous result, and test each input and mapping
+   against the effective evidence and this rubric. Keep what holds; replace
+   what does not, the whole model if need be. Do not re-derive a sound
+   forecast from scratch. An input changes only for (a) new evidence (cite
+   it), (b) an error in the previous working (name it), (c) a rubric change,
+   or (d) an audit finding. The change_note attributes every move of p10,
+   p50 or p90 by a year or more (or between a year and null), and of
+   p_achieved by 0.05 or more, to one of these (old vs new input and its
+   effect), and says what the new evidence that triggered the re-assessment
+   changed (possibly nothing). Re-modelling the same evidence with different
+   judgments is noise, not an update. Without previous working (a first
+   assessment), the rule constrains nothing. A fix that changes the status
+   still needs rule 1, 4 or 8.
+8. \* **Audit correction**: an assessment that addresses the findings of an
+   ETA audit (reports in the data repo's `ledger/audits/<audit id>/`) sets
+   `"audit_correction": "<audit id>"` and may re-judge without new evidence,
+   once per target per audit. Its change_note names the findings it fixes.
 
 ## 6. Writing the record
 
