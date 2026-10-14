@@ -67,6 +67,7 @@ ledger/events/<section>.jsonl        news/claims (one JSON object per line)
 ledger/observations/<section>.csv    KPI datapoints (tabular, high volume)
 ledger/assessments/<section>.jsonl   timestamped milestone/KPI status judgments
 ledger/assessments/notes/<section>/<run id>.md   each assess run's ETA working (by = assess:<run id>)
+ledger/audits/<date>-r<round>/       ETA audit reports (an assess run's AUDIT input)
 ledger/rejected/<section>.jsonl      staged records that failed verification (kept for audit)
 ledger/state/<section>.json          gather bookkeeping (per-watch-item watermarks, run log)
 ledger/staging/                      (gitignored) in-flight gather output
@@ -119,7 +120,7 @@ made_at, rationale, evidence: [event ids], by, rubric, basis}`. Optional fields:
   and 6);
 - `evidence_digest`, the staleness seal added by merge.
 
-`rubric` is the RUBRIC.md version ("v1" ... "v4"); records without it predate
+`rubric` is the RUBRIC.md version ("v1" ... "v5"); records without it predate
 rubric v1. `basis` is the structured reasoning.
 `ledger.py check` requires its top-level keys; the nested structure shown is the
 expected content, but it is not checked:
@@ -143,7 +144,7 @@ wall-clock time of the run (`by` records the run). Every evidence event must be
 known by `made_at` (checked), so a retrospective assessment ("status as of 14 Jul given what was public then") is honest and
 reproducible. Its `known_at` is `made_at`.
 
-Statuses follow the rubric in **gather/RUBRIC.md** (v4). KPI status = pace
+Statuses follow the rubric in **gather/RUBRIC.md** (v5). KPI status = pace
 toward the goal versus what the goal needs (never the level). Milestone status =
 the median of a reasoned ETA forecast on evidence, with `achieved` as a terminal status. Records carry `rubric`,
 a structured `basis` and verdict-bound labels. Hysteresis (a status change needs
@@ -215,8 +216,10 @@ quotes and the fetched documents (URL, status, fetch time, sha256 of the cached 
    as `ledger/assessments/notes/<section>/<run id>.md`: `basis.eta` is the
    summary, the notes are its audit trail (`ledger.py check` warns when a
    current rubric v2+ milestone ETA has no notes, and on notes no record uses).
-   Assess agents must not read other runs' staging files or notes (independent
-   judgments; the prev record's basis is the comparison). Audits read the notes.
+   An assessor reads its targets' previous working and updates that model
+   (RUBRIC.md rule 7: re-deriving from scratch made v4 ETAs jump by up to
+   a decade on the same evidence), but no other run's staging files. With
+   `AUDIT=<report dir>`, it must address the audit's findings.
 7. Each step commits only its own paths. The write-scope guard (cooperative,
    not isolation) lets agents touch only staging and the registry. It checks
    committed changes, uncommitted changes and already-dirty files, and runs

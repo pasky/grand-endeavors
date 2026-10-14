@@ -53,7 +53,7 @@ OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
                "published_basis", "retrieved", "collector", "verification", "note"]
 ASSESS_STATUS = {"green", "yellow", "red", "achieved", "unknown"}
 # gather/RUBRIC.md rubric versions, oldest first; new records use the last one
-RUBRICS = ("v1", "v2", "v3", "v4")
+RUBRICS = ("v1", "v2", "v3", "v4", "v5")
 RUBRIC = RUBRICS[-1]
 ETA_KEYS = {"p10", "p50", "p90", "method", "calc", "cruxes"}  # rubric v2+: milestone basis.eta
 # gather/RUBRIC.md: verdict words bound to each status (same in all versions)
@@ -580,6 +580,38 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
         aids.add(a.get("id"))
     errs += check_hysteresis(section, ass, ids, obs)
     warns += check_assumed_gates(section, ass)
+    e2, w2 = check_citations(ass, ids, superseded_by)
+    return errs + e2, warns + w2
+
+
+CITED_ID_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*")
+
+
+def check_citations(ass: list[dict], evs: dict[str, dict], superseded_by: dict[str, str]) -> tuple[list[str], list[str]]:
+    """gather/RUBRIC.md §6 (v5+): an assessment cites only records effective at its made_at, in
+    `evidence` and in basis.eta.calc: not one superseded by then (its replacement's claim, often
+    narrower, is what holds), and its evidence holds no withdrawal tombstone. Errors for v5+ records; warnings for
+    the latest record of a target under an older rubric (fixed by its next re-assessment)."""
+    rank = lambda r: RUBRICS.index(r) if r in RUBRICS else -1
+    latest: dict[str, dict] = {}
+    for a in sorted((a for a in ass if _valid_day(a.get("made_at", ""))), key=lambda a: a["made_at"]):
+        latest[a.get("target")] = a
+    errs, warns = [], []
+    for a in ass:
+        new = rank(a.get("rubric")) >= RUBRICS.index("v5")
+        if not (new or latest.get(a.get("target")) is a) or not _valid_day(a.get("made_at", "")):
+            continue
+        basis = a.get("basis") if isinstance(a.get("basis"), dict) else {}
+        eta = basis.get("eta") if isinstance(basis.get("eta"), dict) else {}
+        evidence = list(a.get("evidence") or [])
+        for eid in dict.fromkeys(evidence + CITED_ID_RE.findall(str(eta.get("calc") or ""))):
+            e, rep = evs.get(eid), superseded_by.get(eid)
+            # a tombstone may be named in calc (to explain why a claim is not used), never relied on as evidence
+            why = ("is a withdrawal tombstone" if e and e.get("withdrawn") and eid in evidence else
+                   f"is superseded by {rep}" if e and rep in evs and known_at(evs[rep]) <= day(a["made_at"]) else None)
+            if why:
+                (errs if new else warns).append(f"assessment {a.get('id')}: cites '{eid}', which {why} "
+                                                "(cite effective records only; gather/RUBRIC.md §6)")
     return errs, warns
 
 

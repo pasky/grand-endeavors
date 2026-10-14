@@ -1,4 +1,4 @@
-# Status rubric (v4)
+# Status rubric (v5)
 
 Every KPI and milestone in framework.yaml carries a **status**: a colour plus a
 one-line label such as "Off track: 421 ppm, +2.4 ppm/yr vs ≤0 needed". This
@@ -20,8 +20,13 @@ and adjustments need evidence of their own (§4.1 step 3); gates that the
 framework `assumes:` away never block a milestone (§4.2). v4 (2026-10-13): a
 measurement gap is not a slowdown, the most current series of the outcome
 sets the rate, and an ETA states the chance the milestone happens at all
-(`p_achieved`; quantiles past 2100 are null). KPI rules are unchanged in
-v2–v4. Any change in meaning is a new rubric version (rule 4).
+(`p_achieved`; quantiles past 2100 are null). v5 (2026-10-14, after an audit
+of the v4 ETAs): a re-assessment updates the previous model instead of
+re-deriving it (rule 7), every input is labelled measured, sourced or
+assumed, with its sensitivity (§4.1 step 7), a driver's mapping onto the
+milestone is an assumption unless measured, the chance of failure comes from
+named scenarios, and only effective records are cited. KPI rules are
+unchanged in v2–v5. Any change in meaning is a new rubric version (rule 4).
 
 ## 1. What the colours mean
 
@@ -155,7 +160,11 @@ straight line or sounds cautious. Work through these steps:
    value and its target, then the gap as a ratio: "3,194 t vs 100,000 t =
    31×, 5 doublings". For a qualitative milestone (a first demonstration, a
    test passed), find the measurable capability or deployment it needs and
-   measure that gap instead.
+   measure that gap instead. When the wording leaves a boundary open (who
+   counts as "one person", which journals, how long "sustained" is), state
+   the reading you use in `basis.path`, choose the most natural one, and if
+   another reasonable reading moves p50 by more than 2 years, report it as a
+   sensitivity and a definition crux (the owner decides the wording).
 2. **Find the trend.** Collect every data point in the ledger: observations
    (`ledger.py series`) and the dated numbers in events, legacy ones included
    as context. Look in other sections too. If the milestone's quantity has no
@@ -168,6 +177,11 @@ straight line or sounds cautious. Work through these steps:
    of a foreign driver does not re-assess the milestone (TODO.md). "No
    series in the ledger" is a gap to work around (a driver, a reference class,
    or a gather request in `blockers`), not an ETA.
+   Use only **effective records**: a superseded record's claim is replaced
+   by its replacement's (an `-rv` correction often narrows it: "$3.5M
+   revenue" where the original said "solo, $3.5M ARR"). Reason from the
+   replacement's wording and cite its id; a withdrawal tombstone means the
+   claim is wrong.
 3. **Pick the growth model the quantity actually follows**, and justify it:
    - capability metrics (task horizons, benchmark scores, energy gain), deployed
      fleets, launch mass and revenue usually grow **exponentially**: fit in log
@@ -210,6 +224,17 @@ straight line or sounds cautious. Work through these steps:
      quantitative mapping in `calc`. Say which rate the median uses and why.
      A structural floor (e.g. 10 years of follow-up) still applies to the
      milestone's own measurement.
+   - **mapping a driver onto the milestone is an assumption** unless a
+     measurement links the two (e.g. a task horizon and the oversight hours
+     of a running business; a product-quality reject rate and robot
+     interventions; offshore-wind learning and fusion plant costs). Say
+     whether the mapping is measured; if it is not, give an alternative
+     mapping as a sensitivity and list the mapping first among the cruxes. A
+     series that measures a different failure or outcome (rejected napkins
+     are not robot interventions) is context, not the driver's rate.
+   - **durations** (review, disclosure, integration, construction lags) are
+     structural floors only when measured or sourced; an assumed lag is an
+     assumed input like any other (step 7).
    - **no stacking**: each adjustment (benchmark-to-reality gap, review lag,
      adoption lag) needs its own evidence. Do not put every pessimistic
      adjustment in the median and leave the optimistic ones for p10.
@@ -222,7 +247,8 @@ straight line or sounds cautious. Work through these steps:
 4. **Cross-check.** Compare with a reference class (how long comparable
    transitions took from first demonstration to the milestone's level), with
    proponents' dates (historically optimistic: discount them, e.g. 1.5–3× on
-   deep-tech schedules, but do not ignore them), and with the previous ETA.
+   deep-tech schedules, but do not ignore them; discount the time remaining
+   from the assessment date), and with the previous ETA.
    When the methods disagree, explain which you weight and why.
 5. **Set the chance, the median and the range.** `p_achieved` is the
    probability that the milestone is achieved by 2100 at all. p10, p50 and
@@ -235,7 +261,12 @@ straight line or sounds cautious. Work through these steps:
    the whole forecast distribution, including the chance of failure: with
    `p_achieved` 0.6 the unconditional median is later than the median of the
    successful outcomes. Put the conditional timing ("if achieved, ~2100") in
-   `calc`. Beyond that, uncertainty **widens the range; it does not push the
+   `calc`. The chance of failure comes from **named failure scenarios**
+   (what would stop it: a programme cancelled, a physical limit, a legal
+   wall), each with a reference class or its reasoning; no generic
+   "non-completion" mass. p_achieved and all quantiles come from **one
+   distribution**: do not report a deterministic central case as the
+   median, or widen a quantile by hand outside the model. Beyond that, uncertainty **widens the range; it does not push the
    median later**: no padding without evidence. Do not default to ">10 years" because the
    question is hard or the data are thin. If the median is honestly far away,
    show the calculation that puts it there. For a near ETA, one year is a
@@ -243,6 +274,14 @@ straight line or sounds cautious. Work through these steps:
    year added to the median needs its own line in `calc`.
 6. **Name the cruxes**: what observation would move the ETA earlier or later.
    Gather can look for exactly those next time.
+7. **Register the inputs.** Every number the model uses is one of:
+   *measured* (an event id or series point), *sourced* (a published
+   estimate: cite it), or *assumed* (your judgment: give the reasoning).
+   The working notes list them in a table with that label. For each assumed
+   input, report what its plausible low and high values do to p50 and
+   p_achieved; one that moves p50 by more than 2 years or p_achieved by more
+   than 0.1 is a crux. A forecast that rests on assumed inputs is legitimate
+   (this is forecasting); hiding which inputs are assumed is not.
 
 ### 4.2 Assumed gates (`assumes:` in framework.yaml)
 
@@ -275,7 +314,7 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
    a transient.
 4. \* Reinterpretation under a new rubric version: a record whose previous
    assessment predates this rubric version (no rubric, or an older version)
-   may re-judge it with `"rubric_correction": "v4"`, without claiming new
+   may re-judge it with `"rubric_correction": "<current version>"`, without claiming new
    evidence; it must say what the old assessment got wrong. A record that is
    already under the current version is never "corrected": changing it needs
    newer evidence (rule 1).
@@ -284,6 +323,16 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
    that target that ignores rules 1–4 and the terminality of `achieved`. It
    sets `"definition_change": "<mechanism commit of the framework.yaml change>"` and
    judges the evidence against the new wording.
+7. **ETA stability.** A re-assessment of a milestone starts from the
+   previous assessment's model and inputs (its working notes) and updates
+   them; it does not re-derive the forecast from scratch. An input changes
+   only for (a) new evidence (cite it), (b) an error in the previous working
+   (name it), (c) a rubric change, or (d) an audit finding. The change_note
+   attributes every move of p50 by a year or more, or of p_achieved by 0.05
+   or more, to one of these, and says what the new evidence that triggered
+   the re-assessment changed (possibly nothing). Re-modelling the same
+   evidence with different judgments is noise, not an update. Without
+   previous working (a first assessment), the rule constrains nothing.
 
 ## 6. Writing the record
 
@@ -292,7 +341,9 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   It must also match the window trend: no "Worsening" when nothing worsened.
 - **rationale**: prose that is consistent with the basis.
 - **evidence**: the ids of the events relied on. Only `unknown` may have none.
-- \* **rubric** "v4" and a structured **basis**. Its keys are listed in
+  \* Cite effective records only (§4.1 step 2), here and in `basis.eta.calc`:
+  never one superseded by the made_at date, and no withdrawal tombstone as evidence.
+- \* **rubric** "v5" and a structured **basis**. Its keys are listed in
   DESIGN.md §3 (Assessment); for KPIs it includes the window numbers, so the
   judgment can be checked.
 - \* For a milestone that is neither achieved nor unknown, **basis.eta** is an object
@@ -306,6 +357,11 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   combination). `calc` gives the numbers and arithmetic. `cruxes` says what
   would move the ETA earlier or later. For a milestone with `assumes:`, it
   also has `assumes` (§4.2).
+- **Working notes** (milestones): the assess run commits its `eta-notes.md`
+  next to the records. Per milestone: the gap, the input register (step 7),
+  the calculation including the script you ran, the sensitivities, the
+  cross-checks and the cruxes. `calc` is its summary; the notes let a reader
+  (and the next assessment, rule 7) reproduce it.
 - The milestone **label** quotes the median: "..., ETA ~2034" ("ETA
   ~2034*" under an assumed gate); without a median it quotes the chance:
   "..., P(by 2100) 20%". `ledger.py check` warns when the latest
