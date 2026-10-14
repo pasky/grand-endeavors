@@ -25,7 +25,9 @@ of the v4 ETAs): a re-assessment updates the previous model instead of
 re-deriving it (rule 7), every input is labelled measured, sourced or
 assumed, with its sensitivity (§4.1 step 7), a driver's mapping onto the
 milestone is an assumption unless measured, the chance of failure comes from
-named scenarios, and only effective records are cited. KPI rules are
+named scenarios, and only effective records are cited (clarified after
+audit round 2: what counts as measured, calendar-year quantiles, and that
+replacing a disclosed judgment is not an error fix). KPI rules are
 unchanged in v2–v5. Any change in meaning is a new rubric version (rule 4).
 
 ## 1. What the colours mean
@@ -279,7 +281,10 @@ straight line or sounds cautious. Work through these steps:
    its probability is an assumed input with a sensitivity (step 7). No generic
    "non-completion" mass. p_achieved and all quantiles come from **one
    distribution**: do not report a deterministic central case as the
-   median, or widen a quantile by hand outside the model. Beyond that, uncertainty **widens the range; it does not push the
+   median, or widen a quantile by hand outside the model. A quantile year
+   is the calendar year in which the quantile falls (2031.4 and 2031.9 are
+   both 2031, "during 2031"), the same for p10, p50, p90 and the label.
+   Beyond that, uncertainty **widens the range; it does not push the
    median later**: no padding without evidence. Do not default to ">10 years" because the
    question is hard or the data are thin. If the median is honestly far away,
    show the calculation that puts it there. For a near ETA, one year is a
@@ -294,7 +299,14 @@ straight line or sounds cautious. Work through these steps:
    input, report what its plausible low and high values do to p50 and
    p_achieved; one that moves p50 by more than 2 years or p_achieved by more
    than 0.1 is a crux. A forecast that rests on assumed inputs is legitimate
-   (this is forecasting); hiding which inputs are assumed is not.
+   (this is forecasting); hiding which inputs are assumed is not. Only what
+   the source states is measured: a fitted rate is measured, but the spread
+   you put around it for the forecast (which rate the fast and slow cases
+   take) is assumed unless the source reports it; a distribution spanning
+   two reported points is assumed; an outcome the source does not report is
+   unknown, not a failure (eight rounds with one reported success are not
+   "1 of 8"). A sensitivity must compute the milestone's own event (all
+   three homes, if the alternative reading needs three).
 
 ### 4.2 Assumed gates (`assumes:` in framework.yaml)
 
@@ -348,7 +360,9 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
    p_achieved by 0.05 or more, to one of these (old vs new input and its
    effect), and says what the new evidence that triggered the re-assessment
    changed (possibly nothing). Re-modelling the same evidence with different
-   judgments is noise, not an update. Without previous working (a first
+   judgments is noise, not an update: a disclosed assumed input is not an
+   "error" because another value seems better now. Change it only when
+   evidence or the rubric contradicts it, and say how. Without previous working (a first
    assessment), the rule constrains nothing. A fix that changes the status
    still needs rule 1, 4 or 8.
 8. \* **Audit correction**: an assessment that addresses the findings of an
