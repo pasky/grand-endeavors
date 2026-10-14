@@ -116,8 +116,8 @@ not regenerated). Done once: `co2-global-monthly` 7 → 70 d (2026-10).
 **Assessment** (`assessments/<section>.jsonl`): `{id, target ("kpi" |
 "milestone:<slug>"), status ("green"|"yellow"|"red"|"achieved"|"unknown"), label,
 made_at, rationale, evidence: [event ids], by, rubric, basis}`. Optional fields:
-- `rubric_correction: "<the record's rubric>"` and `definition_change: "<commit>"` (rubric rules 4
-  and 6);
+- `rubric_correction: "<the record's rubric>"`, `definition_change: "<commit>"` and
+  `audit_correction: "<audit id>"` (rubric rules 4, 6 and 8);
 - `evidence_digest`, the staleness seal added by merge.
 
 `rubric` is the RUBRIC.md version ("v1" ... "v5"); records without it predate
@@ -148,7 +148,8 @@ Statuses follow the rubric in **gather/RUBRIC.md** (v5). KPI status = pace
 toward the goal versus what the goal needs (never the level). Milestone status =
 the median of a reasoned ETA forecast on evidence, with `achieved` as a terminal status. Records carry `rubric`,
 a structured `basis` and verdict-bound labels. Hysteresis (a status change needs
-newer evidence, or a once-per-target `rubric_correction`) is enforced by
+newer evidence, or a once-per-target `rubric_correction` / per-audit
+`audit_correction`) is enforced by
 `ledger.py check`. Each KPI's assessed metric, window and benchmark are fixed in
 `metrics/kpi-assessment.csv`. `gather/assess.sh` runs the assessment stage (called by
 gather.sh; standalone with FORCE=1 / CORRECTION=1 after a rubric change).

@@ -62,7 +62,9 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       the failures are calibration and provenance (v4 re-runs moved ETAs up to a decade on the
       same evidence; assumed inputs, driver mappings and failure chances unlabelled; superseded
       claims reused). Fix = rubric v5 (stability rule 7, input register, mapping/failure rules,
-      effective-citation check) + a CORRECTION re-run of all milestones with AUDIT=round 1.
+      effective-citation check, audit_correction) + a CORRECTION re-run of all milestones with
+      AUDIT=2026-10-14-r1. Not fixed by v5 (deferred): calibrating assumed failure chances
+      against shared reference classes; correlated shared-driver uncertainty.
       Definition questions found (owner): see the round-1 reports' DEFINITION findings.
 - [ ] Owner review of the rubric v4 ETAs (all milestones re-assessed 2026-10-13; working
       notes committed in ledger/assessments/notes/<section>/<run id>.md). The robot

@@ -311,6 +311,15 @@ def main():
          and has(ledger.check_hysteresis("climate", [dict(prev, rubric="v2"), corr2], evs2), "already under rubric v2"))
     case("hysteresis: no rubric downgrade (v2 -> v1 would re-open a v2 correction)",
          has(ledger.check_hysteresis("climate", [corr2, dict(prev, id="d", made_at="2026-09-29")], evs2), "older than"))
+    aud = dict(flip, audit_correction="2026-10-14-r1")
+    case("hysteresis: an audit correction may re-judge once per target per audit",
+         ledger.check_hysteresis("climate", [prev, aud], evs2) == []
+         and has(ledger.check_hysteresis("climate", [prev, aud, dict(aud, id="g", status="yellow", label="Progressing: x",
+                                                                   made_at="2026-09-29")], evs2), "already applied"))
+    os.makedirs(os.path.join(ledger.DATA, ledger.AUDITS_DIR, "2026-10-14-r1"), exist_ok=True)
+    case("rubric: audit_correction must name an existing audit directory",
+         not has(ledger.check_assessment(aud, topics, evs), "audit_correction")
+         and has(ledger.check_assessment(dict(aud, audit_correction="nope"), topics, evs), "audit_correction"))
     case("rubric: rubric_correction must match the record's rubric",
          has(ledger.check_assessment(dict(corr2, rubric_correction="v1"), topics, evs), "rubric_correction"))
     eta = {"p10": 2029, "p50": 2032, "p90": 2040, "method": "trend", "calc": "log(31)/log(1.45)", "cruxes": "x"}
@@ -390,6 +399,16 @@ def main():
          ledger.check_citations([dict(v5, made_at="2026-04-01")], cev, sup) == ([], [])
          and ledger.check_citations([dict(v5, rubric="v4")], cev, sup)[0] == []
          and has(ledger.check_citations([dict(v5, rubric="v4")], cev, sup)[1], "superseded"))
+    calc_only = dict(v5, evidence=["2026-01-01-x-rv"], basis=dict(v5["basis"], eta=dict(v5["basis"]["eta"],
+                     calc="was 2026-01-01-x-, now 2026-01-01-x-rv; rs: 2026-01-02-f, 2026-09-01-late")))
+    write_jsonl(ledger.path("events", "robots-software"), [ev("2026-01-02-f", "2026-01-02", "Old.", topics=("kpi",)),
+                ev("2026-03-01-f-rv", "2026-03-01", "New.", topics=("kpi",), supersedes=["2026-01-02-f"]),
+                ev("2026-09-01-late", "2026-09-01", "Late.", topics=("kpi",))])
+    ce = ledger.check_citations([calc_only], cev, sup, "climate")[0]
+    os.remove(ledger.path("events", "robots-software"))
+    case("citations: ids in calc are checked too (trailing '-' stripped), across sections, incl. hindsight",
+         len(ce) == 3 and has(ce, "'2026-01-01-x', which is superseded") and has(ce, "by 2026-03-01-f-rv")
+         and has(ce, "'2026-09-01-late', which was published after made_at"))
     case("notes: the current milestone ETA's run needs committed working; manual records and orphan notes warn",
          len(missing) == 1 and has(missing, "20260929T120000Z.md is missing") and present == []
          and has(orphan, "no assess run") and has(orphan, "no assessment record"))

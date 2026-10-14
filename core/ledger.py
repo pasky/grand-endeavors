@@ -87,6 +87,7 @@ def path(kind: str, section: str) -> str:
 # gather/assess.sh commits each run's ETA working next to its records as
 # <NOTES_DIR>/<section>/<run id>.md; a record names its run in by = "assess:<run id>[:<mode>]"
 NOTES_DIR = "ledger/assessments/notes"
+AUDITS_DIR = "ledger/audits"  # ETA audit reports, one directory per audit (gather/RUBRIC.md rule 8)
 ASSESS_BY_RE = re.compile(r"^assess:(\d{8}T\d{6}Z)(:[\w-]+)?$")
 
 
@@ -397,7 +398,8 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
     errs = [f"{at}: missing '{k}'" for k in need if k not in a]
     if errs:
         return errs
-    extra = set(a) - set(need) - {"evidence_digest", "rubric", "basis", "rubric_correction", "definition_change", "_line"}
+    extra = set(a) - set(need) - {"evidence_digest", "rubric", "basis", "rubric_correction", "definition_change",
+                                  "audit_correction", "_line"}
     if extra:
         errs.append(f"{at}: unknown field(s) {sorted(extra)}")
     if a["status"] not in ASSESS_STATUS:
@@ -425,6 +427,10 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
             if not isinstance(basis, dict) or want - set(basis):
                 errs.append(f"{at}: basis must be an object with {sorted(want)}"
                             + (f" (missing {sorted(want - set(basis))})" if isinstance(basis, dict) else ""))
+            if "audit_correction" in a and not (isinstance(a["audit_correction"], str) and re.fullmatch(
+                    r"[\w.-]+", a["audit_correction"]) and os.path.isdir(os.path.join(DATA, AUDITS_DIR, a["audit_correction"]))):
+                errs.append(f"{at}: audit_correction must name an audit directory {AUDITS_DIR}/<audit id>/ "
+                            "(gather/RUBRIC.md rule 8)")
             if a.get("rubric_correction") not in (None, a["rubric"]):
                 errs.append(f"{at}: rubric_correction must be the record's rubric '{a['rubric']}'")
             if a["rubric"] != "v1" and str(a["target"]).startswith("milestone:") \
@@ -580,14 +586,15 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
         aids.add(a.get("id"))
     errs += check_hysteresis(section, ass, ids, obs)
     warns += check_assumed_gates(section, ass)
-    e2, w2 = check_citations(ass, ids, superseded_by)
+    e2, w2 = check_citations(ass, ids, superseded_by, section)
     return errs + e2, warns + w2
 
 
-CITED_ID_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*")
+CITED_ID_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*")  # = EVENT_ID_RE, unanchored (trailing '-' stripped)
 
 
-def check_citations(ass: list[dict], evs: dict[str, dict], superseded_by: dict[str, str]) -> tuple[list[str], list[str]]:
+def check_citations(ass: list[dict], evs: dict[str, dict], superseded_by: dict[str, str],
+                    section: str | None = None) -> tuple[list[str], list[str]]:
     """gather/RUBRIC.md §6 (v5+): an assessment cites only records effective at its made_at, in
     `evidence` and in basis.eta.calc: not one superseded by then (its replacement's claim, often
     narrower, is what holds), and its evidence holds no withdrawal tombstone. Errors for v5+ records; warnings for
@@ -596,6 +603,15 @@ def check_citations(ass: list[dict], evs: dict[str, dict], superseded_by: dict[s
     latest: dict[str, dict] = {}
     for a in sorted((a for a in ass if _valid_day(a.get("made_at", ""))), key=lambda a: a["made_at"]):
         latest[a.get("target")] = a
+    if section and ass:  # calc may cite other sections' records (driver data, RUBRIC.md §4.1 step 2)
+        evs, superseded_by = dict(evs), dict(superseded_by)
+        for s in SECTIONS:
+            if s == section:
+                continue
+            for e in load_jsonl(path("events", s)):
+                evs.setdefault(e.get("id"), e)
+                for old in e.get("supersedes") or []:
+                    superseded_by.setdefault(old, e.get("id"))
     errs, warns = [], []
     for a in ass:
         new = rank(a.get("rubric")) >= RUBRICS.index("v5")
@@ -604,10 +620,13 @@ def check_citations(ass: list[dict], evs: dict[str, dict], superseded_by: dict[s
         basis = a.get("basis") if isinstance(a.get("basis"), dict) else {}
         eta = basis.get("eta") if isinstance(basis.get("eta"), dict) else {}
         evidence = list(a.get("evidence") or [])
-        for eid in dict.fromkeys(evidence + CITED_ID_RE.findall(str(eta.get("calc") or ""))):
+        calc_ids = [m.rstrip("-") for m in CITED_ID_RE.findall(str(eta.get("calc") or ""))]
+        for eid in dict.fromkeys(evidence + calc_ids):
             e, rep = evs.get(eid), superseded_by.get(eid)
             # a tombstone may be named in calc (to explain why a claim is not used), never relied on as evidence
             why = ("is a withdrawal tombstone" if e and e.get("withdrawn") and eid in evidence else
+                   "was published after made_at (hindsight)" if e and eid not in evidence and _valid_day(
+                       e.get("published", "")) and known_at(e) > day(a["made_at"]) else
                    f"is superseded by {rep}" if e and rep in evs and known_at(evs[rep]) <= day(a["made_at"]) else None)
             if why:
                 (errs if new else warns).append(f"assessment {a.get('id')}: cites '{eid}', which {why} "
@@ -652,7 +671,7 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
         by_target.setdefault(a.get("target"), []).append(a)
     rank = lambda r: RUBRICS.index(r) + 1 if r in RUBRICS else 0  # 0 = pre-rubric record
     for target, recs in by_target.items():
-        for prev, a in zip(recs, recs[1:]):
+        for i, (prev, a) in enumerate(zip(recs, recs[1:])):
             if a.get("rubric") not in RUBRICS:
                 continue
             if rank(a["rubric"]) < rank(prev.get("rubric")):  # else v2 -> v1 -> v2 would allow a 2nd correction
@@ -661,6 +680,12 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
                 continue
             if a.get("definition_change"):
                 continue  # gather/RUBRIC.md rule 6: framework definition changed -> fresh judgment
+            if a.get("audit_correction"):  # gather/RUBRIC.md rule 8: once per target per audit
+                if any(p.get("audit_correction") == a["audit_correction"] for p in recs[:i + 1]):
+                    errs.append(f"assessment {a['id']}: audit_correction {a['audit_correction']} was already applied "
+                                f"to {target} (once per target per audit; gather/RUBRIC.md rule 8)")
+                elif not a.get("rubric_correction"):
+                    continue
             if a.get("rubric_correction"):
                 # a correction re-judges a record made under an OLDER rubric; never one already under its version
                 if rank(prev.get("rubric")) >= rank(a["rubric_correction"]):
