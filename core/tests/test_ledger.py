@@ -376,6 +376,20 @@ def main():
     present = ledger.check_notes("climate", [old, cur])
     orphan = ledger.check_notes("climate", [dict(cur, by="owner")])
     os.remove(note)
+    cev = {i: ev(i, d, f"Claim {i} about emissions.") for i, d in
+           (("2026-01-01-x", "2026-01-01"), ("2026-01-01-x-rv", "2026-05-01"), ("2026-02-01-y-wd", "2026-02-01"))}
+    cev["2026-02-01-y-wd"]["withdrawn"] = True
+    sup = {"2026-01-01-x": "2026-01-01-x-rv", "2026-02-01-y": "2026-02-01-y-wd"}
+    v5 = dict(drv, rubric="v5", evidence=["2026-01-01-x"], made_at="2026-06-01",
+              basis=dict(drv["basis"], eta=dict(drv["basis"]["eta"], calc="from 2026-01-01-x; 2026-02-01-y-wd withdrawn")))
+    ce, cw = ledger.check_citations([v5], cev, sup)
+    case("citations: a v5 record must not rely on a superseded record (evidence or calc); a tombstone only in calc",
+         len(ce) == 1 and has(ce, "superseded by 2026-01-01-x-rv") and cw == []
+         and has(ledger.check_citations([dict(v5, evidence=["2026-02-01-y-wd"])], cev, sup)[0], "tombstone"))
+    case("citations: not superseded yet at made_at is fine; an older-rubric latest record only warns",
+         ledger.check_citations([dict(v5, made_at="2026-04-01")], cev, sup) == ([], [])
+         and ledger.check_citations([dict(v5, rubric="v4")], cev, sup)[0] == []
+         and has(ledger.check_citations([dict(v5, rubric="v4")], cev, sup)[1], "superseded"))
     case("notes: the current milestone ETA's run needs committed working; manual records and orphan notes warn",
          len(missing) == 1 and has(missing, "20260929T120000Z.md is missing") and present == []
          and has(orphan, "no assess run") and has(orphan, "no assessment record"))

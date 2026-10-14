@@ -12,10 +12,12 @@
 #         DEFCHANGE=<commit> the framework.yaml definition of the targets changed in that
 #                            mechanism commit (RUBRIC.md rule 6)
 #         ONLY="milestone:x kpi"   restrict to these targets
+#         AUDIT=<path>       audit report(s) (a file or a directory, e.g. ledger/audits/<round>/)
+#                            whose findings the assessor must address (RUBRIC.md rule 7 (d))
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
-RUBRIC=v4  # current gather/RUBRIC.md version (= ledger.RUBRIC; checked by core/tests/test_paths.py)
+RUBRIC=v5  # current gather/RUBRIC.md version (= ledger.RUBRIC; checked by core/tests/test_paths.py)
 . "$(dirname "$0")/../core/lib.sh"
 require_section "$SECTION"
 require_clean
@@ -51,6 +53,15 @@ on every record and judge the evidence against the NEW wording only (RUBRIC.md r
 [ "${CORRECTION:-}" = 1 ] && CORR="Set \"rubric_correction\": \"$RUBRIC\" on every record: these re-judge the existing
 evidence under the new rubric (no new-evidence claim). The change_note must
 say what the previous assessment got wrong under RUBRIC.md."
+AUD=""
+if [ -n "${AUDIT:-}" ]; then
+	[ -e "$AUDIT" ] || { echo "ERROR: AUDIT=$AUDIT does not exist" >&2; exit 1; }
+	AUD="An audit of the current assessments found problems: read every report in $AUDIT.
+Address each finding about your targets, and each rubric-wide or cross-section finding that
+applies to them: fix it, or say in the change_note why it does not hold (RUBRIC.md rule 7 (d)).
+DEFINITION findings await an owner decision: keep the most natural reading, state it in
+basis.path, and model the alternative reading as a sensitivity."
+fi
 # every registered series, all sections: milestone ETAs may rest on a driver from another section
 METRICS="$(for f in metrics/*.csv; do s="$(basename "$f" .csv)"; [ "$s" = kpi-assessment ] && continue
 	printf '    %s: %s\n' "$s" "$(awk -F, 'NR>1{printf "%s%s", (n++ ? ", " : ""), $1}' "$f")"; done)"
@@ -72,7 +83,9 @@ $SPEC
       uv run $ROOT/core/ledger.py series $SECTION <metric> --as-of $UNTIL
   to compute window statistics exactly (show the numbers in basis.window).
 - Previous assessments: ledger/assessments/$SECTION.jsonl (the latest per target
-  with made_at <= $UNTIL is "prev").
+  with made_at <= $UNTIL is "prev"), and prev's working notes $NOTES_DIR/$SECTION/<run id>.md,
+  where prev.by is "assess:<run id>" or "assess:<run id>:<mode>". RUBRIC.md rule 7: start
+  from prev's model and inputs and update them; do not re-derive the forecast from scratch.
 - Other sections, for milestone ETAs (RUBRIC.md §4.1 step 2: a driver trend may live
   elsewhere, e.g. METR task horizons in robots-software): ledger/events/<section>.jsonl,
   and the registered series (same "series <section> <metric>" command):
@@ -80,6 +93,7 @@ $METRICS
   Cite such data in basis.eta.calc (metric, values, event ids); the evidence list holds
   only $SECTION event ids.
 $CORR
+$AUD
 Judge each milestone on its OWN quantity as the framework wording defines it (e.g.
 total greenhouse-gas emissions, not CO2 alone). If only a proxy has data, name
 the proxy and why it tracks the target in basis.path, and let that uncertainty
@@ -88,10 +102,13 @@ Milestone ETAs: follow RUBRIC.md §4.1 step by step for EACH milestone, from all
 above, before choosing its status. Do the arithmetic (uv run python is fine) and write
 your working per milestone to $STAGE/eta-notes.md, one section per milestone headed
 "## milestone:<slug>": the gap, every data point used, the growth model and why, the
-time-to-target calculation, the cross-checks (reference class, discounted proponent dates,
-prev ETA) and the cruxes (for an achieved or unknown milestone: briefly why). The pipeline commits this file next to the records as $NOTES,
-the audit trail of basis.eta: make it self-contained (inline the numbers and the results
-of any script you ran; other staged files are not kept). Put the result in basis.eta
+time-to-target calculation, the input register with each input's sensitivity (RUBRIC.md
+§4.1 step 7: measured / sourced / assumed), the cross-checks (reference class, discounted
+proponent dates, prev ETA), the cruxes, and what changed against prev and why (rule 7);
+for an achieved or unknown milestone, briefly why. The pipeline commits this file next to
+the records as $NOTES, the audit trail of basis.eta: make it self-contained (inline the
+numbers, the final version of any script you ran and its output; other staged files are
+not kept). Put the result in basis.eta
 {p_achieved, p10, p50, p90, method, calc, cruxes} (RUBRIC.md §4.1 step 5: unconditional
 quantiles, null past 2100, so a milestone that probably fails has p50 null) and quote the
 median in the label ("ETA ~2034"), or without one the chance ("P(by 2100) 20%").
@@ -117,9 +134,8 @@ KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correcti
 Validate until 0 errors:
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
 Never run git add/commit (the pipeline commits; a commit by you aborts the run).
-Work only in $STAGE: do not read other runs' files under ledger/staging/, ledger/.sessions/
-or $NOTES_DIR/ (their notes are not evidence, and judgments must be independent; the
-prev record's basis is what you compare against).
+Work only in $STAGE: do not read other runs' files under ledger/staging/ or ledger/.sessions/,
+and of $NOTES_DIR/ only your targets' prev working (notes are not evidence).
 EOF
 }
 # complete = one record per target with its given id (target|id pairs) AND lint-clean
@@ -171,7 +187,7 @@ done
 uv run $ROOT/core/ledger.py merge "$SECTION" --assessments "$AS"
 if [ -s "$STAGE/eta-notes.md" ]; then mkdir -p "$NOTES_DIR/$SECTION"; cp "$STAGE/eta-notes.md" "$NOTES"; fi
 uv run $ROOT/core/ledger.py check "$SECTION"
-commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')$NOTE" \
+commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')$NOTE$( [ -n "${AUDIT:-}" ] && echo " (audit: $AUDIT)")" \
 	"ledger/assessments/$SECTION.jsonl" "$NOTES"
 warn_drivers
 echo ">>> done: assess $SECTION as of $UNTIL"

@@ -58,6 +58,12 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       milestones sharing a driver). Sort findings into rubric-wide / milestone / definition;
       decide the obvious ones, then ONE fix + re-run, repeat until nothing major. Then make
       it permanent: a fresh-agent review stage in assess.sh (like gather's verify).
+      Round 1 (2026-10-14, data ledger/audits/2026-10-14-r1/): arithmetic mostly reproduces;
+      the failures are calibration and provenance (v4 re-runs moved ETAs up to a decade on the
+      same evidence; assumed inputs, driver mappings and failure chances unlabelled; superseded
+      claims reused). Fix = rubric v5 (stability rule 7, input register, mapping/failure rules,
+      effective-citation check) + a CORRECTION re-run of all milestones with AUDIT=round 1.
+      Definition questions found (owner): see the round-1 reports' DEFINITION findings.
 - [ ] Owner review of the rubric v4 ETAs (all milestones re-assessed 2026-10-13; working
       notes committed in ledger/assessments/notes/<section>/<run id>.md). The robot
       capability ETAs (2028–2030) now rest on a measured ~7.6-month failure-rate halving,
