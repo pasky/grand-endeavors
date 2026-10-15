@@ -114,6 +114,23 @@ endeavors:
               - >-
                 One independently verified success suffices; the robot may recover from its own
                 mistakes, but no human help.
+            anchors:  # approved 2026-10-15 (data ledger/audits/2026-10-15-anchors/)
+              - source: manifold  # Coffee Test before 2029
+                id: 92RpIcOUn9
+                relation: similar
+                by: "2028-12-31"
+                note: >-
+                  The market adds a 20-minute limit but lacks explicit developer-independent home
+                  selection, no prior mapping, and independent verification. Net direction: mixed; looser
+                  test controls favor earlier success, while the time limit favors later success.
+              - source: manifold  # Coffee Test before 2027
+                id: ZA8292N5QC
+                relation: similar
+                by: "2026-12-31"
+                note: >-
+                  The market adds a 20-minute limit but lacks explicit developer-independent home
+                  selection, no prior mapping, and independent verification. Net direction: mixed; looser
+                  test controls favor earlier success, while the time limit favors later success.
           - slug: the-fukushima-test
             name: The "Fukushima" Test
             description: >-
@@ -202,6 +219,16 @@ endeavors:
             air, water and food come from local resources and recycling for the whole year, with
             no resupply of consumables from Earth (equipment and spare parts may still come from
             Earth).
+        anchors:  # approved 2026-10-15 (data ledger/audits/2026-10-15-anchors/)
+          - source: manifold  # self-sustaining extraterrestrial colony before 2050
+            id: InfkbfL3uNM9GNq9qgKy
+            relation: similar
+            by: "2049-12-31"
+            note: >-
+              The market allows any extraterrestrial location and expected extended autonomy instead
+              of a completed crewed year without consumable resupply. Net direction: mixed; broader
+              locations and prospective proof favor earlier resolution, while continued sustainability
+              expectations can favor later resolution.
     challenges:
       - slug: radiation-shielding
         name: Radiation Shielding
@@ -327,6 +354,16 @@ endeavors:
         description: >-
           Validated interventions reverse ≥10 years of biological age (epigenetic clocks +
           functional biomarkers), with corresponding reductions in age-related disease incidence.
+        anchors:  # approved 2026-10-15 (data ledger/audits/2026-10-15-anchors/)
+          - source: manifold  # therapy slowing/reversing ageing before 2040
+            id: 60N0viOTdZfv1F9jMM1Q
+            relation: similar
+            by: "2039-12-31"
+            note: >-
+              The market permits non-epigenetic biomarker composites and functional gains instead of
+              disease-incidence reductions, but adds 100 participants, two 25% improvements, safety
+              criteria and two independent validators. Net direction: mixed; easier endpoints compete
+              with stricter study requirements.
     challenges:
       - slug: causal-model-of-aging
         name: Causal Model of Aging
