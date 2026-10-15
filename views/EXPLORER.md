@@ -44,7 +44,9 @@ phone the navigation becomes a strip on top).
   (labelled with the year it starts); one status dot per milestone (hover:
   name and status label). An endeavor of several sections (Robots and
   Automation) is one item with a sub-item per section (Software, Hardware);
-  the supplemental sections are listed apart, under "Supplemental".
+  the supplemental sections are listed apart, under "Supplemental", with no
+  status dot: the latest value of their first indicator with data (else the
+  count of their major events).
   Clicking shows that endeavor in the middle.
 - **Middle, one pane at a time**: the overview by default, or the endeavor
   clicked. Switching is pure CSS (`:target`, `:has()`; the page has no
@@ -70,7 +72,9 @@ legacy, what "as of" means), then **At a glance**: a card per endeavor (Robots
 and Automation: its two sections side by side) with how fresh its news is, the
 KPI definition, the latest value and its series, the KPI status label, the
 milestones with their dots, the event and challenge counts, and the news per
-week over the last 16 weeks; the supplemental sections' cards follow apart.
+week over the last 16 weeks; the supplemental sections' cards follow apart,
+with their first four indicators (latest value, the period it is for) and their
+three latest major (significance 3) events instead of a KPI.
 
 **Endeavor pane**: its event count, latest news and news per week; the intro
 (Robots and Automation: the group intro, links to its sections, then each
@@ -108,6 +112,10 @@ section with its own activity line), then:
   check mark), ⚪ unknown ("Unassessed"), dashed = not yet assessed.
 - **Open challenges** (or fusion's Tech Tree): name, definition and event
   count; expanded, the details and events. Challenges are not assessed.
+- A **supplemental section** (no KPI, milestones or challenges; nothing in it
+  is assessed) shows instead its **indicators** (every registry metric, tiles
+  as above) and its **notable developments**: the 10 latest major
+  (significance 3) events by event date, with a link to the rest in the event log.
 - Folded at the end: **Beyond the framework** events, **events under no
   current topic** (tags the framework no longer lists, e.g. after a change; never silently
   dropped) and the **latest news** (with a link to the event log).

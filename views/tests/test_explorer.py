@@ -463,10 +463,40 @@ def main():
                        r'<span class="hv"[^>]*><b>429.25</b> ppm</span><svg.*?<span class="nd" title="milestones">'
                        r'<span class="dot s-green" title="The Bend: Peak in sight"></span>'
                        r'<span class="dot s-red" title="The Balance: Distant"></span></span></a>', nav) is not None
-             and 'href="#knowledge-beyond"' in nav and "no KPI (supplemental)" in nav and "#intro" in nav
+             and 'href="#knowledge-beyond"' in nav and "no KPI · 0 major events" in nav and "#intro" in nav
              and '<span class="rc r-cold" title="latest news published 2026-08-15 (6 weeks ago)">6w ago</span>' in nav
              and nav.index('href="#climate"') < nav.index('<div class="ng">Supplemental</div>')
              < nav.index('href="#knowledge-beyond"'))
+        # a supplemental section (no KPI, milestones or challenges): its indicators and major events instead
+        kb = {"metrics/knowledge-beyond.csv": "metric,unit,cadence,release_lag_days,required_from,retired_after,"
+              "definition\nqubits,qubits,annual,,,,Largest logical qubit count\nempty,x,annual,,,,Never observed\n",
+              "ledger/observations/knowledge-beyond.csv": ",".join(ledger.OBS_COLUMNS) + "\n" + "".join(
+                  f"qubits,{y},{v},qubits,https://example.org/q,{y}-12-31,source,{y}-12-31,test:fixture,verified,\n"
+                  for y, v in ((2024, 12), (2025, 48))),
+              "ledger/events/knowledge-beyond.jsonl": "".join(json.dumps(
+                  {"id": f"2026-0{i}-01-kb", "date": f"2026-0{i}-01", "published": f"2026-0{i}-01",
+                   "published_basis": "source", "retrieved": f"2026-0{i}-01", "kind": "achievement",
+                   "topics": ["beyond"], "claim": f"KB claim {i}.", "significance": sig,
+                   "sources": [{"url": "https://example.org/k", "title": "K", "primary": True}],
+                   "verification": {"status": "verified"}, "collector": "test"}) + "\n"
+                  for i, sig in ((1, 3), (2, 2), (3, 3)))}
+        for rel, text in kb.items():
+            write(root, rel, text)
+        sp = explore.dashboard(D("2026-09-28"))
+        for rel in kb:
+            os.remove(os.path.join(root, rel))
+        kpane = sp[sp.index('<section class="pane" id="knowledge-beyond">'):]
+        kpane = kpane[:kpane.index("</section>")]
+        knav = re.search(r'<a class="nv" href="#knowledge-beyond">.*?</a>', sp)[0]
+        kcard = re.search(r'<a class="card" href="#knowledge-beyond">.*?</a>', sp)[0]
+        case("supplemental: pane shows indicator tiles and the major events, newest first",
+             "<h3>Indicators we track</h3>" in kpane and kpane.count('<div class="tile ') + kpane.count('<div class="tile"') == 2
+             and "Notable developments" in kpane and "The 2 latest of 2 major" in kpane
+             and kpane.index("KB claim 3.") < kpane.index("KB claim 1.") < kpane.index("<summary>Beyond the framework"))
+        case("supplemental: nav = first indicator with data (no status dot), card = indicators + major events",
+             "<b>48</b> qubits" in knav and "<svg" in knav and 'class="dot' not in knav
+             and "Indicators we track:" in kcard and "<b>48</b> qubits" in kcard and "Never observed" not in kcard
+             and kcard.index("KB claim 3.") < kcard.index("KB claim 1.") and "KB claim 2." not in kcard)
         gdir = os.path.join(root, "grouped")
         write(gdir, "framework.yaml", FRAMEWORK.replace("endeavors:\n", "endeavors:\n"
               "  - title: Robots and Automation\n    intro: Automating labor.\n    sections:\n"

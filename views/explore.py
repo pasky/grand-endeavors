@@ -450,7 +450,9 @@ border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:bor
 .ct{font-size:17px;font-weight:700}.ck{font-size:12px;color:var(--mute)}
 .cv{display:flex;align-items:center;gap:8px}.cv .hv b{font-size:22px}
 .cs{font-size:12.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.cm{font-size:13px;margin:4px 0 0}.cm li{padding:1px 0}.cf{margin-top:auto;padding-top:6px;font-size:12px;color:var(--mute);
+.cm{font-size:13px;margin:4px 0 0}.cm li{padding:1px 0}
+.ci,.cn{font-size:13px;margin:0 0 4px;padding-left:16px}.ci li,.cn li{padding:1px 0}.ci .hv b{font-size:15px}
+.cn li{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.cf{margin-top:auto;padding-top:6px;font-size:12px;color:var(--mute);
 display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:4px 8px}.act{flex:none;fill:var(--acc);opacity:.8}.act .z{fill:var(--line)}
 .crumb{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
 .pane h2{margin:0;font-size:22px}.track{border-top:1px solid var(--line);margin-top:22px;padding-top:16px}
@@ -932,6 +934,38 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -
     return "".join(out)
 
 
+SUPP_MAJOR = 10  # a supplemental pane's notable developments (significance 3) shown before the event log
+
+
+def indicators(db, sec: str) -> list[sqlite3.Row]:
+    """A section's tracked metrics in registry order (metrics/<section>.csv), retired ones out."""
+    return db.execute("SELECT * FROM latest_kpi WHERE section=? AND NOT retired ORDER BY rowid", (sec,)).fetchall()
+
+
+def major_events(db, sec: str) -> list[sqlite3.Row]:
+    """A section's significance-3 events, the latest (by event date) first."""
+    return db.execute("SELECT * FROM current_events WHERE section=? AND significance=3 "
+                      "ORDER BY date_end DESC, known_at DESC, id DESC", (sec,)).fetchall()
+
+
+def supplemental_html(db, sec: str, names, succ) -> str:
+    """A section with no KPI, milestones or challenges (a supplemental one): what we do
+    track there, the indicators (registry metrics, none of them a KPI) and the notable
+    developments (significance 3)."""
+    out = ['<div class="mute">Outside the five endeavors: no KPI, milestones or challenges, so nothing here is '
+           'assessed. We keep an eye on a few indicators and the notable developments.</div>']
+    tiles = indicators(db, sec)
+    out.append("<h3>Indicators we track</h3>" + (
+        '<div class="tiles">' + "".join(kpi_tile(db, t) for t in tiles) + "</div>" if tiles
+        else '<div class="mute">none registered yet</div>'))
+    major = major_events(db, sec)
+    if major:
+        out.append(f'<h3>Notable developments</h3><div class="mute small">The {min(SUPP_MAJOR, len(major))} '
+                   f'latest of {len(major)} major (significance ●●●) events, by event date.</div>'
+                   + events_ul(major, names, succ, set(), SUPP_MAJOR, log_page(sec)))
+    return "".join(out)
+
+
 def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = None, n_recent: int = 8,
                  covered: bool = True, crumb: str = "", head: str = "", track: bool = False) -> str:
     """One endeavor's pane, or (track) one section of a multi-section endeavor's pane
@@ -958,7 +992,7 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
     if s["kpi"]:
         out.append(kpi_block(db, sec, s, ms, names, succ, shown))
     elif not framework:
-        out.append('<div class="mute">Supplemental section: no KPI, milestones or challenges in the framework.</div>')
+        out.append(supplemental_html(db, sec, names, succ))
     for kind, title in (("milestone", "Milestone Countdown"),
                         ("challenge", fsec.get("challenges_heading") or "Major Open Challenges")):
         items = fsec.get(kind + "s") or []
@@ -1113,6 +1147,7 @@ def legend_html() -> str:
 ICONS = {"robots-software": "💻", "robots-hardware": "🦾", "rockets": "🚀", "fusion": "⚡", "health": "🧬",
          "climate": "🌍", "knowledge-beyond": "🔭", "society-cohesion": "🤝", "robots-and-automation": "🤖"}
 ACTIVITY_WEEKS = 16  # the activity histogram (events per week)
+CARD_INDS, CARD_MAJOR = 4, 3  # a supplemental card: its first indicators, its latest major events
 STREAM_N = 100  # events in the news stream (+ the status changes over the same span)
 
 
@@ -1154,7 +1189,9 @@ def glance(db: sqlite3.Connection, sec: str, as_of: dt.date) -> dict:
     return {"km": km if km and km["assessment_id"] else None,
             "mils": [m for m in ms if m["kind"] == "milestone"],
             "n_ch": sum(m["kind"] == "challenge" for m in ms),
-            "head": req[0] if req else None, "n_ev": n_ev, "last": last, "weeks": weeks}
+            "head": req[0] if req else None, "n_ev": n_ev, "last": last, "weeks": weeks,
+            # a section without a KPI: its indicators with data, its major events
+            "inds": [t for t in indicators(db, sec) if t["obs"] is not None], "major": major_events(db, sec)}
 
 
 def merged(gs: list[dict]) -> dict:
@@ -1193,15 +1230,23 @@ def recency(last: str | None, as_of: dt.date) -> str:
     return f'<span class="rc {cls}" title="latest news published {esc(last)} ({_ago(last, as_of)})">{txt}</span>'
 
 
+def _value(t: sqlite3.Row, named: bool = False) -> str:
+    """A metric's latest value (named: with its short name after it, for an indicator)."""
+    label = metric_label(t["section"], t["metric"], t["definition"])
+    v, u = human_value(t["value_text"], t["unit"])
+    return (f'<span class="hv" title="{esc(label)}, {esc(fmt_period(t["obs"]))}"><b>{esc(v)}</b> {esc(u)}'
+            + (f' <span class="mute">{esc(label)}</span>' if named else "") + "</span>")
+
+
 def _headline(db, g: dict, w: int, h: int, has_kpi: bool = True, axis: str = "below") -> str:
     t = g["head"]
-    if not has_kpi:
-        return '<span class="mute">no KPI (supplemental)</span>'
+    if not has_kpi:  # no KPI: the first indicator with data, else the major events
+        if g["inds"]:
+            return _value(g["inds"][0], True) + sparkline(*spark_points(db, g["inds"][0]), w=w, h=h, pad=2, axis=axis)
+        return f'<span class="mute">no KPI · {len(g["major"])} major events</span>'
     if t is None or t["obs"] is None:
         return f'<span class="mute">{"no KPI data yet" if t is not None else "no KPI metric yet"}</span>'
-    return (f'<span class="hv" title="{esc(metric_label(t["section"], t["metric"], t["definition"]))}, {esc(fmt_period(t["obs"]))}">'
-            f'<b>{esc(human_value(t["value_text"], t["unit"])[0])}</b> {esc(human_value(t["value_text"], t["unit"])[1])}</span>'
-            + sparkline(*spark_points(db, t), w=w, h=h, pad=2, axis=axis))
+    return _value(t) + sparkline(*spark_points(db, t), w=w, h=h, pad=2, axis=axis)
 
 
 def _kpi_dot(g: dict) -> str:
@@ -1210,9 +1255,10 @@ def _kpi_dot(g: dict) -> str:
 
 
 def nav_rows(db, sec: str, g: dict, has_kpi: bool) -> str:
-    """The KPI line (status dot, latest value, series) and the milestone dots."""
+    """The KPI line (status dot, latest value, series) and the milestone dots; without a
+    KPI, no dot: the first indicator, or the count of major events."""
     dots = "".join(topic_dot(m) for m in g["mils"])
-    return (f'<span class="nk">{_kpi_dot(g)}{_headline(db, g, 70, 16, has_kpi, "left")}</span>'
+    return (f'<span class="nk">{_kpi_dot(g) if has_kpi else ""}{_headline(db, g, 70, 16, has_kpi, "left")}</span>'
             + (f'<span class="nd" title="milestones">{dots}</span>' if dots else ""))
 
 
@@ -1236,8 +1282,18 @@ def nav_group(db, gid: str, title: str, tracks: list, as_of: dt.date) -> str:
 def card_track(db, kpi_line: str, g: dict) -> str:
     """A section's KPI and milestones on an overview card."""
     km = g["km"]
-    if not kpi_line:
-        out = '<div class="ck">no KPI (supplemental)</div>'
+    if not kpi_line:  # a supplemental section: its indicators and latest major events instead
+        inds = [f'<li>{_value(t, True)} <span class="mute">({esc(fmt_period(t["obs"]))})</span></li>'
+                for t in g["inds"][:CARD_INDS]]
+        if len(g["inds"]) > CARD_INDS:
+            inds.append(f'<li class="mute">+{len(g["inds"]) - CARD_INDS} more</li>')
+        out = ('<div class="ck">No KPI: outside the five endeavors. '
+               + (f'Indicators we track:</div><ul class="ci">{"".join(inds)}</ul>' if inds
+                  else "No indicators tracked yet.</div>"))
+        if g["major"]:
+            out += ('<div class="ck">Latest major developments:</div><ul class="cn">'
+                    + "".join(f'<li><span class="mute">{esc(e["date"])}</span> {esc(e["claim"])}</li>'
+                              for e in g["major"][:CARD_MAJOR]) + "</ul>")
     else:
         status = (f'{dot(km["status"])}<span>{esc(km["label"])}</span>' if km
                   else f'{dot(None)}<span class="mute">KPI not yet assessed</span>')
