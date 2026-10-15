@@ -18,6 +18,8 @@ fusion:
   elec-wholesale-us: US wholesale electricity price (IEA)
   lcoe-solar-pv-irena: Cost of new utility-scale solar power (IRENA)
   lcoe-onshore-wind-irena: Cost of new onshore wind power (IRENA)
+  manifold-pr0qngelph-p: "Forecast: commercial fusion electricity by 2035 (Manifold)"
+  manifold-iubcricrjrizushzxq97-p: "Forecast: fusion engineering breakeven by 2040 (Manifold)"
   lcoe-offshore-wind-irena: Cost of new offshore wind power (IRENA)
 health:
   hale-median-country: Healthy life expectancy, median country (WHO)
