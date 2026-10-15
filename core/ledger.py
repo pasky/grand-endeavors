@@ -16,6 +16,12 @@ COMMANDS
                                                    admitted records atomically (idempotent on replay;
                                                    rejected ones -> ledger/rejected/)
   ledger.py stale <section> --until D              assessment targets with newer evidence (+ next ids)
+  ledger.py drivers <section>                      other sections' series that current ETAs cite
+  ledger.py driver-draws [<driver>] [--seed N] [--n K] [--as-of D] [--section S]
+                                                   shared ETA driver draws as CSV (data drivers.yaml,
+                                                   core/drivers.py); no driver: list driver|used_by|params
+  ledger.py anchors <section>                      external forecast anchors (framework.yaml; core/anchoring.py)
+  ledger.py series <section> <metric> --as-of D    effective observations obs,value,verification,published
   ledger.py items <section>                        gather watch list from framework.yaml
   ledger.py state <section> [--get-item T | --record JSON]  per-item gather watermarks
   ledger.py cutoff <period>                        bulletin cutoff date (+ previous period's cutoff)
@@ -53,7 +59,7 @@ OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
                "published_basis", "retrieved", "collector", "verification", "note"]
 ASSESS_STATUS = {"green", "yellow", "red", "achieved", "unknown"}
 # gather/RUBRIC.md rubric versions, oldest first; new records use the last one
-RUBRICS = ("v1", "v2", "v3", "v4", "v5")
+RUBRICS = ("v1", "v2", "v3", "v4", "v5", "v6")
 RUBRIC = RUBRICS[-1]
 ETA_KEYS = {"p10", "p50", "p90", "method", "calc", "cruxes"}  # rubric v2+: milestone basis.eta
 # gather/RUBRIC.md: verdict words bound to each status (same in all versions)
@@ -169,7 +175,20 @@ def check_framework(fw: dict) -> list[str]:
                     errs.append(f"{s.get('id')}: {t.get('slug')}: name and description required")
                 if "assumes" in t and not (isinstance(t["assumes"], str) and t["assumes"].strip()):
                     errs.append(f"{s.get('id')}: {t.get('slug')}: assumes must be a non-empty string")
+                if "anchors" in t:  # external forecast anchors (core/anchoring.py; gather/RUBRIC.md §4.1 step 4)
+                    import anchoring as anchors
+                    errs += anchors.check(f"{s.get('id')}: {t.get('slug')}", t["anchors"]) if kind == "milestones" \
+                        else [f"{s.get('id')}: {t.get('slug')}: anchors are for milestones only"]
     return errs
+
+
+def fw_anchors(section: str, fw: dict | None = None) -> dict[str, list[dict]]:
+    """{milestone:<slug>: [anchor]} of a section's framework.yaml `anchors:` (core/anchoring.py)."""
+    try:
+        s, _ = fw_section(section, fw)
+    except KeyError:
+        return {}
+    return {f"milestone:{t['slug']}": t["anchors"] for t in s.get("milestones") or [] if t.get("anchors")}
 
 
 def fw_sections(fw: dict) -> list[tuple[dict, dict | None]]:
@@ -602,6 +621,7 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
         aids.add(a.get("id"))
     errs += check_hysteresis(section, ass, ids, obs)
     warns += check_assumed_gates(section, ass)
+    warns += check_anchors(section, ass, obs, reg) + check_driver_use(section, ass)
     e2, w2 = check_citations(ass, ids, superseded_by, section)
     return errs + e2, warns + w2
 
@@ -648,6 +668,109 @@ def check_citations(ass: list[dict], evs: dict[str, dict], superseded_by: dict[s
                 (errs if new else warns).append(f"assessment {a.get('id')}: cites '{eid}', which {why} "
                                                 "(cite effective records only; gather/RUBRIC.md §6)")
     return errs, warns
+
+
+def _latest(ass: list[dict]) -> dict[str, dict]:
+    latest: dict[str, dict] = {}
+    for a in sorted((a for a in ass if _valid_day(a.get("made_at", ""))), key=lambda a: a["made_at"]):
+        latest[a.get("target")] = a
+    return latest
+
+
+def _v6_eta(a: dict) -> dict | None:
+    """basis.eta of a rubric v6+ milestone forecast (not achieved/unknown), else None."""
+    rank = RUBRICS.index(a["rubric"]) if a.get("rubric") in RUBRICS else -1
+    eta = (a.get("basis") or {}).get("eta") if isinstance(a.get("basis"), dict) else None
+    if rank < RUBRICS.index("v6") or a.get("status") in ("unknown", "achieved") or not isinstance(eta, dict) \
+            or not isinstance(eta.get("p_achieved"), (int, float)) or check_eta("", eta, a.get("status"), a.get("made_at"), a["rubric"]):
+        return None
+    return eta
+
+
+def _cites(text: str, ident: str) -> bool:
+    return bool(re.search(rf"(?<![\w-]){re.escape(ident)}(?![\w-])", text))
+
+
+def check_anchors(section: str, ass: list[dict], obs: list[dict], reg: dict | None) -> list[str]:
+    """gather/RUBRIC.md §4.1 step 4 (v6+): the LATEST assessment of a milestone with framework.yaml
+    `anchors:` explains each anchor that diverges from its forecast beyond the thresholds of
+    core/anchoring.py (anchor values known by its made_at), naming the anchor's metric id in
+    basis.eta.calc. Warnings: anchors move daily, a gap is explained at the next assessment."""
+    import anchoring as anchors
+    fw = fw_anchors(section)
+    warns = [f"anchor metric {m} of {t} is not registered in metrics/{section}.csv" for t, al in sorted(fw.items())
+             for a in al for m in anchors.metrics(a).values() if reg is not None and m not in reg]
+    latest = _latest(ass)
+    for t, al in sorted(fw.items()):
+        a = latest.get(t)
+        eta = _v6_eta(a) if a else None
+        if eta is None:
+            continue
+        table = obs_as_of(section, day(a["made_at"]), rows=obs)
+        calc = str(eta.get("calc") or "")
+        for anc in al:
+            ms = anchors.metrics(anc)
+            vals, n = {}, None
+            for q, m in ms.items():
+                r = latest_obs(table, m)
+                if r:
+                    vals[q] = float(r["value"])
+                    n = anchors.forecasters(r.get("note", ""))
+            why = anchors.gap(anc, vals, eta, a["made_at"]) if vals else None
+            if why and not any(_cites(calc, m) for m in ms.values()):
+                warns.append(f"assessment {a.get('id')}: {t} diverges from anchor {anc['source']} {anc['id']} "
+                             f"({anc['relation']}{f', {n} forecasters' if n is not None else ''}): {why}; "
+                             f"basis.eta.calc must explain the gap and name {' / '.join(ms.values())} "
+                             "(gather/RUBRIC.md §4.1 step 4)")
+    return warns
+
+
+def check_driver_use(section: str, ass: list[dict]) -> list[str]:
+    """gather/RUBRIC.md §4.1 step 2 (v6+): the LATEST assessment of a milestone in a shared driver's
+    used_by (drivers.yaml) samples the driver's draws and names the driver id in basis.eta.calc."""
+    import drivers
+    spec = drivers.load(DATA)
+    latest = _latest(ass)
+    warns = []
+    for did, d in sorted(((spec or {}).get("drivers") or {}).items()):
+        for u in (d or {}).get("used_by") or []:
+            sec, _, slug = str(u).partition("/")
+            a = latest.get(f"milestone:{slug}") if sec == section else None
+            eta = _v6_eta(a) if a else None
+            if eta is not None and not _cites(str(eta.get("calc") or ""), did):
+                warns.append(f"assessment {a.get('id')}: milestone:{slug} uses shared driver {did} (drivers.yaml), "
+                             f"but basis.eta.calc does not name it: sample its draws (ledger.py driver-draws {did}) "
+                             "and name it (gather/RUBRIC.md §4.1 step 2)")
+    return warns
+
+
+def check_drivers() -> list[str]:
+    """Schema and references of the data repo's drivers.yaml (core/drivers.py)."""
+    import drivers
+    import kpi
+    regs: dict[str, dict] = {}
+
+    def series_ok(sec, m):
+        if sec not in SECTIONS:
+            return False
+        if sec not in regs:
+            regs[sec] = kpi.load_registry(sec)[0] or {}
+        return m in regs[sec]
+    evs: dict[str, dict] = {}
+    sup: set[str] = set()
+    for s in SECTIONS:
+        for e in load_jsonl(path("events", s)):
+            evs[e.get("id")] = e
+            sup.update(e.get("supersedes") or [])
+
+    def milestone_ok(sec, slug):
+        return sec in SECTIONS and f"milestone:{slug}" in valid_topics(sec)
+    try:
+        spec = drivers.load(DATA)
+    except Exception as e:  # a YAML syntax error
+        return [f"{drivers.DRIVERS_FILE}: {e}"]
+    return drivers.check(spec, series_ok, lambda i: i in evs and i not in sup and not evs[i].get("withdrawn"),
+                         milestone_ok)
 
 
 def check_assumed_gates(section: str, ass: list[dict]) -> list[str]:
@@ -748,6 +871,13 @@ def check_notes(section: str, ass: list[dict]) -> list[str]:
         elif not os.path.isfile(notes_path(section, run)):
             warns.append(f"assessment {a.get('id')}: current {t} ETA has no committed working: "
                          f"{os.path.relpath(notes_path(section, run), DATA)} is missing")
+        elif t in fw_anchors(section) and _v6_eta(a) is not None:
+            # gather/RUBRIC.md §4.1 step 4: the forecast is written down before any anchor is read
+            text = open(notes_path(section, run), encoding="utf-8").read()
+            m = re.search(rf"^## {re.escape(t)}(?![\w-])(.*?)(?=^## milestone:|\Z)", text, re.M | re.S)
+            if not (m and re.search(r"pre-anchor p50", m.group(1), re.I)):
+                warns.append(f"assessment {a.get('id')}: {t} has anchors, but its notes section states no "
+                             "'pre-anchor p50' (written before reading any anchor; gather/RUBRIC.md §4.1 step 4)")
     runs = {assess_run(a) for a in ass}
     d = os.path.join(DATA, NOTES_DIR, section)
     for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
@@ -1366,8 +1496,9 @@ def lint(section: str, ev_files=(), obs_files=(), ass_files=(), allow_legacy: bo
     """Validate staged files as if merged (nothing written). final=True: no
     'unverified' record may remain (run after the verifier)."""
     errs, warns, _ = prepare(section, ev_files, obs_files, ass_files, allow_legacy, lint_mode=not final)
-    staged = {e.get("id") for f in ev_files for e in load_jsonl(f)}
-    # likely duplicates involving a staged record (the verifier resolves them)
+    staged = {e.get("id") for f in (*ev_files, *ass_files) for e in load_jsonl(f)}
+    # warnings involving a staged record: likely duplicates (the verifier resolves them), and an
+    # assessment's unexplained anchor gap or unnamed shared driver (the assessor fixes them)
     for w in warns:
         if any(re.search(rf"\b{re.escape(str(i))}\b", w) for i in staged):
             print(f"  WARN  {w}")
@@ -1418,6 +1549,12 @@ def main() -> int:
     sta = sub.add_parser("stale"); sta.add_argument("section", choices=SECTIONS); sta.add_argument("--until", required=True)
     sta.add_argument("--force", action="store_true", help="all targets (e.g. after a rubric change)")
     dr = sub.add_parser("drivers"); dr.add_argument("section", choices=SECTIONS)
+    dd = sub.add_parser("driver-draws", help="shared ETA driver draws (drivers.yaml); no driver: list them")
+    dd.add_argument("driver", nargs="?"); dd.add_argument("--seed", type=int, help="default: drivers.yaml seed (canonical)")
+    dd.add_argument("--n", type=int, help="default: drivers.yaml n (canonical)")
+    dd.add_argument("--as-of", help="the `asof` of derived expressions (default: drivers.yaml as_of)")
+    dd.add_argument("--section", choices=SECTIONS, help="list only drivers used by this section's milestones")
+    an = sub.add_parser("anchors"); an.add_argument("section", choices=SECTIONS)
     se = sub.add_parser("series"); se.add_argument("section", choices=SECTIONS); se.add_argument("metric")
     se.add_argument("--as-of", required=True)
     stt = sub.add_parser("state"); stt.add_argument("section", choices=SECTIONS)
@@ -1440,6 +1577,10 @@ def main() -> int:
                 for e in errs:
                     print(f"  ERROR [{sec}] {e}")
                 n_e += len(errs)
+            if not a.sections:  # the shared drivers span sections
+                for e in check_drivers():
+                    print(f"  ERROR [drivers] {e}")
+                    n_e += 1
             print(f"\nledger check: {n_e} error(s)")
             return 1 if n_e else 0
         if a.cmd == "topics":
@@ -1488,6 +1629,29 @@ def main() -> int:
         elif a.cmd == "drivers":
             for t, s, m in foreign_drivers(a.section):
                 print(f"{t}|{s}|{m}")
+        elif a.cmd == "driver-draws":
+            import drivers
+            spec = drivers.load(DATA)
+            if spec is None:
+                raise ValueError(f"no {drivers.DRIVERS_FILE} in {DATA}")
+            errs = check_drivers()
+            if errs:
+                raise ValueError("; ".join(errs))
+            if not a.driver:  # driver|used_by|params (the assess prompt lists these)
+                for did, d in spec["drivers"].items():
+                    if a.section is None or any(str(u).startswith(a.section + "/") for u in d["used_by"]):
+                        print(f"{did}|{' '.join(d['used_by'])}|{' '.join(d['params'])}")
+                return 0
+            cols, rows = drivers.draws(spec, a.driver, a.seed, a.n, day(a.as_of) if a.as_of else None)
+            print(",".join(["draw", *cols]))
+            for i, r in enumerate(rows):
+                print(",".join([str(i), *map(drivers.fmt, r)]))
+        elif a.cmd == "anchors":  # target|source|id|relation|by|metric ids
+            import anchoring as anchors
+            for t, al in fw_anchors(a.section).items():
+                for x in al:
+                    print(f"{t}|{x['source']}|{x['id']}|{x['relation']}|{x.get('by') or ''}|"
+                          + " ".join(anchors.metrics(x).values()))
         elif a.cmd == "series":
             import kpi
             t = obs_as_of(a.section, day(a.as_of))

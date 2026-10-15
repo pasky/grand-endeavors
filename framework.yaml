@@ -11,7 +11,11 @@
 #   milestone / challenge: slug, name, description, details? (sub-bullets:
 #     precise criteria, or tech-tree branches), assumes? (milestones: a gate
 #     in the wording that is not the point, e.g. an editorial policy; the ETA
-#     and status are judged as if it held, gather/RUBRIC.md §4.2)
+#     and status are judged as if it held, gather/RUBRIC.md §4.2), anchors?
+#     (milestones: external community forecasts of the same or a bounding event,
+#     {source: manifold|metaculus, id, relation: same|weaker|stronger, by: deadline of a
+#     binary question}, collected by gather/collectors/anchors.py; core/anchoring.py,
+#     gather/RUBRIC.md §4.1 step 4)
 # Text is Markdown (inline: *italic*, **bold**, [links](...); intro/manifesto
 # may have paragraphs).
 #
@@ -186,9 +190,9 @@ endeavors:
         details:
           - >-
             Recurring commercial sales of a space-manufactured product line, from repeated
-            production, to customers who use it for its function. A one-off batch (e.g. the
-            Shuttle-made NIST reference microspheres of 1985) or material supplied for clinical
-            trials does not count.
+            production, to customers who use it for its function: sales from ongoing production,
+            not stock from a few experimental flights (e.g. NIST's "space beads", sold from 1985),
+            and not material supplied for clinical trials.
       - slug: the-homestead
         name: The Homestead
         description: Permanent crewed base operates 1+ year using local resources (Moon or Mars).
@@ -225,6 +229,9 @@ endeavors:
         description: First commercial fusion plant delivers sustained electricity to a public grid.
         details:
           - Sustained = net electricity exported under commercial operation for 3+ consecutive months.
+        anchors:  # approved 2026-10-15 (data ledger/audits/2026-10-15-anchors/)
+          - {source: manifold, id: pR0QngELPh, relation: weaker, by: "2035-12-31"}  # commercial fusion electricity by 2035
+          - {source: manifold, id: iuBCRicRjrIzUshZxq97, relation: weaker, by: "2040-12-31"}  # engineering breakeven by 2040
       - slug: grid-parity
         name: Grid Parity
         description: Fusion Levelized Cost Of Electricity falls below $100/MWh, competitive with gas.

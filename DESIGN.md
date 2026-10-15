@@ -68,11 +68,37 @@ ledger/observations/<section>.csv    KPI datapoints (tabular, high volume)
 ledger/assessments/<section>.jsonl   timestamped milestone/KPI status judgments
 ledger/assessments/notes/<section>/<run id>.md   each assess run's ETA working (by = assess:<run id>)
 ledger/audits/<date>-r<round>/       ETA audit reports (an assess run's AUDIT input)
+ledger/audits/<date>-anchors/        approval of external forecast anchors (framework.yaml anchors:)
 ledger/rejected/<section>.jsonl      staged records that failed verification (kept for audit)
 ledger/state/<section>.json          gather bookkeeping (per-watch-item watermarks, run log)
 ledger/staging/                      (gitignored) in-flight gather output
 metrics/<section>.csv                metric registry = schema/contract for observations
+drivers.yaml                         shared ETA drivers: one fitted distribution each (core/drivers.py)
 ```
+
+**Shared drivers** (rubric v6, RUBRIC.md §4.1 step 2): `drivers.yaml` in the
+data repo holds one fitted distribution per quantity that several milestone
+ETAs rest on (METR horizons, the Dyna failure-rate halving, IRENA LCOE
+learning, fossil CO₂ deceleration, launch mass, the first fusion plant's
+start): its sources (registered series, events), fit window, parameters
+(fixed, split lognormal/normal by p10/p50/p90, triangular, categorical,
+derived expressions; comonotonic `couple`) and `used_by` milestones.
+`ledger.py driver-draws <driver> [--as-of D]` prints its deterministic draws
+(canonical `seed` and `n`; draw i is the same for every milestone, so the
+milestones agree draw by draw). `check` validates the file (references must
+be registered series and effective events) and warns when a current v6
+milestone in a `used_by` does not name the driver in `basis.eta.calc`.
+
+**External anchors** (rubric v6, RUBRIC.md §4.1 step 4): a milestone's
+`anchors:` in framework.yaml names community forecasts (Manifold, Metaculus)
+of the same event or of a weaker/stronger bounding one (`core/anchoring.py`).
+`gather/collectors/anchors.py` stores them weekly as observations of the
+section (`manifold-<id>-p`, `metaculus-<id>-p` or `-p10/-p50/-p90`, registered
+in `metrics/<section>.csv`; the note holds `forecasters=<n>`). `check` warns
+when a current v6 forecast diverges from an anchor known by its made_at
+beyond the rubric's thresholds and `calc` does not cite the anchor's metric
+id, or when its notes state no pre-anchor p50. Metaculus needs an API token
+(`METACULUS_TOKEN`) with aggregate access; without one its anchors are skipped.
 
 **Event** (`events/<section>.jsonl`):
 
@@ -120,7 +146,7 @@ made_at, rationale, evidence: [event ids], by, rubric, basis}`. Optional fields:
   `audit_correction: "<audit id>"` (rubric rules 4, 6 and 8);
 - `evidence_digest`, the staleness seal added by merge.
 
-`rubric` is the RUBRIC.md version ("v1" ... "v5"); records without it predate
+`rubric` is the RUBRIC.md version ("v1" ... "v6"); records without it predate
 rubric v1. `basis` is the structured reasoning.
 `ledger.py check` requires its top-level keys; the nested structure shown is the
 expected content, but it is not checked:
@@ -144,7 +170,7 @@ wall-clock time of the run (`by` records the run). Every evidence event must be
 known by `made_at` (checked), so a retrospective assessment ("status as of 14 Jul given what was public then") is honest and
 reproducible. Its `known_at` is `made_at`.
 
-Statuses follow the rubric in **gather/RUBRIC.md** (v5). KPI status = pace
+Statuses follow the rubric in **gather/RUBRIC.md** (v6). KPI status = pace
 toward the goal versus what the goal needs (never the level). Milestone status =
 the median of a reasoned ETA forecast on evidence, with `achieved` as a terminal status. Records carry `rubric`,
 a structured `basis` and verdict-bound labels. Hysteresis (a status change needs
@@ -221,7 +247,11 @@ quotes and the fetched documents (URL, status, fetch time, sha256 of the cached 
    (RUBRIC.md rule 7: re-deriving from scratch made v4 ETAs jump by up to
    a decade on the same evidence), but no other run's staging files. With
    `AUDIT=<audit id>`, it must address that audit's findings
-   (`ledger/audits/<audit id>/`, `audit_correction`).
+   (`ledger/audits/<audit id>/`, `audit_correction`). The prompt lists the
+   shared drivers its milestones must sample (`driver-draws --section`) and
+   their external anchors (`ledger.py anchors`); the notes state each anchored
+   milestone's pre-anchor p50 before the anchors are read, and `lint` prints
+   the anchor-gap and driver warnings about the staged records.
    **Review** (permanent since 2026-10-15, after the manual audit rounds of
    2026-10-14): when milestones are assessed, a fresh agent in another mode
    (`ASSESS_REVIEW_MODE`, default `deep`) audits the staged records + notes
@@ -242,6 +272,9 @@ quotes and the fetched documents (URL, status, fetch time, sha256 of the cached 
 
 `gather/collect.sh [section...]` is the LLM-free part of §4: for every section
 with a collector it runs `gather/collectors/run.sh <section>` (collect + merge),
+and for every section with framework.yaml anchors `COLLECTOR=anchors
+gather/collectors/run.sh <section>` (weekly per anchor: one already observed
+in the last 7 days is skipped),
 `ledger.py check`, and commits that section's observations ("collect <section>
 (<date>)"). Then it refreshes the published site (`explore.py site` → `build/`)
 and pushes the data repo. A failing section does not stop the others, but the
@@ -350,7 +383,7 @@ Regression tests pin every mechanical guarantee above. Each part keeps its
 tests in its own `tests/` directory:
 - `core/tests/test_ledger.py`: ledger and snapshot, including replay idempotency,
   precedence, supersedes lineage and cycles, staleness digests, frozen
-  snapshots and charts;
+  snapshots and charts, shared driver draws and anchor gaps;
 - `core/tests/test_guard.sh`: the write-scope guard; `core/tests/test_lock.sh`:
   the pipeline lock (§4a); `core/tests/test_review.sh`: assess.sh's review
   stage (fix, rollback, blocked and failed rounds, with stubbed stages);
@@ -388,6 +421,7 @@ themselves.
   README.md DESIGN.md TODO.md   pointer to the site, design, backlog
   framework.yaml                endeavor definitions (read by the pipeline and the dashboard)
   core/     ledger.py kpi.py lib.sh pipeline-lock.sh   shared by gather and views
+            drivers.py anchoring.py                     shared ETA drivers, external anchors
   gather/   gather.sh assess.sh RUBRIC.md collectors/   grows the ledger
             sources/ sources.py                         reference sources per watch item
             collect.sh systemd/                         daily collectors (§4a)

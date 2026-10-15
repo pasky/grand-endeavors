@@ -9,11 +9,15 @@ Each case pins a behavior that a review found broken or easy to regress.
 The bulletin gate (validate.py) is tested in views/tests/test_validate.py.
 """
 import csv
+import datetime as dt
 import os
 import re
+import subprocess
 import sys
 
 from ledger_fixture import ev, fixture, has, kpi, ledger, obs, write_csv, write_jsonl
+
+REAL_CORE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 FAILS = []
 
@@ -435,6 +439,128 @@ def main():
     kpi_a = dict(A(id="k", target="kpi", label="Off track: x"), basis={k: "x" for k in ledger.BASIS_KPI})
     case("rubric: KPI assessment needs the section's spec in metrics/kpi-assessment.csv",
          has(ledger.check_hysteresis("climate", [kpi_a], evs2), "kpi-assessment.csv"))
+
+    # --- rubric v6: shared drivers (core/drivers.py, data drivers.yaml) --------------------------------
+    import yaml
+    import drivers
+    import anchoring
+    fixture()
+    root = kpi.ROOT
+    spec = {"seed": 7, "n": 50, "as_of": "2026-10-15", "drivers": {"co2": {
+        "description": "d", "window": "w", "fit": "f", "used_by": ["climate/the-bend"],
+        "sources": {"series": ["climate/co2-mlo-annual"], "events": ["2026-05-13-gcb-final"]},
+        "params": {"level": {"dist": "fixed", "value": 3.0},
+                   "rate": {"dist": "lognormal", "p10": 1.0, "p50": 2.0, "p90": 6.0},
+                   "rate2": {"dist": "normal", "p50": 0.0, "sd": 1.0, "couple": "rate"},
+                   "route": {"dist": "categorical", "weights": {"a": 0.25, "b": 0.75}},
+                   "lag": {"dist": "triangular", "min": 1, "mode": 2, "max": 4},
+                   "when": {"dist": "derived", "expr": "asof + lag if route == 'a' else inf"}}}}}
+    yaml.safe_dump(spec, open(f"{root}/drivers.yaml", "w"), sort_keys=False)
+    case("drivers: a valid drivers.yaml checks clean", ledger.check_drivers() == [])
+    cols, d1 = drivers.draws(spec, "co2")
+    _, d2 = drivers.draws(spec, "co2", n=10)
+    _, big = drivers.draws(spec, "co2", n=20000)
+    case("drivers: draws are deterministic, and draw i does not depend on n",
+         cols == list(spec["drivers"]["co2"]["params"]) and drivers.draws(spec, "co2")[1] == d1 and d1[:10] == d2)
+    q = lambda xs, p: sorted(xs)[int(p * len(xs))]
+    rate = [r[1] for r in big]
+    case("drivers: a split lognormal reproduces its p10/p50/p90",
+         all(abs(q(rate, p) / v - 1) < 0.05 for p, v in ((0.1, 1.0), (0.5, 2.0), (0.9, 6.0))))
+    case("drivers: a coupled param is comonotonic with its partner (one uniform draw)",
+         [r[2] for r in sorted(big, key=lambda r: r[1])] == sorted(r[2] for r in big))
+    case("drivers: categorical weights and a derived expression of earlier params and asof",
+         abs(sum(r[3] == "a" for r in big) / len(big) - 0.25) < 0.02
+         and all((r[5] == drivers.decimal_year(dt.date(2026, 10, 15)) + r[4]) if r[3] == "a" else r[5] == float("inf") for r in d1)
+         and [r[5] - r[4] for r in drivers.draws(spec, "co2", as_of=dt.date(2030, 1, 1))[1] if r[3] == "a"][:1]
+         == [drivers.decimal_year(dt.date(2030, 1, 1))])
+    bad = yaml.safe_load(yaml.safe_dump(spec, sort_keys=False))
+    p_ = bad["drivers"]["co2"]["params"]
+    p_["rate"]["dist"] = "weibull"
+    p_["when"]["expr"] = "lag + nope"
+    p_["rate2"]["couple"] = "when"
+    bad["drivers"]["co2"]["used_by"] = ["climate/no-such"]
+    bad["drivers"]["co2"]["sources"] = {"series": ["climate/unregistered"], "events": ["2025-11-13-gcb-projection-x"]}
+    yaml.safe_dump(bad, open(f"{root}/drivers.yaml", "w"), sort_keys=False)
+    errs = ledger.check_drivers()
+    case("drivers: check catches a bad dist, unknown expr names, a bad couple, unknown milestones, series and events",
+         all(has(errs, n) for n in ("param rate: needs dist", "unknown names ['nope']", "couple must name",
+                                    "used_by 'climate/no-such'", "'climate/unregistered'", "'2025-11-13-gcb-projection-x'")))
+    yaml.safe_dump(spec, open(f"{root}/drivers.yaml", "w"), sort_keys=False)
+    sup_ev = ev("2026-06-01-gcb-final-rv", "2026-06-01", "Corrected GCB final: 2025 fossil CO2 at 38.2 GtCO2.",
+                supersedes=["2026-05-13-gcb-final"])
+    write_jsonl(ledger.path("events", "climate"), ledger.events("climate") + [sup_ev])
+    case("drivers: a superseded source event is an error", has(ledger.check_drivers(), "'2026-05-13-gcb-final'"))
+    out = subprocess.run([sys.executable, os.path.join(REAL_CORE, "ledger.py"), "driver-draws", "co2", "--n", "2"],
+                         capture_output=True, text=True, env=dict(os.environ, GE_DATA=root))
+    case("drivers: driver-draws refuses a drivers.yaml that does not check clean",
+         out.returncode == 1 and "2026-05-13-gcb-final" in out.stderr)
+    write_jsonl(ledger.path("events", "climate"), [e for e in ledger.events("climate") if e["id"] != sup_ev["id"]])
+    out = subprocess.run([sys.executable, os.path.join(REAL_CORE, "ledger.py"), "driver-draws", "co2", "--n", "2"],
+                         capture_output=True, text=True, env=dict(os.environ, GE_DATA=root)).stdout.splitlines()
+    case("drivers: driver-draws prints CSV draw,<params> (inf for never)",
+         out[0] == "draw,level,rate,rate2,route,lag,when" and len(out) == 3 and out[1].startswith("0,3,"))
+    e6 = {"p_achieved": 0.95, "p10": 2027, "p50": 2029, "p90": 2035, "method": "trend", "calc": "x", "cruxes": "x"}
+    b6 = {"rule": "x", "eta": e6, "path": "x", "blockers": "x", "prev": None, "change_note": "x"}
+    r6 = {"id": "b6", "target": "milestone:the-bend", "status": "yellow", "label": "Progressing: x, ETA ~2029",
+          "made_at": "2026-10-15", "rationale": "r", "evidence": ["2026-05-13-gcb-final"], "by": "t", "rubric": "v6", "basis": b6}
+    with_id = dict(r6, basis=dict(b6, eta=dict(e6, calc="driver co2 draws; x")))
+    case("drivers: a v6 milestone in a driver's used_by must name the driver in calc (warning; v5 exempt)",
+         has(ledger.check_driver_use("climate", [r6]), "shared driver co2")
+         and ledger.check_driver_use("climate", [with_id]) == []
+         and ledger.check_driver_use("climate", [dict(r6, rubric="v5")]) == [])
+
+    # --- rubric v6: external anchors (core/anchoring.py) --------------------------------------------------
+    M = {"source": "manifold", "id": "AbC123", "relation": "same", "by": "2030-12-31"}
+    case("anchors: metric ids (Manifold ids lowercased; Metaculus binary vs date)",
+         anchoring.metrics(M) == {"p": "manifold-abc123-p"}
+         and anchoring.metrics({"source": "metaculus", "id": "45", "relation": "same", "by": "2030-01-01"}) == {"p": "metaculus-45-p"}
+         and list(anchoring.metrics({"source": "metaculus", "id": "45", "relation": "same"}).values())
+         == ["metaculus-45-p10", "metaculus-45-p50", "metaculus-45-p90"])
+    errs = anchoring.check("x", [dict(M, source="polymarket"), dict(M, relation="similar"), {**M, "by": "soon"},
+                                 dict(M, id="no-dash!"), M, M, {"source": "manifold", "id": "Q1", "relation": "same"}])
+    case("anchors: framework check catches source, relation, deadline, id, duplicates; Manifold needs by",
+         all(has(errs, n) for n in ("anchors[0]: source", "anchors[1]: relation", "anchors[2]: by must",
+                                    "anchors[3]: bad manifold id", "anchors[5]: duplicate", "anchors[6]: by must")))
+    g = lambda a, v, e=e6: anchoring.gap(a, v, e, "2026-10-15")
+    case("anchors: binary gaps (same: |diff| > 0.25; weaker: ours above it by > 0.15; stronger: below)",
+         anchoring.our_cdf(e6, "2026-10-15")(2031.0) == 0.6  # p50 2029 (2029.5: 0.5) to p90 2035 (2035.5: 0.9)
+         and g(M, {"p": 0.5}) is None and g(M, {"p": 0.9}) is not None
+         and g(dict(M, relation="weaker"), {"p": 0.99}) is None and g(dict(M, relation="weaker"), {"p": 0.4}) is not None
+         and g(dict(M, relation="stronger"), {"p": 0.1}) is None and g(dict(M, relation="stronger"), {"p": 0.8}) is not None)
+    D = {"source": "metaculus", "id": "9", "relation": "same"}
+    unlikely = dict(e6, p_achieved=0.3, p50=None, p90=None)
+    case("anchors: date gaps (median > 5 y apart or outside p10-p90; bounds; null quantiles lie past 2100)",
+         g(D, {"p50": 2031.0}) is None and g(D, {"p50": 2035.5}) is not None and g(D, {"p50": 2026.5}) is not None
+         and g(dict(D, relation="weaker"), {"p50": 2027.0}) is None and g(dict(D, relation="weaker"), {"p50": 2032.0}) is not None
+         and g(dict(D, relation="stronger"), {"p50": 2027.0}) is not None and g(D, {"p50": 2060.0}, unlikely) is not None
+         and g(dict(D, relation="weaker"), {"p50": 2060.0}, unlikely) is None)
+    fw = yaml.safe_load(open(f"{root}/framework.yaml"))
+    bend = next(m for s, _ in ledger.fw_sections(fw) if s["id"] == "climate" for m in s["milestones"] if m["slug"] == "the-bend")
+    bend["anchors"] = [dict(M, relation="weaker")]
+    yaml.safe_dump(fw, open(f"{root}/framework.yaml", "w"), allow_unicode=True, sort_keys=False)
+    obs_rows = ledger.observations("climate")
+    arow = {**dict(zip(ledger.OBS_COLUMNS, obs("manifold-abc123-p", "2026-10-10", "0.4", "2026-10-10", "seen",
+                                               unit="probability", retrieved="2026-10-10"))), "note": "forecasters=12; q"}
+    reg = kpi.load_registry("climate")[0]
+    case("anchors: an unregistered anchor metric warns",
+         has(ledger.check_anchors("climate", [r6], obs_rows, reg), "manifold-abc123-p of milestone:the-bend is not registered"))
+    reg = dict(reg, **{"manifold-abc123-p": {"unit": "probability"}})
+    w = ledger.check_anchors("climate", [r6], obs_rows + [arow], reg)
+    cited = dict(r6, basis=dict(b6, eta=dict(e6, calc="the market (manifold-abc123-p, 0.40) is thin; crux x")))
+    case("anchors: a v6 forecast diverging beyond the threshold warns unless calc cites the anchor's metric",
+         len(w) == 1 and has(w, "diverges from anchor manifold AbC123 (weaker, 12 forecasters)")
+         and ledger.check_anchors("climate", [cited], obs_rows + [arow], reg) == []
+         and ledger.check_anchors("climate", [dict(r6, rubric="v5")], obs_rows + [arow], reg) == [])
+    case("anchors: only anchor values known by made_at count",
+         ledger.check_anchors("climate", [dict(r6, made_at="2026-10-09")], obs_rows + [arow], reg) == [])
+    run6 = dict(with_id, by="assess:20261015T120000Z")
+    n6 = ledger.notes_path("climate", "20261015T120000Z")
+    os.makedirs(os.path.dirname(n6), exist_ok=True)
+    open(n6, "w").write("## milestone:the-bend\nx\n## milestone:the-balance\npre-anchor p50: 2090\n")
+    nowarn = ledger.check_notes("climate", [run6])
+    open(n6, "w").write("## milestone:the-bend\nPre-anchor p50: 2029 (p10-p90 2027-2035)\n")
+    case("anchors: the notes of a v6 milestone with anchors state its pre-anchor p50 (in its own section)",
+         has(nowarn, "pre-anchor p50") and ledger.check_notes("climate", [run6]) == [])
 
     # --- snapshot ---------------------------------------------------------------------
     fixture()

@@ -1,9 +1,10 @@
 #!/bin/sh
 # Grand Endeavors — COLLECT: the scheduled, LLM-free part of gathering (DESIGN.md §4a).
 # =============================================================================
-# For every section with a deterministic collector (gather/collectors/<section>.py):
-# run it and merge into the ledger (gather/collectors/run.sh), check the section,
-# and commit its observations. Then refresh the published site (build/ in the checkout) and
+# For every section with a deterministic collector (gather/collectors/<section>.py), and every
+# section whose milestones have external forecast anchors (framework.yaml anchors:, collected by
+# gather/collectors/anchors.py, weekly): run it and merge into the ledger (gather/collectors/run.sh),
+# check the section, and commit its observations. Then refresh the published site (build/ in the checkout) and
 # push the data repo. A failing section does not stop the others; the script
 # exits non-zero if anything failed, so the systemd unit shows up as failed.
 # If a section merged but its check or commit failed, its observations stay uncommitted
@@ -29,9 +30,10 @@ if [ -n "$(git status --porcelain)" ]; then
 	exit 1
 fi
 
+has_anchors() { [ -n "$(uv run "$ROOT/core/ledger.py" anchors "$1")" ]; }
 if [ $# -eq 0 ]; then
 	for s in $SECTIONS; do
-		[ -f "$ROOT/gather/collectors/$(echo "$s" | tr - _).py" ] && set -- "$@" "$s"
+		if [ -f "$ROOT/gather/collectors/$(echo "$s" | tr - _).py" ] || has_anchors "$s"; then set -- "$@" "$s"; fi
 	done
 fi
 
@@ -39,7 +41,9 @@ failed=""
 for s in "$@"; do
 	require_section "$s"
 	echo ">>> collect $s"
-	if sh "$ROOT/gather/collectors/run.sh" "$s" && uv run "$ROOT/core/ledger.py" check "$s" \
+	if { [ ! -f "$ROOT/gather/collectors/$(echo "$s" | tr - _).py" ] || sh "$ROOT/gather/collectors/run.sh" "$s"; } \
+			&& { ! has_anchors "$s" || COLLECTOR=anchors sh "$ROOT/gather/collectors/run.sh" "$s"; } \
+			&& uv run "$ROOT/core/ledger.py" check "$s" \
 			&& commit "collect $s ($TODAY)" "ledger/observations/$s.csv"; then
 		:
 	else

@@ -20,7 +20,7 @@
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
-RUBRIC=v5  # current gather/RUBRIC.md version (= ledger.RUBRIC; checked by core/tests/test_paths.py)
+RUBRIC=v6  # current gather/RUBRIC.md version (= ledger.RUBRIC; checked by core/tests/test_paths.py)
 . "$(dirname "$0")/../core/lib.sh"
 require_section "$SECTION"
 require_clean
@@ -69,6 +69,11 @@ fi
 # every registered series, all sections: milestone ETAs may rest on a driver from another section
 METRICS="$(for f in metrics/*.csv; do s="$(basename "$f" .csv)"; [ "$s" = kpi-assessment ] && continue
 	printf '    %s: %s\n' "$s" "$(awk -F, 'NR>1{printf "%s%s", (n++ ? ", " : ""), $1}' "$f")"; done)"
+# shared ETA drivers (data drivers.yaml) and external anchors (framework.yaml) of this section's milestones
+DRIVERS="$(uv run $ROOT/core/ledger.py driver-draws --section "$SECTION" | sed 's/^/    /')"
+[ -n "$DRIVERS" ] || DRIVERS="    (none used by $SECTION milestones)"
+ANCHORS="$(uv run $ROOT/core/ledger.py anchors "$SECTION" | sed 's/^/    /')"
+[ -n "$ANCHORS" ] || ANCHORS="    (none for $SECTION milestones)"
 AS="$STAGE/assessments.jsonl"
 
 prompt() {  # the assess prompt; $BY names the run (and the fallback mode, if used)
@@ -96,6 +101,20 @@ $SPEC
 $METRICS
   Cite such data in basis.eta.calc (metric, values, event ids); the evidence list holds
   only $SECTION event ids.
+- Shared drivers (RUBRIC.md §4.1 step 2; $D/drivers.yaml has their fits), driver|used_by|params:
+$DRIVERS
+  A milestone in a driver's used_by samples its draws and never refits it: draw i of
+      uv run $ROOT/core/ledger.py driver-draws <driver> --as-of $UNTIL   (CSV; canonical seed and n)
+  goes into draw i of your simulation; name the driver id in basis.eta.calc. The mapping onto the
+  milestone stays yours (§4.1 step 3). A driver fit you think wrong: say so in the notes, still use it.
+- External anchors (RUBRIC.md §4.1 step 4), target|source|id|relation|deadline|metric ids:
+$ANCHORS
+  For a milestone with anchors, finish its forecast first and write a line "pre-anchor p50: YYYY
+  (p10-p90 ..., p_achieved ...)" in its notes section BEFORE reading any anchor series. Then read
+  them (series <section> <metric>; the note gives forecasters=n), compare, and explain each gap in
+  basis.eta.calc (the crux, citing the anchor's metric id); do not close a gap without a reason
+  you would accept without the anchor.
+- Every failure scenario of 10% or more names its reference class with counts (§4.1 step 5).
 $CORR
 $AUD
 Judge each milestone on its OWN quantity as the framework wording defines it (e.g.
@@ -135,7 +154,8 @@ target, status (green|yellow|red, or achieved for milestones), label
 (2-4 sentences, consistent with basis), evidence [event ids], by
 "$BY", rubric "$RUBRIC", basis (the keys $ROOT/DESIGN.md §3 "Assessment" lists for
 KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
-Validate until 0 errors:
+Validate until 0 errors, and fix the WARN lines it prints about your records (an unexplained
+anchor gap, an unnamed shared driver):
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
 Never run git add/commit (the pipeline commits; a commit by you aborts the run).
 Work only in $STAGE: do not read other runs' files under ledger/staging/ or ledger/.sessions/,
@@ -215,11 +235,18 @@ $STAGE/review-work/, inspect array sizes first, batch anything large and cap the
 (e.g. ulimit -v 2000000); (5) input register: measured / sourced / assumed labels true,
 sensitivities for assumed inputs that matter; (6) RUBRIC.md rule 7: every move vs prev (p10/p50/p90
 by a year or more or year<->null, p_achieved by 0.05 or more) attributed, and truly; (7) effective
-records only; (8) consistency across milestones sharing a driver.
+records only; (8) consistency across milestones sharing a driver; (9) shared drivers: a milestone in a
+drivers.yaml used_by samples the driver's draws (ledger.py driver-draws <driver> --as-of $UNTIL) as its
+script shows, with no private refit of the driver; (10) anchors (ledger.py anchors $SECTION): the notes
+state a pre-anchor p50 before the anchors are read, and each gap (RUBRIC.md §4.1 step 4 thresholds) is
+explained in calc with its crux and the anchor's metric id, not closed by an unattributed move; (11)
+every failure scenario of 10% or more names its reference class with counts.
 SEVERITY: MAJOR = a factual error vs the ledger, a superseded or corrected claim relied on, the
 wrong quantity, arithmetic that does not reproduce, an unattributed or falsely attributed move,
-an assumed input labelled measured, or another broken RUBRIC.md rule that changes a number (e.g.
-an optional adjustment without evidence in the median). NOT major: a disclosed assumption with its
+an assumed input labelled measured, a shared driver refitted instead of sampled, an anchor gap left
+unexplained or closed without a reason, a failure scenario of 10% or more without reference-class
+counts, or another broken RUBRIC.md rule that changes a number (e.g. an optional adjustment without
+evidence in the median). NOT major: a disclosed assumption with its
 sensitivity, an incomplete minor sensitivity, wording.
 
 Write $1: per MAJOR finding the target, what is wrong (with numbers / ids) and what would fix it;

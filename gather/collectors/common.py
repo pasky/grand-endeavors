@@ -52,12 +52,12 @@ import ledger  # noqa: E402
 USER_AGENT = "grand-endeavors-collector/1 (python-urllib)"
 
 
-def fetch(url: str, fixture_dir: str | None = None) -> str:
-    """Text of `url`, or of fixture_dir/<basename(url)> when a fixture dir is given."""
+def fetch(url: str, fixture_dir: str | None = None, headers: dict | None = None) -> str:
+    """Text of `url`, or of fixture_dir/<basename(url), trailing '/' ignored> when a fixture dir is given."""
     if fixture_dir:
-        with open(os.path.join(fixture_dir, url.rsplit("/", 1)[-1]), encoding="utf-8") as f:
+        with open(os.path.join(fixture_dir, url.rstrip("/").rsplit("/", 1)[-1]), encoding="utf-8") as f:
             return f.read()
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read().decode("utf-8")
 
@@ -133,25 +133,32 @@ def write(path: str, rows: list[dict]) -> None:
         w.writerows(rows)
 
 
-def main(section: str, script: str, collect) -> int:
+def main(section: str | None, script: str, collect, allow_empty: bool = False) -> int:
     """Standard CLI: collect(fixture_dir, today, collector_id, existing_ledger_rows) -> rows;
-    mark revisions against the ledger; validate; write."""
+    mark revisions against the ledger; validate; write. section None: a cross-section collector
+    (anchors.py) takes --section and is called collect(..., existing, section). allow_empty: no rows
+    is a valid result (an empty staged file, nothing to merge)."""
     ap = argparse.ArgumentParser(description=sys.modules["__main__"].__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", required=True, help="staged observations CSV to write")
+    if section is None:
+        ap.add_argument("--section", required=True, choices=ledger.SECTIONS)
     ap.add_argument("--fixture", help="read sources from this directory (offline)")
     ap.add_argument("--today", default=str(dt.datetime.now(dt.timezone.utc).date()),
                     help="retrieval date (default: today, UTC)")
     a = ap.parse_args()
     today = dt.date.fromisoformat(a.today)
+    cross = section is None
+    section = a.section if cross else section
     existing = ledger.observations(section)
     # collector id "collectors/<script>@<date>" is stored in ledger rows: a stable id, not a path
-    rows = collect(a.fixture, today, f"collectors/{os.path.basename(script)}@{today}", existing)
+    cid = f"collectors/{os.path.basename(script)}@{today}"
+    rows = collect(a.fixture, today, cid, existing, section) if cross else collect(a.fixture, today, cid, existing)
     rows = mark_revisions(rows, existing)
     errs = check(rows, registry(section))
     for e in errs:
         print(f"  ERROR {e}", file=sys.stderr)
-    if errs or not rows:
+    if errs or not (rows or allow_empty):
         print(f"{section}: {'no rows' if not rows else f'{len(errs)} error(s)'}; nothing written", file=sys.stderr)
         return 1
     write(a.out, rows)

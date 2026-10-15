@@ -1,4 +1,4 @@
-# Status rubric (v5)
+# Status rubric (v6)
 
 Every KPI and milestone in framework.yaml carries a **status**: a colour plus a
 one-line label such as "Off track: 421 ppm, +2.4 ppm/yr vs ≤0 needed". This
@@ -27,8 +27,13 @@ assumed, with its sensitivity (§4.1 step 7), a driver's mapping onto the
 milestone is an assumption unless measured, the chance of failure comes from
 named scenarios, and only effective records are cited (clarified after
 audit round 2: what counts as measured, calendar-year quantiles, and that
-replacing a disclosed judgment is not an error fix). KPI rules are
-unchanged in v2–v5. Any change in meaning is a new rubric version (rule 4).
+replacing a disclosed judgment is not an error fix). v6 (2026-10-15): a
+driver that several milestones share has one fitted distribution, whose
+draws they all sample (§4.1 step 2); the forecast is compared with external
+community forecasts (anchors) only after it is written down, and a gap is
+explained, not closed (§4.1 step 4); every failure scenario of 10 % or more
+names its reference class with counts (§4.1 step 5). KPI rules are
+unchanged in v2–v6. Any change in meaning is a new rubric version (rule 4).
 
 ## 1. What the colours mean
 
@@ -184,8 +189,20 @@ straight line or sounds cautious. Work through these steps:
    revenue" where the original said "solo, $3.5M ARR"). Reason from the
    replacement's wording and cite its id, also in `calc` when explaining
    what changed; a withdrawal tombstone means the claim is wrong.
-   Milestones that share a driver use the same fit of it (window, anchor
-   point, rate) unless the difference is argued in `calc`.
+   **Shared drivers**: a driver that several milestones rest on has one
+   fitted distribution in the data repo's `drivers.yaml` (sources, fit
+   window, and what is measured and what assumed). A milestone in a
+   driver's `used_by` samples its draws (`ledger.py driver-draws <driver>
+   --as-of <made_at>`, the canonical seed and count: draw i of the driver
+   goes into draw i of the milestone's own simulation) and never refits
+   it, and `calc` names the driver id (\*: `ledger.py check` warns
+   otherwise). Draw i is the same for every milestone, so milestones that
+   share a driver agree on it draw by draw. The mapping of the driver onto
+   the milestone stays the milestone's own assumption (step 3). A driver fit
+   that looks wrong is a finding for the owner (a reviewed `drivers.yaml`
+   edit), never a reason for a private fit. A series that several
+   milestones use but no driver covers gets the same fit in each unless the
+   difference is argued in `calc`.
 3. **Pick the growth model the quantity actually follows**, and justify it:
    - capability metrics (task horizons, benchmark scores, energy gain), deployed
      fleets, launch mass and revenue usually grow **exponentially**: fit in log
@@ -264,6 +281,29 @@ straight line or sounds cautious. Work through these steps:
    deep-tech schedules, but do not ignore them; discount the time remaining
    from the assessment date), and with the previous ETA.
    When the methods disagree, explain which you weight and why.
+   **External anchors**: framework.yaml may list `anchors:` for the
+   milestone, community forecasts (Manifold, Metaculus) of the same event
+   (`same`) or of a bounding one: `weaker` is an easier event that comes no
+   later than ours (its date is a lower bound on our ETA: our P(by its
+   deadline) ≤ its probability), `stronger` a harder event that implies
+   ours (an upper bound). They are observations of the section
+   (`ledger.py anchors <section>` lists their metric ids; read them with
+   `series`). First finish the forecast without them and write its
+   **pre-anchor p50** (with p10–p90 and p_achieved) into the notes; only
+   then read the anchors. A **gap** is a same-event median more than 5
+   years from ours or outside our p10–p90, a same-event probability more
+   than 0.25 from ours at its deadline, or a violated weaker/stronger bound
+   (by more than a year, or more than 0.15 in probability). A gap is
+   **explained, not closed**: name in `calc` the crux on which we and the
+   market differ (an input, a mapping, a reading of the wording) and the
+   observation that would settle it, citing the anchor's metric id. Move
+   the forecast only for a reason you would accept without the anchor (an
+   error the comparison exposed, evidence the market's reasoning points
+   to), attributed like any other move (rule 7). Thin markets (a few dozen
+   forecasters or fewer: forecasters=n in the observation's note) and loose
+   resolution criteria count for less; say so. \* `ledger.py check` warns
+   when a current record diverges beyond these thresholds without citing
+   the anchor's metric id, or when its notes state no pre-anchor p50.
 5. **Set the chance, the median and the range.** `p_achieved` is the
    probability that the milestone is achieved by 2100 at all. p10, p50 and
    p90 are the years by which it is achieved with 10 %, 50 % and 90 %
@@ -278,7 +318,12 @@ straight line or sounds cautious. Work through these steps:
    `calc`. The chance of failure comes from **named failure scenarios**
    (what would stop it: a programme cancelled, a physical limit, a legal
    wall), each with a reference class where one exists, else its reasoning;
-   its probability is an assumed input with a sensitivity (step 7). No generic
+   its probability is an assumed input with a sensitivity (step 7). Every
+   scenario of 10 % or more names its reference class **with counts**
+   ("4 of 11 crewed exploration programmes since 1960 were cancelled before
+   their first landing") and says how the probability follows from them;
+   one with no countable class says why none exists, and its probability
+   is then a disclosed judgment with a sensitivity. No generic
    "non-completion" mass. p_achieved and all quantiles come from **one
    distribution**: do not report a deterministic central case as the
    median, or widen a quantile by hand outside the model. A quantile year
@@ -379,7 +424,7 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
 - **evidence**: the ids of the events relied on. Only `unknown` may have none.
   \* Cite effective records only (§4.1 step 2), here and in `basis.eta.calc`:
   never one superseded by the made_at date, and no withdrawal tombstone as evidence.
-- \* **rubric** "v5" and a structured **basis**. Its keys are listed in
+- \* **rubric** "v6" and a structured **basis**. Its keys are listed in
   DESIGN.md §3 (Assessment); for KPIs it includes the window numbers, so the
   judgment can be checked.
 - \* For a milestone that is neither achieved nor unknown, **basis.eta** is an object
@@ -395,8 +440,9 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   also has `assumes` (§4.2).
 - **Working notes** (milestones): the assess run commits its `eta-notes.md`
   next to the records. Per milestone: the gap, the input register (step 7),
-  the calculation including the script you ran, the sensitivities, the
-  cross-checks and the cruxes. `calc` is its summary; the notes let a reader
+  the calculation including the script you ran (with the shared driver
+  draws it sampled), the sensitivities, the cross-checks (the pre-anchor
+  p50, then the anchors, step 4) and the cruxes. `calc` is its summary; the notes let a reader
   (and the next assessment, rule 7) reproduce it.
 - The milestone **label** quotes the median: "..., ETA ~2034" ("ETA
   ~2034*" under an assumed gate); without a median it quotes the chance:
