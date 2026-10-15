@@ -14,8 +14,18 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       does NOT re-assess robots-hardware. Even a manual re-run cannot change a status on
       driver data alone (hysteresis wants in-section evidence), and the evidence list
       cannot cite foreign event ids. Until fixed, assess.sh and gather.sh print a WARN
-      per affected milestone. Fix: milestones declare their drivers; stale + hysteresis
-      follow them.
+      per affected milestone. Fix: milestones declare their drivers (drivers.yaml `used_by`
+      now does, for the shared ones); stale + hysteresis follow them. Likewise a
+      drivers.yaml edit, or an anchor moving past a gap threshold, re-assesses nothing.
+- [ ] **External anchors cover 1 of 20 milestones** (2026-10-15, data
+      ledger/audits/2026-10-15-anchors): a deep-mode review standing in for the owner accepted
+      only strict implications (two `weaker` Manifold bounds for the-first-watt) and rejected
+      near matches (e.g. the Coffee Test markets, a lunar-base market for the Moon-or-Mars
+      Homestead). Owner: confirm or relax the standard; add anchors as markets appear.
+      **Terms**: Metaculus community aggregates need API access granted on request
+      (non-commercial projects: "get in touch"; then set METACULUS_TOKEN); Manifold's terms
+      forbid systematic compilation without written permission while its API docs allow
+      non-commercial use: consider asking data@manifold.markets.
 
 ## Owner decisions
 
@@ -50,12 +60,18 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       re-sourcing (find a source that states the claim, then `supersedes`), or
       they stay legacy background.
 - [ ] **ETA calibration** (deferred by the 2026-10-14 audit, data ledger/audits/2026-10-14-r1..r4;
-      the audit is now assess.sh's review stage, DESIGN.md step 6): assumed failure chances
-      are reasoned per milestone, not calibrated against shared reference classes; shared
-      drivers' uncertainty is not correlated across milestones. Watch the review stage's
-      MAJOR counts and cost (it roughly doubles an assess run) over the next gather runs.
-- [ ] Owner review of the rubric v5 ETAs (all milestones audit-corrected 2026-10-14; working
-      notes committed in ledger/assessments/notes/<section>/<run id>.md). The robot
+      the audit is now assess.sh's review stage, DESIGN.md step 6). Rubric v6 (2026-10-15)
+      correlates the shared drivers across milestones (drivers.yaml draws) and makes failure
+      scenarios of 10%+ name reference classes with counts; still open: the counts are small,
+      hand-picked analogue sets (data ledger/audits/2026-10-15-v6), and joint statements
+      ("P(A before B)") would need each run to store its per-draw outcome years. Watch the
+      review stage's MAJOR counts and cost (it roughly doubles an assess run).
+- [ ] drivers.yaml `fusion-first-watt` expires 2027-06-30 (review_by: its time-remaining model
+      predicts the past once Helion's 2028 date nears): refit it with the proponents' news.
+- [ ] Owner review of the rubric v6 ETAs (all milestones re-assessed 2026-10-15 under v6, then
+      audited, data ledger/audits/2026-10-15-v6; working notes committed in
+      ledger/assessments/notes/<section>/<run id>.md), and of data drivers.yaml (the shared
+      driver fits carry over the audited v5 inputs; spreads are assumed). The robot
       capability ETAs (2027–2031) rest on the Dyna failure-rate halving (~7.6 months, ONE
       customer deployment, 2025–2026), now an explicitly assumed transfer to robot
       reliability; more dated reliability series would firm it up.
