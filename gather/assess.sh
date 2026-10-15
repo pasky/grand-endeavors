@@ -225,6 +225,7 @@ sensitivity, an incomplete minor sensitivity, wording.
 Write $1: per MAJOR finding the target, what is wrong (with numbers / ids) and what would fix it;
 then minor findings briefly. Paraphrase the notes, never copy long passages. The LAST line of
 $1 must be exactly "MAJOR: <count>".
+Never run git add/commit: the pipeline commits your report (a commit by you aborts the run).
 EOF2
 }
 run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the review failed)
