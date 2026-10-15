@@ -411,7 +411,7 @@ def main():
         sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), fsec, 1)
         case("events under their topics, beyond + latest folded",
              "Beyond the framework: 1 event(s)" in sec and "Latest news: the 1 most recently published of 5 events" in sec
-             and "previously green on 2026-07-02" in sec and "under no current topic" not in sec)
+             and re.search(r"Previously <span class=\"dot s-green\"[^>]*></span>green \(assessed 2026-07-02\)", sec) and "under no current topic" not in sec)
         other = dict(fsec, milestones=[m for m in fsec["milestones"] if m["slug"] != "the-balance"])
         sec = explore.section_html(db, db.execute("SELECT * FROM sections WHERE section='climate'").fetchone(), other, 1)
         case("events of a topic the framework no longer lists are not dropped",
@@ -430,9 +430,12 @@ def main():
               "evidence": "[]", "basis": json.dumps({"rule": "§4", "path": "p", "eta": {
                   "p10": 2031, "p50": 2034, "p90": None, "method": "trend", "calc": "log(31)/log(1.45)", "cruxes": "c"}})}
         ah = explore.assessment_html(am)
-        case("rubric v2 ETA: median + 80% range, then its method/calculation, after Path order kept",
-             "<dt>ETA</dt><dd>~2034 (80% range 2031–never/after 2100)</dd><dt>ETA method</dt><dd>trend</dd>" in ah
-             and "<dt>ETA calculation</dt><dd>log(31)/log(1.45)</dd>" in ah and ah.index("ETA") < ah.index("Path"))
+        case("rubric v2 ETA: median + 80% range and its cruxes with the outlook (before Path); its "
+             "method/calculation folded with how it was assessed",
+             "<dt>ETA</dt><dd>~2034 (80% range 2031–never/after 2100)</dd><dt>ETA cruxes</dt><dd>c</dd>"
+             "<dt>Path</dt><dd>p</dd>" in ah
+             and ah.index('<details class="tech">') < ah.index("<dt>ETA method</dt><dd>trend</dd>")
+             < ah.index("<dt>ETA calculation</dt><dd>log(31)/log(1.45)</dd>"))
         am4 = dict(am, basis=json.dumps({"eta": {"p_achieved": 0.2, "p10": 2078, "p50": None, "p90": None,
                                                   "method": "m", "calc": "c", "cruxes": "x"}}))
         case("rubric v4 ETA without a median: the chance, not a fake year",
@@ -520,6 +523,17 @@ def main():
         case("stream: status changes shown without any events, all-history footer",
              no_ev.count("· status change</span>") == 4 and "All 0 events and all status changes" in no_ev
              and 'href="#climate"' in no_ev)
+        case("values in readable units: minutes from 2 hours on as hours",
+             explore.human_value("1044.78", "min") == ("17.4", "hours")
+             and explore.human_value("185.91", "min") == ("3.1", "hours")
+             and explore.human_value("90", "min") == ("90", "min") and explore.human_value("89", "s") == ("89", "s"))
+        bend = re.search(r'<li class="topic" id="t-climate-milestone-the-bend">.*?</li>', page, re.S)[0]
+        case("an expanded status does not repeat its status line", bend.count("Peak in sight") == 1)
+        ah = explore.assessment_html({"assessment_id": "a", "status": "yellow", "prev_status": None, "legacy_evidence": 0,
+                                      "rationale": "R.", "by": "b", "evidence": "[]",
+                                      "basis": json.dumps({"eta": "5-10 years", "window": {"n_points": 9}})})
+        case("assessment basis: the outlook shown, how it was assessed folded",
+             ah.index("5-10 years") < ah.index('<details class="tech">') < ah.index("n points: 9"))
         bars = explore.activity_bars([0, 2, 1], D("2026-09-28"))
         case("activity bars: one per week, empty weeks marked",
              bars.count("<rect") == 3 and bars.count('class="z"') == 1 and "2026-09-28: 0, 2, 1" in bars)

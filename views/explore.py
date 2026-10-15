@@ -475,15 +475,20 @@ li.ev:target{background:var(--sel);outline:2px solid var(--acc);border-radius:6p
 .chip{font-size:11px;background:var(--chip);border-radius:3px;padding:0 4px;margin-right:3px}
 .sig3{font-weight:600}.rel{font-size:12px;color:var(--mute);margin-left:12px}
 details summary{cursor:pointer;color:var(--acc);margin:6px 0}
-details>summary{position:relative;padding:5px 8px 5px 34px;margin:2px 0 2px -8px;border-radius:8px}
+details>summary{position:relative;padding:5px 8px 5px 38px;margin:2px 0 2px -8px;border-radius:8px}
 details>summary:hover{background:var(--hov)}
 .small{font-size:12px}.note{background:var(--notebg);border:1px solid var(--noteln);border-radius:6px;padding:6px 10px;margin:8px 0}
 .manifesto p{font-size:15px;margin:8px 0}.legend{margin:8px 0 4px}.more{padding:4px 0 8px 26px}
 section p{margin:6px 0}.kpi{margin:10px 0 2px}
 details summary{list-style:none}details summary::-webkit-details-marker{display:none}
-details>summary::before{content:"▸";position:absolute;left:8px;top:6px;width:19px;height:19px;border-radius:50%;
-background:var(--sel);color:var(--acc);font-size:11px;line-height:19px;text-align:center;transition:transform .15s}
-details>summary:hover::before{background:var(--acc);color:var(--card)}details[open]>summary::before{transform:rotate(90deg)}
+/* the expander: a chevron (an SVG mask, so it takes the theme colour) in a round button; turns down when open */
+details>summary::before,details>summary::after{content:"";position:absolute;left:6px;top:4px;width:24px;height:24px}
+details>summary::before{border-radius:50%;background:var(--sel);transition:background .15s}
+details>summary::after{background:var(--acc);transition:transform .15s;
+-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 7.5l4.5 4.5-4.5 4.5' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/24px no-repeat;
+mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 7.5l4.5 4.5-4.5 4.5' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/24px no-repeat}
+details>summary:hover::before{background:var(--acc)}details>summary:hover::after{background:var(--card)}
+details[open]>summary::after{transform:rotate(90deg)}
 li.topic summary,.kpid summary{color:var(--ink)}
 li.topic{border-bottom:1px solid var(--line)}ul.topics{margin:0 0 4px}
 .st{display:block;font-size:13px}ul.md{list-style:disc;padding-left:22px;margin:4px 0}
@@ -615,6 +620,19 @@ def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200,
             f'<circle cx="{sx(d):.1f}" cy="{sy(v):.1f}" r="2.5" fill="currentColor"/></svg>')
 
 
+def human_value(value_text, unit) -> tuple[str, str]:
+    """A value in a readable unit: minutes from 2 hours on as hours (METR task horizons:
+    1044.78 min -> 17.4 hours)."""
+    if unit in ("min", "minutes"):
+        try:
+            v = float(value_text)
+        except (TypeError, ValueError):
+            return str(value_text), unit
+        if v >= 120:
+            return f"{v / 60:.1f}" if v < 6000 else f"{v / 60:.0f}", "hours"
+    return str(value_text), unit
+
+
 def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
     """A metric: its name (id + definition as the tooltip), the latest value, the period
     it is for, its source, the like-for-like change of a monthly series, the series,
@@ -624,7 +642,8 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
     if k["obs"] is None:
         return (f'<div class="tile nodata">{head}<div class="v gap">—</div>'
                 f'<div class="gap">no data yet</div><div class="d">{esc(k["unit"])}, {esc(k["cadence"])}</div></div>')
-    body = (f'<div class="v">{esc(k["value_text"])} <small>{esc(k["unit"])}</small></div>'
+    v, u = human_value(k["value_text"], k["unit"])
+    body = (f'<div class="v" title="{esc(k["value_text"])} {esc(k["unit"])}">{esc(v)} <small>{esc(u)}</small></div>'
             f'<div class="d"><span title="published {esc(k["known_at"])}">{esc(fmt_period(k["obs"]))}</span> · '
             f'{link(k["source"], "source")}{badge("legacy") if k["verification"] == "legacy" else ""}</div>')
     if k["year_ago_obs"] is not None:  # monthly: the like-for-like change (the seasonal cycle cancels)
@@ -756,6 +775,7 @@ BASIS_LABELS = {"eta": "ETA", "path": "Path", "blockers": "Blockers", "assessed_
 
 
 ETA_LABELS = {"method": "ETA method", "calc": "ETA calculation", "cruxes": "ETA cruxes"}
+OUTLOOK_KEYS = ("eta", "eta_cruxes", "path", "blockers", "reason")
 
 
 def _plain(v) -> str:
@@ -772,17 +792,19 @@ def dot(status, title: str | None = None) -> str:
 
 
 def assessment_html(m: sqlite3.Row) -> str:
-    """The judgment behind a status: label, rationale and the structured basis."""
+    """The judgment behind a status (shown under its status line): the previous status,
+    rationale and the structured basis."""
     if not m["assessment_id"]:
         return '<div class="gap">not yet assessed</div>'
-    prev = (f"; previously {esc(m['prev_status'])} on {esc(m['prev_made_at'])}"
+    prev = (f'Previously {dot(m["prev_status"])}{esc(m["prev_status"])} (assessed {esc(m["prev_made_at"])}).'
             if m["prev_status"] and m["prev_status"] != m["status"] else "")
-    out = [f'<div class="ass"><div>{dot(m["status"])}<b>{esc(m["label"])}</b> '
-           f'<span class="mute">({esc(m["status"])}, assessed {esc(m["made_at"])}{prev})</span>'
-           f'{badge("legacy") if m["legacy_evidence"] else ""}</div>',
+    note = " ".join(x for x in (prev, badge("legacy") + " rests on unverified evidence only"
+                                if m["legacy_evidence"] else "") if x)
+    # the status line it expands from already shows the dot, label and date
+    out = ['<div class="ass">' + (f'<div class="mute small">{note}</div>' if note else ""),
            f'<div>{esc(m["rationale"])}</div>']
     basis = json.loads(m["basis"] or "null") or {}
-    rows = [(BASIS_LABELS[k], _plain(basis[k])) for k in BASIS_LABELS if basis.get(k) not in (None, "", [], {})]
+    rows = [(k, BASIS_LABELS[k], _plain(basis[k])) for k in BASIS_LABELS if basis.get(k) not in (None, "", [], {})]
     eta = basis.get("eta")
     if isinstance(eta, dict) and "p50" in eta:  # rubric v2+ forecast: median + 80% range (+ v4 chance), reasoning
         yr = lambda k: eta[k] if eta.get(k) is not None else "never/after 2100"
@@ -791,11 +813,17 @@ def assessment_html(m: sqlite3.Row) -> str:
         head = (f"~{eta['p50']} (80% range {yr('p10')}–{yr('p90')}" + (f"; P(by 2100) {pct}" if pct else "") + ")"
                 if eta.get("p50") is not None else
                 f"unlikely by 2100 (P {pct or '?'}" + (f"; 10% chance by {eta['p10']}" if eta.get("p10") is not None else "") + ")")
-        i = next(i for i, (k, _) in enumerate(rows) if k == "ETA")
-        rows[i:i + 1] = [("ETA", head)] + [
-            (ETA_LABELS[k], _plain(eta[k])) for k in ETA_LABELS if eta.get(k) not in (None, "", [], {})]
-    if rows:
-        out.append('<dl class="basis">' + "".join(f"<dt>{esc(k)}</dt><dd>{esc(v)}</dd>" for k, v in rows) + "</dl>")
+        i = next(i for i, (k, _, _) in enumerate(rows) if k == "eta")
+        rows[i:i + 1] = [("eta", "ETA", head)] + [
+            (f"eta_{k}", ETA_LABELS[k], _plain(eta[k])) for k in ETA_LABELS if eta.get(k) not in (None, "", [], {})]
+    dl = lambda rs: "".join(f"<dt>{esc(label)}</dt><dd>{esc(v)}</dd>" for _, label, v in rs)
+    # the outlook (a milestone's ETA and its cruxes, path, blockers) is for every reader; how the
+    # status was derived (the data window, benchmark, rubric rule, ETA method, ...) is audit detail: folded
+    if outlook := [r for r in rows if r[0] in OUTLOOK_KEYS]:
+        out.append(f'<dl class="basis">{dl(outlook)}</dl>')
+    if tech := [r for r in rows if r[0] not in OUTLOOK_KEYS]:
+        out.append('<details class="tech"><summary>How this was assessed: the data, the benchmark and the rubric rule'
+                   f'</summary><dl class="basis">{dl(tech)}</dl></details>')
     out.append(f'<div class="mute small">by {esc(m["by"])} · {len(json.loads(m["evidence"] or "[]"))} evidence event(s)</div></div>')
     return "".join(out)
 
@@ -1082,7 +1110,7 @@ def legend_html() -> str:
         "“As of” means only what was public by that date is included.</p></div></details>")
 
 
-ICONS = {"robots-software": "🧠", "robots-hardware": "🦾", "rockets": "🚀", "fusion": "⚡", "health": "🧬",
+ICONS = {"robots-software": "💻", "robots-hardware": "🦾", "rockets": "🚀", "fusion": "⚡", "health": "🧬",
          "climate": "🌍", "knowledge-beyond": "🔭", "society-cohesion": "🤝", "robots-and-automation": "🤖"}
 ACTIVITY_WEEKS = 16  # the activity histogram (events per week)
 STREAM_N = 100  # events in the news stream (+ the status changes over the same span)
@@ -1172,7 +1200,7 @@ def _headline(db, g: dict, w: int, h: int, has_kpi: bool = True, axis: str = "be
     if t is None or t["obs"] is None:
         return f'<span class="mute">{"no KPI data yet" if t is not None else "no KPI metric yet"}</span>'
     return (f'<span class="hv" title="{esc(metric_label(t["section"], t["metric"], t["definition"]))}, {esc(fmt_period(t["obs"]))}">'
-            f'<b>{esc(t["value_text"])}</b> {esc(t["unit"])}</span>'
+            f'<b>{esc(human_value(t["value_text"], t["unit"])[0])}</b> {esc(human_value(t["value_text"], t["unit"])[1])}</span>'
             + sparkline(*spark_points(db, t), w=w, h=h, pad=2, axis=axis))
 
 

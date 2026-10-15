@@ -80,7 +80,8 @@ section with its own activity line), then:
   then, always shown:
   - **KPI tiles**, one per required metric (others fold under "more metrics
     we track"). A tile shows the metric's name (`views/metric-labels.yaml`;
-    hover: its id and full registry definition), the latest value, the period
+    hover: its id and full registry definition), the latest value (minutes
+    from 2 hours on shown as hours; hover: the recorded value), the period
     it is for (hover: when it was published), a `source` link and a `legacy`
     badge for values from the unverified 2025 report; for monthly series the
     like-for-like change vs the same month a year earlier (the change vs the
@@ -90,13 +91,16 @@ section with its own activity line), then:
     "update overdue since …" (the tile is then dashed) or "no data yet".
     The change vs the previous observation, with its comparability flag,
     stays in Datasette (`latest_kpi`).
-  - the **assessment** (expanded from the status line): label, rationale and
-    its structured basis (assessed quantity, window, benchmark, …), its cited
+  - the **assessment** (expanded from the status line, which is its label):
+    the previous status if it changed, the rationale, the outlook (the ETA:
+    median year + 80% range, or the chance by 2100, and its cruxes; path,
+    blockers, or why it is unassessed) and, folded, how it was assessed (the
+    assessed quantity, data window, benchmark, rubric rule, ETA method and
+    calculation, …); its cited
     evidence, and the other KPI-tagged events.
 - **Milestone Countdown**: per milestone its status dot, name and definition,
   then the status label, assessment date and event count. Expanded: the
-  precise criteria, the assessment (rationale; ETA, path, blockers; the
-  previous status), the **cited evidence** (every event the assessment cites,
+  precise criteria, the assessment (as for the KPI), the **cited evidence** (every event the assessment cites,
   whatever its topic tags; one superseded or withdrawn since is flagged), then
   the milestone's latest 5 other events, with a link to the rest in the event
   log. Statuses follow
@@ -108,7 +112,8 @@ section with its own activity line), then:
   current topic** (tags the framework no longer lists, e.g. after a change; never silently
   dropped) and the **latest news** (with a link to the event log).
 
-Every expandable line has a round ▸ button in front (it turns ▾ when open).
+Every expandable line has a round chevron button in front (it turns down
+when open).
 
 Each event shows the claim, event date, kind (achievement, announcement,
 projection, setback, …), significance (●●○), when it was published, topic
