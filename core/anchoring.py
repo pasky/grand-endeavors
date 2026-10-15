@@ -21,6 +21,7 @@ basis.eta.calc does not address (by citing the anchor's metric id) is a warning.
 from __future__ import annotations
 
 import datetime as dt
+import math
 import re
 
 SOURCES = ("manifold", "metaculus")
@@ -80,16 +81,17 @@ def decimal_year(d: dt.date) -> float:
 
 def our_cdf(eta: dict, made_at: str):
     """P(achieved by decimal year t) of a forecast {p_achieved, p10, p50, p90}: piecewise linear
-    through 0 at made_at, each non-null quantile at the middle of its calendar year, and
-    p_achieved at the end of 2100 (a rough interpolation, enough for a divergence threshold)."""
-    pts = [(y + 0.5, lvl) for y, lvl in ((eta.get("p10"), 0.1), (eta.get("p50"), 0.5), (eta.get("p90"), 0.9))
-           if y is not None]
+    through 0 at made_at, each non-null quantile in the middle of the part of its calendar year
+    after made_at, and p_achieved at the end of 2100 (a rough interpolation, enough for a
+    divergence threshold). Null quantiles lie past 2100."""
     start = decimal_year(dt.date.fromisoformat(made_at))
-    pts = [(start, 0.0)] * (not pts or start < pts[0][0]) + pts + [(2101.0, float(eta["p_achieved"]))]
+    pts = [(start, 0.0)] + [((max(y, start) + y + 1) / 2, lvl) for y, lvl in
+                            ((eta.get("p10"), 0.1), (eta.get("p50"), 0.5), (eta.get("p90"), 0.9)) if y is not None]
+    pts.append((2101.0, float(eta["p_achieved"])))
 
     def f(t: float) -> float:
-        if t <= pts[0][0]:
-            return pts[0][1] if pts[0][1] > 0 else 0.0
+        if t <= start:
+            return 0.0
         for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
             if t <= x1:
                 return y0 + (y1 - y0) * (t - x0) / (x1 - x0) if x1 > x0 else y1
@@ -115,17 +117,19 @@ def gap(a: dict, values: dict[str, float], eta: dict, made_at: str) -> str | Non
     if "p50" not in values:
         return None
     m = values["p50"]
-    y = lambda k: eta.get(k) if eta.get(k) is not None else 2101  # a null quantile lies past 2100
-    ours = y("p50") + 0.5
-    what = f"median {m:.1f} vs ours {'>2100' if eta.get('p50') is None else eta['p50']}"
+    # our quantiles as intervals: a year Y is [Y, Y + 1); a null quantile lies past 2100, maybe never
+    lo = lambda k: eta[k] if eta.get(k) is not None else 2101
+    hi = lambda k: eta[k] + 1 if eta.get(k) is not None else math.inf
+    ours = "past 2100" if eta.get("p50") is None else str(eta["p50"])
+    what = f"median {m:.1f} vs ours {ours}"
     if rel == "same":
-        if abs(ours - m) > MEDIAN_YEARS:
+        if m < lo("p50") - MEDIAN_YEARS or m > hi("p50") + MEDIAN_YEARS:
             return f"{what} (same event: more than {MEDIAN_YEARS} years apart)"
-        if not y("p10") <= m < (y("p90") + 1 if eta.get("p90") is not None else 2101):
-            return f"{what} (same event: outside our p10-p90 {eta.get('p10')}-{eta.get('p90')})"
-    elif rel == "weaker" and m - ours > BOUND_YEARS:
+        if not lo("p10") <= m < hi("p90"):
+            return f"{what} (same event: outside our p10-p90 {eta.get('p10')}-{eta.get('p90') or 'past 2100'})"
+    elif rel == "weaker" and m > hi("p50") + BOUND_YEARS:
         return f"{what} (weaker event, a lower bound on our ETA: its median is later than ours)"
-    elif rel == "stronger" and ours - m > BOUND_YEARS:
+    elif rel == "stronger" and m < lo("p50") - BOUND_YEARS:
         return f"{what} (stronger event, an upper bound on our ETA: our median is later than its)"
     return None
 

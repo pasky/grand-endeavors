@@ -86,8 +86,10 @@ derived expressions; comonotonic `couple`) and `used_by` milestones.
 `ledger.py driver-draws <driver> [--as-of D]` prints its deterministic draws
 (canonical `seed` and `n`; draw i is the same for every milestone, so the
 milestones agree draw by draw). `check` validates the file (references must
-be registered series and effective events) and warns when a current v6
-milestone in a `used_by` does not name the driver in `basis.eta.calc`.
+be registered series and effective events, and a sample of draws must
+evaluate) and warns when a current v6 milestone in a `used_by` does not name
+the driver in `basis.eta.calc`, or when a driver's `review_by` date (its fit
+expires, e.g. a proponent date in it passes) is past.
 
 **External anchors** (rubric v6, RUBRIC.md §4.1 step 4): a milestone's
 `anchors:` in framework.yaml names community forecasts (Manifold, Metaculus)

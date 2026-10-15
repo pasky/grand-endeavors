@@ -26,7 +26,10 @@ drivers.yaml:
         <name>: {dist: derived, expr: "<python expression>"}        of earlier params, asof, inf
                                                                     and min/max/exp/log/sqrt
       each random param may have `couple: <earlier random param>` (comonotonic: the same uniform
-      draw, e.g. the 50% and 80% doubling times) and a `label` (measured / sourced / assumed).
+      draw, e.g. the 50% and 80% doubling times); every param may have a `label` (measured /
+      sourced / assumed; quote it in a flow mapping when it contains a comma).
+      review_by: YYYY-MM-DD   optional: the fit expires (e.g. a proponent date in it passes);
+                              check and driver-draws warn after it
 """
 from __future__ import annotations
 
@@ -41,6 +44,9 @@ DRIVERS_FILE = "drivers.yaml"
 ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 Z90 = NormalDist().inv_cdf(0.9)  # 1.2816: p10/p90 are -/+ Z90 standard deviations
 RANDOM = {"lognormal", "normal", "triangular", "categorical"}
+KEYS = {"fixed": {"value"}, "lognormal": {"p10", "p50", "p90", "sdlog"}, "normal": {"p10", "p50", "p90", "sd"},
+        "triangular": {"min", "mode", "max"}, "categorical": {"weights"}, "derived": {"expr"}}
+COMMON_KEYS = {"dist", "label", "couple"}
 EXPR_NAMES = {"min": min, "max": max, "exp": math.exp, "log": math.log, "sqrt": math.sqrt, "inf": math.inf}
 
 
@@ -63,13 +69,20 @@ def check_param(at: str, name: str, p, earlier: dict) -> list[str]:
     if not isinstance(p, dict) or p.get("dist") not in RANDOM | {"fixed", "derived"}:
         return [f"{at}: needs dist (one of {sorted(RANDOM | {'fixed', 'derived'})})"]
     d, errs = p["dist"], []
+    extra = set(p) - KEYS[d] - COMMON_KEYS
+    if extra:  # e.g. a flow-mapping label with an unquoted comma ("label: a, b assumed")
+        errs.append(f"{at}: unknown key(s) {sorted(map(str, extra))} for dist {d} (quote labels containing commas)")
+    if "label" in p and not isinstance(p["label"], str):
+        errs.append(f"{at}: label must be a string")
     if d == "fixed" and not _num(p.get("value")):
         errs.append(f"{at}: fixed needs a numeric value")
     elif d in ("lognormal", "normal"):
         spread = "sdlog" if d == "lognormal" else "sd"
-        if all(_num(p.get(k)) for k in ("p10", "p50", "p90")):
-            if not p["p10"] < p["p50"] < p["p90"]:
-                errs.append(f"{at}: needs p10 < p50 < p90")
+        if set(p) & {"p10", "p90"} and spread in p:
+            errs.append(f"{at}: {d} takes p10, p50, p90 OR p50 and {spread}, not both")
+        elif {"p10", "p90"} & set(p):
+            if not all(_num(p.get(k)) for k in ("p10", "p50", "p90")) or not p["p10"] < p["p50"] < p["p90"]:
+                errs.append(f"{at}: needs numeric p10 < p50 < p90")
         elif not (_num(p.get("p50")) and _num(p.get(spread)) and p[spread] > 0):
             errs.append(f"{at}: {d} needs p10, p50, p90 or p50 and {spread} > 0")
         if d == "lognormal" and any(_num(p.get(k)) and p[k] <= 0 for k in ("p10", "p50", "p90")):
@@ -113,6 +126,7 @@ def check(spec: dict | None, series_ok, event_ok, milestone_ok) -> list[str]:
         return errs + [f"{DRIVERS_FILE}: needs a drivers mapping"]
     for did, d in drivers.items():
         at = f"{DRIVERS_FILE}: driver {did}"
+        n0 = len(errs)
         if not ID_RE.match(str(did)):
             errs.append(f"{at}: bad driver id")
         if not isinstance(d, dict):
@@ -121,6 +135,11 @@ def check(spec: dict | None, series_ok, event_ok, milestone_ok) -> list[str]:
         for k in ("description", "window", "fit"):
             if not str(d.get(k) or "").strip():
                 errs.append(f"{at}: needs {k}")
+        if "review_by" in d:
+            try:
+                dt.date.fromisoformat(str(d["review_by"]))
+            except ValueError:
+                errs.append(f"{at}: review_by must be YYYY-MM-DD")
         for u in d.get("used_by") or []:
             sec, _, slug = str(u).partition("/")
             if not milestone_ok(sec, slug):
@@ -148,7 +167,23 @@ def check(spec: dict | None, series_ok, event_ok, milestone_ok) -> list[str]:
             errs += check_param(at, name, p, earlier)
             # a coupled param is no partner itself (draws() keeps one uniform stream per uncoupled param)
             earlier[name] = ("coupled" if "couple" in p else p.get("dist")) if isinstance(p, dict) else None
+        if len(errs) == n0:  # executable check: every param of a sample of draws is a number (inf = never) or a label
+            try:
+                for row in draws(spec, did, seed=0, n=200, as_of=dt.date(2030, 1, 1))[1]:
+                    bad = [k for k, v in zip(params, row) if not (isinstance(v, str) or _num(v) or v == math.inf)]
+                    if bad:
+                        errs.append(f"{at}: draws give a non-numeric {bad[0]}")
+                        break
+            except Exception as e:  # a derived expression failing at run time (1 / 0, a str + a number, ...)
+                errs.append(f"{at}: draws fail: {type(e).__name__}: {e}")
     return errs
+
+
+def review_due(spec: dict | None, when: dt.date) -> list[str]:
+    """Drivers whose review_by date has passed by `when` (a proponent date in the fit has expired, etc.)."""
+    return [f"{DRIVERS_FILE}: driver {did}: review_by {d['review_by']} has passed: refit it (a reviewed edit)"
+            for did, d in ((spec or {}).get("drivers") or {}).items()
+            if isinstance(d, dict) and d.get("review_by") and str(d["review_by"]) < str(when)]
 
 
 def _quantile(p: dict, u: float):
@@ -168,7 +203,7 @@ def _quantile(p: dict, u: float):
     log = d == "lognormal"
     t = (lambda x: math.log(x)) if log else (lambda x: x)
     mid = t(p["p50"])
-    if "p10" in p and "p90" in p:
+    if _num(p.get("p10")) and _num(p.get("p90")):
         sd = (mid - t(p["p10"])) / Z90 if z < 0 else (t(p["p90"]) - mid) / Z90
     else:
         sd = p["sdlog" if log else "sd"]

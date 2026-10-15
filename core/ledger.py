@@ -21,7 +21,8 @@ COMMANDS
                                                    shared ETA driver draws as CSV (data drivers.yaml,
                                                    core/drivers.py); no driver: list driver|used_by|params
   ledger.py anchors <section>                      external forecast anchors (framework.yaml; core/anchoring.py)
-  ledger.py series <section> <metric> --as-of D    effective observations obs,value,verification,published
+  ledger.py series <section> <metric> --as-of D [--with-note]
+                                                   effective observations obs,value,verification,published[,note]
   ledger.py items <section>                        gather watch list from framework.yaml
   ledger.py state <section> [--get-item T | --record JSON]  per-item gather watermarks
   ledger.py cutoff <period>                        bulletin cutoff date (+ previous period's cutoff)
@@ -710,12 +711,13 @@ def check_anchors(section: str, ass: list[dict], obs: list[dict], reg: dict | No
         calc = str(eta.get("calc") or "")
         for anc in al:
             ms = anchors.metrics(anc)
-            vals, n = {}, None
-            for q, m in ms.items():
-                r = latest_obs(table, m)
-                if r:
-                    vals[q] = float(r["value"])
-                    n = anchors.forecasters(r.get("note", ""))
+            latest = {q: latest_obs(table, m) for q, m in ms.items()}
+            # one vintage: the latest collection; a quantile it lacks (beyond a Metaculus question's
+            # range) is missing, never an older collection's value
+            vintage = max((r["obs"] for r in latest.values() if r), default=None)
+            rows = {q: r for q, r in latest.items() if r and r["obs"] == vintage}
+            vals = {q: float(r["value"]) for q, r in rows.items()}
+            n = next((anchors.forecasters(r.get("note", "")) for r in rows.values()), None)
             why = anchors.gap(anc, vals, eta, a["made_at"]) if vals else None
             if why and not any(_cites(calc, m) for m in ms.values()):
                 warns.append(f"assessment {a.get('id')}: {t} diverges from anchor {anc['source']} {anc['id']} "
@@ -1557,6 +1559,7 @@ def main() -> int:
     an = sub.add_parser("anchors"); an.add_argument("section", choices=SECTIONS)
     se = sub.add_parser("series"); se.add_argument("section", choices=SECTIONS); se.add_argument("metric")
     se.add_argument("--as-of", required=True)
+    se.add_argument("--with-note", action="store_true", help="append the row's note (e.g. an anchor's forecasters=n)")
     stt = sub.add_parser("state"); stt.add_argument("section", choices=SECTIONS)
     stt.add_argument("--get-item", help="last_until of one watch item"); stt.add_argument("--record", help="JSON object of a finished run")
     s = sub.add_parser("snapshot"); s.add_argument("period_dir"); s.add_argument("section", choices=SECTIONS)
@@ -1578,9 +1581,12 @@ def main() -> int:
                     print(f"  ERROR [{sec}] {e}")
                 n_e += len(errs)
             if not a.sections:  # the shared drivers span sections
+                import drivers
                 for e in check_drivers():
                     print(f"  ERROR [drivers] {e}")
                     n_e += 1
+                for w in drivers.review_due(drivers.load(DATA), dt.date.today()):
+                    print(f"  WARN  [drivers] {w}")
             print(f"\nledger check: {n_e} error(s)")
             return 1 if n_e else 0
         if a.cmd == "topics":
@@ -1633,6 +1639,8 @@ def main() -> int:
             import drivers
             spec = drivers.load(DATA)
             if spec is None:
+                if not a.driver:
+                    return 0  # no shared drivers (yet)
                 raise ValueError(f"no {drivers.DRIVERS_FILE} in {DATA}")
             errs = check_drivers()
             if errs:
@@ -1642,6 +1650,9 @@ def main() -> int:
                     if a.section is None or any(str(u).startswith(a.section + "/") for u in d["used_by"]):
                         print(f"{did}|{' '.join(d['used_by'])}|{' '.join(d['params'])}")
                 return 0
+            for w in drivers.review_due({"drivers": {a.driver: spec["drivers"].get(a.driver)}},
+                                        day(a.as_of) if a.as_of else dt.date.today()):
+                print(f"WARN: {w}", file=sys.stderr)
             cols, rows = drivers.draws(spec, a.driver, a.seed, a.n, day(a.as_of) if a.as_of else None)
             print(",".join(["draw", *cols]))
             for i, r in enumerate(rows):
@@ -1657,7 +1668,8 @@ def main() -> int:
             t = obs_as_of(a.section, day(a.as_of))
             for (m, o), r in sorted(t.items(), key=lambda kv: kpi.obs_range(kv[0][1])[0]):
                 if m == a.metric:
-                    print(f"{o},{r['value']},{r['verification']},{r['published']}")
+                    print(f"{o},{r['value']},{r['verification']},{r['published']}"
+                          + (f",{r['note']}" if a.with_note else ""))
         elif a.cmd == "state":
             p = path("state", a.section)
             st = json.load(open(p)) if os.path.exists(p) else {"section": a.section, "items": {}, "runs": []}

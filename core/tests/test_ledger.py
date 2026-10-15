@@ -485,6 +485,17 @@ def main():
     case("drivers: check catches a bad dist, unknown expr names, a bad couple, unknown milestones, series and events",
          all(has(errs, n) for n in ("param rate: needs dist", "unknown names ['nope']", "couple must name",
                                     "used_by 'climate/no-such'", "'climate/unregistered'", "'2025-11-13-gcb-projection-x'")))
+    for mutate, needle in ((lambda q: q["rate"].update(label="a", spread="assumed"), "unknown key(s) ['spread']"),
+                           (lambda q: q["rate"].update(p10=None), "needs numeric p10 < p50 < p90"),
+                           (lambda q: q["rate"].update(sdlog=0.5), "not both"),
+                           (lambda q: q["when"].update(expr="lag / 0"), "draws fail: ZeroDivisionError")):
+        bad = yaml.safe_load(yaml.safe_dump(spec, sort_keys=False))
+        mutate(bad["drivers"]["co2"]["params"])
+        yaml.safe_dump(bad, open(f"{root}/drivers.yaml", "w"), sort_keys=False)
+        case(f"drivers: check catches {needle}", has(ledger.check_drivers(), needle))
+    case("drivers: a passed review_by is due (a fit that expires, e.g. a proponent date)",
+         drivers.review_due({"drivers": {"co2": dict(spec["drivers"]["co2"], review_by="2027-06-30")}}, dt.date(2027, 7, 1))
+         and not drivers.review_due({"drivers": {"co2": dict(spec["drivers"]["co2"], review_by="2027-06-30")}}, dt.date(2027, 6, 30)))
     yaml.safe_dump(spec, open(f"{root}/drivers.yaml", "w"), sort_keys=False)
     sup_ev = ev("2026-06-01-gcb-final-rv", "2026-06-01", "Corrected GCB final: 2025 fossil CO2 at 38.2 GtCO2.",
                 supersedes=["2026-05-13-gcb-final"])
@@ -534,6 +545,13 @@ def main():
          and g(dict(D, relation="weaker"), {"p50": 2027.0}) is None and g(dict(D, relation="weaker"), {"p50": 2032.0}) is not None
          and g(dict(D, relation="stronger"), {"p50": 2027.0}) is not None and g(D, {"p50": 2060.0}, unlikely) is not None
          and g(dict(D, relation="weaker"), {"p50": 2060.0}, unlikely) is None)
+    case("anchors: censored medians (a null p50 is past 2100, maybe never: no 'later than ours' violation)",
+         g(dict(D, relation="weaker"), {"p50": 2150.0}, dict(e6, p_achieved=0.49, p50=None, p90=None)) is None
+         and g(dict(D, relation="stronger"), {"p50": 2080.0}, dict(e6, p_achieved=0.49, p50=None, p90=None)) is not None)
+    same_year = {"p_achieved": 0.95, "p10": 2026, "p50": 2026, "p90": 2026}
+    f = anchoring.our_cdf(same_year, "2026-10-15")
+    case("anchors: quantiles in the assessment year lie after made_at (0 before it, 0.9 by the end of the year)",
+         f(2025.0) == 0.0 and f(2026.8) < 0.1 and 0.9 <= f(2027.0) < 0.91)
     fw = yaml.safe_load(open(f"{root}/framework.yaml"))
     bend = next(m for s, _ in ledger.fw_sections(fw) if s["id"] == "climate" for m in s["milestones"] if m["slug"] == "the-bend")
     bend["anchors"] = [dict(M, relation="weaker")]
@@ -551,6 +569,19 @@ def main():
          len(w) == 1 and has(w, "diverges from anchor manifold AbC123 (weaker, 12 forecasters)")
          and ledger.check_anchors("climate", [cited], obs_rows + [arow], reg) == []
          and ledger.check_anchors("climate", [dict(r6, rubric="v5")], obs_rows + [arow], reg) == [])
+    Q = {"source": "metaculus", "id": "5", "relation": "same"}
+    bend["anchors"] = [Q]
+    yaml.safe_dump(fw, open(f"{root}/framework.yaml", "w"), allow_unicode=True, sort_keys=False)
+    qrow = lambda q, o, v: {**dict(zip(ledger.OBS_COLUMNS, obs(f"metaculus-5-{q}", o, v, o, "seen", unit="year", retrieved=o))),
+                            "note": "forecasters=50"}
+    qreg = dict(reg, **{f"metaculus-5-{q}": {"unit": "year"} for q in ("p10", "p50", "p90")})
+    old_new = [qrow("p10", "2026-10-01", "2030"), qrow("p50", "2026-10-01", "2040"), qrow("p90", "2026-10-01", "2050"),
+               qrow("p10", "2026-10-08", "2045")]  # this week the median moved beyond the question's range
+    case("anchors: a quantile missing from the latest collection is missing, not last week's value",
+         ledger.check_anchors("climate", [r6], obs_rows + old_new, qreg) == []
+         and has(ledger.check_anchors("climate", [r6], obs_rows + old_new[:3], qreg), "median 2040.0"))
+    bend["anchors"] = [dict(M, relation="weaker")]
+    yaml.safe_dump(fw, open(f"{root}/framework.yaml", "w"), allow_unicode=True, sort_keys=False)
     case("anchors: only anchor values known by made_at count",
          ledger.check_anchors("climate", [dict(r6, made_at="2026-10-09")], obs_rows + [arow], reg) == [])
     run6 = dict(with_id, by="assess:20261015T120000Z")
