@@ -59,9 +59,23 @@ endeavors:
               the journal would credit an AI as primary author once it clearly did the work
               (today Nature and Science bar AI authorship); it tracks AI research capability,
               not editorial policy.
+            details:
+              - The flagship journals Nature or Science, not their family titles.
+              - >-
+                AI-generated: the AI poses the question, designs and analyses the work and writes
+                the paper. Humans may fund it, provide compute, carry out lab protocols as directed
+                and submit it, but contribute no ideas or text.
           - slug: the-10m-solopreneur
             name: The $10M Solopreneur
             description: A single-person company reaches $10M ARR with <10 hours/week human oversight.
+            details:
+              - >-
+                Single person: no employees, and no contractors running its operations (incidental
+                professional services such as legal or accounting are fine). Several businesses
+                owned and run by the same person count together.
+              - >-
+                ARR = recurring revenue, annualized. Oversight = all human time spent running the
+                business(es), averaged over a quarter at ≥$10M ARR.
         challenges_heading: Major Open Challenges (assuming "LLMs are enough" hypothesis)
         challenges:
           - slug: reliability
@@ -83,11 +97,19 @@ endeavors:
           - slug: robotaxi-saturation
             name: Robotaxi Saturation
             description: >-
-              Autonomous robotaxis outnumber human-driven taxis in a major metropolitan area (L5
-              Transport Solved).
+              Autonomous robotaxis outnumber human-driven taxis in a major metropolitan area
+              (driverless transport solved).
+            details:
+              - Taxis include ride-hail; count the vehicles in service at peak.
+              - Driverless (SAE L4) service across the metro's service area qualifies; SAE L5 is not required.
           - slug: the-wozniak-test
             name: The "Wozniak" Test
             description: Robot enters a random, previously unseen home and successfully makes a cup of coffee.
+            details:
+              - Random and unseen = not chosen by the robot's developer, and not visited, mapped or scanned beforehand.
+              - >-
+                One independently verified success suffices; the robot may recover from its own
+                mistakes, but no human help.
           - slug: the-fukushima-test
             name: The "Fukushima" Test
             description: >-
@@ -152,12 +174,24 @@ endeavors:
         description: >-
           100,000 tonnes delivered to orbit in a single year — the threshold to enable Mars
           colonization.
-      - slug: the-homestead
-        name: The Homestead
-        description: Permanent crewed base operates 1+ year using local resources (Moon or Mars).
       - slug: the-export
         name: The Export
         description: Product manufactured in space is sold commercially on Earth (beyond novelty items).
+        details:
+          - >-
+            Recurring commercial sales of a space-manufactured product line, from repeated
+            production, to customers who use it for its function. A one-off batch (e.g. the
+            Shuttle-made NIST reference microspheres of 1985) or material supplied for clinical
+            trials does not count.
+      - slug: the-homestead
+        name: The Homestead
+        description: Permanent crewed base operates 1+ year using local resources (Moon or Mars).
+        details:
+          - >-
+            Continuously crewed for 12+ months, and life-sustaining self-sufficient: the crew's
+            air, water and food come from local resources and recycling for the whole year, with
+            no resupply of consumables from Earth (equipment and spare parts may still come from
+            Earth).
     challenges:
       - slug: radiation-shielding
         name: Radiation Shielding
@@ -183,9 +217,15 @@ endeavors:
       - slug: the-first-watt
         name: The First Watt
         description: First commercial fusion plant delivers sustained electricity to a public grid.
+        details:
+          - Sustained = net electricity exported under commercial operation for 3+ consecutive months.
       - slug: grid-parity
         name: Grid Parity
         description: Fusion Levelized Cost Of Electricity falls below $100/MWh, competitive with gas.
+        details:
+          - >-
+            $100/MWh in constant 2025 US dollars is the test ("competitive with gas" explains
+            it, it is not a second threshold).
     challenges_heading: Tech Tree
     challenges:
       - slug: d-t-fusion
@@ -232,6 +272,9 @@ endeavors:
           80% of all solid tumor cases reach 10-year survival — metastatic cancer becomes a
           chronic, manageable condition.
         details:
+          - >-
+            Survival is relative (net) survival, the standard cancer statistic. The metastatic
+            clause explains what the 80% means; it is not a separate test.
           - >-
             Judged at the frontier: the whole resident population of at least one country or
             region of 50M+ (not a selected cohort or one insurer's members) gets there;
@@ -307,12 +350,25 @@ endeavors:
       - slug: the-bend
         name: The Bend
         description: Year of peak global greenhouse gas emissions is definitively behind us.
+        details:
+          - >-
+            Definitively: a major global all-GHG inventory shows the peak year 3+ years back and
+            the latest year at least 1% below it.
       - slug: the-balance
         name: The Balance
         description: Global net anthropogenic greenhouse gas emissions reach approximately zero.
+        details:
+          - >-
+            Net emissions in GWP100 (the UNFCCC convention), durable removals counted;
+            approximately zero = within ±5% of 2025 gross emissions (about ±3 GtCO₂e).
       - slug: the-ceiling
         name: The Ceiling
         description: Peak warming held below +2°C.
+        details:
+          - >-
+            Warming = the long-term human-induced warming indicator (IPCC method, vs
+            1850–1900). Achieved once it has stopped rising below +2.0°C and stayed at or
+            below that peak for 10 years.
     challenges:
       - slug: net-zero-transition
         name: Net-Zero Transition
