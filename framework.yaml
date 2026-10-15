@@ -142,7 +142,11 @@ endeavors:
                 alone during the run.
               - >-
                 Purpose-built lights-out automation ("dark factories") does not count; it is
-                reported under Beyond.
+                reported under Beyond. General-purpose = robots that software alone could move to
+                other jobs (humanoids, mobile manipulators), not machines built for this line.
+              - >-
+                No teleoperation and no remote fault-fixing; a remote human may only give
+                job-level orders (e.g. start the changeover).
         challenges:
           - slug: dexterous-manipulation
             name: Dexterous Manipulation
@@ -174,6 +178,8 @@ endeavors:
         description: >-
           100,000 tonnes delivered to orbit in a single year — the threshold to enable Mars
           colonization.
+        details:
+          - Cargo plus propellant delivered by tanker flights counts; the launch vehicles themselves do not.
       - slug: the-export
         name: The Export
         description: Product manufactured in space is sold commercially on Earth (beyond novelty items).
@@ -306,6 +312,9 @@ endeavors:
             Prevalence among all residents aged 80+ of a country or region of 50M+,
             age-standardized within 80+ (WHO standard population) so that an older 80+ mix
             does not decide it; worldwide diffusion is not required.
+          - >-
+            CDR ≥1 or a clinical-consensus dementia diagnosis, whichever the population study
+            uses; they are treated as equivalent.
       - slug: the-long-middle-age
         name: The Long Middle Age
         description: >-
