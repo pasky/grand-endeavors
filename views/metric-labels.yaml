@@ -7,9 +7,13 @@ robots-software:
   metr-80-horizon-by-release: AI task horizon at 80% success, by model release
   metr-50-horizon-by-release: AI task horizon at 50% success, by model release
   metr-50-horizon-frontier: AI task horizon at 50% success, frontier as evaluated
+robots-hardware:
+  manifold-92rpicoun9-p: "Forecast: robot passes the Coffee Test by 2028 (Manifold)"
+  manifold-za8292n5qc-p: "Forecast: robot passes the Coffee Test by 2026 (Manifold)"
 rockets:
   cost-to-leo-best: Cheapest launch to low Earth orbit
   payload-mass-to-orbit: Payload mass launched to orbit in the year
+  manifold-infkbfl3unm9gnq9qgky-p: "Forecast: self-sustaining extraterrestrial colony by 2050 (Manifold)"
 fusion:
   elec-price-household-world-popw-real: World household electricity price (constant 2025 $)
   elec-price-household-world-popw-nominal: World household electricity price (current $)
@@ -24,6 +28,7 @@ fusion:
 health:
   hale-median-country: Healthy life expectancy, median country (WHO)
   hale-global: Healthy life expectancy, world population-weighted (WHO)
+  manifold-60n0viotdzfv1f9jmm1q-p: "Forecast: therapy slowing or reversing human ageing by 2040 (Manifold)"
 climate:
   co2-mlo-monthly: CO₂ at Mauna Loa, monthly mean (NOAA)
   co2-trend-10yr-mlo-jan-dec: CO₂ growth, 10-year average (Mauna Loa)
