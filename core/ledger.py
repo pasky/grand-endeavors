@@ -101,12 +101,14 @@ def review_path(section: str, run_id: str) -> str:
 
 
 def review_major(section: str, run_id: str) -> int | None:
-    """MAJOR findings left after the run's last review round (None: no review, or unreadable)."""
+    """MAJOR findings the run left: the review file's LAST line "MAJOR: <n>" (assess.sh writes it after
+    the accepted rounds; an unverified fix keeps round 1's count). None: no review, or no such line."""
     p = review_path(section, run_id)
     if not os.path.isfile(p):
         return None
-    counts = re.findall(r"^MAJOR: (\d+)\s*$", open(p, encoding="utf-8").read(), re.M)
-    return int(counts[-1]) if counts else None
+    lines = [ln.strip() for ln in open(p, encoding="utf-8") if ln.strip()]
+    m = re.fullmatch(r"MAJOR: (\d+)", lines[-1]) if lines else None
+    return int(m.group(1)) if m else None
 
 
 def assess_run(rec: dict) -> str | None:
@@ -733,19 +735,19 @@ def check_notes(section: str, ass: list[dict]) -> list[str]:
         latest[a.get("target")] = a
     warns = []
     for t, a in sorted(latest.items(), key=lambda kv: str(kv[0])):
+        run = assess_run(a)
+        if str(t).startswith("milestone:") and run and review_major(section, run):  # whatever the status
+            warns.append(f"assessment {a.get('id')}: current {t} has {review_major(section, run)} unresolved "
+                         f"MAJOR review finding(s) in {os.path.relpath(review_path(section, run), DATA)}")
         if not str(t).startswith("milestone:") or a.get("rubric") not in RUBRICS[1:] \
                 or a.get("status") in ("unknown", "achieved"):
             continue
-        run = assess_run(a)
         if not run:
             warns.append(f"assessment {a.get('id')}: current {t} ETA has no assess run in by={a.get('by')!r}, "
                          "so no committed working (notes)")
         elif not os.path.isfile(notes_path(section, run)):
             warns.append(f"assessment {a.get('id')}: current {t} ETA has no committed working: "
                          f"{os.path.relpath(notes_path(section, run), DATA)} is missing")
-        elif review_major(section, run):
-            warns.append(f"assessment {a.get('id')}: current {t} ETA has {review_major(section, run)} unresolved "
-                         f"MAJOR review finding(s) in {os.path.relpath(review_path(section, run), DATA)}")
     runs = {assess_run(a) for a in ass}
     d = os.path.join(DATA, NOTES_DIR, section)
     for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:

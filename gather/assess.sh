@@ -186,82 +186,103 @@ done
 [ "$attempt" = 3 ] && NOTE="$NOTE (fallback mode $FALLBACK_MODE: $PI_MODEL)"
 as_complete || exit 1
 
-# REVIEW: the ETA audit (TODO.md, rounds 2026-10-14-r1..r4) as a permanent stage. A fresh agent in
-# another mode (ASSESS_REVIEW_MODE, default deep) audits the staged milestone records + notes; MAJOR
-# findings get ONE fix attempt by the assessor and one re-review. Whatever remains is committed with
-# the run (the review file next to the notes; ledger.py check warns while MAJOR findings remain).
-# REVIEW=0 skips it (e.g. a cheap re-run). A reviewer that fails is noted, never fatal.
+# REVIEW: the ETA audit (2026-10-14 rounds, data ledger/audits/) as a permanent stage. A fresh agent in
+# another mode (ASSESS_REVIEW_MODE, default deep; the same mode as a deep-fallback assessor, which is
+# then not "another" model) audits the staged milestone records + notes; MAJOR findings get ONE fix
+# attempt by the assessor and one re-review. What remains is committed with the run: the accepted
+# review rounds, then a final "MAJOR: <n>" = findings left (a fix whose re-review failed counts as
+# unresolved); ledger.py check warns while it is > 0. A failed or blocked review is noted, never
+# fatal; the one fatal case is a reviewer that edits what it reviews. REVIEW=0 skips the stage.
+# --- review stage (core/tests/test_review.sh runs this block with stubs) ---
 REVIEW_FILE="$NOTES_DIR/$SECTION/$RUN_ID.review.md"  # = ledger.review_path
-review_prompt() {  # $1 = output file
-cat <<EOF
+review_prompt() {  # $1 = output file, $2 = the previous round's report (re-review after a fix)
+cat <<EOF2
 Audit the ETA assessments that another agent just staged for "$SECTION" as of $UNTIL, before they
-are committed. Records: $AS; their working notes: $STAGE/eta-notes.md. Do NOT modify either file
-(or anything else outside $1). Read $ROOT/gather/RUBRIC.md fully (binding) and the milestones'
-wording in $ROOT/framework.yaml (description + details). Comparison: the previous record per target
-in ledger/assessments/$SECTION.jsonl and its notes $NOTES_DIR/$SECTION/<run id>.md (prev.by =
-"assess:<run id>[:mode]"). Evidence: effective events in ledger/events/<section>.jsonl; series:
+are committed. Records: $AS; their working notes: $STAGE/eta-notes.md. Do NOT modify either file;
+write only $1 and scratch files under $STAGE/review-work/. Read $ROOT/gather/RUBRIC.md fully
+(binding) and the milestones' wording in $ROOT/framework.yaml (description + details). Comparison:
+the previous record per target in ledger/assessments/$SECTION.jsonl and its notes
+$NOTES_DIR/$SECTION/<run id>.md (prev.by = "assess:<run id>[:mode]"). Evidence: effective events in
+ledger/events/<section>.jsonl; series:
     uv run $ROOT/core/ledger.py series <section> <metric> --as-of $UNTIL
-
+$( [ -n "${2:-}" ] && printf '%s\n' "This is a RE-REVIEW after the assessor's fix: read $2 first. For each of its MAJOR findings say
+whether it is fixed or soundly rebutted in the notes' '## Review response' (an unresolved one stays
+MAJOR), then check the revised files afresh for regressions.")
 For each milestone record check: (1) right quantity for the framework wording and details;
 (2) data recency, measurement gaps unmeasured not flat; (3) spot-check 2-3 key numbers against the
-ledger; (4) rerun the notes' script and confirm the stored numbers (keep memory small: batches,
-no huge arrays); (5) input register: measured / sourced / assumed labels true, sensitivities for
-assumed inputs that matter; (6) RUBRIC.md rule 7: every move vs prev (p10/p50/p90 by a year or
-more or year<->null, p_achieved by 0.05 or more) attributed, and truly; (7) effective records only;
-(8) consistency across milestones sharing a driver.
+ledger; (4) rerun the notes' script and confirm the stored numbers: copy it under
+$STAGE/review-work/, inspect array sizes first, batch anything large and cap the process memory
+(e.g. ulimit -v 2000000); (5) input register: measured / sourced / assumed labels true,
+sensitivities for assumed inputs that matter; (6) RUBRIC.md rule 7: every move vs prev (p10/p50/p90
+by a year or more or year<->null, p_achieved by 0.05 or more) attributed, and truly; (7) effective
+records only; (8) consistency across milestones sharing a driver.
 SEVERITY: MAJOR = a factual error vs the ledger, a superseded or corrected claim relied on, the
 wrong quantity, arithmetic that does not reproduce, an unattributed or falsely attributed move,
-an assumed input labelled measured, or another broken RUBRIC.md rule that changes a number.
-NOT major: a disclosed assumption with its sensitivity, an incomplete minor sensitivity, wording.
+an assumed input labelled measured, or another broken RUBRIC.md rule that changes a number (e.g.
+an optional adjustment without evidence in the median). NOT major: a disclosed assumption with its
+sensitivity, an incomplete minor sensitivity, wording.
 
 Write $1: per MAJOR finding the target, what is wrong (with numbers / ids) and what would fix it;
 then minor findings briefly. Paraphrase the notes, never copy long passages. The LAST line of
 $1 must be exactly "MAJOR: <count>".
-EOF
+EOF2
 }
-run_review() {  # $1 = round; sets REV_MAJOR (empty = the review failed)
-	rev="$STAGE/review-$1.md"; rm -f "$rev"
+run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the review failed)
+	rev="$STAGE/review-$1.md"; rm -f "$rev"; REV_MAJOR=""
+	if ! PI_MODEL="$(pi_mode_model "$REVIEW_MODE")"; then
+		PI_MODEL="$ASSESS_MODEL"; echo "WARN: review $1 failed: no pi mode '$REVIEW_MODE'" >&2; return 0
+	fi
 	sums="$(cksum "$AS" "$STAGE/eta-notes.md")"
-	PI_MODEL="$(pi_mode_model "$REVIEW_MODE")"; PI_SOFT_FAIL=1
-	pi_run "review-$1" "$(review_prompt "$rev")"
+	PI_SOFT_FAIL=1
+	pi_run "review-$1" "$(review_prompt "$rev" "${2:-}")"
 	PI_SOFT_FAIL=; PI_MODEL="$ASSESS_MODEL"
 	[ "$(cksum "$AS" "$STAGE/eta-notes.md")" = "$sums" ] || { echo "ERROR: the reviewer modified $AS or the notes" >&2; exit 1; }
 	REV_MAJOR="$(tail -n 1 "$rev" 2>/dev/null | sed -n 's/^MAJOR: \([0-9][0-9]*\)$/\1/p')"
-	[ "$PI_RC" = 0 ] && [ -n "$REV_MAJOR" ] || { REV_MAJOR=""; echo "WARN: review $1 failed (pi exit $PI_RC, or no 'MAJOR: <n>' last line)" >&2; }
+	if [ "$PI_RC" != 0 ] || [ -n "${PI_BLOCKED:-}" ] || [ -z "$REV_MAJOR" ]; then
+		echo "WARN: review $1 failed (pi exit $PI_RC$( [ -n "${PI_BLOCKED:-}" ] && echo ', provider block'), or no 'MAJOR: <n>' last line)" >&2
+		REV_MAJOR=""; if [ -f "$rev" ]; then mv "$rev" "$rev.rejected"; fi   # a failed round is never committed
+	fi
 }
-ASSESS_MODEL="$PI_MODEL"
-case "$TARGETS" in *milestone:*) [ "${REVIEW:-1}" = 0 ] || DO_REVIEW=1 ;; esac
-if [ -n "${DO_REVIEW:-}" ]; then
-	REVIEW_MODE="${ASSESS_REVIEW_MODE:-deep}"
+review_stage() {  # updates NOTE; writes $STAGE/review.md (nothing when round 1 failed)
+	REVIEW_MODE="${ASSESS_REVIEW_MODE:-deep}"; ASSESS_MODEL="${PI_MODEL:-}"
+	rm -f "$STAGE/review.md"
 	run_review 1
-	if [ -z "$REV_MAJOR" ]; then NOTE="$NOTE (review failed)"
-	elif [ "$REV_MAJOR" -gt 0 ]; then
+	if [ -z "$REV_MAJOR" ]; then NOTE="$NOTE (review failed)"; return 0; fi
+	left="$REV_MAJOR"; tail_note=""
+	if [ "$REV_MAJOR" -gt 0 ]; then
 		cp "$AS" "$AS.draft"; cp "$STAGE/eta-notes.md" "$STAGE/eta-notes.md.draft"
-		MAJOR1="$REV_MAJOR"
 		PI_SOFT_FAIL=1
 		pi_run fix "$(prompt)
 
 You already staged $AS and $STAGE/eta-notes.md in this run (they are your draft: do not start over).
-An independent review found $REV_MAJOR MAJOR problem(s): read $STAGE/review-1.md. Revise both files in
+An independent review found $left MAJOR problem(s): read $STAGE/review-1.md. Revise both files in
 place: fix each MAJOR finding, or rebut it with evidence in a final '## Review response' section of the
 notes. Change only what a finding requires (RUBRIC.md rule 7 applies to your own draft too)."
 		PI_SOFT_FAIL=
-		if [ "$PI_RC" = 0 ] && as_complete; then
-			run_review 2
-			if [ -n "$REV_MAJOR" ]; then NOTE="$NOTE (review: $MAJOR1 MAJOR, $REV_MAJOR after one fix)"
-			else NOTE="$NOTE (review: $MAJOR1 MAJOR, fixed once, re-review failed)"; fi
-		else  # a failed or broken fix never replaces a complete draft
+		if [ "$PI_RC" = 0 ] && [ -z "${PI_BLOCKED:-}" ] && as_complete; then
+			rm -f "$AS.draft" "$STAGE/eta-notes.md.draft"
+			run_review 2 "$STAGE/review-1.md"
+			if [ -n "$REV_MAJOR" ]; then NOTE="$NOTE (review: $left MAJOR, $REV_MAJOR after one fix)"; left="$REV_MAJOR"
+			else NOTE="$NOTE (review: $left MAJOR, fixed once, re-review failed)"
+				tail_note="The re-review failed: the fix is unverified, so round 1's count stands."; fi
+		else  # a failed, blocked or broken fix never replaces the complete draft
 			mv "$AS.draft" "$AS"; mv "$STAGE/eta-notes.md.draft" "$STAGE/eta-notes.md"
-			echo "WARN: the fix attempt failed (pi exit $PI_RC or incomplete); committing the reviewed draft" >&2
-			NOTE="$NOTE (review: $REV_MAJOR MAJOR, fix failed)"
+			echo "WARN: the fix attempt failed (pi exit $PI_RC$( [ -n "${PI_BLOCKED:-}" ] && echo ', provider block'), or incomplete); committing the reviewed draft" >&2
+			NOTE="$NOTE (review: $left MAJOR, fix failed)"
+			tail_note="The fix attempt failed; the reviewed draft was committed unchanged."
 		fi
 	else NOTE="$NOTE (review: 0 MAJOR)"
 	fi
-	for r in 1 2; do [ -s "$STAGE/review-$r.md" ] && { printf '# Review round %s\n\n' "$r"; cat "$STAGE/review-$r.md"; echo; }; done > "$STAGE/review.md"
-	if [ -n "${REV_MAJOR:-}" ] && [ "$REV_MAJOR" -gt 0 ]; then
-		echo "WARN: $REV_MAJOR MAJOR review finding(s) remain; see $REVIEW_FILE" >&2
-	fi
-fi
+	{
+		for r in 1 2; do
+			if [ -s "$STAGE/review-$r.md" ]; then printf '# Review round %s\n\n' "$r"; cat "$STAGE/review-$r.md"; echo; fi
+		done
+		printf '# Remaining\n\n%s\nMAJOR: %s\n' "$tail_note" "$left"
+	} > "$STAGE/review.md"
+	if [ "$left" -gt 0 ]; then echo "WARN: $left MAJOR review finding(s) remain; see $REVIEW_FILE" >&2; fi
+}
+# --- end review stage ---
+case "$TARGETS" in *milestone:*) if [ "${REVIEW:-1}" != 0 ]; then review_stage; fi ;; esac
 
 for t in $(echo "$TARGETS" | cut -d'|' -f1 | grep '^milestone:' || true); do
 	grep -qE "^## $t([^a-z0-9-]|\$)" "$STAGE/eta-notes.md" || echo "WARN: $STAGE/eta-notes.md has no '## $t' section" >&2

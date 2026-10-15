@@ -385,14 +385,15 @@ def main():
     present = ledger.check_notes("climate", [old, cur])
     orphan = ledger.check_notes("climate", [dict(cur, by="owner")])
     rev = ledger.review_path("climate", "20260929T120000Z")
-    open(rev, "w").write("# Review round 1\n\nx\nMAJOR: 2\n\n# Review round 2\n\ny\nMAJOR: 1\n")
+    open(rev, "w").write("# Review round 1\n\nx\nMAJOR: 2\n\n# Remaining\n\nMAJOR: 1\n")
     left = ledger.check_notes("climate", [old, cur])
+    achieved = ledger.check_notes("climate", [old, dict(cur, status="achieved")])
     open(rev, "w").write("x\nMAJOR: 0\n")
     clean_rev = ledger.check_notes("climate", [old, cur])
     os.remove(rev)
     os.remove(note)
     case("notes: a current run's last review round with MAJOR findings left warns; its review file is no orphan",
-         len(left) == 1 and has(left, "1 unresolved MAJOR") and clean_rev == [])
+         len(left) == 1 and has(left, "1 unresolved MAJOR") and clean_rev == [] and has(achieved, "unresolved MAJOR"))
     cev = {i: ev(i, d, f"Claim {i} about emissions.") for i, d in
            (("2026-01-01-x", "2026-01-01"), ("2026-01-01-x-rv", "2026-05-01"), ("2026-02-01-y-wd", "2026-02-01"))}
     cev["2026-02-01-y-wd"]["withdrawn"] = True
