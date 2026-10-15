@@ -220,7 +220,18 @@ quotes and the fetched documents (URL, status, fetch time, sha256 of the cached 
    An assessor reads its targets' previous working and updates that model
    (RUBRIC.md rule 7: re-deriving from scratch made v4 ETAs jump by up to
    a decade on the same evidence), but no other run's staging files. With
-   `AUDIT=<report dir>`, it must address the audit's findings.
+   `AUDIT=<audit id>`, it must address that audit's findings
+   (`ledger/audits/<audit id>/`, `audit_correction`).
+   **Review** (permanent since 2026-10-15, after the manual audit rounds of
+   2026-10-14): when milestones are assessed, a fresh agent in another mode
+   (`ASSESS_REVIEW_MODE`, default `deep`) audits the staged records + notes
+   against a checklist and a fixed severity bar, without editing them. MAJOR
+   findings get one fix attempt by the assessor (a failed fix restores the
+   draft) and one re-review; the rounds are committed as
+   `notes/<section>/<run id>.review.md`, each ending "MAJOR: <n>", and
+   `ledger.py check` warns while a current run has MAJOR findings left.
+   A failed review is noted in the commit message, never fatal. `REVIEW=0`
+   skips it.
 7. Each step commits only its own paths. The write-scope guard (cooperative,
    not isolation) lets agents touch only staging and the registry. It checks
    committed changes, uncommitted changes and already-dirty files, and runs

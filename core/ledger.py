@@ -95,6 +95,20 @@ def notes_path(section: str, run_id: str) -> str:
     return os.path.join(DATA, NOTES_DIR, section, f"{run_id}.md")
 
 
+def review_path(section: str, run_id: str) -> str:
+    """assess.sh's review of the run (rounds; each ends with 'MAJOR: <n>'), next to its notes."""
+    return os.path.join(DATA, NOTES_DIR, section, f"{run_id}.review.md")
+
+
+def review_major(section: str, run_id: str) -> int | None:
+    """MAJOR findings left after the run's last review round (None: no review, or unreadable)."""
+    p = review_path(section, run_id)
+    if not os.path.isfile(p):
+        return None
+    counts = re.findall(r"^MAJOR: (\d+)\s*$", open(p, encoding="utf-8").read(), re.M)
+    return int(counts[-1]) if counts else None
+
+
 def assess_run(rec: dict) -> str | None:
     """The assess.sh run id of an assessment record (None for backfills/manual records)."""
     m = ASSESS_BY_RE.match(str(rec.get("by") or ""))
@@ -729,10 +743,13 @@ def check_notes(section: str, ass: list[dict]) -> list[str]:
         elif not os.path.isfile(notes_path(section, run)):
             warns.append(f"assessment {a.get('id')}: current {t} ETA has no committed working: "
                          f"{os.path.relpath(notes_path(section, run), DATA)} is missing")
+        elif review_major(section, run):
+            warns.append(f"assessment {a.get('id')}: current {t} ETA has {review_major(section, run)} unresolved "
+                         f"MAJOR review finding(s) in {os.path.relpath(review_path(section, run), DATA)}")
     runs = {assess_run(a) for a in ass}
     d = os.path.join(DATA, NOTES_DIR, section)
     for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
-        if not (f.endswith(".md") and f[:-3] in runs):
+        if not (f.endswith(".md") and f.removesuffix(".md").removesuffix(".review") in runs):
             warns.append(f"{NOTES_DIR}/{section}/{f}: no assessment record of this section is by its run")
     return warns
 

@@ -15,6 +15,8 @@
 #         AUDIT=<audit id>   the ETA audit in ledger/audits/<audit id>/ whose findings the assessor
 #                            must address; records set audit_correction (RUBRIC.md rules 7, 8).
 #                            Usually with FORCE=1 ONLY="<milestones>" (the audited targets are not stale)
+#         REVIEW=0           skip the review stage (default: on when milestones are assessed)
+#         ASSESS_REVIEW_MODE the reviewer's pi mode (default deep)
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
@@ -183,13 +185,92 @@ while :; do
 done
 [ "$attempt" = 3 ] && NOTE="$NOTE (fallback mode $FALLBACK_MODE: $PI_MODEL)"
 as_complete || exit 1
+
+# REVIEW: the ETA audit (TODO.md, rounds 2026-10-14-r1..r4) as a permanent stage. A fresh agent in
+# another mode (ASSESS_REVIEW_MODE, default deep) audits the staged milestone records + notes; MAJOR
+# findings get ONE fix attempt by the assessor and one re-review. Whatever remains is committed with
+# the run (the review file next to the notes; ledger.py check warns while MAJOR findings remain).
+# REVIEW=0 skips it (e.g. a cheap re-run). A reviewer that fails is noted, never fatal.
+REVIEW_FILE="$NOTES_DIR/$SECTION/$RUN_ID.review.md"  # = ledger.review_path
+review_prompt() {  # $1 = output file
+cat <<EOF
+Audit the ETA assessments that another agent just staged for "$SECTION" as of $UNTIL, before they
+are committed. Records: $AS; their working notes: $STAGE/eta-notes.md. Do NOT modify either file
+(or anything else outside $1). Read $ROOT/gather/RUBRIC.md fully (binding) and the milestones'
+wording in $ROOT/framework.yaml (description + details). Comparison: the previous record per target
+in ledger/assessments/$SECTION.jsonl and its notes $NOTES_DIR/$SECTION/<run id>.md (prev.by =
+"assess:<run id>[:mode]"). Evidence: effective events in ledger/events/<section>.jsonl; series:
+    uv run $ROOT/core/ledger.py series <section> <metric> --as-of $UNTIL
+
+For each milestone record check: (1) right quantity for the framework wording and details;
+(2) data recency, measurement gaps unmeasured not flat; (3) spot-check 2-3 key numbers against the
+ledger; (4) rerun the notes' script and confirm the stored numbers (keep memory small: batches,
+no huge arrays); (5) input register: measured / sourced / assumed labels true, sensitivities for
+assumed inputs that matter; (6) RUBRIC.md rule 7: every move vs prev (p10/p50/p90 by a year or
+more or year<->null, p_achieved by 0.05 or more) attributed, and truly; (7) effective records only;
+(8) consistency across milestones sharing a driver.
+SEVERITY: MAJOR = a factual error vs the ledger, a superseded or corrected claim relied on, the
+wrong quantity, arithmetic that does not reproduce, an unattributed or falsely attributed move,
+an assumed input labelled measured, or another broken RUBRIC.md rule that changes a number.
+NOT major: a disclosed assumption with its sensitivity, an incomplete minor sensitivity, wording.
+
+Write $1: per MAJOR finding the target, what is wrong (with numbers / ids) and what would fix it;
+then minor findings briefly. Paraphrase the notes, never copy long passages. The LAST line of
+$1 must be exactly "MAJOR: <count>".
+EOF
+}
+run_review() {  # $1 = round; sets REV_MAJOR (empty = the review failed)
+	rev="$STAGE/review-$1.md"; rm -f "$rev"
+	sums="$(cksum "$AS" "$STAGE/eta-notes.md")"
+	PI_MODEL="$(pi_mode_model "$REVIEW_MODE")"; PI_SOFT_FAIL=1
+	pi_run "review-$1" "$(review_prompt "$rev")"
+	PI_SOFT_FAIL=; PI_MODEL="$ASSESS_MODEL"
+	[ "$(cksum "$AS" "$STAGE/eta-notes.md")" = "$sums" ] || { echo "ERROR: the reviewer modified $AS or the notes" >&2; exit 1; }
+	REV_MAJOR="$(tail -n 1 "$rev" 2>/dev/null | sed -n 's/^MAJOR: \([0-9][0-9]*\)$/\1/p')"
+	[ "$PI_RC" = 0 ] && [ -n "$REV_MAJOR" ] || { REV_MAJOR=""; echo "WARN: review $1 failed (pi exit $PI_RC, or no 'MAJOR: <n>' last line)" >&2; }
+}
+ASSESS_MODEL="$PI_MODEL"
+case "$TARGETS" in *milestone:*) [ "${REVIEW:-1}" = 0 ] || DO_REVIEW=1 ;; esac
+if [ -n "${DO_REVIEW:-}" ]; then
+	REVIEW_MODE="${ASSESS_REVIEW_MODE:-deep}"
+	run_review 1
+	if [ -z "$REV_MAJOR" ]; then NOTE="$NOTE (review failed)"
+	elif [ "$REV_MAJOR" -gt 0 ]; then
+		cp "$AS" "$AS.draft"; cp "$STAGE/eta-notes.md" "$STAGE/eta-notes.md.draft"
+		MAJOR1="$REV_MAJOR"
+		PI_SOFT_FAIL=1
+		pi_run fix "$(prompt)
+
+You already staged $AS and $STAGE/eta-notes.md in this run (they are your draft: do not start over).
+An independent review found $REV_MAJOR MAJOR problem(s): read $STAGE/review-1.md. Revise both files in
+place: fix each MAJOR finding, or rebut it with evidence in a final '## Review response' section of the
+notes. Change only what a finding requires (RUBRIC.md rule 7 applies to your own draft too)."
+		PI_SOFT_FAIL=
+		if [ "$PI_RC" = 0 ] && as_complete; then
+			run_review 2
+			if [ -n "$REV_MAJOR" ]; then NOTE="$NOTE (review: $MAJOR1 MAJOR, $REV_MAJOR after one fix)"
+			else NOTE="$NOTE (review: $MAJOR1 MAJOR, fixed once, re-review failed)"; fi
+		else  # a failed or broken fix never replaces a complete draft
+			mv "$AS.draft" "$AS"; mv "$STAGE/eta-notes.md.draft" "$STAGE/eta-notes.md"
+			echo "WARN: the fix attempt failed (pi exit $PI_RC or incomplete); committing the reviewed draft" >&2
+			NOTE="$NOTE (review: $REV_MAJOR MAJOR, fix failed)"
+		fi
+	else NOTE="$NOTE (review: 0 MAJOR)"
+	fi
+	for r in 1 2; do [ -s "$STAGE/review-$r.md" ] && { printf '# Review round %s\n\n' "$r"; cat "$STAGE/review-$r.md"; echo; }; done > "$STAGE/review.md"
+	if [ -n "${REV_MAJOR:-}" ] && [ "$REV_MAJOR" -gt 0 ]; then
+		echo "WARN: $REV_MAJOR MAJOR review finding(s) remain; see $REVIEW_FILE" >&2
+	fi
+fi
+
 for t in $(echo "$TARGETS" | cut -d'|' -f1 | grep '^milestone:' || true); do
 	grep -qE "^## $t([^a-z0-9-]|\$)" "$STAGE/eta-notes.md" || echo "WARN: $STAGE/eta-notes.md has no '## $t' section" >&2
 done
 uv run $ROOT/core/ledger.py merge "$SECTION" --assessments "$AS"
 if [ -s "$STAGE/eta-notes.md" ]; then mkdir -p "$NOTES_DIR/$SECTION"; cp "$STAGE/eta-notes.md" "$NOTES"; fi
+if [ -s "$STAGE/review.md" ]; then mkdir -p "$NOTES_DIR/$SECTION"; cp "$STAGE/review.md" "$REVIEW_FILE"; fi
 uv run $ROOT/core/ledger.py check "$SECTION"
 commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')$NOTE$( [ -n "${AUDIT:-}" ] && echo " (audit: $AUDIT)")" \
-	"ledger/assessments/$SECTION.jsonl" "$NOTES"
+	"ledger/assessments/$SECTION.jsonl" "$NOTES" "$REVIEW_FILE"
 warn_drivers
 echo ">>> done: assess $SECTION as of $UNTIL"

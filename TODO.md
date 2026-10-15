@@ -49,28 +49,11 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       (Reuters 401, Science 403). Another fetch retry will not help. They need
       re-sourcing (find a source that states the claim, then `supersedes`), or
       they stay legacy background.
-- [ ] **Make the ETA audit permanent**: a fresh-agent review stage in assess.sh (like
-      gather's verify) that audits the run's notes + records against the checklist and the
-      round-2 severity bar (data ledger/audits/2026-10-14-r2/README.md), and feeds MAJOR
-      findings back into one fix attempt (AUDIT-style). Roughly doubles an assess run's cost.
-      The manual loop it replaces (2026-10-14, rounds r1-r4 in data ledger/audits/):
-      deep-mode reviewers per section read each run's committed ETA notes + the ledger
-      against a fixed checklist (right quantity for the wording; definitions resolved; data
-      recency and measurement gaps; ledger vs background numbers, spot-checked; meaningful
-      median / p_achieved; the single assumption that moves the median most; consistency
-      across milestones sharing a driver); fix + re-run until nothing major (r4: 0 MAJOR).
-      Round 1 (2026-10-14, data ledger/audits/2026-10-14-r1/): arithmetic mostly reproduces;
-      the failures are calibration and provenance (v4 re-runs moved ETAs up to a decade on the
-      same evidence; assumed inputs, driver mappings and failure chances unlabelled; superseded
-      claims reused). Fix = rubric v5 (stability rule 7, input register, mapping/failure rules,
-      effective-citation check, audit_correction) + a CORRECTION re-run of all milestones with
-      AUDIT=2026-10-14-r1. Not fixed by v5 (deferred): calibrating assumed failure chances
-      against shared reference classes; correlated shared-driver uncertainty.
-      Rounds 2-4: 11 -> 2 -> 0 MAJOR, all milestone-level after v5's clarifications.
-- [ ] Owner: decide the open milestone definitions the audits list as DEFINITION findings
-      (data ledger/audits/2026-10-14-r2/*.md); assessors currently take the most natural
-      reading and report the alternative as a sensitivity. A wording change is a
-      framework.yaml edit + DEFCHANGE re-assessment (RUBRIC.md rule 6).
+- [ ] **ETA calibration** (deferred by the 2026-10-14 audit, data ledger/audits/2026-10-14-r1..r4;
+      the audit is now assess.sh's review stage, DESIGN.md step 6): assumed failure chances
+      are reasoned per milestone, not calibrated against shared reference classes; shared
+      drivers' uncertainty is not correlated across milestones. Watch the review stage's
+      MAJOR counts and cost (it roughly doubles an assess run) over the next gather runs.
 - [ ] Owner review of the rubric v5 ETAs (all milestones audit-corrected 2026-10-14; working
       notes committed in ledger/assessments/notes/<section>/<run id>.md). The robot
       capability ETAs (2027–2031) rest on the Dyna failure-rate halving (~7.6 months, ONE
