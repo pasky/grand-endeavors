@@ -26,7 +26,7 @@ sources:
     covers: Weekly analyses of AI capability trends, compute and economics.
     cadence: weekly
     tier: secondary
-  # --- The Linux Kernel Patch -----------------------------------------------------------------------
+  # --- Automated Software Engineer (the Linux kernel patch) ---------------------------------------
   - name: LWN.net — kernel coverage
     url: https://lwn.net/Kernel/
     items: [milestone:the-linux-kernel-patch]
@@ -51,7 +51,7 @@ sources:
     covers: Fast news on kernel merges and notable patch series (incl. AI-written ones).
     cadence: daily
     tier: news
-  # --- The Nature Author --------------------------------------------------------------------------
+  # --- First Automated Scientist (the Nature author) ----------------------------------------------
   - name: Nature Portfolio — AI editorial policy
     url: https://www.nature.com/nature-portfolio/editorial-policies/ai
     items: [milestone:the-nature-author]
@@ -78,7 +78,7 @@ sources:
     covers: Sakana's "AI Scientist" (end-to-end AI-generated papers passing peer review) and other automated-research results.
     cadence: irregular
     tier: primary
-  # --- The $10M Solopreneur -----------------------------------------------------------------------
+  # --- Automated Economy Kickoff (the $10M solopreneur) -------------------------------------------
   - name: TrustMRR — verified startup revenue
     url: https://trustmrr.com/
     items: [milestone:the-10m-solopreneur]

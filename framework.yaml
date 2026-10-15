@@ -46,7 +46,7 @@ endeavors:
         kpi: 80-percentile METR task length equivalent (Human-hours)
         milestones:
           - slug: the-linux-kernel-patch
-            name: The Linux Kernel Patch
+            name: Automated Software Engineer
             description: >-
               An AI-submitted large (10k+ lines diff) patch to the Linux Kernel (or equivalent
               critical infra) is accepted by maintainers.
@@ -55,7 +55,7 @@ endeavors:
               AI-written code, no human-submitter rule); it tracks AI engineering capability,
               not project policy.
           - slug: the-nature-author
-            name: The Nature Author
+            name: First Automated Scientist
             description: >-
               An AI-generated research paper is accepted by a top-tier journal (Nature/Science)
               with AI credited as primary author.
@@ -70,7 +70,7 @@ endeavors:
                 the paper. Humans may fund it, provide compute, carry out lab protocols as directed
                 and submit it, but contribute no ideas or text.
           - slug: the-10m-solopreneur
-            name: The $10M Solopreneur
+            name: Automated Economy Kickoff
             description: A single-person company reaches $10M ARR with <10 hours/week human oversight.
             details:
               - >-
