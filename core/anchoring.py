@@ -7,11 +7,13 @@ bounding one, collected as observations of the milestone's section by gather/col
       - {source: manifold, id: <market id>, relation: same|weaker|stronger, by: YYYY-MM-DD}
       - {source: metaculus, id: <question (post) id>, relation: ..., by: YYYY-MM-DD}   (binary)
       - {source: metaculus, id: <question (post) id>, relation: ...}                   (date question)
+    (a `similar` anchor also needs `note`: its main wording differences and their net direction)
 
 relation: same = the question resolves on our event; weaker = an easier event that comes no later
 than ours (its date is a LOWER bound on our ETA: our P(by its deadline) <= its probability);
 stronger = a harder event that implies ours (an UPPER bound: our P(by its deadline) >= its
-probability). `by` = the last day the event may happen for the binary question to resolve YES.
+probability); similar = the same underlying capability or outcome under different resolution
+criteria that neither imply nor are implied by ours (compared at wider thresholds). `by` = the last day the event may happen for the binary question to resolve YES.
 Metric ids (registered in metrics/<section>.csv): manifold-<id lowercased>-p and metaculus-<id>-p
 (binary, probability 0-1), metaculus-<id>-p10/-p50/-p90 (date questions, decimal years).
 
@@ -25,13 +27,15 @@ import math
 import re
 
 SOURCES = ("manifold", "metaculus")
-RELATIONS = ("same", "weaker", "stronger")
+RELATIONS = ("same", "weaker", "stronger", "similar")
 ID_RE = {"manifold": re.compile(r"^[A-Za-z0-9]+$"), "metaculus": re.compile(r"^[0-9]+$")}
 # gap thresholds (gather/RUBRIC.md §4.1 step 4)
 MEDIAN_YEARS = 5      # same-event date anchor: medians more than this apart
 BOUND_YEARS = 1       # weaker/stronger date anchor: bound violated by more than this
 SAME_PROB = 0.25      # same-event binary anchor: |our P(by deadline) - its P| above this
 BOUND_PROB = 0.15     # weaker/stronger binary anchor: bound violated by more than this
+SIMILAR_YEARS = 10    # similar-event date anchor: medians more than this apart
+SIMILAR_PROB = 0.35   # similar-event binary anchor: |our P(by deadline) - its P| above this
 FORECASTERS_RE = re.compile(r"\bforecasters=(\d+)")
 
 
@@ -59,6 +63,8 @@ def check(at: str, anchors) -> list[str]:
             errs.append(f"{here}: bad {a['source']} id {a.get('id')!r}")
         if a.get("relation") not in RELATIONS:
             errs.append(f"{here}: relation must be one of {', '.join(RELATIONS)}")
+        if a.get("relation") == "similar" and not str(a.get("note") or "").strip():
+            errs.append(f"{here}: a similar anchor needs a note (its wording differences and their net direction)")
         if set(a) - {"source", "id", "relation", "by", "note"}:
             errs.append(f"{here}: unknown key(s) {sorted(set(a) - {'source', 'id', 'relation', 'by', 'note'})}")
         if "by" in a or a["source"] == "manifold":
@@ -109,6 +115,8 @@ def gap(a: dict, values: dict[str, float], eta: dict, made_at: str) -> str | Non
         what = f"P(by {a['by']}) {q:.2f} vs ours ~{ours:.2f}"
         if rel == "same" and abs(ours - q) > SAME_PROB:
             return f"{what} (same event: differs by more than {SAME_PROB})"
+        if rel == "similar" and abs(ours - q) > SIMILAR_PROB:
+            return f"{what} (similar event: differs by more than {SIMILAR_PROB})"
         if rel == "weaker" and ours - q > BOUND_PROB:
             return f"{what} (weaker event, a lower bound on our ETA: ours exceeds it by more than {BOUND_PROB})"
         if rel == "stronger" and q - ours > BOUND_PROB:
@@ -127,6 +135,8 @@ def gap(a: dict, values: dict[str, float], eta: dict, made_at: str) -> str | Non
             return f"{what} (same event: more than {MEDIAN_YEARS} years apart)"
         if not lo("p10") <= m < hi("p90"):
             return f"{what} (same event: outside our p10-p90 {eta.get('p10')}-{eta.get('p90') or 'past 2100'})"
+    elif rel == "similar" and (m < lo("p50") - SIMILAR_YEARS or m > hi("p50") + SIMILAR_YEARS):
+        return f"{what} (similar event: more than {SIMILAR_YEARS} years apart)"
     elif rel == "weaker" and m > hi("p50") + BOUND_YEARS:
         return f"{what} (weaker event, a lower bound on our ETA: its median is later than ours)"
     elif rel == "stronger" and m < lo("p50") - BOUND_YEARS:

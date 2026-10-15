@@ -1657,12 +1657,12 @@ def main() -> int:
             print(",".join(["draw", *cols]))
             for i, r in enumerate(rows):
                 print(",".join([str(i), *map(drivers.fmt, r)]))
-        elif a.cmd == "anchors":  # target|source|id|relation|by|metric ids
+        elif a.cmd == "anchors":  # target|source|id|relation|by|metric ids|note
             import anchoring as anchors
             for t, al in fw_anchors(a.section).items():
                 for x in al:
                     print(f"{t}|{x['source']}|{x['id']}|{x['relation']}|{x.get('by') or ''}|"
-                          + " ".join(anchors.metrics(x).values()))
+                          + " ".join(anchors.metrics(x).values()) + "|" + " ".join(str(x.get("note") or "").split()))
         elif a.cmd == "series":
             import kpi
             t = obs_as_of(a.section, day(a.as_of))

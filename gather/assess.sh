@@ -108,7 +108,7 @@ $DRIVERS
       uv run $ROOT/core/ledger.py driver-draws <driver> --as-of $UNTIL   (CSV; canonical seed and n)
   goes into draw i of your simulation; name the driver id in basis.eta.calc. The mapping onto the
   milestone stays yours (§4.1 step 3). A driver fit you think wrong: say so in the notes, still use it.
-- External anchors (RUBRIC.md §4.1 step 4), target|source|id|relation|deadline|metric ids:
+- External anchors (RUBRIC.md §4.1 step 4), target|source|id|relation|deadline|metric ids|note:
 $ANCHORS
   For a milestone with anchors, finish its forecast first and write a line "pre-anchor p50: YYYY
   (p10-p90 ..., p_achieved ...)" in its notes section BEFORE reading any anchor series. Then read
@@ -242,7 +242,8 @@ records only; (8) consistency across milestones sharing a driver; (9) shared dri
 drivers.yaml used_by samples the driver's draws (ledger.py driver-draws <driver> --as-of $UNTIL) as its
 script shows, with no private refit of the driver; (10) anchors (ledger.py anchors $SECTION): the notes
 state a pre-anchor p50 before the anchors are read, and each gap (RUBRIC.md §4.1 step 4 thresholds) is
-explained in calc with its crux and the anchor's metric id, not closed by an unattributed move; (11)
+explained in calc with its crux and the anchor's metric id (for a `similar` anchor: how much of it the
+wording differences account for), not closed by an unattributed move; (11)
 every failure scenario of 10% or more names its reference class with counts, or argues why no class
 can be counted and gives a sensitivity (RUBRIC.md §4.1 step 5).
 SEVERITY: MAJOR = a factual error vs the ledger, a superseded or corrected claim relied on, the

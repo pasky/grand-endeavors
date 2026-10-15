@@ -31,7 +31,8 @@ replacing a disclosed judgment is not an error fix). v6 (2026-10-15): a
 driver that several milestones share has one fitted distribution, whose
 draws they all sample (§4.1 step 2); the forecast is compared with external
 community forecasts (anchors) only after it is written down, and a gap is
-explained, not closed (§4.1 step 4); every failure scenario of 10 % or more
+explained, not closed (§4.1 step 4; anchors of the same, a bounding or a
+similar event); every failure scenario of 10 % or more
 names its reference class with counts (§4.1 step 5). KPI rules are
 unchanged in v2–v6. Any change in meaning is a new rubric version (rule 4).
 
@@ -286,17 +287,24 @@ straight line or sounds cautious. Work through these steps:
    (`same`) or of a bounding one: `weaker` is an easier event that comes no
    later than ours (its date is a lower bound on our ETA: our P(by its
    deadline) ≤ its probability), `stronger` a harder event that implies
-   ours (an upper bound). They are observations of the section
+   ours (an upper bound), and `similar` the same underlying capability or
+   outcome under resolution criteria that neither imply nor are implied
+   by ours (framework.yaml notes the differences and the direction they push
+   its date). They are observations of the section
    (`ledger.py anchors <section>` lists their metric ids; read them with
    `series`). First finish the forecast without them and write its
    **pre-anchor p50** (with p10–p90 and p_achieved) into the notes; only
    then read the anchors. A **gap** is a same-event median more than 5
    years from ours or outside our p10–p90, a same-event probability more
-   than 0.25 from ours at its deadline, or a violated weaker/stronger bound
-   (by more than a year, or more than 0.15 in probability). A gap is
+   than 0.25 from ours at its deadline, a violated weaker/stronger bound
+   (by more than a year, or more than 0.15 in probability), or for a
+   `similar` anchor a median more than 10 years from ours or a probability
+   more than 0.35 from ours. A gap is
    **explained, not closed**: name in `calc` the crux on which we and the
    market differ (an input, a mapping, a reading of the wording) and the
-   observation that would settle it, citing the anchor's metric id. Move
+   observation that would settle it, citing the anchor's metric id (for a
+   `similar` anchor, first how much of the gap its wording differences
+   explain, in the direction framework.yaml notes). Move
    the forecast only for a reason you would accept without the anchor (an
    error the comparison exposed, evidence the market's reasoning points
    to), attributed like any other move (rule 7). Thin markets (a few dozen

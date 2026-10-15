@@ -13,8 +13,8 @@
 #     in the wording that is not the point, e.g. an editorial policy; the ETA
 #     and status are judged as if it held, gather/RUBRIC.md §4.2), anchors?
 #     (milestones: external community forecasts of the same or a bounding event,
-#     {source: manifold|metaculus, id, relation: same|weaker|stronger, by: deadline of a
-#     binary question}, collected by gather/collectors/anchors.py; core/anchoring.py,
+#     {source: manifold|metaculus, id, relation: same|weaker|stronger|similar, by: deadline
+#     of a binary question, note: wording differences (required for similar)}, collected by gather/collectors/anchors.py; core/anchoring.py,
 #     gather/RUBRIC.md §4.1 step 4)
 # Text is Markdown (inline: *italic*, **bold**, [links](...); intro/manifesto
 # may have paragraphs).

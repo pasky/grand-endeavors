@@ -527,7 +527,7 @@ def main():
          and anchoring.metrics({"source": "metaculus", "id": "45", "relation": "same", "by": "2030-01-01"}) == {"p": "metaculus-45-p"}
          and list(anchoring.metrics({"source": "metaculus", "id": "45", "relation": "same"}).values())
          == ["metaculus-45-p10", "metaculus-45-p50", "metaculus-45-p90"])
-    errs = anchoring.check("x", [dict(M, source="polymarket"), dict(M, relation="similar"), {**M, "by": "soon"},
+    errs = anchoring.check("x", [dict(M, source="polymarket"), dict(M, relation="related"), {**M, "by": "soon"},
                                  dict(M, id="no-dash!"), M, M, {"source": "manifold", "id": "Q1", "relation": "same"}])
     case("anchors: framework check catches source, relation, deadline, id, duplicates; Manifold needs by",
          all(has(errs, n) for n in ("anchors[0]: source", "anchors[1]: relation", "anchors[2]: by must",
@@ -538,6 +538,12 @@ def main():
          and g(M, {"p": 0.5}) is None and g(M, {"p": 0.9}) is not None
          and g(dict(M, relation="weaker"), {"p": 0.99}) is None and g(dict(M, relation="weaker"), {"p": 0.4}) is not None
          and g(dict(M, relation="stronger"), {"p": 0.1}) is None and g(dict(M, relation="stronger"), {"p": 0.8}) is not None)
+    S = dict(M, relation="similar", note="looser test, earlier")
+    case("anchors: a similar anchor needs a note and is compared at wider thresholds (0.35; 10 years)",
+         has(anchoring.check("x", [dict(S, note="")]), "needs a note") and anchoring.check("x", [S]) == []
+         and g(S, {"p": 0.9}) is None and g(S, {"p": 0.2}) is not None
+         and g(dict(S, by=None, id="9", source="metaculus"), {"p50": 2038.0}) is None
+         and g(dict(S, by=None, id="9", source="metaculus"), {"p50": 2041.0}) is not None)
     D = {"source": "metaculus", "id": "9", "relation": "same"}
     unlikely = dict(e6, p_achieved=0.3, p50=None, p90=None)
     case("anchors: date gaps (median > 5 y apart or outside p10-p90; bounds; null quantiles lie past 2100)",

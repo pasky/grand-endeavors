@@ -93,7 +93,9 @@ expires, e.g. a proponent date in it passes) is past.
 
 **External anchors** (rubric v6, RUBRIC.md §4.1 step 4): a milestone's
 `anchors:` in framework.yaml names community forecasts (Manifold, Metaculus)
-of the same event or of a weaker/stronger bounding one (`core/anchoring.py`).
+of the same event, of a weaker/stronger bounding one, or of a `similar` one
+(different resolution criteria, compared at wider thresholds, with a note on
+the wording differences) (`core/anchoring.py`).
 `gather/collectors/anchors.py` stores them weekly as observations of the
 section (`manifold-<id>-p`, `metaculus-<id>-p` or `-p10/-p50/-p90`, registered
 in `metrics/<section>.csv`; the note holds `forecasters=<n>`). `check` warns
