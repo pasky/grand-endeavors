@@ -396,7 +396,14 @@ def collect_cost(fixture: str | None, today: dt.date, collector: str, reg: dict,
                        f"SpaceX rideshare price per kg for {y} launches (booking app price API, pricingMenus)",
                        collector, str(today))
             for y, v in sorted(parse_ride_api(common.fetch(RIDE_API, fixture)).items()) if y <= today.year]
-    ride = {int(o): r for (m, o), r in effective.items() if m == M_RIDE} | {int(r["obs"]): r for r in rows}
+    # inputs of the real series as ledger.prepare would leave them: an unchanged API value keeps the
+    # effective row (and its date), a new or changed one is the fresh row, a withdrawn value never counts
+    wds = [r for r in existing if r.get("verification") == "withdrawn"]
+    ride = {int(o): r for (m, o), r in effective.items() if m == M_RIDE}
+    for r in rows:
+        eff = ride.get(int(r["obs"]))
+        if not ledger.withdrawn(r, wds) and not (eff and Decimal(eff["value"]) == Decimal(r["value"])):
+            ride[int(r["obs"])] = r
     for metric, years in ((M_COST, range(min(s[0] for s in spans.values()), today.year)),
                           (M_RIDE_REAL, sorted(ride))):
         lag = dt.timedelta(days=int(reg[metric]["release_lag_days"] or 0))

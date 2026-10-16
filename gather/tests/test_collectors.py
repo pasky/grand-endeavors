@@ -244,7 +244,7 @@ def real(nominal_per_kg, year):
 PRICES = listed(("falcon-9", 2016, "62", "22800", "2016-06-03"),
                 *[("falcon-heavy", y, "90", "63800", f"{y}-07-01") for y in range(2018, 2021)],
                 ("falcon-heavy", 2021, "90", "63800", "2022-03-15"), ("falcon-heavy", 2022, "97", "63800", "2022-03-22"))
-RIDE = [prow("rideshare-price-per-kg-spacex", 2024, "6000", "2024-06-02", "$/kg")]
+RIDE = [prow("rideshare-price-per-kg-spacex", y, v, d, "$/kg") for y, v, d in ((2021, "5000", "2021-06-15"), (2024, "6000", "2024-06-02"))]
 kall = rockets.collect(FIX, TODAY, "x", PRICES + RIDE)
 k = {(r["metric"], r["obs"]): r for r in kall}
 kv = lambda y: int(k[(rockets.M_COST, str(y))]["value"])
@@ -268,9 +268,16 @@ case("ride: the price API gives a nominal row per launch year up to the current 
      "is announced, not in force)",
      sorted(o for m, o in k if m == rockets.M_RIDE) == ["2023", "2024", "2025", "2026"]
      and k[(rockets.M_RIDE, "2026")]["value"] == "7000" and k[(rockets.M_RIDE, "2026")]["published_basis"] == "seen")
-case("ride: real = nominal deflated with the obs year's CPI, complete years only (ledger 2024 + API 2023-2026)",
+case("ride: real = nominal deflated with the obs year's CPI, complete years only (ledger 2021, 2024 + API 2023-2026)",
      int(k[(rockets.M_RIDE_REAL, "2024")]["value"]) == real(6000, 2024)
-     and sorted(o for m, o in k if m == rockets.M_RIDE_REAL) == ["2023", "2024", "2025"])
+     and sorted(o for m, o in k if m == rockets.M_RIDE_REAL) == ["2021", "2023", "2024", "2025"])
+case("ride: an API value equal to the ledger's keeps the ledger row's date for the real series (2024: rule "
+     "2025-01-15, not today)", k[(rockets.M_RIDE_REAL, "2024")]["published"] == "2025-01-15")
+wd = RIDE[:1] + [prow("rideshare-price-per-kg-spacex", 2024, "5900", "2024-06-03", "$/kg"),
+                 dict(prow("rideshare-price-per-kg-spacex", 2024, "6000", "2026-09-01", "$/kg"), verification="withdrawn")]
+kw = {(r["metric"], r["obs"]): r for r in rockets.collect(FIX, TODAY, "x", PRICES + wd)}
+case("ride: a withdrawn value re-served by the API does not feed the real series (2024 from the remaining 5900)",
+     int(kw[(rockets.M_RIDE_REAL, "2024")]["value"]) == real(5900, 2024))
 case("ride: an unexpected price API format fails loudly",
      raises_exit(rockets.parse_ride_api, '{"content": {"pricing": []}}')
      and raises_exit(rockets.parse_ride_api, '{"content": {"pricingMenus": [{"year": 2026, "pricePerKilogramUsd": 7000}]}}'))
