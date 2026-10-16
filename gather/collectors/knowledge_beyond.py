@@ -13,7 +13,9 @@ fails the run (nothing is written), so a broken source is never silently skipped
 internet-users-world-share
   World Bank WDI API, indicator IT.NET.USER.ZS ("Individuals using the Internet (% of
   population)", World = WLD; the data are ITU's), WB_URL. JSON [meta, [records]]; a paged
-  answer (pages > 1) is an error. value = the record's number verbatim; obs = its year.
+  answer (pages > 1), a record count other than the stated total, a repeated year or no
+  value at all is an error. value = the record's number verbatim; obs = its year
+  (complete years only: a current-year value would be a partial-year estimate).
   published: registry release_lag_days rule (ITU's estimate for year Y appears in its
   November Facts and Figures; WDI carries it during Y+1).
 
@@ -30,11 +32,17 @@ top500-top-rmax
   The TOP500 list pages https://top500.org/lists/top500/YYYY/MM/ (June and November
   lists, from 1993-06). value = the rank-1 system's HPL Rmax converted to PFlop/s from
   the table header's unit (GFlop/s until the 2000s, then TFlop/s, PFlop/s), exact decimal
-  arithmetic. obs = the list month. Fetched: every list from the latest one already in
-  the ledger (re-checked for revisions) up to the newest list due by today, or all of
-  them on the first run (1 s apart); only the newest candidate may be missing (404: not
-  released yet, e.g. early June). published: rule (list month end + lag; the pages state
-  no date, the lists come out mid-month, so this is a late upper estimate, capped at
+  arithmetic; the Rmax cell is bound to its header column and the page title must name
+  the requested edition (year and month's first 3 letters). TOP500_ERRATA overrides a wrong header unit (Nov 2018: "GFlop/s"
+  over TFlop/s values). Guard: the #1 Rmax never fell, nor grew 10x, from one list to
+  the next (checked against the previous list of this run, else the ledger), so a unit
+  error fails the run instead of entering the series. obs = the list month. Fetched:
+  every list from the latest one this collector already put in the ledger (re-checked
+  for revisions) up to the newest list due by today, or all of them on the first run or
+  with TOP500_REFRESH=1 (1 s apart; e.g. after a new erratum, so the old value gets a
+  revision row). Only an edition not yet in the ledger may be missing (404), and only in
+  its own month (not released yet: the lists come out mid-month). published: rule (list
+  month end + lag; the pages state no date, so this is a late upper estimate, capped at
   retrieval).
 
 exoplanets-confirmed
@@ -42,8 +50,9 @@ exoplanets-confirmed
   confirmed planet), EXO_URL: pl_name, disc_year. value = planets with disc_year <= obs
   year, counted in the current archive; complete years only (Dec 31 + lag passed). A
   planet added later with an earlier discovery year, or a retracted one, revises the
-  count (appended as a revision). Guards: fewer than MIN_PLANETS rows (truncation) or a
-  duplicated pl_name is an error. published: rule.
+  count (appended as a revision). Guards: a row count other than the archive's own
+  count(*) (EXO_COUNT_URL), fewer than MIN_PLANETS rows (truncation) or a duplicated
+  pl_name is an error. published: rule.
 
 With --fixture DIR each source is read from DIR/<FIXTURES name> (TOP500:
 DIR/top500-YYYY-MM.html; a missing list file counts as not found).
@@ -63,19 +72,24 @@ from decimal import Decimal
 
 import common
 import kpi
+import ledger
 
 SECTION = "knowledge-beyond"
 WB_URL = "https://api.worldbank.org/v2/country/WLD/indicator/IT.NET.USER.ZS?format=json&per_page=200"
 ERDOS_URL = "https://raw.githubusercontent.com/teorth/erdosproblems/main/data/statistics_history.csv"
 EXO_URL = ("https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
            "?query=select+pl_name,disc_year+from+pscomppars&format=csv")
+EXO_COUNT_URL = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+count(*)+from+pscomppars&format=csv"
 TOP500_URL = "https://top500.org/lists/top500/{y}/{m:02d}/"
 FIXTURES = {WB_URL: "wb_internet_users.json", ERDOS_URL: "statistics_history.csv",
-            EXO_URL: "exoplanets_pscomppars.csv"}
+            EXO_URL: "exoplanets_pscomppars.csv", EXO_COUNT_URL: "exoplanets_count.csv"}
 M_INTERNET, M_ERDOS = "internet-users-world-share", "erdos-problems-solved-share"
 M_TOP500, M_EXO = "top500-top-rmax", "exoplanets-confirmed"
 FIRST_ERDOS_MONTH = "2025-09"
 FIRST_TOP500 = (1993, 6)
+# list pages whose Rmax header unit is wrong: {(year, month): (true unit prefix, why)}
+TOP500_ERRATA = {(2018, 11): ("T", "the page's header says GFlop/s but its values are TFlop/s: Summit's "
+                              "143,500 = 143.5 PFlop/s, as its TOP500 system page gives")}
 MIN_PLANETS = 5000
 TO_PFLOPS = {"G": Decimal("1e-6"), "T": Decimal("1e-3"), "P": Decimal(1), "E": Decimal(1000)}
 
@@ -112,12 +126,20 @@ def parse_wb(text: str) -> list[tuple[str, str]]:
         raise ValueError(f"{WB_URL}: unexpected answer {str(d)[:200]}")
     if int(d[0].get("pages", 1)) > 1:
         raise ValueError(f"{WB_URL}: paged answer ({d[0]['pages']} pages); refusing a partial series")
-    out = []
+    if int(d[0].get("total", -1)) != len(d[1]):
+        raise ValueError(f"{WB_URL}: {len(d[1])} records, the answer states total {d[0].get('total')}")
+    out, years = [], set()
     for r in d[1]:
         if r["indicator"]["id"] != "IT.NET.USER.ZS" or r["countryiso3code"] != "WLD":
             raise ValueError(f"{WB_URL}: unexpected record {r}")
+        year = str(int(r["date"]))
+        if year in years:
+            raise ValueError(f"{WB_URL}: year {year} twice")
+        years.add(year)
         if r["value"] is not None:
-            out.append((str(int(r["date"])), str(r["value"])))
+            out.append((year, str(r["value"])))
+    if not out:
+        raise ValueError(f"{WB_URL}: no values")
     return sorted(out)
 
 
@@ -157,33 +179,48 @@ def erdos_months(snaps: list[dict], today: dt.date, reg: dict) -> list[tuple[str
 
 
 # --- TOP500 ---------------------------------------------------------------------------------------
-def parse_top500(text: str, url: str) -> tuple[Decimal, str]:
-    """(rank-1 Rmax in PFlop/s, system name) of a list page."""
-    unit = re.search(r"<th>\s*Rmax \(([GTPE])Flop/s\)\s*</th>", text)
-    i = text.find("<td>1</td>")
-    if not unit or i < 0:
-        raise ValueError(f"{url}: no Rmax column or no rank-1 row")
-    row = text[i:text.find("</tr>", i)]
-    nums = re.findall(r'<td style="text-align: right;">\s*([\d,]+(?:\.\d+)?)\s*</td>', row)
-    if len(nums) < 3:  # cores, Rmax, Rpeak
-        raise ValueError(f"{url}: rank-1 row has {len(nums)} numeric cells, expected cores, Rmax, Rpeak")
-    link = re.search(r'<a href="/system/\d+">(.*?)</a>', row, re.S)
+def parse_top500(text: str, url: str, edition: tuple[int, int]) -> tuple[Decimal, str]:
+    """(rank-1 Rmax in PFlop/s, system name) of the list page of `edition` (year, month)."""
+    title = re.search(r"<title>\s*(\w+) (\d{4}) \| TOP500", text)
+    # month by its first 3 letters: the Nov 2015 page says "Novermber"
+    if not title or (title[1][:3], int(title[2])) != (dt.date(*edition, 1).strftime("%b"), edition[0]):
+        raise ValueError(f"{url}: not the {edition[0]}-{edition[1]:02d} list page (title {title[0] if title else None!r})")
+    a = text.find('<table class="table table-condensed table-striped">')
+    head = re.findall(r"<th>\s*(.*?)\s*</th>", text[a:text.find("</thead>", a)], re.S) if a >= 0 else []
+    col = next((k for k, h in enumerate(head) if re.fullmatch(r"Rmax \([GTPE]Flop/s\)", h)), None)
+    i = text.find("<td>1</td>", a)
+    if col is None or i < 0 or head[:2] != ["Rank", "System"]:
+        raise ValueError(f"{url}: no Rank/System/Rmax header or no rank-1 row (header {head})")
+    cells = re.findall(r"<td[^>]*>(.*?)</td>", text[i:text.find("</tr>", i)], re.S)
+    if len(cells) != len(head):
+        raise ValueError(f"{url}: rank-1 row has {len(cells)} cells, the header {len(head)}")
+    value = cells[col].strip().replace(",", "")
+    if not re.fullmatch(r"\d+(?:\.\d+)?", value):
+        raise ValueError(f"{url}: rank-1 Rmax {cells[col]!r} is not a number")
+    unit = TOP500_ERRATA.get(edition, (head[col][6], ""))[0]
+    link = re.search(r'<a href="/system/\d+">(.*?)</a>', cells[1], re.S)
     name = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", link[1] if link else "")).strip(" ,")
-    return Decimal(nums[1].replace(",", "")) * TO_PFLOPS[unit[1]], name
+    return Decimal(value) * TO_PFLOPS[unit], name
 
 
-def top500_lists(today: dt.date, existing) -> list[tuple[int, int]]:
-    """Lists to fetch: from the latest one in the ledger (else the first list) to the newest due by today."""
-    have = sorted(r["obs"] for r in existing if r["metric"] == M_TOP500 and r["verification"] != "withdrawn")
-    start = tuple(map(int, have[-1].split("-"))) if have else FIRST_TOP500
+def top500_lists(today: dt.date, existing, refresh: bool = False) -> list[tuple[int, int]]:
+    """Lists to fetch: from the latest one this collector put in the ledger (else, or with
+    refresh, the first list) to the newest due by today."""
+    have = sorted(r["obs"] for r in existing if r["metric"] == M_TOP500 and r["verification"] == "collector")
+    start = tuple(map(int, have[-1].split("-"))) if have and not refresh else FIRST_TOP500
     return [(y, m) for y in range(start[0], today.year + 1) for m in (6, 11)
             if (y, m) >= start and dt.date(y, m, 1) <= today]
 
 
 # --- NASA Exoplanet Archive ---------------------------------------------------------------------
-def parse_exo(text: str) -> dict[int, int]:
-    """{discovery year: planets}."""
+def parse_exo(text: str, count_text: str) -> dict[int, int]:
+    """{discovery year: planets}; count_text = the archive's own count(*) of the table."""
     rows = list(csv.DictReader(io.StringIO(text)))
+    count = count_text.strip().splitlines()
+    if len(count) != 2 or count[0] != "count(*)" or not count[1].isdigit():
+        raise ValueError(f"{EXO_COUNT_URL}: unexpected answer {count_text[:200]!r}")
+    if len(rows) != int(count[1]):
+        raise ValueError(f"{EXO_URL}: {len(rows)} planets, the archive counts {count[1]}; truncated answer?")
     if not rows or set(rows[0]) != {"pl_name", "disc_year"}:
         raise ValueError(f"{EXO_URL}: unexpected answer {text[:200]!r}")
     if len(rows) < MIN_PLANETS:
@@ -204,9 +241,10 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
     def add(metric, obs, value, source, note):
         rows.append(common.row(reg, metric, obs, value, source, note, collector, str(today)))
 
-    for year, value in parse_wb(fetch(WB_URL, fixture)):  # every year WDI has (revisions append)
-        add(M_INTERNET, year, value, WB_URL,
-            "World Bank WDI IT.NET.USER.ZS, World (WLD): individuals using the Internet, % of population (ITU data)")
+    for year, value in parse_wb(fetch(WB_URL, fixture)):  # every complete year WDI has (revisions append)
+        if int(year) < today.year:
+                add(M_INTERNET, year, value, WB_URL,
+                "World Bank WDI IT.NET.USER.ZS, World (WLD): individuals using the Internet, % of population (ITU data)")
 
     for obs, s in erdos_months(parse_erdos(fetch(ERDOS_URL, fixture)), today, reg):
         add(M_ERDOS, obs, common.round_half_up(Decimal(s["solved"]) * 100 / s["total"], 1), ERDOS_URL,
@@ -214,22 +252,34 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
             f"{s['other']} otherwise solved) at snapshot {s['commit'][:12]} of {s['at']:%Y-%m-%d %H:%M} UTC, "
             f"the last by the end of {obs}")
 
-    lists = top500_lists(today, existing)
+    lists = top500_lists(today, existing, bool(os.environ.get("TOP500_REFRESH")))
+    effective = ledger.obs_as_of("", rows=list(existing))
+    prev = None  # (edition, Rmax) of the previous list: from this run, else the ledger
     for k, (y, m) in enumerate(lists):
-        url = TOP500_URL.format(y=y, m=m)
+        url, obs = TOP500_URL.format(y=y, m=m), f"{y}-{m:02d}"
         if k and not fixture:
             time.sleep(1)
         try:
-            text = fetch(url, fixture, f"top500-{y}-{m:02d}.html")
+            text = fetch(url, fixture, f"top500-{obs}.html")
         except NotFound:
-            if k == len(lists) - 1:
-                continue  # the newest list is not out yet
+            # only an edition never collected, due this month, may be missing (not released yet)
+            if (M_TOP500, obs) not in effective and today < dt.date(y, m, 1) + dt.timedelta(days=31):
+                continue
             raise
-        rmax, name = parse_top500(text, url)
-        add(M_TOP500, f"{y}-{m:02d}", format(rmax.normalize(), "f"), url,
-            f"TOP500 {dt.date(y, m, 1):%B %Y} list, rank 1: {name}; HPL Rmax converted to PFlop/s")
+        rmax, name = parse_top500(text, url, (y, m))
+        if prev is None:
+            before = [o for (mt, o) in effective if mt == M_TOP500 and o < obs]
+            prev = (max(before), Decimal(effective[(M_TOP500, max(before))]["value"])) if before else None
+        if prev and not prev[1] <= rmax < 10 * prev[1]:
+            raise ValueError(f"{url}: rank-1 Rmax {rmax} PFlop/s vs {prev[1]} on the {prev[0]} list "
+                             "(the #1 never fell, nor grew 10x, between lists): a unit error? see TOP500_ERRATA")
+        prev = (obs, rmax)
+        erratum = TOP500_ERRATA.get((y, m), (None, ""))[1]
+        add(M_TOP500, obs, format(rmax.normalize(), "f"), url,
+            f"TOP500 {dt.date(y, m, 1):%B %Y} list, rank 1: {name}; HPL Rmax converted to PFlop/s"
+            + (f" ({erratum})" if erratum else ""))
 
-    by_year = parse_exo(fetch(EXO_URL, fixture))
+    by_year = parse_exo(fetch(EXO_URL, fixture), fetch(EXO_COUNT_URL, fixture))
     total = 0
     for year in range(min(by_year), today.year + 1):
         total += by_year.get(year, 0)

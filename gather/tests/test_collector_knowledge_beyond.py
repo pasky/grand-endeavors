@@ -10,7 +10,10 @@ Run:  uv run gather/tests/test_collector_knowledge_beyond.py
 """
 import datetime as dt
 import os
+import shutil
 import sys
+import tempfile
+from decimal import Decimal
 
 GATHER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIX = os.path.join(GATHER, "tests", "fixtures", "knowledge-beyond")
@@ -21,7 +24,8 @@ import knowledge_beyond as kb  # noqa: E402
 
 FAILS = []
 TODAY = dt.date(2026, 10, 16)
-kb.MIN_PLANETS = 10  # the exoplanet fixture is trimmed to 40 planets
+kb.MIN_PLANETS = 10  # the exoplanet fixture is trimmed to 40 planets (exoplanets_count.csv says 40 to match)
+REG = common.registry(kb.SECTION)
 
 
 def case(name, cond):
@@ -43,7 +47,12 @@ def read(name):
         return f.read()
 
 
-HAVE = [{"metric": kb.M_TOP500, "obs": "2025-11", "verification": "collector"}]  # TOP500: fetch from Nov 2025 on
+def t5row(obs, value, verification="collector"):
+    return dict(common.row(REG, kb.M_TOP500, obs, value, "https://top500.org/", "", "t", "2026-01-01"),
+                verification=verification)
+
+
+HAVE = [t5row("2025-11", "1809")]  # TOP500: fetch from Nov 2025 on
 rows = kb.collect(FIX, TODAY, "t", HAVE)
 by = {(r["metric"], r["obs"]): r for r in rows}
 errs = common.check(rows, common.registry(kb.SECTION))
@@ -57,8 +66,18 @@ case("internet: non-null World years, values verbatim (no float noise; '67' stay
      == [("2005", "15.6"), ("2022", "67"), ("2024", "71.2"), ("2025", "73.6")])
 case("internet: rule-basis date = year end + lag, capped at retrieval",
      by[(kb.M_INTERNET, "2024")]["published"] == "2025-10-27" and by[(kb.M_INTERNET, "2025")]["published"] == str(TODAY))
-case("internet: a paged answer is refused",
-     raises(ValueError, kb.parse_wb, read("wb_internet_users.json").replace('"pages": 1', '"pages": 2')))
+WB = read("wb_internet_users.json")
+case("internet: a paged, short (total mismatch) or valueless answer is refused",
+     raises(ValueError, kb.parse_wb, WB.replace('"pages": 1', '"pages": 2'))
+     and raises(ValueError, kb.parse_wb, WB.replace('"total": 5', '"total": 66'))
+     and raises(ValueError, kb.parse_wb, '[{"page": 1, "pages": 1, "total": 0}, []]'))
+with tempfile.TemporaryDirectory() as tmp:
+    for f in os.listdir(FIX):
+        shutil.copy(os.path.join(FIX, f), tmp)
+    with open(os.path.join(tmp, "wb_internet_users.json"), "w") as f:
+        f.write(WB.replace('"date": "2004"', '"date": "2026"').replace('"value": null', '"value": 75.0', 1))
+    cur = [r["obs"] for r in kb.collect(tmp, TODAY, "t", HAVE) if r["metric"] == kb.M_INTERNET]
+case("internet: a current-year (partial) value is not emitted", "2026" not in cur and "2025" in cur)
 
 # --- Erdős problems
 snaps = kb.parse_erdos(read("statistics_history.csv"))
@@ -76,25 +95,39 @@ case("erdos: out-of-order snapshot dates are refused",
                                                   + read("statistics_history.csv").splitlines()[:0:-1])))
 
 # --- TOP500
-v, name = kb.parse_top500(read("top500-1993-06.html"), "u")
+v, name = kb.parse_top500(read("top500-1993-06.html"), "u", (1993, 6))
 case("top500: GFlop/s header converted exactly (59.70 GFlop/s = 0.0000597 PFlop/s), system named",
      format(v.normalize(), "f") == "0.0000597" and name == "CM-5/1024")
-case("top500: lists to fetch = from the latest in the ledger to the newest due",
-     kb.top500_lists(dt.date(2026, 12, 1), [{"metric": kb.M_TOP500, "obs": "2025-11", "verification": "collector"}])
-     == [(2025, 11), (2026, 6), (2026, 11)] and kb.top500_lists(dt.date(1993, 12, 1), []) == [(1993, 6), (1993, 11)])
+v18, _ = kb.parse_top500(read("top500-2018-11.html"), "u", (2018, 11))
+case("top500: the Nov 2018 erratum (header GFlop/s over TFlop/s values) gives Summit's 143.5 PFlop/s", v18 == Decimal("143.5"))
+case("top500: a page of another edition is refused",
+     raises(ValueError, kb.parse_top500, read("top500-2018-11.html"), "u", (2019, 6)))
+case("top500: lists to fetch = from the latest collected one to the newest due (legacy rows are no watermark; "
+     "TOP500_REFRESH = all)",
+     kb.top500_lists(dt.date(2026, 12, 1), HAVE) == [(2025, 11), (2026, 6), (2026, 11)]
+     and kb.top500_lists(dt.date(1993, 12, 1), []) == [(1993, 6), (1993, 11)]
+     and kb.top500_lists(dt.date(1993, 12, 1), [t5row("2025-11", "1809", "legacy")]) == [(1993, 6), (1993, 11)]
+     and kb.top500_lists(dt.date(1993, 12, 1), HAVE, refresh=True) == [(1993, 6), (1993, 11)])
 t5 = {r["obs"]: r for r in kb.collect(FIX, dt.date(2026, 12, 1), "t", HAVE) if r["metric"] == kb.M_TOP500}
 case("top500: the newest list may be missing (Nov 2026 not out); PFlop/s values verbatim",
      sorted(t5) == ["2025-11", "2026-06"] and t5["2026-06"]["value"] == "2198.4" and t5["2025-11"]["value"] == "1809")
 case("top500: a missing older list fails the run",
-     raises(kb.NotFound, kb.collect, FIX, dt.date(2026, 12, 1), "t",
-            [{"metric": kb.M_TOP500, "obs": "2024-11", "verification": "collector"}]))
+     raises(kb.NotFound, kb.collect, FIX, dt.date(2026, 12, 1), "t", [t5row("2024-11", "1742")]))
+case("top500: the newest list missing after its own month (never released?) fails the run",
+     raises(kb.NotFound, kb.collect, FIX, dt.date(2026, 12, 2), "t", HAVE))
+case("top500: an edition already in the ledger that went missing fails the run",
+     raises(kb.NotFound, kb.collect, FIX, dt.date(2026, 11, 20), "t", HAVE + [t5row("2026-11", "2500")]))
+case("top500: a #1 Rmax below the previous list's (e.g. a unit error) fails the run",
+     raises(ValueError, kb.collect, FIX, TODAY, "t", HAVE + [t5row("2025-06", "1809000")]))
 
 # --- exoplanets
 case("exoplanets: cumulative by discovery year, complete years past the lag only",
      by[(kb.M_EXO, "2009")]["value"] == "23" and by[(kb.M_EXO, "2014")]["value"] == "40"
      and (kb.M_EXO, "2026") not in by and kb.collect(FIX, dt.date(2026, 1, 29), "t", HAVE)[-1]["obs"] == "2024")
-case("exoplanets: a truncated answer is refused",
-     raises(ValueError, kb.parse_exo, "\n".join(read("exoplanets_pscomppars.csv").splitlines()[:5])))
+EXO = read("exoplanets_pscomppars.csv")
+case("exoplanets: an answer short of the archive's count(*) is refused",
+     raises(ValueError, kb.parse_exo, "\n".join(EXO.splitlines()[:-1]), read("exoplanets_count.csv"))
+     and raises(ValueError, kb.parse_exo, "\n".join(EXO.splitlines()[:5]), "count(*)\n4\n"))
 
 print(f"\n{len(FAILS)} failure(s)" if FAILS else "\nall knowledge-beyond collector tests passed")
 sys.exit(1 if FAILS else 0)
