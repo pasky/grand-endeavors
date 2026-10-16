@@ -33,6 +33,11 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       8-item climate gather ≈ 75 min of agent time), and which model per stage
       (e.g. a cheaper intake model, a strong verifier).
 - [ ] Finish `views/newsletter-intro.md` (the newsletter intro still ends in `..todo..`).
+- [ ] **Success level for single-success AI milestones.** RUBRIC "Calibrate the driver" (§4.1, under the
+      long-tail list) says to use the 50% horizon when one success is enough (one accepted patch, one paper).
+      Audit 2026-10-16-eta-basis (owner: 80% = autonomy) mandates 80% for all three robots-software
+      milestones. The 2026-10-16 kernel-patch review flags the conflict. At 50% the kernel ETA would be
+      2027.3 / 2028.8 / 2031.5 instead of 2027.6 / 2029.6 / 2032.7. Decide, then align the rubric or the audit.
 
 ## Operations
 
@@ -118,6 +123,17 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
         times (to replace the decoded histogram); Epoch rescaling ECI (`--calibrate` refits against the
         current vintage).
       - Recalibrating means new metric ids, plus `retired_after` on the old ones.
+- [ ] Robots-software milestone ETAs rest on precursor ladders (audits 2026-10-16-eta-basis, -r2):
+      - **Kernel:** the size of accepted AI-written contributions.
+      - **Nature author:** the venue tier of accepted AI-generated papers.
+      - **Solopreneur:** verified solo revenue.
+      - **Today:** they are ledger events from intake (gather run 20261016T052807Z, which covered
+        2025-07 to 2026-10). Make them registered series so new rungs trigger re-assessment.
+      - **Candidates:**
+        - GitHub commit search for `Assisted-by:` trailers in torvalds/linux and llvm-project. Matches
+          are unreliable (the search index caps results and gives false positives).
+        - TrustMRR's API (key required; solo status is self-declared).
+      - Run regular robots-software gathers: the section had no intake between 2026-01 and 2026-10.
 - [ ] 🤖 `ledger.py check` charges an assess run's unresolved review MAJOR count to EVERY milestone of
       that run: the review file ends in one run-level `MAJOR: <n>` line. Example: run 20261016T033429Z left
       one MAJOR, on the-10m-solopreneur (fixed by audit 2026-10-16-task-horizon), yet the kernel-patch
