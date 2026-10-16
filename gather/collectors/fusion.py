@@ -93,9 +93,8 @@ CDX = ("http://web.archive.org/cdx/search/cdx?url={}&output=json&fl=timestamp,st
        "&filter=statuscode:200&collapse=timestamp:6")
 WAYBACK = "https://web.archive.org/web/{}id_/{}"
 WB_POP = "https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?format=json&per_page=20000&date=2014:{}"
-BLS_CPI = "https://download.bls.gov/pub/time.series/cu/cu.data.1.AllItems"
-CPI_SERIES = "CUUR0000SA0"  # CPI-U, all items, US city average, NSA
-BLS_USER_AGENT = "grand-endeavors-collector/1 (python-urllib; contact: pasky@ucw.cz)"
+BLS_CPI, CPI_SERIES, BLS_USER_AGENT = common.BLS_CPI, common.CPI_SERIES, common.BLS_USER_AGENT
+parse_bls_cpi = common.parse_bls_cpi
 BASE_YEAR = 2025
 # Highest genuine GPP household price seen 2018-2026: Italy 0.783 USD/kWh (Dec 2022).  Larger
 # values are GPP currency-conversion errors (Syria 2.220 in 2025 Q2, Croatia 1.227 in 2022 Q2)
@@ -320,19 +319,6 @@ def population(records: list[dict]) -> tuple[dict, dict]:
     return pop, names
 
 
-def parse_bls_cpi(text: str) -> dict[int, Decimal]:
-    """{year: annual average} of CPI_SERIES from a BLS cu.data.* flat file (tab-separated
-    series_id, year, period, value, footnotes; M13 = BLS's official annual average)."""
-    out = {}
-    for ln in text.splitlines()[1:]:
-        f = [x.strip() for x in ln.split("\t")]
-        if len(f) >= 4 and f[0] == CPI_SERIES and f[2] == "M13":
-            out[int(f[1])] = Decimal(f[3])
-    if not out:
-        raise ValueError(f"no {CPI_SERIES} annual averages (M13) in the BLS file")
-    return out
-
-
 def norm(name: str) -> str:
     s = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z0-9]+", " ", s.replace("&", " and ")).strip()
@@ -371,18 +357,7 @@ def weighted(prices: dict[str, Decimal], pop: dict[str, dict[int, int]], year: i
 
 
 def deflate(nominal: Decimal, year: int, cpis: dict[int, Decimal], base: int = BASE_YEAR) -> tuple[Decimal, str]:
-    """(real value in constant `base` USD, note).  Missing CPI years fall back to the
-    latest available year (stated in the note)."""
-    last = max(cpis)
-    by = base if base in cpis else last
-    oy = year if year in cpis else latest_year(cpis, year)
-    note = f"deflated with BLS CPI-U annual averages ({CPI_SERIES}) {oy} -> {by}"
-    flags = []
-    if by != base:
-        flags.append(f"{base} CPI not yet published, base = {by} CPI (provisional)")
-    if oy != year:
-        flags.append(f"{year} CPI not yet published, {oy} CPI used (provisional)")
-    return nominal * cpis[by] / cpis[oy], note + ("; " + "; ".join(flags) if flags else "")
+    return common.deflate(nominal, year, cpis, base)
 
 
 def mwh(usd_kwh: Decimal | str) -> str:

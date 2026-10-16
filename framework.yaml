@@ -192,7 +192,9 @@ endeavors:
       making all raw materials cheap, and vast opportunities for community independence. And if
       nothing else, transport by orbital flights is the next best thing to teleportation, allowing
       you to reach the opposite side of the globe in 90 minutes.
-    kpi: Cost to LEO ($/kg)
+    kpi: >-
+      Cost to LEO ($/kg): the cheapest published price per kg to low Earth orbit of a dedicated
+      launch among the rockets in service, inflation-adjusted (constant 2025 $)
     milestones:
       - slug: the-deluge
         name: The Deluge

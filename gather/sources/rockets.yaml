@@ -4,7 +4,7 @@ sources:
   - name: SpaceX — rideshare
     url: https://www.spacex.com/rideshare
     items: [kpi]
-    covers: Published Falcon 9 rideshare price per kg to SSO (the only public per-kg list price of a major provider).
+    covers: Published Falcon 9 rideshare price per kg to SSO (the only public per-kg list price of a major provider); stage it as rideshare-price-per-kg-spacex (price in force on 1 July of the year). Dedicated-launch list prices (SpaceX's Capabilities & Services PDF went 404 in 2025-08) go to list-price-<rocket> + list-leo-kg-<rocket> whenever a provider publishes one (registered rockets only; a new rocket needs registering).
     cadence: updated on price changes
     tier: primary
   - name: SpaceX — updates
@@ -34,9 +34,17 @@ sources:
   - name: Our World in Data — cost of space launches to LEO
     url: https://ourworldindata.org/grapher/cost-space-launches-low-earth-orbit
     items: [kpi]
-    covers: Historical $/kg to LEO by vehicle (CSIS Aerospace Security Project data); background for the KPI series, not current prices.
-    cadence: irregular
+    covers: CSIS Aerospace Security Project $/kg to LEO per rocket (FY2021 $, at its first successful launch; CSIS last updated 2022-09-01); the KPI series (cost-to-leo-best-real) prices rockets without published list prices with it, not current prices.
+    cadence: irregular (OWID refresh ~yearly)
     tier: secondary
+    collector: true
+  - name: Jonathan's Space Report — GCAT launch list
+    url: https://planet4589.org/space/gcat/tsv/launch/launch.tsv
+    items: [kpi]
+    covers: Every launch with its vehicle type and outcome (J. McDowell's GCAT); gives each rocket's years in service for the KPI series.
+    cadence: continuous
+    tier: primary
+    collector: true
   - name: ESA — Space Transportation
     url: https://www.esa.int/Enabling_Support/Space_Transportation
     items: [kpi, beyond]

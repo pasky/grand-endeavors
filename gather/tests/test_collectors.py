@@ -206,17 +206,122 @@ case("metr: YYYY-MM ledger dates of the metric are re-stated as of the month end
 parsed = rockets.parse(fixture("msatannual.txt"))
 case("jsr: year rows parsed (Total column, verbatim), all-time Total row skipped",
      parsed == [(1956, "0.0"), (2016, "337.4"), (2024, "2625.9"), (2025, "3194.0"), (2026, "2120.6")])
-rrow = rockets.collect(FIX, TODAY, "collectors/rockets.py@2026-09-28")
+rall = rockets.collect(FIX, TODAY, "collectors/rockets.py@2026-09-28")
+rrow = [r for r in rall if r["metric"] == rockets.METRIC]
 case("jsr: the partial current year (2026) is NOT emitted", [r["obs"] for r in rrow] == ["1956", "2016", "2024", "2025"])
-case("jsr: a year is emitted only once its release lag has passed (2025 absent on 2026-01-10)",
-     "2025" not in [r["obs"] for r in rockets.collect(FIX, dt.date(2026, 1, 10), "x")]
-     and "2025" in [r["obs"] for r in rockets.collect(FIX, dt.date(2026, 1, 15), "x")])
-case("jsr: all rows pass ledger.check_obs_row against metrics/rockets.csv", registry_ok("rockets", rrow))
+case("jsr: a year is emitted only once its release lag has passed (2025 absent on 2026-01-10, both metrics)",
+     not [r for r in rockets.collect(FIX, dt.date(2026, 1, 10), "x") if r["obs"] == "2025"]
+     and len([r for r in rockets.collect(FIX, dt.date(2026, 1, 15), "x") if r["obs"] == "2025"]) == 2)
+case("jsr: all rows pass ledger.check_obs_row against metrics/rockets.csv", registry_ok("rockets", rall))
 r = by_key(rrow)[("payload-mass-to-orbit", "2025")]
 case("jsr: 2025 = 3194.0 t, rule-published 2026-01-15",
      (r["value"], r["unit"], r["published"], r["published_basis"]) == ("3194.0", "t", "2026-01-15", "rule"))
 case("jsr: unexpected column layout fails loudly",
      raises_exit(rockets.parse, "# Bin YDate USA Total\n 1 2020 1.0\n"))
+
+# --- rockets KPI (list prices / CSIS $/kg, CPI-deflated, x JSR GCAT years in service) ---------------
+CPIS = common.parse_bls_cpi(fixture("cu.data.1.AllItems"))
+GLEO = fixture("launch.tsv")
+CLEO = fixture("cost-space-launches-low-earth-orbit.csv")
+
+
+def prow(metric, obs, value, published, unit="$M"):
+    """A verified ledger price row (the fields collect_cost reads)."""
+    return {"metric": metric, "obs": str(obs), "value": value, "unit": unit, "published": published,
+            "published_basis": "source", "retrieved": "2026-10-16", "verification": "verified",
+            "source": f"https://web.archive.org/web/{obs}/x"}
+
+
+def listed(*items):
+    return [r for slug, y, price, kg, pub in items
+            for r in (prow(f"list-price-{slug}", y, price, pub), prow(f"list-leo-kg-{slug}", y, kg, pub, "kg"))]
+
+
+def real(nominal_per_kg, year):
+    return round(nominal_per_kg * float(CPIS[2025]) / float(CPIS[year]))
+
+
+PRICES = listed(("falcon-9", 2016, "62", "22800", "2016-06-03"),
+                *[("falcon-heavy", y, "90", "63800", f"{y}-07-01") for y in range(2018, 2021)],
+                ("falcon-heavy", 2021, "90", "63800", "2022-03-15"), ("falcon-heavy", 2022, "97", "63800", "2022-03-22"))
+RIDE = [prow("rideshare-price-per-kg-spacex", 2024, "6000", "2024-06-02", "$/kg")]
+kall = rockets.collect(FIX, TODAY, "x", PRICES + RIDE)
+k = {(r["metric"], r["obs"]): r for r in kall}
+kv = lambda y: int(k[(rockets.M_COST, str(y))]["value"])
+case("leo: a listed rocket's $/kg = list price / its LEO kg, deflated with the obs year's CPI (Falcon Heavy 2018, 2021)",
+     kv(2018) == real(90e6 / 63800, 2018) and kv(2021) == real(90e6 / 63800, 2021))
+case("leo: a year without a list row holds the last listed year's real value (Falcon Heavy 2023-2025 = 2022)",
+     kv(2022) == real(97e6 / 63800, 2022) == kv(2023) == kv(2025) and "held in real terms" in k[(rockets.M_COST, "2025")]["note"])
+case("leo: unlisted rockets use CSIS (FY2021 $ rebased to 2025 $ with CPI): Saturn V 1967-73, Proton 1974, Zenit 2 2005",
+     kv(1973) == real(5400, 2021) and kv(1974) == real(8200, 2021) and kv(2005) == real(5100, 2021)
+     and "Saturn V" in k[(rockets.M_COST, "1973")]["note"])
+case("leo: years before a listed rocket's first list row fall back to its CSIS figure (Falcon 9 2010 at CSIS 2600)",
+     kv(2010) == real(2600, 2021) and "Falcon 9 CSIS" in k[(rockets.M_COST, "2010")]["note"])
+case("leo: the source is the winning input (Falcon Heavy's list-price row in 2018, the CSIS file in 1973)",
+     k[(rockets.M_COST, "2018")]["source"].endswith("/2018/x") and k[(rockets.M_COST, "1973")]["source"] == rockets.CSIS_URL)
+case("leo: one row per year from the first CSIS year to the last complete one; rows pass the registry",
+     sorted(o for m, o in k if m == rockets.M_COST) == [str(y) for y in range(1962, 2026)] and registry_ok("rockets", kall))
+case("leo: years before the CSIS update are published at it (basis source), later ones by the rule",
+     (k[(rockets.M_COST, "2021")]["published"], k[(rockets.M_COST, "2021")]["published_basis"]) == (rockets.CSIS_UPDATED, "source")
+     and (k[(rockets.M_COST, "2022")]["published"], k[(rockets.M_COST, "2022")]["published_basis"]) == ("2023-01-15", "rule"))
+case("leo: rideshare real = nominal deflated with the obs year's CPI, one row per nominal row",
+     int(k[(rockets.M_RIDE_REAL, "2024")]["value"]) == real(6000, 2024) and len([1 for m, _ in k if m == rockets.M_RIDE_REAL]) == 1)
+case("leo: a list price without its LEO capacity fails loudly",
+     raises_exit(rockets.collect, FIX, TODAY, "x", PRICES[:-1]))
+case("leo: a gap between two listed years fails loudly (missed intake, not a delisting)",
+     raises_exit(rockets.collect, FIX, TODAY, "x", [r for r in PRICES if r["obs"] != "2020"]))
+case("cpi: a missing earlier CPI year (truncated file) or no CPI at or before the year raises, never falls back",
+     _raises(common.deflate, common.Decimal(100), 2018, {2017: common.Decimal(1), 2021: common.Decimal(1)}, 2021)
+     and _raises(common.deflate, common.Decimal(100), 2018, {2021: common.Decimal(1), 2025: common.Decimal(1)}, 2025))
+spans = rockets.service_years(rockets.parse_csis(CLEO), rockets.parse_gcat(GLEO), TODAY)
+case("leo: Zenit 2 stays in service through its last GCAT launch of any variant (Zenit-2SB 2011), gaps included",
+     spans["Zenit 2"][:2] == (1985, 2011))
+case("leo: a rocket that launched within ACTIVE_YEARS is in service to last year (Falcon Heavy, last 2024); "
+     "one that did not is retired (Rokot, last 2019)",
+     spans["Falcon Heavy"] == (2018, 2025, 2024) and spans["Rokot"] == (1994, 2019, 2019))
+case("leo: suborbital launches do not count as service (New Shepard absent)", "New Shepard" not in rockets.parse_gcat(GLEO))
+saved = dict(rockets.LISTED), dict(rockets.EXTRA_LV)
+try:
+    rockets.LISTED["New Glenn"], rockets.EXTRA_LV["New Glenn"] = "new-glenn", ["New Glenn 7x2"]
+    ng = {r["obs"]: r for r in rockets.collect(FIX, TODAY, "x", PRICES + listed(("new-glenn", 2025, "30", "45000", "2025-05-01")))
+          if r["metric"] == rockets.M_COST}
+    case("leo: a listed rocket CSIS does not cover enters from its first GCAT success with its first list price "
+         "(a hypothetical New Glenn $30M / 45 t in 2025)",
+         int(ng["2025"]["value"]) == real(30e6 / 45000, 2025) and "New Glenn" in ng["2025"]["note"]
+         and int(ng["2024"]["value"]) == kv(2024))
+    rockets.LISTED.pop("New Glenn")
+    case("leo: a rocket in EXTRA_LV without a LISTED price fails loudly",
+         raises_exit(rockets.service_years, rockets.parse_csis(CLEO), rockets.parse_gcat(GLEO), TODAY))
+finally:
+    rockets.LISTED, rockets.EXTRA_LV = saved
+prior = [dict(prow(rockets.M_COST, 2020, "1400", rockets.CSIS_UPDATED, "$/kg"), verification="collector"),
+         dict(prow(rockets.M_COST, 2019, str(kv(2019)), rockets.CSIS_UPDATED, "$/kg"), verification="collector")]
+rev = by_key(common.mark_revisions(rockets.collect(FIX, TODAY, "x", PRICES + prior), PRICES + prior))
+case("leo: a changed pre-update value is a revision dated first seen, not backdated to the CSIS update; "
+     "an unchanged one keeps the CSIS date",
+     (rev[(rockets.M_COST, "2020")]["published"], rev[(rockets.M_COST, "2020")]["published_basis"]) == ("2026-09-28", "seen")
+     and rev[(rockets.M_COST, "2019")]["published"] == rockets.CSIS_UPDATED)
+case("leo: a ledger year the run no longer derives fails loudly (withdraw it explicitly)",
+     raises_exit(rockets.collect, FIX, TODAY, "x", [dict(prior[0], obs="1950")]))
+case("leo: a CSIS rocket without a GCAT mapping fails loudly (a new CSIS vintage needs a reviewed CSIS_LV entry)",
+     raises_exit(rockets.service_years, rockets.parse_csis(CLEO.rstrip("\n") + "\nStarship,2027,100,Heavy\n"),
+                 rockets.parse_gcat(GLEO), TODAY))
+case("leo: a mapped rocket missing from the CSIS data fails loudly (a truncated export would raise the minimum)",
+     raises_exit(rockets.service_years,
+                 rockets.parse_csis("\n".join(ln for ln in CLEO.splitlines() if not ln.startswith("Falcon Heavy,"))),
+                 rockets.parse_gcat(GLEO), TODAY))
+case("leo: a mapped LV_Type missing from GCAT fails loudly (a GCAT rename)",
+     raises_exit(rockets.service_years, rockets.parse_csis(CLEO),
+                 rockets.parse_gcat(GLEO.replace("\tZenit-2M\t", "\tZenit-2 M\t")), TODAY))
+f9 = next(ln for ln in GLEO.splitlines() if "\tFalcon 9\t" in ln)
+case("leo: an active unmapped GCAT LV_Type named like a mapped one fails loudly (new variant 'Falcon 9 Block 7'); "
+     "reviewed exceptions pass (Vega C)",
+     raises_exit(rockets.service_years, rockets.parse_csis(CLEO),
+                 rockets.parse_gcat(GLEO + f9.replace("\tFalcon 9\t", "\tFalcon 9 Block 7\t") + "\n"), TODAY)
+     and rockets.parse_gcat(GLEO).get("Vega C", (0, 0))[1] >= TODAY.year - rockets.ACTIVE_YEARS)
+case("leo: unexpected CSIS / GCAT headers fail loudly",
+     raises_exit(rockets.parse_csis, "Entity,Year,Cost\nX,2000,1\n")
+     and raises_exit(rockets.parse_gcat, "#Launch_Tag\tLV_Type\n"))
 
 # --- fusion (GPP household electricity prices x WB population, US CPI) ------------------------
 FFIX = os.path.join(FIX, "fusion")
