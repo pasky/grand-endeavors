@@ -72,6 +72,13 @@ cost-to-leo-best-real (THE rockets KPI; owner decisions 2026-10-16)
     year the run no longer derives fails the run (withdraw it explicitly).
   - A list-price gap between two listed years fails the run (missed intake, not a
     delisting); only the years after a rocket's last listed one are held.
+  - Adding a rocket (Starship, New Glenn, Neutron ... once a provider publishes a
+    dedicated-launch price with its LEO capacity): register list-price-<slug> and
+    list-leo-kg-<slug> (copy the Falcon definitions), add it to LISTED, and to
+    EXTRA_LV with its GCAT LV_Types when CSIS lacks it; intake then stages its rows.
+    SpaceX's price PDF is 404 since 2025-08: a successor page would feed the same
+    metrics.  A new OWID/CSIS vintage fails the run on any unmapped rocket: extend
+    CSIS_LV.
   - Only complete years past the release lag are emitted.  published: the rule date
     (Dec 31 + lag, when CPI(Y) is out), but not before CSIS_UPDATED or the
     publication of the list rows used (basis 'source').  As in fusion.py, the dates
