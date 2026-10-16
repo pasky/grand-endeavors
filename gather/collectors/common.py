@@ -50,6 +50,11 @@ import kpi  # noqa: E402
 import ledger  # noqa: E402
 
 USER_AGENT = "grand-endeavors-collector/1 (python-urllib)"
+# US inflation (fusion and rockets real-$ series): BLS CPI-U, all items, US city average, NSA,
+# official annual averages (period M13). BLS asks for a User-Agent with a contact address.
+BLS_CPI = "https://download.bls.gov/pub/time.series/cu/cu.data.1.AllItems"
+CPI_SERIES = "CUUR0000SA0"
+BLS_USER_AGENT = "grand-endeavors-collector/1 (python-urllib; contact: pasky@ucw.cz)"
 
 
 def fetch(url: str, fixture_dir: str | None = None, headers: dict | None = None) -> str:
@@ -60,6 +65,36 @@ def fetch(url: str, fixture_dir: str | None = None, headers: dict | None = None)
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read().decode("utf-8")
+
+
+def parse_bls_cpi(text: str) -> dict[int, Decimal]:
+    """{year: annual average} of CPI_SERIES from a BLS cu.data.* flat file (tab-separated
+    series_id, year, period, value, footnotes; M13 = BLS's official annual average)."""
+    out = {}
+    for ln in text.splitlines()[1:]:
+        f = [x.strip() for x in ln.split("\t")]
+        if len(f) >= 4 and f[0] == CPI_SERIES and f[2] == "M13":
+            out[int(f[1])] = Decimal(f[3])
+    if not out:
+        raise ValueError(f"no {CPI_SERIES} annual averages (M13) in the BLS file")
+    return out
+
+
+def deflate(nominal: Decimal, year: int, cpis: dict[int, Decimal], base: int) -> tuple[Decimal, str]:
+    """(real value in constant `base` USD, note).  A year past the latest published CPI
+    falls back to it (provisional, stated in the note); a missing earlier year (a
+    truncated or broken CPI file) raises ValueError."""
+    if year not in cpis and year < max(cpis) or not any(y <= year for y in cpis):
+        raise ValueError(f"no {CPI_SERIES} annual average for {year} in a CPI series ending {max(cpis)}")
+    by = base if base in cpis else max(cpis)
+    oy = year if year in cpis else max(cpis)
+    note = f"deflated with BLS CPI-U annual averages ({CPI_SERIES}) {oy} -> {by}"
+    flags = []
+    if by != base:
+        flags.append(f"{base} CPI not yet published, base = {by} CPI (provisional)")
+    if oy != year:
+        flags.append(f"{year} CPI not yet published, {oy} CPI used (provisional)")
+    return nominal * cpis[by] / cpis[oy], note + ("; " + "; ".join(flags) if flags else "")
 
 
 def round_half_up(x: Decimal | float | str, places: int) -> str:

@@ -101,8 +101,17 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       - coverage is about 94%.
 
       Consider adding a local-currency or PPP variant.
-- [ ] Rockets KPI: a `cost-to-leo-best` history (only one point). Needs a
-      sourcing decision: list prices are sparse and inconsistent.
+- [ ] Rockets KPI (`cost-to-leo-best-real`, owner decisions 2026-10-16: published
+      list price / published LEO capacity, CPI-deflated to 2025 $, last listed price
+      held in real terms; CSIS FY2021 $/kg for rockets without list prices; JSR GCAT
+      years in service; collectors/rockets.py). New rockets (Starship, New Glenn,
+      Neutron, ...) enter when a provider publishes a dedicated-launch price + LEO
+      capacity: register `list-price-<slug>` + `list-leo-kg-<slug>`, add the rocket
+      to `LISTED` (and `EXTRA_LV` with its GCAT LV_Types when CSIS lacks it); intake
+      then stages the rows. Starship is the one that would move the KPI. SpaceX's
+      price PDF is 404 since 2025-08: watch for a successor page. A new OWID/CSIS
+      vintage (next ~2026-11) fails the collector on any unmapped rocket: extend
+      `CSIS_LV`. Rideshare 2026: the page is JS-rendered (no static price).
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
       needs a definition that can actually be observed.
 

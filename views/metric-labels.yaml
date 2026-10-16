@@ -16,7 +16,14 @@ robots-hardware:
   manifold-92rpicoun9-p: "Forecast: robot passes the Coffee Test by 2028 (Manifold)"
   manifold-za8292n5qc-p: "Forecast: robot passes the Coffee Test by 2026 (Manifold)"
 rockets:
-  cost-to-leo-best: Cheapest launch to low Earth orbit
+  cost-to-leo-best-real: Cheapest launch to low Earth orbit, per kg (constant 2025 $)
+  rideshare-price-per-kg-spacex-real: SpaceX rideshare price per kg, smallest ticket to orbit (constant 2025 $)
+  rideshare-price-per-kg-spacex: SpaceX rideshare price per kg (current $)
+  list-price-falcon-9: Falcon 9 list price per launch ($M, current $)
+  list-leo-kg-falcon-9: Falcon 9 payload to low Earth orbit (as published with its price)
+  list-price-falcon-heavy: Falcon Heavy list price per launch ($M, current $)
+  list-leo-kg-falcon-heavy: Falcon Heavy payload to low Earth orbit (as published with its price)
+  cost-to-leo-best: Cheapest launch to low Earth orbit (list price as reported)
   payload-mass-to-orbit: Payload mass launched to orbit in the year
   manifold-infkbfl3unm9gnq9qgky-p: "Forecast: self-sustaining extraterrestrial colony by 2050 (Manifold)"
 fusion:
