@@ -101,9 +101,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       - coverage is about 94%.
 
       Consider adding a local-currency or PPP variant.
-- [ ] 🤖 SpaceX rideshare price for 2026 (`rideshare-price-per-kg-spacex`): spacex.com/rideshare
-      is JS-rendered since 2026 (no static price; Wayback captures show an empty shell).
-      Find where the price now loads from, or another primary statement of it.
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
       needs a definition that can actually be observed.
 

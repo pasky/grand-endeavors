@@ -1,2 +1,2 @@
 - Never rewrite ./data history (rebase, reset --hard, --amend), even unpushed: fix with a new commit.
-- To show the owner a change visible on the site, rebuild it (`uv run views/explore.py site`) and give the preview URL https://pasky.or.cz/grand-endeavors/<slot>/ (<slot> = worktree dir minus `<repo>-agent-`; views/EXPLORER.md "Previews"), never a file:// path.
+- Show site changes via the worktree preview URL (views/EXPLORER.md "Previews"), never file://.
