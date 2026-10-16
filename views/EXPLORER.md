@@ -113,7 +113,9 @@ section with its own activity line), then:
   count; expanded, the details and events. Challenges are not assessed.
 - A **supplemental section** (no KPI, milestones or challenges; nothing in it
   is assessed) shows instead its **indicators** (every registry metric, tiles
-  as above) and its **notable developments**: the 10 latest major
+  as above; series that only feed another indicator, listed under `_inputs` in
+  `views/metric-labels.yaml`, e.g. the two sides of the Q-Day gap, fold under
+  "Fine print" and stay off the overview card) and its **notable developments**: the 10 latest major
   (significance 3) events by event date, with a link to the rest in the event log.
 - Folded at the end: **Beyond the framework** events, **events under no
   current topic** (tags the framework no longer lists, e.g. after a change; never silently

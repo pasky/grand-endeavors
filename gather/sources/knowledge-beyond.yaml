@@ -1,9 +1,9 @@
 # knowledge-beyond: reference sources for gather intake (reviewed 2026-10-12; indicators 2026-10-16).
 # Schema: README.md. A supplemental section: no KPI, "kpi" = its registered indicators
 # (metrics/knowledge-beyond.csv). Internet use, Erdős problems, TOP500 and exoplanets are
-# collected (gather/collectors/knowledge_beyond.py); the Q-Day qubit pair, the largest
-# connectome and the ambient-pressure Tc record are staged by intake from the sources
-# below. Everything else is section-wide ("*").
+# collected (gather/collectors/knowledge_beyond.py), and so is the Q-Day gap, derived from
+# its two inputs (qubits needed, qubits available); those inputs, the largest connectome
+# and the ambient-pressure Tc record are staged by intake from the sources below. Everything else is section-wide ("*").
 sources:
   # --- Indicators: collected ---------------------------------------------------------------------
   - name: World Bank — Individuals using the Internet (% of population)

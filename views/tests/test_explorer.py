@@ -469,10 +469,12 @@ def main():
              < nav.index('href="#knowledge-beyond"'))
         # a supplemental section (no KPI, milestones or challenges): its indicators and major events instead
         kb = {"metrics/knowledge-beyond.csv": "metric,unit,cadence,release_lag_days,required_from,retired_after,"
-              "definition\nqubits,qubits,annual,,,,Largest logical qubit count\nempty,x,annual,,,,Never observed\n",
+              "definition\nqubits,qubits,annual,,,,Largest logical qubit count\nempty,x,annual,,,,Never observed\n"
+              "feed,qubits,annual,,,,Feeder series only behind another indicator\n",
               "ledger/observations/knowledge-beyond.csv": ",".join(ledger.OBS_COLUMNS) + "\n" + "".join(
                   f"qubits,{y},{v},qubits,https://example.org/q,{y}-12-31,source,{y}-12-31,test:fixture,verified,\n"
-                  for y, v in ((2024, 12), (2025, 48))),
+                  for y, v in ((2024, 12), (2025, 48))) + f"feed,2025,777,qubits,https://example.org/f,2025-12-31,"
+                  "source,2025-12-31,test:fixture,verified,\n",
               "ledger/events/knowledge-beyond.jsonl": "".join(json.dumps(
                   {"id": f"2026-0{i}-01-kb", "date": f"2026-0{i}-01", "published": f"2026-0{i}-01",
                    "published_basis": "source", "retrieved": f"2026-0{i}-01", "kind": "achievement",
@@ -482,7 +484,9 @@ def main():
                   for i, sig in ((1, 3), (2, 2), (3, 3)))}
         for rel, text in kb.items():
             write(root, rel, text)
+        explore.METRIC_INPUTS["knowledge-beyond"] = ["feed"]
         sp = explore.dashboard(D("2026-09-28"))
+        del explore.METRIC_INPUTS["knowledge-beyond"]
         for rel in kb:
             os.remove(os.path.join(root, rel))
         kpane = sp[sp.index('<section class="pane" id="knowledge-beyond">'):]
@@ -490,9 +494,13 @@ def main():
         knav = re.search(r'<a class="nv" href="#knowledge-beyond">.*?</a>', sp)[0]
         kcard = re.search(r'<a class="card" href="#knowledge-beyond">.*?</a>', sp)[0]
         case("supplemental: pane shows indicator tiles and the major events, newest first",
-             "<h3>Indicators we track</h3>" in kpane and kpane.count('<div class="tile ') + kpane.count('<div class="tile"') == 2
+             "<h3>Indicators we track</h3>" in kpane
+             and kpane[:kpane.index("Fine print")].count('<div class="tile ') + kpane[:kpane.index("Fine print")].count('<div class="tile"') == 2
              and "Notable developments" in kpane and "The 2 latest of 2 major" in kpane
              and kpane.index("KB claim 3.") < kpane.index("KB claim 1.") < kpane.index("<summary>Beyond the framework"))
+        case("supplemental: input series (metric-labels _inputs) fold under 'Fine print' in the pane, not on the card",
+             "<summary>Fine print: 1 input series behind the indicators above</summary>" in kpane
+             and kpane.index("Fine print") < kpane.index("777") < kpane.index("Notable developments") and "777" not in kcard)
         case("supplemental: nav = title + news freshness only, card = indicators + major events",
              'class="nk"' not in knav and 'class="dot' not in knav and 'class="rc ' in knav
              and "Indicators we track:" in kcard and "<b>48</b> qubits" in kcard and "Never observed" not in kcard

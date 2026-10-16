@@ -554,6 +554,7 @@ def _metric_labels() -> dict[str, dict[str, str]]:
 
 
 METRIC_LABELS = _metric_labels()
+METRIC_INPUTS: dict[str, list[str]] = METRIC_LABELS.pop("_inputs", None) or {}  # section -> fine-print metrics
 _UNLABELLED: set[tuple[str, str]] = set()
 
 
@@ -937,9 +938,12 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -
 SUPP_MAJOR = 10  # a supplemental pane's notable developments (significance 3) shown before the event log
 
 
-def indicators(db, sec: str) -> list[sqlite3.Row]:
-    """A section's tracked metrics in registry order (metrics/<section>.csv), retired ones out."""
-    return db.execute("SELECT * FROM latest_kpi WHERE section=? AND NOT retired ORDER BY rowid", (sec,)).fetchall()
+def indicators(db, sec: str, inputs: bool = False) -> list[sqlite3.Row]:
+    """A section's tracked metrics in registry order (metrics/<section>.csv), retired ones out;
+    without the series that only feed another indicator (metric-labels.yaml _inputs), or
+    (inputs) only those."""
+    rows = db.execute("SELECT * FROM latest_kpi WHERE section=? AND NOT retired ORDER BY rowid", (sec,)).fetchall()
+    return [t for t in rows if (t["metric"] in METRIC_INPUTS.get(sec, [])) == inputs]
 
 
 def major_events(db, sec: str) -> list[sqlite3.Row]:
@@ -954,10 +958,13 @@ def supplemental_html(db, sec: str, names, succ) -> str:
     developments (significance 3)."""
     out = ['<div class="mute">Outside the five endeavors: no KPI, milestones or challenges, so nothing here is '
            'assessed. We keep an eye on a few indicators and the notable developments.</div>']
-    tiles = indicators(db, sec)
+    tiles, inputs = indicators(db, sec), indicators(db, sec, inputs=True)
     out.append("<h3>Indicators we track</h3>" + (
         '<div class="tiles">' + "".join(kpi_tile(db, t) for t in tiles) + "</div>" if tiles
         else '<div class="mute">none registered yet</div>'))
+    if inputs:
+        out.append(f"<details><summary>Fine print: {len(inputs)} input series behind the indicators above</summary>"
+                   '<div class="tiles">' + "".join(kpi_tile(db, t) for t in inputs) + "</div></details>")
     major = major_events(db, sec)
     if major:
         out.append(f'<h3>Notable developments</h3><div class="mute small">The {min(SUPP_MAJOR, len(major))} '

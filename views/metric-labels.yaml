@@ -3,6 +3,11 @@
 # and their full definitions (shown as the tile's tooltip). A metric without a label
 # here is shown by the first clause of its definition (else its id), and explore.py
 # warns: add one when registering a metric.
+# _inputs: per section, metrics that only feed another indicator (e.g. the two sides of
+# a derived ratio); a supplemental section's pane folds them under "Fine print", and
+# its overview card leaves them out.
+_inputs:
+  knowledge-beyond: [qday-rsa2048-qubits-needed, qday-largest-device-qubits]
 robots-software:
   metr-80-horizon-by-release: AI task horizon at 80% success, by model release
   metr-50-horizon-by-release: AI task horizon at 50% success, by model release
@@ -32,8 +37,9 @@ health:
 knowledge-beyond:
   internet-users-world-share: People using the Internet, share of the world (ITU)
   erdos-problems-solved-share: Erdős problems solved
-  qday-rsa2048-qubits-needed: "Q-Day: qubits needed to break RSA-2048 (best estimate)"
-  qday-largest-device-qubits: "Q-Day: qubits in the largest device at ≤0.1% error"
+  qday-qubit-gap: "Q-Day gap: qubits needed to break RSA-2048 ÷ qubits available"
+  qday-rsa2048-qubits-needed: "Qubits needed to break RSA-2048 (best estimate, at 0.1% error)"
+  qday-largest-device-qubits: "Qubits in the largest quantum computer at ≤0.1% error"
   connectome-largest-neurons: Largest synapse-level connectome (neurons)
   superconductor-tc-ambient-record: Highest superconducting Tc at ambient pressure (replicated)
   top500-top-rmax: "Fastest supercomputer (TOP500 #1, HPL)"

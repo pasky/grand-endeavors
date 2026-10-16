@@ -6,9 +6,10 @@
 
 Usage:  uv run gather/collectors/knowledge_beyond.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
 
-Four machine-readable sources; the section's other indicators (Q-Day qubits, connectome,
-superconducting Tc) have no feed and are staged by gather intake. Any source failing
-fails the run (nothing is written), so a broken source is never silently skipped.
+Four machine-readable sources, plus one series derived from the ledger; the section's other
+indicators (the Q-Day inputs, connectome, superconducting Tc) have no feed and are staged
+by gather intake. Any source failing fails the run (nothing is written), so a broken
+source is never silently skipped.
 
 internet-users-world-share
   World Bank WDI API, indicator IT.NET.USER.ZS ("Individuals using the Internet (% of
@@ -54,6 +55,15 @@ exoplanets-confirmed
   count(*) (EXO_COUNT_URL), fewer than MIN_PLANETS rows (truncation) or a duplicated
   pl_name is an error. published: rule.
 
+qday-qubit-gap (derived, no fetch)
+  From the section's ledger rows of its two intake-staged inputs (effective values):
+  at each obs date of either input, needed = the lowest qday-rsa2048-qubits-needed and
+  available = the highest qday-largest-device-qubits observed by that date (both are
+  record series); value = needed / available to 3 significant digits, emitted once both
+  exist. obs = that date; source = the changed input's source; published = the later
+  of the two inputs' publication dates (basis source). An input revision re-derives the
+  affected dates (revisions append; equal values dedup on merge).
+
 With --fixture DIR each source is read from DIR/<FIXTURES name> (TOP500:
 DIR/top500-YYYY-MM.html; a missing list file counts as not found).
 """
@@ -85,6 +95,7 @@ FIXTURES = {WB_URL: "wb_internet_users.json", ERDOS_URL: "statistics_history.csv
             EXO_URL: "exoplanets_pscomppars.csv", EXO_COUNT_URL: "exoplanets_count.csv"}
 M_INTERNET, M_ERDOS = "internet-users-world-share", "erdos-problems-solved-share"
 M_TOP500, M_EXO = "top500-top-rmax", "exoplanets-confirmed"
+M_GAP, M_NEEDED, M_DEVICE = "qday-qubit-gap", "qday-rsa2048-qubits-needed", "qday-largest-device-qubits"
 FIRST_ERDOS_MONTH = "2025-09"
 FIRST_TOP500 = (1993, 6)
 # list pages whose Rmax header unit is wrong: {(year, month): (true unit prefix, why)}
@@ -234,6 +245,33 @@ def parse_exo(text: str, count_text: str) -> dict[int, int]:
     return by_year
 
 
+# --- Q-Day qubit gap (derived) -------------------------------------------------------------------
+def sig3(x: Decimal) -> str:
+    """Plain decimal to 3 significant digits, half-up (1020.4 -> '1020', 0.04166 -> '0.0417')."""
+    return format(x.quantize(Decimal(1).scaleb(x.adjusted() - 2), rounding="ROUND_HALF_UP").normalize(), "f")
+
+
+def qday_gap(existing) -> list[tuple[str, Decimal, dict, dict, dict]]:
+    """[(obs, gap, changed input row, needed row, device row)] per obs date of either input."""
+    eff = ledger.obs_as_of("", rows=list(existing))
+    inputs = sorted((kpi.obs_range(r["obs"])[1], r["obs"], r) for (m, _), r in eff.items() if m in (M_NEEDED, M_DEVICE))
+    out, best = [], {}
+    for end, obs, r in inputs:
+        cur = best.get(r["metric"])
+        better = min if r["metric"] == M_NEEDED else max
+        if cur is None or better(Decimal(r["value"]), Decimal(cur["value"])) != Decimal(cur["value"]):
+            best[r["metric"]] = r
+        if M_NEEDED in best and M_DEVICE in best:
+            n, d = best[M_NEEDED], best[M_DEVICE]
+            if Decimal(d["value"]) > 0:
+                gap = (r["obs"], Decimal(n["value"]) / Decimal(d["value"]), r, n, d)
+                if out and out[-1][0] == obs:
+                    out[-1] = gap  # both inputs on one date: one row
+                else:
+                    out.append(gap)
+    return out
+
+
 def collect(fixture: str | None, today: dt.date, collector: str, existing=()) -> list[dict]:
     reg = common.registry(SECTION)
     rows = []
@@ -278,6 +316,12 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
         add(M_TOP500, obs, format(rmax.normalize(), "f"), url,
             f"TOP500 {dt.date(y, m, 1):%B %Y} list, rank 1: {name}; HPL Rmax converted to PFlop/s"
             + (f" ({erratum})" if erratum else ""))
+
+    for obs, gap, r, n, d in qday_gap(existing):
+        rows.append(common.row(reg, M_GAP, obs, sig3(gap), r["source"],
+                               f"derived: {n['value']} qubits needed ({M_NEEDED}@{n['obs']}, {n['source']}) / "
+                               f"{d['value']} available ({M_DEVICE}@{d['obs']}, {d['source']})",
+                               collector, str(today), published=max(n["published"], d["published"], obs[:10])))
 
     by_year = parse_exo(fetch(EXO_URL, fixture), fetch(EXO_COUNT_URL, fixture))
     total = 0

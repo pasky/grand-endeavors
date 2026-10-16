@@ -120,6 +120,29 @@ case("top500: an edition already in the ledger that went missing fails the run",
 case("top500: a #1 Rmax below the previous list's (e.g. a unit error) fails the run",
      raises(ValueError, kb.collect, FIX, TODAY, "t", HAVE + [t5row("2025-06", "1809000")]))
 
+# --- Q-Day qubit gap (derived from the ledger's input rows)
+def inrow(metric, obs, value, verification="verified"):
+    return dict(common.row(REG, metric, obs, value, f"https://example.org/{metric}/{obs}", "", "t", obs,
+                           published=obs), verification=verification)
+
+
+QIN = [inrow(kb.M_NEEDED, "2019-05-23", "20000000"), inrow(kb.M_DEVICE, "2024-04-16", "20"),
+       inrow(kb.M_NEEDED, "2025-05-21", "1000000"), inrow(kb.M_DEVICE, "2025-11-05", "98"),
+       inrow(kb.M_NEEDED, "2026-02-12", "100000"), inrow(kb.M_NEEDED, "2026-03-01", "13000", "withdrawn")]
+gap = {r["obs"]: r for r in kb.collect(FIX, TODAY, "t", HAVE + QIN) if r["metric"] == kb.M_GAP}
+case("qday gap: needed / available at each input date once both exist, 3 significant digits, withdrawn values out",
+     [(o, r["value"]) for o, r in sorted(gap.items())]
+     == [("2024-04-16", "1000000"), ("2025-05-21", "50000"), ("2025-11-05", "10200"), ("2026-02-12", "1020")])
+case("qday gap: dated by the later input, sourced by the changed one",
+     gap["2025-11-05"]["published"] == "2025-11-05" and gap["2025-11-05"]["published_basis"] == "source"
+     and gap["2025-11-05"]["source"].endswith(f"{kb.M_DEVICE}/2025-11-05"))
+case("qday gap: a weaker later estimate or a smaller later device does not raise the gap (record series)",
+     [r["value"] for r in [g for g in kb.collect(FIX, TODAY, "t", HAVE + QIN[:5] + [
+         inrow(kb.M_NEEDED, "2026-04-01", "500000"), inrow(kb.M_DEVICE, "2026-05-01", "50")])
+         if g["metric"] == kb.M_GAP]][-2:] == ["1020", "1020"])
+case("qday gap: sig3", [kb.sig3(Decimal(x)) for x in ("1020.408", "0.041666", "9.995", "10", "123456")]
+     == ["1020", "0.0417", "10", "10", "123000"])
+
 # --- exoplanets
 case("exoplanets: cumulative by discovery year, complete years past the lag only",
      by[(kb.M_EXO, "2009")]["value"] == "23" and by[(kb.M_EXO, "2014")]["value"] == "40"
