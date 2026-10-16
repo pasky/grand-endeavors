@@ -210,11 +210,9 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    the framework.
 2. **collect**: deterministic collectors (`gather/collectors/<section>.py`) fetch
    machine-readable sources into staged observations. No LLM. A collector may
-   also derive series through a frozen, documented conversion. The robots-software KPI
-   is one: task horizons in human-hours converted from Epoch's ECI (software,
-   calibrated against METR's discontinued time horizons) and from the Remote
-   Labor Index (remote work), blended by their geometric mean. The conversion is part of the metric's
-   registry definition, so changing it means new metric ids.
+   also compute a derived series from its sources (e.g. robots-software's task
+   horizons). The computation is part of that metric's registry definition, so
+   changing it means a new metric id.
 3. **intake** (one web-capable agent per watch item): find developments
    published in the item's window, and stage event records and observations.
    Windows are per item: from the item's last UNTIL minus OVERLAP_DAYS (default
