@@ -11,13 +11,15 @@ sed -n '/^# --- review stage/,/^# --- end review stage ---/p' "$ASSESS" > "$w/bl
 # $1 name, $2 expected exit (0|1), $3 expected "MAJOR ..." lines of review.md's "# Remaining" block,
 # joined by "|" ("" = no file; targets: milestone:a, milestone:b and the unreviewed kpi),
 # $4 expected substring of NOTE, $5 expected records content afterwards, then stage bodies:
-# $6 review-1, $7 fix, $8 review-2 (shell snippets; "$rev" = the report path; set RC/BLOCK)
+# $6 review-1, $7 fix, $8 review-2 (shell snippets; "$rev" = the report path; set RC/BLOCK),
+# optional $9: one more milestone target
 t() {
 	rm -rf "$w/s"; mkdir -p "$w/s"; echo draft > "$w/s/assessments.jsonl"; echo notes > "$w/s/eta-notes.md"
 	(
 		set -eu
 		STAGE="$w/s"; AS="$STAGE/assessments.jsonl"; NOTES_DIR=n; SECTION=x; RUN_ID=r; UNTIL=2026-01-01; ROOT=/r
-		TARGETS="$(printf 'milestone:b|b1\nkpi|k1\nmilestone:a|a1')"
+		TARGETS="$(printf 'milestone:b|b1\nkpi|k1\nmilestone:a|a1')${9:+
+$9|x1}"
 		NOTE=""; PI_MODEL="assessor/model"; R1="$6"; FIX="$7"; R2="$8"
 		pi_mode_model() { [ "${NO_MODE:-}" = "" ] && echo "reviewer/model"; }
 		prompt() { echo base; }
@@ -31,7 +33,8 @@ t() {
 		review_stage 2>/dev/null
 		echo "$NOTE" > "$w/note"
 		[ "$PI_MODEL" = "assessor/model" ] || echo "model not restored: $PI_MODEL" >> "$w/note"
-	) >/dev/null 2>&1 && got=0 || got=1
+	) >/dev/null 2>&1; got=$?   # not "&& ... ||": that would disable set -e inside the subshell
+	[ "$got" = 0 ] || got=1
 	fin="$(sed -n '/^# Remaining$/,$p' "$w/s/review.md" 2>/dev/null | grep '^MAJOR' | paste -sd'|')"
 	ok=1
 	[ "$got" = "$2" ] || ok=""
@@ -68,6 +71,9 @@ t "no per-target lines: the total only"              0 "MAJOR: 0" "(review: 0 MA
 t "a target missing: the total only"                 0 "MAJOR: 2" "fix failed"                    draft 'printf "x\nMAJOR milestone:b: 2\nMAJOR: 2\n" > "$rev"' "RC=1" ""
 t "a kpi line is not a milestone target: total only" 0 "MAJOR: 0" "(review: 0 MAJOR)"             draft 'printf "x\nMAJOR kpi: 0\nMAJOR milestone:a: 0\nMAJOR milestone:b: 0\nMAJOR: 0\n" > "$rev"' "" ""
 t "per-target lines not summing to the total: total" 0 "MAJOR: 2" "fix failed"                    draft 'printf "x\nMAJOR milestone:a: 1\nMAJOR milestone:b: 0\nMAJOR: 2\n" > "$rev"' "RC=1" ""
+LC_ALL=en_US.UTF-8 t "prefix slugs sort alike in any locale; 0-padded" 0 "MAJOR milestone:a: 2|MAJOR milestone:a-1: 0|MAJOR milestone:b: 0|MAJOR: 2" "fix failed" \
+	draft 'printf "x\nMAJOR milestone:b: 0\nMAJOR milestone:a-1: 00\nMAJOR milestone:a: 02\nMAJOR: 02\n" > "$rev"' "RC=1" "" "milestone:a-1"
+t "a duplicated target: the total only"              0 "MAJOR: 0" "(review: 0 MAJOR)"             draft 'printf "x\nMAJOR milestone:a: 0\nMAJOR milestone:a: 0\nMAJOR milestone:b: 0\nMAJOR: 0\n" > "$rev"' "" ""
 t "accepted re-review without valid lines: its total, not round 1's lines" \
                                                      0 "MAJOR: 1" "(review: 2 MAJOR, 1 after one fix)" fixed "$M2" "$FIXED" 'printf "x\nMAJOR: 1\n" > "$rev"'
 

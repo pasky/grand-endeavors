@@ -228,7 +228,7 @@ as_complete || exit 1
 # fatal; the one fatal case is a reviewer that edits what it reviews. REVIEW=0 skips the stage.
 # --- review stage (core/tests/test_review.sh runs this block with stubs) ---
 REVIEW_FILE="$NOTES_DIR/$SECTION/$RUN_ID.review.md"  # = ledger.review_path
-REVIEW_TARGETS="$(printf '%s\n' "$TARGETS" | awk -F'|' '$1 ~ /^milestone:/ {print $1}' | sort)"
+REVIEW_TARGETS="$(printf '%s\n' "$TARGETS" | awk -F'|' '$1 ~ /^milestone:/ {print $1}' | LC_ALL=C sort)"
 review_prompt() {  # $1 = output file, $2 = the previous round's report (re-review after a fix)
 cat <<EOF2
 Audit the ETA assessments that another agent just staged for "$SECTION" as of $UNTIL, before they
@@ -276,7 +276,7 @@ EOF2
 }
 per_target() {  # $1 = report: "<target> <n>" per "MAJOR <target>: <n>" line right before its last line
 	awk 'NF { l[++n] = $0 } END { for (i = n - 1; i > 0 && l[i] ~ /^MAJOR [^ ]+: [0-9]+$/; i--) {
-		k = l[i]; sub(/^MAJOR /, "", k); sub(/: [0-9]+$/, "", k); v = l[i]; sub(/^.*: /, "", v); print k, v } }' "$1" | sort
+		k = l[i]; sub(/^MAJOR /, "", k); sub(/: [0-9]+$/, "", k); v = l[i]; sub(/^.*: /, "", v); print k, v + 0 } }' "$1" | LC_ALL=C sort
 }
 run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the review failed) and
 	# REV_TARGETS ("<target> <n>" lines; empty when they do not cover exactly the milestone targets or sum to REV_MAJOR)
@@ -289,7 +289,7 @@ run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the 
 	pi_run "review-$1" "$(review_prompt "$rev" "${2:-}")"
 	PI_SOFT_FAIL=; PI_MODEL="$ASSESS_MODEL"
 	[ "$(cksum "$AS" "$STAGE/eta-notes.md")" = "$sums" ] || { echo "ERROR: the reviewer modified $AS or the notes" >&2; exit 1; }
-	REV_MAJOR="$(tail -n 1 "$rev" 2>/dev/null | sed -n 's/^MAJOR: \([0-9][0-9]*\)$/\1/p')"
+	REV_MAJOR="$(tail -n 1 "$rev" 2>/dev/null | sed -n 's/^MAJOR: 0*\([0-9][0-9]*\)$/\1/p')"
 	if [ "$PI_RC" != 0 ] || [ -n "${PI_BLOCKED:-}" ] || [ -z "$REV_MAJOR" ]; then
 		echo "WARN: review $1 failed (pi exit $PI_RC$( [ -n "${PI_BLOCKED:-}" ] && echo ', provider block'), or no 'MAJOR: <n>' last line)" >&2
 		REV_MAJOR=""; if [ -f "$rev" ]; then mv "$rev" "$rev.rejected"; fi   # a failed round is never committed
@@ -297,7 +297,7 @@ run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the 
 	fi
 	REV_TARGETS="$(per_target "$rev")"
 	if [ "$(printf '%s\n' "$REV_TARGETS" | cut -d' ' -f1)" != "$REVIEW_TARGETS" ] \
-		|| [ "$(printf '%s\n' "$REV_TARGETS" | awk '{s += $2} END {print s + 0}')" != "$REV_MAJOR" ]; then
+		|| [ "$(printf '%s\n' "$REV_TARGETS" | awk '{s += $2} END {print s + 0}')" -ne "$REV_MAJOR" ]; then
 		echo "WARN: review $1: its 'MAJOR <target>: <n>' lines do not list exactly the milestone targets or do not sum to 'MAJOR: $REV_MAJOR'; only the total counts" >&2
 		REV_TARGETS=""
 	fi
