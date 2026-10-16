@@ -1,6 +1,6 @@
 """Shared ETA drivers (gather/RUBRIC.md §4.1 step 2, rubric v6+).
 
-A driver is a fitted quantity that several milestone ETAs rest on (METR task horizons, the Dyna
+A driver is a fitted quantity that several milestone ETAs rest on (AI task horizons, the Dyna
 failure-rate halving, ...). The data repo's drivers.yaml holds ONE fitted distribution per driver,
 and every milestone listed in its `used_by` samples the same deterministic draws
 (`ledger.py driver-draws <driver>`), so milestones sharing a driver agree on it draw by draw

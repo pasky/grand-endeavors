@@ -4,6 +4,11 @@
 # here is shown by the first clause of its definition (else its id), and explore.py
 # warns: add one when registering a metric.
 robots-software:
+  horizon-50-blended: AI task horizon at 50% success, software and remote work blended
+  horizon-50-software-eci: AI software task horizon at 50% success (METR-equivalent, from ECI)
+  horizon-50-remote-rli: AI remote-work task horizon at 50% success (from the Remote Labor Index)
+  eci-frontier-by-release: Epoch Capabilities Index, by model release
+  rli-automation-by-release: Remote Labor Index automation rate, by model release
   metr-80-horizon-by-release: AI task horizon at 80% success, by model release
   metr-50-horizon-by-release: AI task horizon at 50% success, by model release
   metr-50-horizon-frontier: AI task horizon at 50% success, frontier as evaluated

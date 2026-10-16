@@ -8,7 +8,9 @@ Run:  uv run gather/tests/test_collectors.py     (no network; sources come from 
                                                    small verbatim snippets of the real files)
 """
 import datetime as dt
+import math
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -168,7 +170,8 @@ mrow = robots_software.collect(FIX, TODAY, "collectors/robots_software.py@2026-0
 mk = by_key(mrow)
 case("metr: all rows pass ledger.check_obs_row against metrics/robots-software.csv", registry_ok("robots-software", mrow))
 case("metr: emits the release-cohort ids only (never the as-publicly-evaluated *-frontier ids)",
-     {r["metric"] for r in mrow} == {"metr-50-horizon-by-release", "metr-80-horizon-by-release"})
+     {r["metric"] for r in mrow if r["metric"].startswith("metr-")}
+     == {"metr-50-horizon-by-release", "metr-80-horizon-by-release"})
 case("metr: legacy rows of the old *-frontier ids are NOT re-stated under the new ids",
      not any(r["obs"] == "2025-11" for r in robots_software.collect(
          FIX, TODAY, "x", [{"metric": "metr-80-horizon-frontier", "obs": "2025-11"},
@@ -188,6 +191,7 @@ with tempfile.TemporaryDirectory() as tmp:
     v2 = fixture("benchmark_results_1_1.yaml").replace("estimate: 89.801503", "estimate: 1.0")
     with open(os.path.join(tmp, "benchmark_results_1_1.yaml"), "w") as f:
         f.write(v2)
+    shutil.copy(os.path.join(FIX, "benchmark_data.zip"), tmp)
     v1_rows = robots_software.collect(FIX, dt.date(2026, 9, 1), "v1")
     v2_rows = robots_software.collect(tmp, TODAY, "v2", v1_rows)
 restated = by_key(v2_rows).get(("metr-80-horizon-by-release", "2026-02-19"))
@@ -201,6 +205,41 @@ case("metr: after both vintages the latest p80 frontier in the ledger view is 69
 case("metr: YYYY-MM ledger dates of the metric are re-stated as of the month end",
      by_key(robots_software.collect(FIX, TODAY, "x", [{"metric": "metr-80-horizon-by-release", "obs": "2024-04"}]))
      [("metr-80-horizon-by-release", "2024-04")]["value"] == "0.93")
+
+# --- robots-software (Epoch ECI + RLI -> task horizons) ---------------------------------
+# fixtures: benchmark_data.zip = rows of Epoch's 2026-10-15 zip (the 21 calibration models and a
+# few later ones, plus one score-less row); eci-calibration/ = METR's full final TH1.1 file.
+rs = robots_software
+epoch = rs.epoch_members(common.fetch_bytes(rs.EPOCH_URL, FIX))
+eci_ms = rs.eci_models(epoch[rs.ECI_MEMBER])
+_, full_metr = rs.models(common.fetch(rs.URL, os.path.join(FIX, "eci-calibration")))
+cal = rs.calibrate(full_metr, eci_ms)
+case("eci: the frozen calibration is the OLS fit over all 21 METR/ECI pairs (provenance of ECI_A, ECI_B)",
+     cal["n"] == 21 and abs(cal["a"] - rs.ECI_A) < 1e-6 and abs(cal["b"] - rs.ECI_B) < 1e-6)
+tasks = sorted(rs.rli_tasks())
+case("rli: decoded project lengths reproduce the paper (201 projects with times, median 11.5 h within 3%)",
+     len(tasks) == 201 and abs(2 ** tasks[100] / 11.5 - 1) < 0.03)
+h = rs.rli_hours(21.25)
+case("rli: the horizon reproduces the automation rate under the logistic model; none at 0% or 100%",
+     abs(sum(1 / (1 + 2.718281828459045 ** (-rs.BETA * (math.log2(h) - t))) for t in tasks) / len(tasks) - 0.2125) < 1e-9
+     and rs.rli_hours(0) is None and rs.rli_hours(100) is None)
+hk = {(r["metric"], r["obs"]): r for r in mrow if not r["metric"].startswith("metr-")}
+case("eci: series start at GPT-4 (earlier small models are not a frontier); score-less rows are skipped",
+     min(o for m, o in hk if m == rs.ECI) == rs.ECI_START and not any("No Score" in r["note"] for r in hk.values()))
+blend_dates = sorted(o for m, o in hk if m == rs.BLEND)
+sw = {o: float(r["value"]) for (m, o), r in hk.items() if m == rs.SOFTWARE}
+rw = {o: float(r["value"]) for (m, o), r in hk.items() if m == rs.REMOTE}
+def in_force(series, d):
+    return series[max(o for o in series if o <= d)]
+case("blend: one row per component change from the first date both exist, = sqrt(software x remote)",
+     blend_dates[0] == min(rw) and set(blend_dates) == {d for d in set(sw) | set(rw) if d >= min(rw)}
+     and all(abs(float(hk[(rs.BLEND, d)]["value"]) / math.sqrt(in_force(sw, d) * in_force(rw, d)) - 1) < 0.02
+             for d in blend_dates))  # components are rounded to 3 dp (0.025 h: +-2%)
+case("eci/rli: a held ledger date between frontier steps is re-stated as of that date",
+     by_key(rs.collect(FIX, TODAY, "x", [{"metric": rs.BLEND, "obs": "2026-08"}]))[(rs.BLEND, "2026-08")]["value"]
+     == hk[(rs.BLEND, max(d for d in blend_dates if d <= "2026-08-31"))]["value"])
+case("epoch: a non-zip download (an HTML error page) is rejected",
+     raises_exit(rs.epoch_members, b"<!DOCTYPE html><title>404</title>"))
 
 # --- rockets (JSR) ---------------------------------------------------------------------
 parsed = rockets.parse(fixture("msatannual.txt"))

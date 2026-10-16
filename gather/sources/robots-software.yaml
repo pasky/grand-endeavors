@@ -1,11 +1,31 @@
 # robots-software: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
 sources:
-  # --- KPI: METR time horizon -----------------------------------------------------------------
+  # --- KPI: blended task horizon (ECI software horizon x RLI remote-work horizon) -------------------
+  - name: Epoch AI — Epoch Capabilities Index (ECI)
+    url: https://epoch.ai/eci
+    items: [kpi]
+    covers: >-
+      ECI scores of frontier models (the software-horizon component of the KPI, via a frozen METR
+      calibration); methodology at epoch.ai/data/eci-documentation/methodology. Refits can shift past scores.
+    cadence: continuous (new frontier models within days of release; data zip refreshed daily)
+    tier: secondary
+    collector: true
+  - name: Scale AI / CAIS — Remote Labor Index leaderboard
+    url: https://labs.scale.com/leaderboard/rli
+    items: [kpi, milestone:the-10m-solopreneur]
+    covers: >-
+      Automation rate of 240 real Upwork freelance projects, expert-graded (the remote-work component of
+      the KPI; collected from Epoch's mirror, which has release dates).
+    cadence: batches about monthly, typically 2-3 weeks after a frontier release (manual grading)
+    tier: primary
+    collector: true
   - name: METR — task-completion time horizons
     url: https://metr.org/time-horizons/
     items: [kpi]
-    covers: 50%/80% time horizons of frontier models (the KPI); the data file benchmark_results_*.yaml behind it.
-    cadence: as models are evaluated (days to weeks after a frontier release)
+    covers: >-
+      50%/80% time horizons of frontier models (the KPI's calibration source); the data file
+      benchmark_results_*.yaml behind it. No longer updated since 2026-09 (last model released 2026-04-07).
+    cadence: discontinued (watch for a successor suite)
     tier: primary
     collector: true
   - name: METR — research and notes
@@ -17,7 +37,8 @@ sources:
   - name: Epoch AI — benchmarking hub
     url: https://epoch.ai/benchmarks
     items: [kpi, challenge:reliability, challenge:agency, challenge:novelty]
-    covers: Independent runs of frontier models on SWE-bench Verified, FrontierMath, GPQA etc., plus METR horizons in one place.
+    covers: Independent runs of frontier models on SWE-bench Verified, FrontierMath, MirrorCode etc., plus external results (METR horizons, RLI, Terminal-Bench) in one place; data download epoch.ai/data/benchmark_data.zip (CC-BY).
+    collector: true
     cadence: continuous
     tier: secondary
   - name: Epoch AI — Gradient Updates newsletter

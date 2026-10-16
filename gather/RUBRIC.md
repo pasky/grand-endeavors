@@ -101,7 +101,7 @@ goal_direction, trend window, pace benchmark and benchmark source. Assessors do
 not choose these; changing one is a reviewed registry edit. Without a row there
 is no KPI assessment (status unknown).
 
-- **Assessed quantity**: for level or flow KPIs (METR horizon, $/kg, HALE,
+- **Assessed quantity**: for level or flow KPIs (AI task horizon, $/kg, HALE,
   $/MWh), the series itself. For stock KPIs whose goal is to stop accumulating
   (CO₂ ppm), the multi-year growth rate, with goal_direction = down to ≤ 0. The
   stock level goes in the label only.
@@ -178,7 +178,7 @@ straight line or sounds cautious. Work through these steps:
    as context. Look in other sections too. If the milestone's quantity has no
    series, tie it to a **driver** that does, and say how the milestone maps
    onto the driver's units. For example, an AI-written 10,000-line patch maps
-   onto METR task horizons (robots-software KPI); robots doing a full shift
+   onto AI task horizons (robots-software KPI); robots doing a full shift
    maps onto the software autonomy trend plus hardware unit volumes. Cite
    another section's data in `calc` (registered metric id, values, event ids);
    `evidence` lists only this section's events. Known gap: a new observation

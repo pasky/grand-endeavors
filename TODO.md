@@ -9,8 +9,8 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 
 - [ ] **Cross-section ETA drivers are not tracked** (deferred by the owner 2026-10-12).
       Milestone ETAs may rest on another section's series, e.g. all four robots-hardware
-      capability milestones on robots-software's METR horizons (`ledger.py drivers
-      <section>` lists them). But `ledger.py stale` ignores them, so a new METR point
+      capability milestones on robots-software's task horizons (`ledger.py drivers
+      <section>` lists them). But `ledger.py stale` ignores them, so a new horizon point
       does NOT re-assess robots-hardware. Even a manual re-run cannot change a status on
       driver data alone (hysteresis wants in-section evidence), and the evidence list
       cannot cite foreign event ids. Until fixed, assess.sh and gather.sh print a WARN
@@ -107,6 +107,15 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       sourcing decision: list prices are sparse and inconsistent.
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
       needs a definition that can actually be observed.
+- [ ] Robots-software KPI (horizon-50-blended, 2026-10-16) rests on two frozen conversions
+      (gather/collectors/robots_software.py):
+      - **Software (ECI→METR):** the calibration ends at ECI 156.76 while the frontier is at about 167.
+        That is about 2.3 doublings of extrapolation.
+      - **Remote work (RLI):** METR's assumed slope of 0.6 sets the level within about ±0.5 doublings today,
+        and far more at the 2025 low rates.
+      - **Watch:** a METR successor suite (TH 2.0); RLI's per-project times, if released, to replace the
+        decoded histogram; and Epoch rescaling ECI (`--calibrate` refits against the current vintage).
+      Recalibrating means new metric ids, plus `retired_after` on the old ones.
 
 ## Roadmap
 

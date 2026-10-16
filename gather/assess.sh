@@ -97,7 +97,7 @@ $SPEC
   where prev.by is "assess:<run id>" or "assess:<run id>:<mode>". RUBRIC.md rule 7: start
   from prev's model and inputs and update them; do not re-derive the forecast from scratch.
 - Other sections, for milestone ETAs (RUBRIC.md §4.1 step 2: a driver trend may live
-  elsewhere, e.g. METR task horizons in robots-software): ledger/events/<section>.jsonl,
+  elsewhere, e.g. AI task horizons in robots-software): ledger/events/<section>.jsonl,
   and the registered series (same "series <section> <metric>" command):
 $METRICS
   Cite such data in basis.eta.calc (metric, values, event ids); the evidence list holds
