@@ -21,6 +21,7 @@ COMMANDS
                                                    shared ETA driver draws as CSV (data drivers.yaml,
                                                    core/drivers.py); no driver: list driver|used_by|params
   ledger.py anchors <section>                      external forecast anchors (framework.yaml; core/anchoring.py)
+  ledger.py precursors <section>                   milestone|precursor series (framework.yaml precursors:)
   ledger.py series <section> <metric> --as-of D [--with-note]
                                                    effective observations obs,value,verification,published[,note]
   ledger.py items <section>                        gather watch list from framework.yaml
@@ -178,6 +179,13 @@ def check_framework(fw: dict) -> list[str]:
                     errs.append(f"{s.get('id')}: {t.get('slug')}: name and description required")
                 if "assumes" in t and not (isinstance(t["assumes"], str) and t["assumes"].strip()):
                     errs.append(f"{s.get('id')}: {t.get('slug')}: assumes must be a non-empty string")
+                if "precursors" in t:  # the milestone's precursor series (fw_precursors)
+                    pre = t["precursors"]
+                    if kind != "milestones":
+                        errs.append(f"{s.get('id')}: {t.get('slug')}: precursors are for milestones only")
+                    elif not (isinstance(pre, list) and pre and all(isinstance(m, str) and re.fullmatch(r"[a-z0-9][a-z0-9-]*", m)
+                                                                    for m in pre) and len(set(pre)) == len(pre)):
+                        errs.append(f"{s.get('id')}: {t.get('slug')}: precursors must be a non-empty list of distinct metric ids")
                 if "anchors" in t:  # external forecast anchors (core/anchoring.py; gather/RUBRIC.md §4.1 step 4)
                     import anchoring as anchors
                     errs += anchors.check(f"{s.get('id')}: {t.get('slug')}", t["anchors"]) if kind == "milestones" \
@@ -192,6 +200,18 @@ def fw_anchors(section: str, fw: dict | None = None) -> dict[str, list[dict]]:
     except KeyError:
         return {}
     return {f"milestone:{t['slug']}": t["anchors"] for t in s.get("milestones") or [] if t.get("anchors")}
+
+
+def fw_precursors(section: str, fw: dict | None = None) -> dict[str, list[str]]:
+    """{milestone:<slug>: [metric id]} of a section's framework.yaml `precursors:`: registered series
+    of the section that measure the milestone's precursor ladder (the best achievement so far on
+    the milestone's own scale). Their new values count as new evidence for the milestone
+    (evidence_digest, check_hysteresis), like events tagged with it."""
+    try:
+        s, _ = fw_section(section, fw)
+    except KeyError:
+        return {}
+    return {f"milestone:{t['slug']}": list(t["precursors"]) for t in s.get("milestones") or [] if t.get("precursors")}
 
 
 def fw_sections(fw: dict) -> list[tuple[dict, dict | None]]:
@@ -625,6 +645,8 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
     errs += check_hysteresis(section, ass, ids, obs)
     warns += check_assumed_gates(section, ass)
     warns += check_anchors(section, ass, obs, reg) + check_driver_use(section, ass)
+    errs += [f"framework.yaml {t}: precursor {m} is not a registered metric of {section}"
+             for t, ms in fw_precursors(section).items() for m in ms if reg is not None and m not in reg]
     e2, w2 = check_citations(ass, ids, superseded_by, section)
     return errs + e2, warns + w2
 
@@ -841,6 +863,9 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
             if target == "kpi" and obs:  # a KPI moves on observations of its assessed metric
                 spec = kpi_assessment_spec(section) or {}
                 newer_obs = any(r["metric"] == spec.get("assessed_metric") and tier(r)
+                                and day(prev["made_at"]) < known_at(r) <= day(a["made_at"]) for r in obs)
+            elif obs and (pre := fw_precursors(section).get(target)):  # a milestone moves on its precursor series
+                newer_obs = any(r["metric"] in pre and tier(r)
                                 and day(prev["made_at"]) < known_at(r) <= day(a["made_at"]) for r in obs)
             if a["status"] != prev["status"] and not newer_obs and not any(
                     e in evs and known_at(evs[e]) > day(prev["made_at"]) for e in a.get("evidence") or []):
@@ -1085,7 +1110,8 @@ def assessment_as_of(section: str, when: dt.date) -> dict[str, dict]:
 def evidence_digest(section: str, target: str, when: dt.date) -> str:
     """Fingerprint of the verified evidence available for `target` as of `when`:
     effective non-legacy events tagged with it (ids, so replacements count), and
-    for the KPI the effective non-legacy values of the required metrics. Stored on
+    for the KPI the effective non-legacy values of the required metrics, for a
+    milestone those of its precursor series (fw_precursors). Stored on
     assessments at merge time; a different current digest means new or late-
     discovered evidence, whatever its publication date."""
     import hashlib
@@ -1097,6 +1123,9 @@ def evidence_digest(section: str, target: str, when: dt.date) -> str:
         req = {m for m, row in reg.items() if kpi.required_active(row, when)}
         items += sorted(f"{m}@{o}={r['value']}" for (m, o), r in obs_as_of(section, when).items()
                         if m in req and tier(r))
+    elif pre := fw_precursors(section).get(target):
+        items += sorted(f"{m}@{o}={r['value']}" for (m, o), r in obs_as_of(section, when).items()
+                        if m in pre and tier(r))
     return hashlib.sha1("\n".join(items).encode()).hexdigest()[:16]
 
 
@@ -1125,6 +1154,8 @@ def stale_targets(section: str, until: dt.date, force: bool = False) -> list[tup
                 reg = kpi.load_registry(section)[0] or {}
                 req = {m for m, row in reg.items() if kpi.required_active(row, until)}
                 newer = any(r["metric"] in req and tier(r) and since < known_at(r) <= until for r in observations(section))
+            elif not newer and (pre := fw_precursors(section).get(t)):
+                newer = any(r["metric"] in pre and tier(r) and since < known_at(r) <= until for r in observations(section))
         if newer or force:
             base = f"{until}-{t.replace(':', '-')}"
             aid, n = base, 1
@@ -1578,6 +1609,7 @@ def main() -> int:
     dd.add_argument("--as-of", help="the `asof` of derived expressions (default: drivers.yaml as_of)")
     dd.add_argument("--section", choices=SECTIONS, help="list only drivers used by this section's milestones")
     an = sub.add_parser("anchors"); an.add_argument("section", choices=SECTIONS)
+    pc = sub.add_parser("precursors"); pc.add_argument("section", choices=SECTIONS)
     se = sub.add_parser("series"); se.add_argument("section", choices=SECTIONS); se.add_argument("metric")
     se.add_argument("--as-of", required=True)
     se.add_argument("--with-note", action="store_true", help="append the row's note (e.g. an anchor's forecasters=n)")
@@ -1684,6 +1716,9 @@ def main() -> int:
                 for x in al:
                     print(f"{t}|{x['source']}|{x['id']}|{x['relation']}|{x.get('by') or ''}|"
                           + " ".join(anchors.metrics(x).values()) + "|" + " ".join(str(x.get("note") or "").split()))
+        elif a.cmd == "precursors":  # target|metric ids
+            for t, ms in fw_precursors(a.section).items():
+                print(f"{t}|{' '.join(ms)}")
         elif a.cmd == "series":
             import kpi
             t = obs_as_of(a.section, day(a.as_of))

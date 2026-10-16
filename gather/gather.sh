@@ -82,6 +82,7 @@ OBS_HEADER="$(cd "$ROOT/core" && uv run python -c 'import ledger; print(",".join
 # Open questions logged by bulletins' edit stage ($ROOT/DESIGN.md §5): input for intake.
 GAPS_TEXT="$(cat */gaps/"$SECTION".md 2>/dev/null | grep -E '^[-*] ' | tail -40 || true)"
 uv run $ROOT/core/ledger.py items "$SECTION" > "$STAGE/items.txt"
+uv run $ROOT/core/ledger.py precursors "$SECTION" > "$STAGE/precursors.txt"
 DONE_ITEMS=""
 while IFS='|' read -r topic name desc <&3; do
 	if [ -n "${ITEMS:-}" ]; then case " $ITEMS " in *" $topic "*) : ;; *) continue ;; esac; fi
@@ -93,6 +94,7 @@ while IFS='|' read -r topic name desc <&3; do
 	DONE_ITEMS="$DONE_ITEMS $topic"
 	ev="$STAGE/$slug.events.jsonl"; ob="$STAGE/$slug.obs.csv"
 	SRC_TEXT="$(uv run $ROOT/gather/sources.py list "$SECTION" "$topic")"   # (assignment: aborts on error)
+	PRE="$(awk -F'|' -v t="$topic" '$1==t{print $2}' "$STAGE/precursors.txt")"
 	pi_run "intake-$slug" "$(cat <<EOF
 You are a news-intake researcher for "Grand Endeavors", a live tracker of
 humanity's progress. Section "$SECTION", watch item "$topic" ($name):
@@ -126,6 +128,7 @@ add a better/primary source to it, stage a replacement record (new id, e.g.
 
 Metric registry (for optional "metrics" links and observations):
 $REG_TEXT
+$( [ -n "$PRE" ] && printf '\nPRECURSOR SERIES of this milestone (framework.yaml precursors: %s): the best achievement so\nfar on its ladder. When you find a value beyond the latest one in the ledger (ledger.py series), stage\nan observation for it, exactly per the metric definition and with the primary source, as well as the event.\n' "$PRE" )
 
 OPEN GAPS reported by recent bulletins (fill them if they concern this item and
 the window; otherwise ignore):

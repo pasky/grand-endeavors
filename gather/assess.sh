@@ -73,6 +73,8 @@ METRICS="$(for f in metrics/*.csv; do s="$(basename "$f" .csv)"; [ "$s" = kpi-as
 # (plain assignments: a failing ledger.py aborts under set -e; a pipeline would hide it)
 DRIVERS="$(uv run $ROOT/core/ledger.py driver-draws --section "$SECTION")"
 DRIVERS="$(printf '%s\n' "${DRIVERS:-(none used by $SECTION milestones)}" | sed 's/^/    /')"
+PRECURSORS="$(uv run $ROOT/core/ledger.py precursors "$SECTION")"
+PRECURSORS="$(printf '%s\n' "${PRECURSORS:-(none for $SECTION milestones)}" | sed 's/^/    /')"
 ANCHORS="$(uv run $ROOT/core/ledger.py anchors "$SECTION")"
 ANCHORS="$(printf '%s\n' "${ANCHORS:-(none for $SECTION milestones)}" | sed 's/^/    /')"
 AS="$STAGE/assessments.jsonl"
@@ -108,6 +110,11 @@ $DRIVERS
       uv run $ROOT/core/ledger.py driver-draws <driver> --as-of $UNTIL   (CSV; canonical seed and n)
   goes into draw i of your simulation; name the driver id in basis.eta.calc. The mapping onto the
   milestone stays yours (§4.1 step 3). A driver fit you think wrong: say so in the notes, still use it.
+- Precursor series (framework.yaml precursors:), target|metric ids: registered series of the
+  best achievement so far on the milestone's own scale (its ladder; "series $SECTION <metric>").
+  Their new values re-open the milestone like its events do; use them where the mapping onto a
+  driver is calibrated (§4.1 step 3), and cite the metric ids and values in basis.eta.calc:
+$PRECURSORS
 - External anchors (RUBRIC.md §4.1 step 4), target|source|id|relation|deadline|metric ids|note:
 $ANCHORS
   For a milestone with anchors, finish its forecast first and write a line "pre-anchor p50: YYYY
