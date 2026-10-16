@@ -33,14 +33,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       8-item climate gather ≈ 75 min of agent time), and which model per stage
       (e.g. a cheaper intake model, a strong verifier).
 - [ ] Finish `views/newsletter-intro.md` (the newsletter intro still ends in `..todo..`).
-- [ ] **Success level for single-success AI milestones.** RUBRIC "Calibrate the driver" (§4.1, under the
-      long-tail list) says to use the 50% horizon when one success is enough (one accepted patch, one paper).
-      Audit 2026-10-16-eta-basis (owner: 80% = autonomy) mandates 80% for all three robots-software
-      milestones. The 2026-10-16 kernel-patch review flags the conflict. At 50% the kernel ETA would be
-      2027.3 / 2028.8 / 2031.5 instead of 2027.6 / 2029.6 / 2032.7. Decide, then align the rubric or the audit.
-
-## Operations
-
 - [ ] Scheduling of the LLM stages: `gather/gather.sh <section>`, then
       `views/bulletin.sh` + `views/roundup.sh` after each cutoff (weekly cutoff =
       Sunday + 2 days); needs the scheduling-budget decision above. The

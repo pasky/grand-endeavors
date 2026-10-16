@@ -33,7 +33,10 @@ draws they all sample (§4.1 step 2); the forecast is compared with external
 community forecasts (anchors) only after it is written down, and a gap is
 explained, not closed (§4.1 step 4; anchors of the same, a bounding or a
 similar event); every failure scenario of 10 % or more
-names its reference class with counts (§4.1 step 5). KPI rules are
+names its reference class with counts (§4.1 step 5); clarified 2026-10-16
+(owner): attempts that cost a gatekeeper's goodwill, such as AI patches and
+papers, are not freely repeatable, so they use the 80 % level (§4.1 step 3).
+KPI rules are
 unchanged in v2–v6. Any change in meaning is a new rubric version (rule 4).
 
 ## 1. What the colours mean
@@ -223,9 +226,13 @@ straight line or sounds cautious. Work through these steps:
    one-off construction projects with no learning).
    Calibrate the driver to what the milestone actually needs:
    - **reliability level**: when one success is enough and attempts can be
-     repeated or selected (one accepted patch, one paper, one demo), use the
-     50 % horizon or success rate. Use 80 % or higher only when the milestone
-     needs sustained reliability (full shifts, unattended operation).
+     repeated or selected cheaply (one demo, one benchmark run), use the
+     50 % horizon or success rate. Use 80 % or higher when the milestone
+     needs sustained reliability (full shifts, unattended operation), or when
+     failed attempts are costly to a gatekeeper and so cannot be repeated
+     freely. AI submissions to maintainers, editors or reviewers who are
+     flooded by AI slop (one accepted patch, one paper) become feasible only
+     once the AI is reliable.
    - **central rate**: the currently measured rate (the KPI window) is the
      median case unless a named constraint will slow it down. The slower
      long-run rate is the p90 case, not the median.
