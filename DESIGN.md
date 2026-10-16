@@ -236,7 +236,8 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    derives from intake-staged ones (knowledge-beyond's Q-Day gap) are current in the same run.
 6. **assess**: `ledger.py stale` lists targets whose evidence is newer than
    their latest assessment (effective events tagged with the target; for the
-   KPI also required-metric observations), plus never-assessed targets, each
+   KPI also required-metric observations; for a milestone also the observations
+   of its framework.yaml `precursors:` series), plus never-assessed targets, each
    with its next free assessment id. The trigger is stateless, so a run that
    died before assessing is caught up by the next one. **Known gap**: a
    milestone whose ETA rests on another section's series (`ledger.py drivers`)

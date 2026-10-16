@@ -110,11 +110,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       benchmarks that publish human time per task: SWE-Marathon; Terminal-Bench 4.x if Harbor
       Hub exposes per-task results. Recalibrating means new metric ids
       (gather/collectors/robots_software.py).
-- [ ] Robots-software milestone precursors exist only as ledger events:
-      - largest accepted AI-written contribution;
-      - venue tier of AI-generated papers;
-      - verified solo revenue.
-      Make them registered series, so that a new precursor point triggers re-assessment.
 
 ## Roadmap
 

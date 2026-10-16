@@ -10,6 +10,9 @@ _inputs:
   knowledge-beyond: [qday-rsa2048-qubits-needed, qday-largest-device-qubits]
 robots-software:
   horizon-80-blended: AI task horizon at 80% success, software and remote work blended
+  ai-contribution-lines-merged-max: Largest AI-written code contribution merged (lines)
+  ai-paper-venue-tier-max: Highest venue tier of an accepted AI-generated paper
+  solo-company-arr-max: Highest reported ARR of a one-person company
   horizon-80-software-eci: AI software task horizon at 80% success (METR-equivalent, from ECI)
   horizon-80-remote-rli: AI remote-work task horizon at 80% success (from the Remote Labor Index)
   horizon-50-blended: AI task horizon at 50% success, software and remote work blended

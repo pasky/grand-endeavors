@@ -610,6 +610,35 @@ def main():
     case("anchors: the notes of a v6 milestone with anchors state its pre-anchor p50 (in its own section)",
          has(nowarn, "pre-anchor p50") and ledger.check_notes("climate", [run6]) == [])
 
+    # --- milestone precursors (framework.yaml precursors:) ----------------------------------------
+    bad_pre = {"title": "t", "tagline": "t", "manifesto": "m", "endeavors": [{"id": "s", "title": "S",
+               "milestones": [{"slug": "a", "name": "A", "description": "d", "precursors": []},
+                              {"slug": "b", "name": "B", "description": "d", "precursors": ["x", "x"]}],
+               "challenges": [{"slug": "c", "name": "C", "description": "d", "precursors": ["x"]}]}]}
+    pe = ledger.check_framework(bad_pre)
+    case("precursors: a non-empty list of distinct metric ids, on milestones only",
+         has(pe, "a: precursors must be") and has(pe, "b: precursors must be") and has(pe, "c: precursors are for milestones only"))
+    bend.pop("anchors", None)
+    yaml.safe_dump(fw, open(f"{root}/framework.yaml", "w"), allow_unicode=True, sort_keys=False)
+    when = __import__("datetime").date(2026, 9, 29)
+    plain = ledger.evidence_digest("climate", "milestone:the-bend", when)
+    # no event after 2026-06-01; a co2-mlo-monthly value is published 2026-07-07
+    mp = dict(A(id="mp", status="yellow", label="Progressing: x", made_at="2026-06-01"))
+    mf = dict(A(id="mf", status="red", label="Distant: x", made_at="2026-09-01"))
+    no_pre = ledger.check_hysteresis("climate", [mp, mf], evs, ledger.observations("climate"))
+    bend["precursors"] = ["co2-mlo-monthly"]
+    yaml.safe_dump(fw, open(f"{root}/framework.yaml", "w"), allow_unicode=True, sort_keys=False)
+    case("precursors: their values enter the milestone's evidence digest (new values re-open it)",
+         ledger.evidence_digest("climate", "milestone:the-bend", when) != plain)
+    case("precursors: a milestone status change may rest on a newer value of a precursor series",
+         has(no_pre, "without evidence") and ledger.check_hysteresis("climate", [mp, mf], evs, ledger.observations("climate")) == [])
+    bend["precursors"] = ["no-such-series"]
+    yaml.safe_dump(fw, open(f"{root}/framework.yaml", "w"), allow_unicode=True, sort_keys=False)
+    case("precursors: an unregistered precursor series is an error",
+         has(ledger.check_section("climate")[0], "precursor no-such-series is not a registered metric"))
+    bend.pop("precursors")
+    yaml.safe_dump(fw, open(f"{root}/framework.yaml", "w"), allow_unicode=True, sort_keys=False)
+
     # --- snapshot ---------------------------------------------------------------------
     fixture()
     pdir = f"{kpi.ROOT}/pilot-26H1"

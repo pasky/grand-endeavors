@@ -18,7 +18,9 @@
 #     (milestones: external community forecasts of the same or a bounding event,
 #     {source: manifold|metaculus, id, relation: same|weaker|stronger|similar, by: deadline
 #     of a binary question, note: wording differences (required for similar)}, collected by gather/collectors/anchors.py; core/anchoring.py,
-#     gather/RUBRIC.md §4.1 step 4)
+#     gather/RUBRIC.md §4.1 step 4), precursors? (milestones: registered metric ids of the
+#     section measuring the milestone's precursor ladder, the best achievement so far on its own
+#     scale; their new values re-open the milestone like its events do; core/ledger.py fw_precursors)
 # Text is Markdown (inline: *italic*, **bold**, [links](...); intro/manifesto
 # may have paragraphs).
 #
@@ -57,6 +59,7 @@ endeavors:
               maintainers judge an openly AI-submitted patch on its merits (no blanket ban on
               AI-written code, no human-submitter rule); it tracks AI engineering capability,
               not project policy.
+            precursors: [ai-contribution-lines-merged-max]
           - slug: the-nature-author
             name: First Automated Scientist
             description: >-
@@ -66,6 +69,7 @@ endeavors:
               the journal would credit an AI as primary author once it clearly did the work
               (today Nature and Science bar AI authorship); it tracks AI research capability,
               not editorial policy.
+            precursors: [ai-paper-venue-tier-max]
             details:
               - The flagship journals Nature or Science, not their family titles.
               - >-
@@ -75,6 +79,7 @@ endeavors:
           - slug: the-10m-solopreneur
             name: Automated Economy Kickoff
             description: A single-person company reaches $10M ARR with <10 hours/week human oversight.
+            precursors: [solo-company-arr-max]
             details:
               - >-
                 Single person: no employees, and no contractors running its operations (incidental
