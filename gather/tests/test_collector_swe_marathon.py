@@ -74,6 +74,10 @@ tasks_lit = BUNDLE[BUNDLE.index("Ze={"):BUNDLE.index(",Qe={")]
 case("parse: an unrelated tasks:[...] array (another suite version) is ignored",
      sm.parse(HTML, BUNDLE.replace(",Qe={", ",Ye=" + tasks_lit[3:].replace("{id:`excel-clone`", "{id:`excel-clone-v0`")
                                    + ",Qe={"))["tasks"] == d["tasks"])
+case("parse: the dataset's task array with an unsupported value fails loudly (not skipped)",
+     raises(sm.parse, HTML, BUNDLE.replace("{id:`zstd-decoder`,", "{id:`zstd-decoder`,extra:f(),")))
+case("parse: an expression applied to the task array (.map, which could re-key it) fails loudly",
+     raises(sm.parse, HTML, BUNDLE.replace("]},Qe={", "].map(e=>e)},Qe={")))
 case("parse: two arrays covering the result tasks are ambiguous",
      raises(sm.parse, HTML, BUNDLE.replace(",Qe={", ",Ye=" + tasks_lit[3:] + ",Qe={")))
 case("parse: an unknown trial status is refused",
@@ -112,6 +116,19 @@ case("fit: h80 = h50 * 2^(-ln 4 / beta), true h80 inside its 95% CI",
      and f["h80_lo"] < 2 ** true80 < f["h80_hi"])
 case("fit: n, successes, tasks, first/last start", f["n"] == 37 * 60 and f["tasks"] == 37
      and f["first"] == "2026-08-01 12:00 UTC" and f["last"] == "2026-08-28 12:00 UTC" and 0 < f["successes"] < f["n"])
+T = lambda task, reward, status="success": sm.Trial(task, "A", "M", None, reward, status,  # noqa: E731
+                                                     "2026-08-01 00:00 UTC", f"{task}-{reward}")
+H3 = {"a": 4.0, "b": 8.0, "c": 16.0}
+ex = sm.fit([T(t, int(i < k)) for t, k in (("a", 9), ("b", 3), ("c", 3)) for i in range(10)], H3)
+case("fit: analytic case 9/10, 3/10, 3/10 at 4/8/16 h -> h50 8, h80 4, beta ln 4; SEs as statsmodels"
+     " Logit (model 0.50388, task-clustered x G/(G-1) 0.54459 doublings)",
+     math.isclose(ex["h50"], 8) and math.isclose(ex["h80"], 4) and math.isclose(ex["beta"], math.log(4))
+     and abs(ex["se_log2_h80_model"] - 0.5038800104) < 1e-8 and abs(ex["se_log2_h80_cluster"] - 0.5445944760) < 1e-8)
+flat = sm.fit([T("t0", int(i < 1)) for i in range(6)] + [T("t9", int(i < 3)) for i in range(18)], HOURS)
+weak = sm.fit([T("t6", int(i < 101)) for i in range(200)] + [T("t9", int(i < 100)) for i in range(200)], HOURS)
+case("fit: a flat slope (1/6 vs 3/18) is flagged; a very weak one (101/200 vs 100/200) fits without overflow",
+     flat["flag"] == "inverted" and weak["flag"] is None and weak["extrapolated"] == "below"
+     and (weak["h80_lo"], weak["h80_hi"]) == (0.0, math.inf))
 het = sm.fit(synth(16.0, 0.9, task_sd=1.5, seed=3), HOURS)
 case("fit: task heterogeneity widens the task-clustered SE beyond the model SE, and the CI uses it",
      het["se_log2_h80_cluster"] > 1.5 * het["se_log2_h80_model"] and het["se_log2_h80"] == het["se_log2_h80_cluster"])
@@ -122,8 +139,6 @@ def flag(trials):
     return r["flag"] if r["h50"] is None and r["h80"] is None and r["beta"] is None else "HAS-NUMBERS"
 
 
-T = lambda task, reward, status="success": sm.Trial(task, "A", "M", None, reward, status,  # noqa: E731
-                                                     "2026-08-01 00:00 UTC", f"{task}-{reward}")
 case("degenerate: no successes -> flagged, no horizon", flag([T("t0", 0), T("t9", 0)]) == "no-successes")
 case("degenerate: all successes -> flagged", flag([T("t0", 1), T("t9", 1)]) == "all-successes")
 case("degenerate: one task length -> flagged", flag([T("t0", 1), T("t0", 0)]) == "too-few-tasks")

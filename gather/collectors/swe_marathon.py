@@ -7,7 +7,7 @@
 Usage:  uv run gather/collectors/swe_marathon.py [--fixture DIR] [--best] [--include-errors]
           prints the per-configuration fits (--best: the best configuration per model)
 
-This module is pure parsing + fitting (no ledger rows); robots_software.py uses it.
+This module is pure parsing + fitting (no ledger rows), for robots_software.py.
 
 SOURCE
   https://www.swe-marathon.org/index.html (SWE-Marathon by Abundant AI; the site footer says
@@ -25,10 +25,11 @@ SOURCE
       expert_time_estimate_hours:<number>},agent:{timeout_sec},...}, ...]}   (the task.toml
       files, translated; the 20 values equal tasks/<task>/task.toml at the repo's
       v1.1-official tag, checked 2026-10-16)
-  The hours are taken from the second structure by parsing the array literal (a small parser
-  for the JSON-like JS subset; `tasks:[` arrays that are not this one fail to parse or lack
-  id/metadata and are skipped). Exactly one array must cover exactly the result tasks, and
-  every task needs a positive hour estimate: anything else fails loudly.
+  The hours are taken from the second structure: every `{dataset:<string>,tasks:[` in the
+  bundle is parsed as a literal (a small parser for the JSON-like JS subset) up to its closing
+  `]}`; an unparsable one, or one followed by an expression, fails loudly rather than being
+  skipped. Exactly one such array must cover exactly the result tasks (others, e.g. another
+  suite version, are ignored), and every task needs a positive hour estimate.
 
 TRIALS
   status "success" = the Harbor trial finished without an exception (agent timeouts included:
@@ -49,12 +50,14 @@ FIT (METR "Measuring AI Ability to Complete Long Tasks", 2025)
   beta). Uncertainty of log2 h80 and log2 h50 by the delta method, from (a) the observed
   (= expected) information and (b) a task-clustered sandwich (trials of one task are
   correlated: task difficulty is not only length), with the G/(G-1) small-sample factor; the
-  95% CI uses the larger of the two standard errors (conservative). METR's own CIs come from a
-  hierarchical bootstrap; this is the cheap deterministic analogue.
+  95% CI is an approximate Wald interval on log2 h80 with the larger of the two standard
+  errors (with ~20 tasks and shallow slopes it is rough, not guaranteed coverage). METR's own
+  CIs come from a hierarchical bootstrap; this is the cheap deterministic analogue.
   Degenerate configurations get a `flag` and NO h50/h80/beta (never an extrapolated number):
     no-successes / all-successes   the horizon is below / above every task: no finite MLE
     separated     every success is on tasks no longer than every failure: beta -> infinity
-    inverted      success rises with task length (fitted beta <= 0, or separated that way)
+    inverted      success does not fall with task length (fitted beta <= 1e-9, i.e. flat or
+                  rising, or separated that way)
     too-few-tasks fewer than two distinct task lengths
     no-convergence
   A fit whose h80 lies outside the task lengths it was fitted on (4-400 h for the full suite)
@@ -245,14 +248,21 @@ def results_json(bundle: str) -> tuple[str, dict]:
 def task_hours(bundle: str, names: set[str]) -> dict[str, float]:
     """{task: expert_time_estimate_hours} from the bundle's task.toml array (see module doc)."""
     found = []
-    for m in re.finditer(r"tasks:\[", bundle):
-        try:
-            arr = _JS(bundle, m.end() - 1).value()
-        except (ValueError, IndexError):
+    for m in re.finditer(r"\{dataset:(?=[`\"'])", bundle):
+        r = _JS(bundle, m.end())
+        r.string()
+        if not bundle.startswith(",tasks:[", r.i):
             continue
-        if arr and all(isinstance(t, dict) and isinstance(t.get("id"), str) and isinstance(t.get("metadata"), dict)
-                       for t in arr):
-            found.append(arr)
+        r.i += len(",tasks:")
+        try:
+            arr = r.value()
+        except IndexError:
+            r.fail("truncated")
+        r.eat("}")   # the array ends the object: no .map(...) or other expression on it
+        if not all(isinstance(t, dict) and isinstance(t.get("id"), str) and isinstance(t.get("metadata"), dict)
+                   for t in arr):
+            raise ValueError(f"bundle: dataset tasks at offset {m.start()} are not {{id, metadata}} objects")
+        found.append(arr)
     cover = [a for a in found if {t["id"] for t in a} == names]
     if len(cover) != 1:
         raise ValueError(f"bundle: {len(cover)} task-metadata arrays cover exactly the {len(names)} result "
@@ -384,7 +394,7 @@ def fit(trials: list[Trial], hours: dict[str, float], include_errors: bool = Fal
             break
     else:
         return dict(out, flag="no-convergence")
-    if b >= 0:
+    if -b <= 1e-9:
         return dict(out, flag="inverted")
 
     (i00, i01, i11), _ = info(a, b)
@@ -408,14 +418,16 @@ def fit(trials: list[Trial], hours: dict[str, float], include_errors: bool = Fal
         ga, gb = -1 / b, -(level_logit - a) / (b * b)
         return math.sqrt(max(0.0, ga * ga * v[0][0] + 2 * ga * gb * v[0][1] + gb * gb * v[1][1]))
 
+    def pow2(v):   # a weak slope can put a horizon or CI bound beyond float range
+        return 0.0 if v < -1000 else math.inf if v > 1000 else 2 ** v
+
     l50, l80 = xc - a / b, xc + (LN4 - a) / b
     se80 = max(se(LN4, cov), se(LN4, rob))
-    h80 = 2 ** l80
     lo, hi = min(x for x, _, _ in pts), max(x for x, _, _ in pts)
-    return dict(out, beta=-b, h50=2 ** l50, h80=h80,
+    return dict(out, beta=-b, h50=pow2(l50), h80=pow2(l80),
                 se_log2_h50=max(se(0.0, cov), se(0.0, rob)), se_log2_h80=se80,
                 se_log2_h80_model=se(LN4, cov), se_log2_h80_cluster=se(LN4, rob),
-                h80_lo=2 ** (l80 - Z95 * se80), h80_hi=2 ** (l80 + Z95 * se80),
+                h80_lo=pow2(l80 - Z95 * se80), h80_hi=pow2(l80 + Z95 * se80),
                 extrapolated="below" if l80 < lo else "above" if l80 > hi else None)
 
 
