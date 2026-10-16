@@ -57,14 +57,19 @@ CPI_SERIES = "CUUR0000SA0"
 BLS_USER_AGENT = "grand-endeavors-collector/1 (python-urllib; contact: pasky@ucw.cz)"
 
 
-def fetch(url: str, fixture_dir: str | None = None, headers: dict | None = None) -> str:
-    """Text of `url`, or of fixture_dir/<basename(url), trailing '/' ignored> when a fixture dir is given."""
+def fetch_bytes(url: str, fixture_dir: str | None = None, headers: dict | None = None) -> bytes:
+    """Bytes of `url`, or of fixture_dir/<basename(url), trailing '/' ignored> when a fixture dir is given."""
     if fixture_dir:
-        with open(os.path.join(fixture_dir, url.rstrip("/").rsplit("/", 1)[-1]), encoding="utf-8") as f:
+        with open(os.path.join(fixture_dir, url.rstrip("/").rsplit("/", 1)[-1]), "rb") as f:
             return f.read()
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
     with urllib.request.urlopen(req, timeout=60) as r:
-        return r.read().decode("utf-8")
+        return r.read()
+
+
+def fetch(url: str, fixture_dir: str | None = None, headers: dict | None = None) -> str:
+    """Text (UTF-8) of `url`, or of its fixture (see fetch_bytes)."""
+    return fetch_bytes(url, fixture_dir, headers).decode("utf-8")
 
 
 def parse_bls_cpi(text: str) -> dict[int, Decimal]:

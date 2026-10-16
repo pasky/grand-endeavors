@@ -591,10 +591,11 @@ def main():
         case("stream: status changes shown without any events, all-history footer",
              no_ev.count("· status change</span>") == 4 and "All 0 events and all status changes" in no_ev
              and 'href="#climate"' in no_ev)
-        case("values in readable units: minutes from 2 hours on as hours",
+        case("values in readable units: minutes (or hours) from 2 hours on as hours, shorter hours as minutes",
              explore.human_value("1044.78", "min") == ("17.4", "hours")
              and explore.human_value("185.91", "min") == ("3.1", "hours")
-             and explore.human_value("90", "min") == ("90", "min") and explore.human_value("89", "s") == ("89", "s"))
+             and explore.human_value("90", "min") == ("90", "min") and explore.human_value("89", "s") == ("89", "s")
+             and explore.human_value("9.567", "h") == ("9.6", "hours") and explore.human_value("0.225", "h") == ("14", "min"))
         bend = re.search(r'<li class="topic" id="t-climate-milestone-the-bend">.*?</li>', page, re.S)[0]
         case("an expanded status does not repeat its status line", bend.count("Peak in sight") == 1)
         ah = explore.assessment_html({"assessment_id": "a", "status": "yellow", "prev_status": None, "legacy_evidence": 0,

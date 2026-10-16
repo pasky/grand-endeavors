@@ -78,7 +78,7 @@ drivers.yaml                         shared ETA drivers: one fitted distribution
 
 **Shared drivers** (rubric v6, RUBRIC.md §4.1 step 2): `drivers.yaml` in the
 data repo holds one fitted distribution per quantity that several milestone
-ETAs rest on (METR horizons, the Dyna failure-rate halving, IRENA LCOE
+ETAs rest on (AI task horizons, the Dyna failure-rate halving, IRENA LCOE
 learning, fossil CO₂ deceleration, launch mass, the first fusion plant's
 start): its sources (registered series, events), fit window, parameters
 (fixed, split lognormal/normal by p10/p50/p90, triangular, categorical,
@@ -209,7 +209,12 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    and always an open-ended `beyond` sweep for significant developments outside
    the framework.
 2. **collect**: deterministic collectors (`gather/collectors/<section>.py`) fetch
-   machine-readable sources into staged observations. No LLM.
+   machine-readable sources into staged observations. No LLM. A collector may
+   also derive series through a frozen, documented conversion. The robots-software KPI
+   is one: task horizons in human-hours converted from Epoch's ECI (software,
+   calibrated against METR's discontinued time horizons) and from the Remote
+   Labor Index (remote work), blended by their geometric mean. The conversion is part of the metric's
+   registry definition, so changing it means new metric ids.
 3. **intake** (one web-capable agent per watch item): find developments
    published in the item's window, and stage event records and observations.
    Windows are per item: from the item's last UNTIL minus OVERLAP_DAYS (default

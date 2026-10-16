@@ -656,14 +656,16 @@ def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200,
 
 def human_value(value_text, unit) -> tuple[str, str]:
     """A value in a readable unit: minutes from 2 hours on as hours (METR task horizons:
-    1044.78 min -> 17.4 hours)."""
-    if unit in ("min", "minutes"):
+    1044.78 min -> 17.4 hours); hours (task horizons: 9.567 h) as hours, under 2 hours as minutes."""
+    if unit in ("min", "minutes", "h"):
         try:
-            v = float(value_text)
+            v = float(value_text) * (60 if unit == "h" else 1)
         except (TypeError, ValueError):
             return str(value_text), unit
         if v >= 120:
             return f"{v / 60:.1f}" if v < 6000 else f"{v / 60:.0f}", "hours"
+        if unit == "h":
+            return f"{v:.0f}", "min"
     return str(value_text), unit
 
 
