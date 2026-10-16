@@ -231,6 +231,8 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    error; each file is replaced atomically. Replays are idempotent (identical =
    no-op, conflicting = error), so a crashed merge can simply be re-run.
    Rejected records go to `rejected/`.
+   If intake merged observations, the section's collector runs again, so series it
+   derives from intake-staged ones (knowledge-beyond's Q-Day gap) are current in the same run.
 6. **assess**: `ledger.py stale` lists targets whose evidence is newer than
    their latest assessment (effective events tagged with the target; for the
    KPI also required-metric observations), plus never-assessed targets, each

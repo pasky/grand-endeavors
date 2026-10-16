@@ -60,9 +60,9 @@ qday-qubit-gap (derived, no fetch)
   at each obs date of either input, needed = the lowest qday-rsa2048-qubits-needed and
   available = the highest qday-largest-device-qubits observed by that date (both are
   record series); value = needed / available to 3 significant digits, emitted once both
-  exist. obs = that date; source = the changed input's source; published = the later
-  of the two inputs' publication dates (basis source). An input revision re-derives the
-  affected dates (revisions append; equal values dedup on merge).
+  exist. obs = that date; source = the changed input's source. Dating, revisions and
+  withdrawals when inputs change: gap_rows(). gather.sh re-runs the collector after
+  merging intake, so new inputs reach the gap in the same run.
 
 With --fixture DIR each source is read from DIR/<FIXTURES name> (TOP500:
 DIR/top500-YYYY-MM.html; a missing list file counts as not found).
@@ -252,24 +252,60 @@ def sig3(x: Decimal) -> str:
 
 
 def qday_gap(existing) -> list[tuple[str, Decimal, dict, dict, dict]]:
-    """[(obs, gap, changed input row, needed row, device row)] per obs date of either input."""
+    """[(obs, gap, changed input row, needed row, device row)] per obs date of either input
+    (effective rows; both inputs on one date make one entry)."""
     eff = ledger.obs_as_of("", rows=list(existing))
-    inputs = sorted((kpi.obs_range(r["obs"])[1], r["obs"], r) for (m, _), r in eff.items() if m in (M_NEEDED, M_DEVICE))
+    inputs = sorted(((kpi.obs_range(r["obs"])[1], r["obs"], r["metric"]), r)
+                    for (m, _), r in eff.items() if m in (M_NEEDED, M_DEVICE))
     out, best = [], {}
-    for end, obs, r in inputs:
-        cur = best.get(r["metric"])
-        better = min if r["metric"] == M_NEEDED else max
+    for (end, obs, metric), r in inputs:
+        cur = best.get(metric)
+        better = min if metric == M_NEEDED else max
         if cur is None or better(Decimal(r["value"]), Decimal(cur["value"])) != Decimal(cur["value"]):
-            best[r["metric"]] = r
-        if M_NEEDED in best and M_DEVICE in best:
+            best[metric] = r
+        if M_NEEDED in best and M_DEVICE in best and Decimal(best[M_DEVICE]["value"]) > 0:
             n, d = best[M_NEEDED], best[M_DEVICE]
-            if Decimal(d["value"]) > 0:
-                gap = (r["obs"], Decimal(n["value"]) / Decimal(d["value"]), r, n, d)
-                if out and out[-1][0] == obs:
-                    out[-1] = gap  # both inputs on one date: one row
-                else:
-                    out.append(gap)
+            gap = (obs, Decimal(n["value"]) / Decimal(d["value"]), r, n, d)
+            if out and out[-1][0] == obs:
+                out[-1] = gap
+            else:
+                out.append(gap)
     return out
+
+
+def gap_rows(reg: dict, existing, collector: str, today: dt.date) -> list[dict]:
+    """The derived qday-qubit-gap rows, reconciled with the gap rows already in the ledger:
+    - a new obs date: published = when its inputs were all public, i.e. the latest of the
+      inputs' publication dates and of any input withdrawal by then (a withdrawal can
+      expose an older record holder), basis source; an input dated first-seen makes the
+      row first-seen too (published = retrieved);
+    - an obs date whose effective gap value differs: a revision, dated first seen (today);
+    - an effective gap obs that the inputs no longer produce (an input withdrawn): a
+      withdrawal record. (A withdrawn value can never return for that obs: DESIGN.md §3.)"""
+    eff = ledger.obs_as_of("", rows=list(existing))
+    wds = [r for r in existing if r["metric"] in (M_NEEDED, M_DEVICE) and r["verification"] == "withdrawn"]
+    rows, want = [], set()
+    for obs, gap, r, n, d in qday_gap(existing):
+        want.add(obs)
+        value, cur = sig3(gap), eff.get((M_GAP, obs))
+        note = (f"derived: {n['value']} qubits needed ({M_NEEDED}@{n['obs']}, {n['source']}) / "
+                f"{d['value']} available ({M_DEVICE}@{d['obs']}, {d['source']})")
+        end = kpi.obs_range(obs)[1]
+        if cur is not None and Decimal(cur["value"]) != Decimal(value):
+            published, note = None, note + f"; revises {cur['value']} (an input changed; published = first seen)"
+        elif "seen" in (n["published_basis"], d["published_basis"]):
+            published = None
+        else:
+            published = max([n["published"], d["published"], obs[:10]]
+                            + [w["published"] for w in wds if kpi.obs_range(w["obs"])[1] <= end])
+            published = min(published, str(today))
+        rows.append(common.row(reg, M_GAP, obs, value, r["source"], note, collector, str(today), published=published))
+    for (m, obs), cur in sorted(eff.items()):
+        if m == M_GAP and obs not in want:
+            rows.append(dict(common.row(reg, M_GAP, obs, cur["value"], cur["source"],
+                                        "withdrawn: its inputs no longer give a gap at this date (an input was withdrawn)",
+                                        collector, str(today)), verification="withdrawn"))
+    return rows
 
 
 def collect(fixture: str | None, today: dt.date, collector: str, existing=()) -> list[dict]:
@@ -317,11 +353,7 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
             f"TOP500 {dt.date(y, m, 1):%B %Y} list, rank 1: {name}; HPL Rmax converted to PFlop/s"
             + (f" ({erratum})" if erratum else ""))
 
-    for obs, gap, r, n, d in qday_gap(existing):
-        rows.append(common.row(reg, M_GAP, obs, sig3(gap), r["source"],
-                               f"derived: {n['value']} qubits needed ({M_NEEDED}@{n['obs']}, {n['source']}) / "
-                               f"{d['value']} available ({M_DEVICE}@{d['obs']}, {d['source']})",
-                               collector, str(today), published=max(n["published"], d["published"], obs[:10])))
+    rows += gap_rows(reg, existing, collector, today)
 
     by_year = parse_exo(fetch(EXO_URL, fixture), fetch(EXO_COUNT_URL, fixture))
     total = 0

@@ -484,9 +484,13 @@ def main():
                   for i, sig in ((1, 3), (2, 2), (3, 3)))}
         for rel, text in kb.items():
             write(root, rel, text)
+        saved_inputs = dict(explore.METRIC_INPUTS)
         explore.METRIC_INPUTS["knowledge-beyond"] = ["feed"]
-        sp = explore.dashboard(D("2026-09-28"))
-        del explore.METRIC_INPUTS["knowledge-beyond"]
+        try:
+            sp = explore.dashboard(D("2026-09-28"))
+        finally:
+            explore.METRIC_INPUTS.clear()
+            explore.METRIC_INPUTS.update(saved_inputs)
         for rel in kb:
             os.remove(os.path.join(root, rel))
         kpane = sp[sp.index('<section class="pane" id="knowledge-beyond">'):]

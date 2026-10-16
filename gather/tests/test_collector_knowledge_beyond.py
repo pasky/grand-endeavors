@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(GATHER, "collectors"))
 
 import common  # noqa: E402
 import knowledge_beyond as kb  # noqa: E402
+import ledger  # noqa: E402
 
 FAILS = []
 TODAY = dt.date(2026, 10, 16)
@@ -140,6 +141,51 @@ case("qday gap: a weaker later estimate or a smaller later device does not raise
      [r["value"] for r in [g for g in kb.collect(FIX, TODAY, "t", HAVE + QIN[:5] + [
          inrow(kb.M_NEEDED, "2026-04-01", "500000"), inrow(kb.M_DEVICE, "2026-05-01", "50")])
          if g["metric"] == kb.M_GAP]][-2:] == ["1020", "1020"])
+
+
+def day(d, base):
+    """Run the gap derivation on day d against the ledger rows `base` and merge it (ledger.prepare):
+    (merge errors, the new ledger rows, the staged rows)."""
+    staged = common.mark_revisions(kb.gap_rows(REG, base, "t", dt.date.fromisoformat(d)), base)
+    saved = ledger.observations, ledger.events, ledger.assessments
+    with tempfile.TemporaryDirectory() as tmp:
+        f = os.path.join(tmp, "staged.csv")
+        common.write(f, staged)
+        try:
+            ledger.observations, ledger.events, ledger.assessments = (lambda s: list(base)), (lambda s: []), (lambda s: [])
+            errs, _, plan = ledger.prepare(kb.SECTION, obs_files=[f])
+        finally:
+            ledger.observations, ledger.events, ledger.assessments = saved
+    for e in errs[:5]:
+        print("     ", e)
+    return errs, list(base) + (plan["obs"] if not errs else []), staged
+
+
+L0 = [inrow(kb.M_NEEDED, "2026-02-01", "1000"), inrow(kb.M_DEVICE, "2026-02-01", "10"),
+      inrow(kb.M_DEVICE, "2026-03-01", "20")]
+errs, L1, st = day("2026-04-01", L0)
+g = lambda base: {o: r["value"] for (m, o), r in ledger.obs_as_of("", rows=base).items() if m == kb.M_GAP}
+case("qday gap lifecycle: both inputs on one date make one row (no crash); 100x then 50x",
+     not errs and g(L1) == {"2026-02-01": "100", "2026-03-01": "50"})
+wd = dict(inrow(kb.M_DEVICE, "2026-03-01", "20"), published="2026-05-01", retrieved="2026-05-01",
+          published_basis="seen", verification="withdrawn", note="wrong")
+errs, L2, st = day("2026-05-02", L1 + [wd])
+case("qday gap lifecycle: an input withdrawn -> its gap row is withdrawn too (the stale 50x is not the headline)",
+     not errs and g(L2) == {"2026-02-01": "100"}
+     and any(r["verification"] == "withdrawn" and r["obs"] == "2026-03-01" for r in st))
+rev = dict(inrow(kb.M_DEVICE, "2026-02-01", "8"), published="2026-06-01", retrieved="2026-06-01", published_basis="seen")
+errs, L3, st = day("2026-06-02", L2 + [rev])
+r125 = next(r for r in st if r["obs"] == "2026-02-01")
+case("qday gap lifecycle: an input revision re-derives the gap as a revision dated first seen, which becomes effective",
+     not errs and g(L3) == {"2026-02-01": "125"} and r125["published"] == "2026-06-02" and r125["published_basis"] == "seen")
+errs, L4, st = day("2026-06-03", L3)
+case("qday gap lifecycle: the next day's run is a clean no-op (merge-valid, nothing new)",
+     not errs and len(L4) == len(L3))
+newd = dict(inrow(kb.M_DEVICE, "2026-07-01", "40"), published="2026-07-01", published_basis="seen", retrieved="2026-07-01")
+st = kb.gap_rows(REG, L3 + [newd], "t", dt.date(2026, 7, 3))
+r7 = next(r for r in st if r["obs"] == "2026-07-01")
+case("qday gap: a gap from a first-seen input is first-seen too", r7["published_basis"] == "seen" and r7["published"] == "2026-07-03")
+
 case("qday gap: sig3", [kb.sig3(Decimal(x)) for x in ("1020.408", "0.041666", "9.995", "10", "123456")]
      == ["1020", "0.0417", "10", "10", "123000"])
 

@@ -213,6 +213,14 @@ if [ -n "$staged_ev$staged_ob" ]; then
 fi
 uv run $ROOT/core/ledger.py check "$SECTION"
 commit "gather $SECTION: merge verified intake (until $UNTIL)" $LEDGER_PATHS
+# a collector may derive series from intake-staged observations (knowledge-beyond's Q-Day
+# gap): re-run it once intake merged observations, so they reach the derived series now
+if [ -f "$collector" ] && [ -z "${SKIP_COLLECT:-}" ] && [ -n "$staged_ob" ]; then
+	echo ">>> [$RUN_NAME] re-collect after intake ($collector)"
+	sh "$ROOT/gather/collectors/run.sh" "$SECTION"
+	uv run $ROOT/core/ledger.py check "$SECTION"
+	commit "gather $SECTION: re-collect after intake ($collector, $TODAY)" $LEDGER_PATHS
+fi
 
 # --- 5. assess (stateless trigger: evidence newer than the latest assessment) -------
 # assess.sh applies RUBRIC.md (current rubric version) to targets that `ledger.py stale` reports.
