@@ -209,10 +209,7 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    and always an open-ended `beyond` sweep for significant developments outside
    the framework.
 2. **collect**: deterministic collectors (`gather/collectors/<section>.py`) fetch
-   machine-readable sources into staged observations. No LLM. A collector may
-   also compute a derived series from its sources (e.g. robots-software's task
-   horizons). The computation is part of that metric's registry definition, so
-   changing it means a new metric id.
+   machine-readable sources into staged observations. No LLM.
 3. **intake** (one web-capable agent per watch item): find developments
    published in the item's window, and stage event records and observations.
    Windows are per item: from the item's last UNTIL minus OVERLAP_DAYS (default
