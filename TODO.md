@@ -17,6 +17,8 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       per affected milestone. Fix: milestones declare their drivers (drivers.yaml `used_by`
       now does, for the shared ones); stale + hysteresis follow them. Likewise a
       drivers.yaml edit, or an anchor moving past a gap threshold, re-assesses nothing.
+- [ ] 🤖 `ledger.py check` charges an assess run's unresolved review MAJOR count to every
+      milestone of that run. Make the reviewer's count per target.
 - [ ] **External anchors cover 1 of 20 milestones** (2026-10-15, data
       ledger/audits/2026-10-15-anchors): a deep-mode review standing in for the owner accepted
       only strict implications (two `weaker` Manifold bounds for the-first-watt) and rejected
@@ -33,14 +35,17 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       8-item climate gather ≈ 75 min of agent time), and which model per stage
       (e.g. a cheaper intake model, a strong verifier).
 - [ ] Finish `views/newsletter-intro.md` (the newsletter intro still ends in `..todo..`).
+
+## Operations
+
 - [ ] Scheduling of the LLM stages: `gather/gather.sh <section>`, then
       `views/bulletin.sh` + `views/roundup.sh` after each cutoff (weekly cutoff =
       Sunday + 2 days); needs the scheduling-budget decision above. The
       deterministic collectors already run daily (`gather/collect.sh`, systemd user
       timer, DESIGN.md §4a), and so do the site refresh and the data push.
-- [ ] Gather all sections. Only climate (full), fusion (KPI) and the
-      re-verification pass have run; the other sections' news is all
-      2025-report history.
+- [ ] Gather all sections. Only climate (full), fusion (KPI), robots-software (KPI and
+      milestones, 2025-07 to 2026-10) and the re-verification pass have run; the other
+      sections' news is all 2025-report history.
 - [ ] A hosted Datasette (`datasette publish`); the dashboard itself is published
       (pasky.or.cz/grand-endeavors/ = `build/`) and linked from the round-ups'
       Quick Reference.
@@ -100,37 +105,16 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       Consider adding a local-currency or PPP variant.
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
       needs a definition that can actually be observed.
-- [ ] Robots-software KPI (horizon-80-blended, 2026-10-16) rests on two frozen conversions
-      (gather/collectors/robots_software.py). The driver task-horizon draws their errors.
-      - **Software (ECI→METR):** the calibration ends at ECI 156.76 while the frontier is at about 167.
-        That is about 2.3 doublings of extrapolation, with a prediction error of about 0.55 doublings.
-      - **Remote work (RLI):** METR's slope (measured p10–p90: 0.50–0.69) moves today's 80% level
-        by −0.8 / +0.6 doublings.
-      - **Next: our own horizon fits** on public task-level benchmarks with human times per task. Do not
-        assume METR resumes. Each new frontier model then adds a calibration point (ECI → hours) and a
-        measured slope.
-        - SWE-Marathon: tasks of 4–400 h, per-trial results in the site bundle.
-        - Terminal-Bench 4.x: expert hours per task; per-task results only via Harbor Hub (unverified).
-      - **Also watch:** RLI "dollars earned" per model (it would let us fit the RLI slope); RLI per-project
-        times (to replace the decoded histogram); Epoch rescaling ECI (`--calibrate` refits against the
-        current vintage).
-      - Recalibrating means new metric ids, plus `retired_after` on the old ones.
-- [ ] Robots-software milestone ETAs rest on precursor ladders (audits 2026-10-16-eta-basis, -r2):
-      - **Kernel:** the size of accepted AI-written contributions.
-      - **Nature author:** the venue tier of accepted AI-generated papers.
-      - **Solopreneur:** verified solo revenue.
-      - **Today:** they are ledger events from intake (gather run 20261016T052807Z, which covered
-        2025-07 to 2026-10). Make them registered series so new rungs trigger re-assessment.
-      - **Candidates:**
-        - GitHub commit search for `Assisted-by:` trailers in torvalds/linux and llvm-project. Matches
-          are unreliable (the search index caps results and gives false positives).
-        - TrustMRR's API (key required; solo status is self-declared).
-      - Run regular robots-software gathers: the section had no intake between 2026-01 and 2026-10.
-- [ ] 🤖 `ledger.py check` charges an assess run's unresolved review MAJOR count to EVERY milestone of
-      that run: the review file ends in one run-level `MAJOR: <n>` line. Example: run 20261016T033429Z left
-      one MAJOR, on the-10m-solopreneur (fixed by audit 2026-10-16-task-horizon), yet the kernel-patch
-      and Nature-author records of that run still warn. Fix: the reviewer emits per-target counts
-      (`MAJOR <target>: <n>`), and `review_major` reads the record's own target.
+- [ ] Robots-software KPI (horizon-80-blended): its ECI-to-hours calibration can no longer grow,
+      because METR stopped publishing. Add calibration points from our own horizon fits on
+      benchmarks that publish human time per task: SWE-Marathon; Terminal-Bench 4.x if Harbor
+      Hub exposes per-task results. Recalibrating means new metric ids
+      (gather/collectors/robots_software.py).
+- [ ] Robots-software milestone precursors exist only as ledger events:
+      - largest accepted AI-written contribution;
+      - venue tier of AI-generated papers;
+      - verified solo revenue.
+      Make them registered series, so that a new precursor point triggers re-assessment.
 
 ## Roadmap
 
