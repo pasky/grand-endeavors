@@ -242,7 +242,7 @@ records only; (8) consistency across milestones sharing a driver; (9) shared dri
 drivers.yaml used_by samples the driver's draws (ledger.py driver-draws <driver> --as-of $UNTIL) as its
 script shows, with no private refit of the driver; (10) anchors (ledger.py anchors $SECTION): the notes
 state a pre-anchor p50 before the anchors are read, and each gap (RUBRIC.md §4.1 step 4 thresholds) is
-explained in calc with its crux and the anchor's metric id (for a `similar` anchor: how much of it the
+explained in calc with its crux and the anchor's metric id (for a "similar" anchor: how much of it the
 wording differences account for), not closed by an unattributed move; (11)
 every failure scenario of 10% or more names its reference class with counts, or argues why no class
 can be counted and gives a sensitivity (RUBRIC.md §4.1 step 5).
