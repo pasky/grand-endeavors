@@ -1,0 +1,1 @@
+- Never rewrite ./data history (rebase, reset --hard, --amend), even unpushed: fix with a new commit.
