@@ -29,6 +29,15 @@ health:
   hale-median-country: Healthy life expectancy, median country (WHO)
   hale-global: Healthy life expectancy, world population-weighted (WHO)
   manifold-60n0viotdzfv1f9jmm1q-p: "Forecast: therapy slowing or reversing human ageing by 2040 (Manifold)"
+knowledge-beyond:
+  internet-users-world-share: People using the Internet, share of the world (ITU)
+  erdos-problems-solved-share: Erdős problems solved
+  qday-rsa2048-qubits-needed: "Q-Day: qubits needed to break RSA-2048 (best estimate)"
+  qday-largest-device-qubits: "Q-Day: qubits in the largest device at ≤0.1% error"
+  connectome-largest-neurons: Largest synapse-level connectome (neurons)
+  superconductor-tc-ambient-record: Highest superconducting Tc at ambient pressure (replicated)
+  top500-top-rmax: "Fastest supercomputer (TOP500 #1, HPL)"
+  exoplanets-confirmed: Confirmed exoplanets (NASA)
 climate:
   co2-mlo-monthly: CO₂ at Mauna Loa, monthly mean (NOAA)
   co2-trend-10yr-mlo-jan-dec: CO₂ growth, 10-year average (Mauna Loa)

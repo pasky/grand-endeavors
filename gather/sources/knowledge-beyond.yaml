@@ -1,8 +1,76 @@
-# knowledge-beyond: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
-# No fixed KPI yet: "kpi" = quantitative indicators (connectivity, quantum hardware);
-# everything else is section-wide ("*").
+# knowledge-beyond: reference sources for gather intake (reviewed 2026-10-12; indicators 2026-10-16).
+# Schema: README.md. A supplemental section: no KPI, "kpi" = its registered indicators
+# (metrics/knowledge-beyond.csv). Internet use, Erdős problems, TOP500 and exoplanets are
+# collected (gather/collectors/knowledge_beyond.py); the Q-Day qubit pair, the largest
+# connectome and the ambient-pressure Tc record are staged by intake from the sources
+# below. Everything else is section-wide ("*").
 sources:
-  # --- Indicators -----------------------------------------------------------------------------
+  # --- Indicators: collected ---------------------------------------------------------------------
+  - name: World Bank — Individuals using the Internet (% of population)
+    url: https://data.worldbank.org/indicator/IT.NET.USER.ZS
+    items: [kpi]
+    covers: WDI series IT.NET.USER.ZS (ITU data), by country and the World aggregate; the collector takes the World series.
+    cadence: WDI updates; the year-Y World value appears during Y+1
+    tier: secondary
+    collector: true
+  - name: Erdős problems database (T. Tao et al.)
+    url: https://github.com/teorth/erdosproblems
+    items: [kpi]
+    covers: Status of every problem on erdosproblems.com (proved, disproved, solved, open; Lean formalizations, AI contributions), with a per-commit statistics history the collector reads.
+    cadence: continuous (several commits a week)
+    tier: primary
+    collector: true
+  - name: Erdős Problems — forum
+    url: https://www.erdosproblems.com/
+    items: [kpi]
+    covers: The problem site and its forum, where new solutions (including AI-found ones) are posted and discussed before the database records them.
+    cadence: continuous
+    tier: primary
+  - name: TOP500 — lists
+    url: https://top500.org/lists/top500/
+    items: [kpi]
+    covers: The June and November TOP500 lists (HPL Rmax per system); the collector takes the rank-1 Rmax.
+    cadence: twice a year, June (ISC) and November (SC)
+    tier: primary
+    collector: true
+  - name: NASA Exoplanet Archive
+    url: https://exoplanetarchive.ipac.caltech.edu/
+    items: [kpi]
+    covers: Confirmed exoplanet counts and new-planet announcements; the collector counts the Planetary Systems Composite table by discovery year.
+    cadence: weekly table updates
+    tier: primary
+    collector: true
+  # --- Indicators: staged by intake -----------------------------------------------------------------
+  - name: arXiv — cond-mat.supr-con recent
+    url: https://arxiv.org/list/cond-mat.supr-con/recent
+    items: [kpi]
+    covers: Superconductivity preprints, where Tc claims and their independent replications (or refutations) appear first.
+    cadence: weekdays
+    tier: primary
+  - name: Nature — superconductors
+    url: https://www.nature.com/subjects/superconductors
+    items: [kpi]
+    covers: Peer-reviewed superconductivity results and news across Nature journals.
+    cadence: continuous
+    tier: primary
+  - name: FlyWire
+    url: https://flywire.ai/
+    items: [kpi]
+    covers: The adult fly whole-brain connectome (neuron and synapse counts, releases) and its successors.
+    cadence: irregular
+    tier: primary
+  - name: MICrONS Explorer
+    url: https://www.microns-explorer.org/
+    items: [kpi]
+    covers: The mouse visual cortex cubic-millimetre connectome datasets (cells, neurons, synapses per release).
+    cadence: irregular
+    tier: primary
+  - name: E11 Bio
+    url: https://e11.bio/
+    items: [kpi]
+    covers: Effort towards whole mouse brain connectomics (expansion/barcoding methods, dataset scale).
+    cadence: irregular
+    tier: primary
   - name: ITU — Facts and Figures (series)
     url: https://www.itu.int/en/ITU-D/Statistics/Pages/facts/default.aspx
     items: [kpi]
@@ -32,7 +100,7 @@ sources:
   - name: Quantum Computing Report
     url: https://quantumcomputingreport.com/
     items: [kpi]
-    covers: "Industry tracker: qubit counts, gate fidelities and logical-qubit demonstrations per vendor, roadmaps, funding."
+    covers: "Industry tracker: qubit counts, gate fidelities and logical-qubit demonstrations per vendor, roadmaps, funding (the Q-Day device indicator: qubits at ≤0.1% two-qubit error)."
     cadence: daily news; tracker tables continuous
     tier: secondary
   # --- Quantum computing ------------------------------------------------------------------------
@@ -57,7 +125,7 @@ sources:
   - name: arXiv — quant-ph recent
     url: https://arxiv.org/list/quant-ph/recent
     items: ["*"]
-    covers: Quantum information and hardware preprints (where error-correction results appear first).
+    covers: Quantum information and hardware preprints (where error-correction results and RSA-2048 factoring resource estimates appear first).
     cadence: weekdays
     tier: primary
   # --- Nanotechnology / materials -----------------------------------------------------------------
