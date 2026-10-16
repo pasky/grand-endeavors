@@ -80,6 +80,7 @@ import math
 import re
 import sys
 import zipfile
+from decimal import Decimal, InvalidOperation
 
 import common
 import kpi
@@ -185,6 +186,17 @@ def epoch_members(data: bytes) -> dict[str, list[dict]]:
     return out
 
 
+def number(text: str, what: str) -> Decimal:
+    """A finite decimal from the source text (exact, so half-up rounding is honest); else fail loudly."""
+    try:
+        v = Decimal(text.strip())
+    except InvalidOperation:
+        v = None
+    if v is None or not v.is_finite():
+        raise SystemExit(f"{EPOCH_URL}: {what}: '{text}' is not a finite number")
+    return v
+
+
 def eci_models(rows: list[dict]) -> list[dict]:
     """[{id, release, value, ci}] of the ECI file (rows without a score or date are skipped)."""
     out = []
@@ -193,17 +205,18 @@ def eci_models(rows: list[dict]) -> list[dict]:
             dt.date.fromisoformat(r["date"])  # malformed date -> fail loudly
             ci = (f"; 90% CI {r['eci_ci_low']}-{r['eci_ci_high']}"
                   if r.get("eci_ci_low", "").strip() and r.get("eci_ci_high", "").strip() else "")
-            out.append({"id": r["Model"], "release": r["date"], "value": float(r["eci"]), "ci": ci})
+            out.append({"id": r["Model"], "release": r["date"], "value": number(r["eci"], f"ECI of {r['Model']}"),
+                        "ci": ci})
     return out
 
 
 def rli_models(rows: list[dict]) -> list[dict]:
-    """[{id, release, value}] of Epoch's RLI mirror; value = automation rate in %."""
+    """[{id, release, value}] of Epoch's RLI mirror; value = automation rate in % (score x 100, exact)."""
     out = []
     for r in rows:
         if r["Score"].strip() and r["Release date"].strip():
             dt.date.fromisoformat(r["Release date"])
-            s = float(r["Score"])
+            s = number(r["Score"], f"RLI score of {r['Model version']}")
             if not 0 <= s <= 1:
                 raise SystemExit(f"{EPOCH_URL}: RLI score {s} of {r['Model version']} is not a fraction")
             out.append({"id": r["Model version"], "release": r["Release date"], "value": 100 * s, "ci": ""})
@@ -229,9 +242,9 @@ def at(step: list[dict], when: dt.date) -> dict | None:
     return pool[-1] if pool else None
 
 
-def eci_hours(eci: float) -> float:
+def eci_hours(eci) -> float:
     """METR-equivalent 50% horizon (hours) of an ECI score (frozen calibration)."""
-    return 2 ** (ECI_A + ECI_B * eci) / 60
+    return 2 ** (ECI_A + ECI_B * float(eci)) / 60
 
 
 def rli_tasks() -> list[float]:
@@ -242,10 +255,10 @@ def rli_tasks() -> list[float]:
     return out + [math.log2(h) for h in RLI_HIST["extremes_h"]]
 
 
-def rli_hours(rate_pct: float) -> float | None:
+def rli_hours(rate_pct) -> float | None:
     """50% horizon (hours) at which METR's logistic model, averaged over RLI's projects,
     predicts the given automation rate; None at 0% or 100% (no finite horizon)."""
-    p = rate_pct / 100
+    p = float(rate_pct) / 100
     if not 0 < p < 1:
         return None
     tasks = rli_tasks()
@@ -262,7 +275,7 @@ def rli_hours(rate_pct: float) -> float | None:
 def calibrate(metr_models: list[dict], eci: list[dict]) -> dict:
     """OLS of log2(METR p50 minutes) on ECI over CALIBRATION_PAIRS present in both files."""
     by_id = {m["id"]: m for m in metr_models if "p50" in m}
-    by_name = {m["id"]: m["value"] for m in eci}
+    by_name = {m["id"]: float(m["value"]) for m in eci}
     pts = [(by_name[e], math.log2(by_id[mid]["p50"]["estimate"]))
            for mid, e in CALIBRATION_PAIRS.items() if mid in by_id and e in by_name]
     n = len(pts)
@@ -312,42 +325,44 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
     # Epoch: ECI and RLI frontiers, and the horizons
     files = epoch_members(common.fetch_bytes(EPOCH_URL, fixture))
     eci = steps(eci_models(files[ECI_MEMBER]), ECI_START)
-    rli = [m for m in steps(rli_models(files[RLI_MEMBER])) if m["value"] > 0]
-    if not eci or not rli:
+    rli = steps(rli_models(files[RLI_MEMBER]))
+    rli_h = [m for m in rli if rli_hours(m["value"]) is not None]   # 0% / 100%: no finite horizon
+    if not eci or not rli_h:
         raise SystemExit(f"{EPOCH_URL}: empty ECI or RLI series")
 
     def horizon(metric: str, m: dict) -> tuple[float, str]:
         if metric == SOFTWARE:
-            return eci_hours(m["value"]), f"ECI {m['value']:.2f} of {m['id']}"
-        return rli_hours(m["value"]), f"RLI automation rate {m['value']:.2f}% of {m['id']}"
+            return eci_hours(m["value"]), f"ECI {common.round_half_up(m['value'], 2)} of {m['id']}"
+        return rli_hours(m["value"]), f"RLI automation rate {common.round_half_up(m['value'], 2)}% of {m['id']}"
 
-    def emit(metric: str, obs: str, when: dt.date | None, fresh: bool) -> None:
-        """One row of `metric` for `obs`, from the frontier step(s) in force on `when`."""
+    series = {ECI: eci, RLI: rli, SOFTWARE: eci, REMOTE: rli_h}
+
+    def emit(metric: str, obs: str, when: dt.date, fresh: bool) -> None:
+        """One row of `metric` for `obs`, from the frontier step(s) in force on `when`. A date
+        already in the ledger that no model in the current vintage covers fails loudly: the
+        source dropped or re-dated the models behind it, and a human must withdraw the rows."""
         tag = "new" if fresh else f"re-stated as of {obs} per the current file:"
+        parts = [at(series[c], when) for c in ((SOFTWARE, REMOTE) if metric == BLEND else (metric,))]
+        if None in parts:
+            raise SystemExit(f"{metric} {obs}: held in the ledger, but no model of the current "
+                             f"{EPOCH_URL} vintage covers that date (withdraw the rows by hand)")
+        m = parts[0]
         if metric in (ECI, RLI):
-            m = at(eci if metric == ECI else rli, when)
-            if m:
-                add(metric, obs, m["value"], 2, EPOCH_URL,
-                    f"{tag} best by release date: {m['id']} (released {m['release']}{m['ci']})")
+            add(metric, obs, m["value"], 2, EPOCH_URL,
+                f"{tag} best by release date: {m['id']} (released {m['release']}{m['ci']})")
         elif metric in (SOFTWARE, REMOTE):
-            m = at(eci if metric == SOFTWARE else rli, when)
-            if m:
-                h, what = horizon(metric, m)
-                add(metric, obs, h, 3, EPOCH_URL, f"{tag} best by release date: {what} (released {m['release']}) "
-                    + ("-> METR-equivalent via the frozen ECI calibration" if metric == SOFTWARE
-                       else f"-> METR overall-score method (slope {BETA}, RLI paper's project lengths)"))
-        else:  # BLEND
-            s, r = at(eci, when), at(rli, when)
-            if s and r:
-                hs, ws = horizon(SOFTWARE, s)
-                hr, wr = horizon(REMOTE, r)
-                add(BLEND, obs, math.sqrt(hs * hr), 3, EPOCH_URL,
-                    f"{tag} geometric mean of software {hs:.3f} h ({ws}) and remote work {hr:.3f} h ({wr})")
+            h, what = horizon(metric, m)
+            add(metric, obs, h, 3, EPOCH_URL, f"{tag} best by release date: {what} (released {m['release']}) "
+                + ("-> METR-equivalent via the frozen ECI calibration" if metric == SOFTWARE
+                   else f"-> METR overall-score method (slope {BETA}, RLI paper's project lengths)"))
+        else:  # BLEND, from the unrounded components
+            (hs, ws), (hr, wr) = horizon(SOFTWARE, parts[0]), horizon(REMOTE, parts[1])
+            add(BLEND, obs, math.sqrt(hs * hr), 3, EPOCH_URL,
+                f"{tag} geometric mean of software {hs:.3f} h ({ws}) and remote work {hr:.3f} h ({wr})")
 
-    new = {ECI: [m["release"] for m in eci], RLI: [m["release"] for m in rli]}
-    new[SOFTWARE], new[REMOTE] = new[ECI], new[RLI]
-    first = max(eci[0]["release"], rli[0]["release"])
-    new[BLEND] = sorted({d for d in new[ECI] + new[RLI] if d >= first})
+    new = {k: [m["release"] for m in v] for k, v in series.items()}
+    first = max(eci[0]["release"], rli_h[0]["release"])
+    new[BLEND] = sorted({d for d in new[SOFTWARE] + new[REMOTE] if d >= first})
     for metric in (ECI, RLI, SOFTWARE, REMOTE, BLEND):
         for obs in new[metric]:
             emit(metric, obs, dt.date.fromisoformat(obs), True)

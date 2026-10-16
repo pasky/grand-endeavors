@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 
 GATHER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIX = os.path.join(GATHER, "tests", "fixtures")
@@ -231,15 +232,49 @@ sw = {o: float(r["value"]) for (m, o), r in hk.items() if m == rs.SOFTWARE}
 rw = {o: float(r["value"]) for (m, o), r in hk.items() if m == rs.REMOTE}
 def in_force(series, d):
     return series[max(o for o in series if o <= d)]
+def blend_ok(d):  # the blend uses unrounded components; the registered ones are rounded to 3 dp
+    s, w, v = in_force(sw, d), in_force(rw, d), float(hk[(rs.BLEND, d)]["value"])
+    return abs(v - math.sqrt(s * w)) <= math.sqrt(s * w) * 0.00025 * (1 / s + 1 / w) + 0.0005 + 1e-9
 case("blend: one row per component change from the first date both exist, = sqrt(software x remote)",
      blend_dates[0] == min(rw) and set(blend_dates) == {d for d in set(sw) | set(rw) if d >= min(rw)}
-     and all(abs(float(hk[(rs.BLEND, d)]["value"]) / math.sqrt(in_force(sw, d) * in_force(rw, d)) - 1) < 0.02
-             for d in blend_dates))  # components are rounded to 3 dp (0.025 h: +-2%)
+     and all(blend_ok(d) for d in blend_dates))
 case("eci/rli: a held ledger date between frontier steps is re-stated as of that date",
      by_key(rs.collect(FIX, TODAY, "x", [{"metric": rs.BLEND, "obs": "2026-08"}]))[(rs.BLEND, "2026-08")]["value"]
      == hk[(rs.BLEND, max(d for d in blend_dates if d <= "2026-08-31"))]["value"])
 case("epoch: a non-zip download (an HTML error page) is rejected",
      raises_exit(rs.epoch_members, b"<!DOCTYPE html><title>404</title>"))
+
+
+def epoch_variant(tmp, rli_extra="", rli_drop=None, eci_extra=""):
+    """A copy of the fixtures with rows added to (or a model dropped from) the Epoch zip."""
+    shutil.copy(os.path.join(FIX, "benchmark_results_1_1.yaml"), tmp)
+    src = zipfile.ZipFile(os.path.join(FIX, "benchmark_data.zip"))
+    with zipfile.ZipFile(os.path.join(tmp, "benchmark_data.zip"), "w") as z:
+        eci_txt = src.read(rs.ECI_MEMBER).decode() + eci_extra
+        rli_txt = "".join(ln for ln in src.read(rs.RLI_MEMBER).decode().splitlines(True)
+                          if not (rli_drop and ln.startswith(rli_drop + ","))) + rli_extra
+        z.writestr(rs.ECI_MEMBER, eci_txt)
+        z.writestr(rs.RLI_MEMBER, rli_txt)
+    return tmp
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    case("eci: a non-finite score fails loudly (it would silently reorder the frontier)",
+         raises_exit(rs.collect, epoch_variant(tmp, eci_extra="Bad,Bad,nan,,,2026-10-02,X,,,,\n"), TODAY, "x"))
+with tempfile.TemporaryDirectory() as tmp:
+    rows = by_key(rs.collect(epoch_variant(tmp, rli_extra="zero,0,2025-01-10,X,,,,,,\nfull,1,2026-10-01,X,,,,,,\n"),
+                             TODAY, "x"))
+    case("rli: 0% and 100% stay in the raw series but get no horizon (no finite value) and no blend",
+         rows[(rs.RLI, "2025-01-10")]["value"] == "0.00" and rows[(rs.RLI, "2026-10-01")]["value"] == "100.00"
+         and (rs.REMOTE, "2025-01-10") not in rows and (rs.REMOTE, "2026-10-01") not in rows
+         and (rs.BLEND, "2026-10-01") not in rows and min(o for m, o in rows if m == rs.BLEND) == "2025-06-05")
+with tempfile.TemporaryDirectory() as tmp:
+    case("rli: a held date that the current vintage no longer covers fails loudly (no stale peak kept)",
+         raises_exit(rs.collect, epoch_variant(tmp, rli_drop="gemini-2.5-pro-preview-06-05"), TODAY, "x",
+                     [{"metric": rs.BLEND, "obs": "2025-06-05"}]))
+case("rli: percentages are exact decimals, so half-up rounding holds at ties (0.07035 -> 7.04)",
+     common.round_half_up(rs.rli_models([{"Model version": "m", "Score": "0.07035", "Release date": "2026-01-01"}])
+                          [0]["value"], 2) == "7.04")
 
 # --- rockets (JSR) ---------------------------------------------------------------------
 parsed = rockets.parse(fixture("msatannual.txt"))
