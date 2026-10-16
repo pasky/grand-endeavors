@@ -209,9 +209,9 @@ case("jsr: year rows parsed (Total column, verbatim), all-time Total row skipped
 rall = rockets.collect(FIX, TODAY, "collectors/rockets.py@2026-09-28")
 rrow = [r for r in rall if r["metric"] == rockets.METRIC]
 case("jsr: the partial current year (2026) is NOT emitted", [r["obs"] for r in rrow] == ["1956", "2016", "2024", "2025"])
-case("jsr: a year is emitted only once its release lag has passed (2025 absent on 2026-01-10, both metrics)",
-     not [r for r in rockets.collect(FIX, dt.date(2026, 1, 10), "x") if r["obs"] == "2025"]
-     and len([r for r in rockets.collect(FIX, dt.date(2026, 1, 15), "x") if r["obs"] == "2025"]) == 2)
+lagged = lambda d: [r for r in rockets.collect(FIX, d, "x") if r["obs"] == "2025" and r["metric"] != rockets.M_RIDE]
+case("jsr: a year is emitted only once its release lag has passed (2025 absent on 2026-01-10; mass, KPI, rideshare real)",
+     not lagged(dt.date(2026, 1, 10)) and len(lagged(dt.date(2026, 1, 15))) == 3)
 case("jsr: all rows pass ledger.check_obs_row against metrics/rockets.csv", registry_ok("rockets", rall))
 r = by_key(rrow)[("payload-mass-to-orbit", "2025")]
 case("jsr: 2025 = 3194.0 t, rule-published 2026-01-15",
@@ -264,8 +264,16 @@ case("leo: one row per year from the first CSIS year to the last complete one; r
 case("leo: years before the CSIS update are published at it (basis source), later ones by the rule",
      (k[(rockets.M_COST, "2021")]["published"], k[(rockets.M_COST, "2021")]["published_basis"]) == (rockets.CSIS_UPDATED, "source")
      and (k[(rockets.M_COST, "2022")]["published"], k[(rockets.M_COST, "2022")]["published_basis"]) == ("2023-01-15", "rule"))
-case("leo: rideshare real = nominal deflated with the obs year's CPI, one row per nominal row",
-     int(k[(rockets.M_RIDE_REAL, "2024")]["value"]) == real(6000, 2024) and len([1 for m, _ in k if m == rockets.M_RIDE_REAL]) == 1)
+case("ride: the price API gives a nominal row per launch year up to the current one (2026 = $7,000/kg; 2027 "
+     "is announced, not in force)",
+     sorted(o for m, o in k if m == rockets.M_RIDE) == ["2023", "2024", "2025", "2026"]
+     and k[(rockets.M_RIDE, "2026")]["value"] == "7000" and k[(rockets.M_RIDE, "2026")]["published_basis"] == "seen")
+case("ride: real = nominal deflated with the obs year's CPI, complete years only (ledger 2024 + API 2023-2026)",
+     int(k[(rockets.M_RIDE_REAL, "2024")]["value"]) == real(6000, 2024)
+     and sorted(o for m, o in k if m == rockets.M_RIDE_REAL) == ["2023", "2024", "2025"])
+case("ride: an unexpected price API format fails loudly",
+     raises_exit(rockets.parse_ride_api, '{"content": {"pricing": []}}')
+     and raises_exit(rockets.parse_ride_api, '{"content": {"pricingMenus": [{"year": 2026, "pricePerKilogramUsd": 7000}]}}'))
 case("leo: a list price without its LEO capacity fails loudly",
      raises_exit(rockets.collect, FIX, TODAY, "x", PRICES[:-1]))
 case("leo: a gap between two listed years fails loudly (missed intake, not a delisting)",

@@ -4,9 +4,10 @@ sources:
   - name: SpaceX — rideshare
     url: https://www.spacex.com/rideshare
     items: [kpi]
-    covers: Published Falcon 9 rideshare price per kg to SSO (the only public per-kg list price of a major provider); stage it as rideshare-price-per-kg-spacex (price in force on 1 July of the year). Dedicated-launch list prices (SpaceX's Capabilities & Services PDF went 404 in 2025-08) go to list-price-<rocket> + list-leo-kg-<rocket> whenever a provider publishes one (registered rockets only; a new rocket needs registering).
+    covers: Falcon 9 rideshare offer to SSO (the page shows no prices since 2026; the price per kg comes from the booking app's API, api-rideshare.spacex.com/api/v2/price, collected). Dedicated-launch list prices (SpaceX's Capabilities & Services PDF went 404 in 2025-08) go to list-price-<rocket> + list-leo-kg-<rocket> whenever a provider publishes one (registered rockets only; a new rocket needs registering).
     cadence: updated on price changes
     tier: primary
+    collector: true
   - name: SpaceX — updates
     url: https://www.spacex.com/updates/
     items: [kpi, milestone:the-deluge]

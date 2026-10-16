@@ -85,14 +85,19 @@ cost-to-leo-best-real (THE rockets KPI; owner decisions 2026-10-16)
     describe the underlying prices: rebasing to BASE_YEAR $ is not a publication
     input (CPI(BASE_YEAR) itself appears in January of the following year).
 
-rideshare-price-per-kg-spacex-real: the ledger's nominal rideshare price per kg of
-  each year, deflated with CPI(Y) to BASE_YEAR $ (same publication rule).
+rideshare-price-per-kg-spacex: from 2026 spacex.com/rideshare shows no prices; its booking
+  app reads them from RIDE_API (pricingMenus: US cents per kg by launch year).  Emits the
+  years up to the current one (later years are announced, not yet in force), basis seen;
+  2020-2025 were backfilled from page captures (the API's 2023-2025 agree).
+rideshare-price-per-kg-spacex-real: each year's nominal rideshare price per kg (ledger,
+  or this run's RIDE_API value), deflated with CPI(Y) to BASE_YEAR $ (same publication rule).
 """
 from __future__ import annotations
 
 import csv
 import datetime as dt
 import io
+import json
 import sys
 from decimal import Decimal
 
@@ -117,6 +122,7 @@ LISTED = {"Falcon 9": "falcon-9", "Falcon Heavy": "falcon-heavy"}
 EXTRA_LV: dict[str, list[str]] = {}
 M_RIDE = "rideshare-price-per-kg-spacex"
 M_RIDE_REAL = "rideshare-price-per-kg-spacex-real"
+RIDE_API = "https://api-rideshare.spacex.com/api/v2/price"
 
 # CSIS rocket (OWID entity) -> the GCAT LV_Types that are that rocket (its variants
 # sharing the priced configuration's family).
@@ -367,6 +373,18 @@ def _dated(reg, metric, year, value, source, note, collector, today, inputs_publ
     return r
 
 
+def parse_ride_api(text: str) -> dict[int, Decimal]:
+    """{launch year: US$ per kg} from RIDE_API's pricingMenus (US cents per kg)."""
+    try:
+        menus = json.loads(text)["content"]["pricingMenus"]
+        out = {int(m["year"]): Decimal(int(m["pricePerKilogramUsd"])) / 100 for m in menus}
+    except (ValueError, KeyError, TypeError) as e:
+        raise SystemExit(f"{RIDE_API}: unexpected format ({e!r})")
+    if not out or not all(1000 <= v <= 100000 for v in out.values()):
+        raise SystemExit(f"{RIDE_API}: no or implausible $/kg prices {out}")
+    return out
+
+
 def collect_cost(fixture: str | None, today: dt.date, collector: str, reg: dict, existing=()) -> list[dict]:
     csis = parse_csis(common.fetch(CSIS_URL, fixture))
     spans = service_years(csis, parse_gcat(common.fetch(GCAT_URL, fixture)), today)
@@ -374,9 +392,13 @@ def collect_cost(fixture: str | None, today: dt.date, collector: str, reg: dict,
     effective = ledger.obs_as_of("", rows=list(existing))
     withdrawals = ledger.obs_withdrawals(list(existing))
     listed = list_prices(effective)
-    rows = []
+    rows = [common.row(reg, M_RIDE, str(y), common.round_half_up(v, 0), RIDE_API,
+                       f"SpaceX rideshare price per kg for {y} launches (booking app price API, pricingMenus)",
+                       collector, str(today))
+            for y, v in sorted(parse_ride_api(common.fetch(RIDE_API, fixture)).items()) if y <= today.year]
+    ride = {int(o): r for (m, o), r in effective.items() if m == M_RIDE} | {int(r["obs"]): r for r in rows}
     for metric, years in ((M_COST, range(min(s[0] for s in spans.values()), today.year)),
-                          (M_RIDE_REAL, sorted(int(o) for m, o in effective if m == M_RIDE))):
+                          (M_RIDE_REAL, sorted(ride))):
         lag = dt.timedelta(days=int(reg[metric]["release_lag_days"] or 0))
         for year in years:
             if year >= today.year or dt.date(year, 12, 31) + lag > today:
@@ -390,7 +412,7 @@ def collect_cost(fixture: str | None, today: dt.date, collector: str, reg: dict,
                         f"(JSR GCAT), constant {BASE_YEAR} $: " + " = ".join(who) + f"; {c['note']}"
                         + f"; inputs as retrieved on {today}")
             else:
-                r = effective[(M_RIDE, str(year))]
+                r = ride[year]
                 real, dnote = common.deflate(Decimal(r["value"]), year, cpis, BASE_YEAR)
                 value, source, inputs = common.round_half_up(real, 0), r["source"], r["published"]
                 note = f"SpaceX rideshare {r['value']} $/kg to SSO ({year}), constant {BASE_YEAR} $; {dnote}"
