@@ -107,15 +107,21 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       sourcing decision: list prices are sparse and inconsistent.
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
       needs a definition that can actually be observed.
-- [ ] Robots-software KPI (horizon-50-blended, 2026-10-16) rests on two frozen conversions
-      (gather/collectors/robots_software.py):
+- [ ] Robots-software KPI (horizon-80-blended, 2026-10-16) rests on two frozen conversions
+      (gather/collectors/robots_software.py). The driver task-horizon draws their errors.
       - **Software (ECI→METR):** the calibration ends at ECI 156.76 while the frontier is at about 167.
-        That is about 2.3 doublings of extrapolation.
-      - **Remote work (RLI):** METR's assumed slope of 0.6 sets the level within about ±0.5 doublings today,
-        and far more at the 2025 low rates.
-      - **Watch:** a METR successor suite (TH 2.0); RLI's per-project times, if released, to replace the
-        decoded histogram; and Epoch rescaling ECI (`--calibrate` refits against the current vintage).
-      Recalibrating means new metric ids, plus `retired_after` on the old ones.
+        That is about 2.3 doublings of extrapolation, with a prediction error of about 0.55 doublings.
+      - **Remote work (RLI):** METR's slope (measured p10–p90: 0.50–0.69) moves today's 80% level
+        by −0.8 / +0.6 doublings.
+      - **Next: our own horizon fits** on public task-level benchmarks with human times per task. Do not
+        assume METR resumes. Each new frontier model then adds a calibration point (ECI → hours) and a
+        measured slope.
+        - SWE-Marathon: tasks of 4–400 h, per-trial results in the site bundle.
+        - Terminal-Bench 4.x: expert hours per task; per-task results only via Harbor Hub (unverified).
+      - **Also watch:** RLI "dollars earned" per model (it would let us fit the RLI slope); RLI per-project
+        times (to replace the decoded histogram); Epoch rescaling ECI (`--calibrate` refits against the
+        current vintage).
+      - Recalibrating means new metric ids, plus `retired_after` on the old ones.
 - [ ] 🤖 `ledger.py check` charges an assess run's unresolved review MAJOR count to EVERY milestone of
       that run: the review file ends in one run-level `MAJOR: <n>` line. Example: run 20261016T033429Z left
       one MAJOR, on the-10m-solopreneur (fixed by audit 2026-10-16-task-horizon), yet the kernel-patch

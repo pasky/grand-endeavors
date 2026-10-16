@@ -10,13 +10,14 @@ Usage:  uv run gather/collectors/robots_software.py --out FILE [--fixture DIR] [
             refit the ECI -> METR calibration from the METR file and the current ECI file and
             print it next to the frozen constants (a changed calibration is a NEW metric id)
 
-The KPI (framework.yaml, metrics/kpi-assessment.csv) is horizon-50-blended: the geometric
-mean of two 50%-success task horizons in human-hours, both release-cohort series (the best
+The KPI (framework.yaml, metrics/kpi-assessment.csv) is horizon-80-blended: the geometric
+mean of two 80%-success task horizons in human-hours, both release-cohort series (the best
 among models RELEASED by the obs date, from the current file vintages):
-  horizon-50-software-eci    METR-equivalent software horizon converted from the Epoch
+  horizon-80-software-eci    METR-equivalent software horizon converted from the Epoch
                              Capabilities Index frontier (eci-frontier-by-release)
-  horizon-50-remote-rli      remote-freelance-work horizon converted from the Remote Labor
+  horizon-80-remote-rli      remote-freelance-work horizon converted from the Remote Labor
                              Index automation-rate frontier (rli-automation-by-release)
+The same three at 50% success (horizon-50-*) are collected alongside.
 
 SOURCES
   https://epoch.ai/data/benchmark_data.zip (Epoch AI Benchmarking Hub, CC-BY 4.0; refreshed
@@ -28,7 +29,7 @@ SOURCES
   https://metr.org/assets/benchmark_results_1_1.yaml, the data file behind
   https://metr.org/time-horizons/ ("Time Horizon 1.1"). METR stopped updating it (page
   changelog 2026-09-08: "no longer actively updated"; last model released 2026-04-07). It is
-  still collected (cheap; a resumed series would show up) and it is the calibration source.
+  still read because it is the (frozen) calibration source.
   Format (YAML, parsed line-wise by `yaml_paths`, no dependency):
     benchmark_name: METR-Horizon-v1.1
     results:
@@ -40,22 +41,25 @@ SOURCES
         release_date: YYYY-MM-DD
 
 CONVERSIONS (frozen; changing one changes what the horizon ids mean -> new ids)
-  software: log2(METR p50 minutes) = ECI_A + ECI_B * ECI, an OLS fit over the 21 models in both
-    METR's TH1.1 file and Epoch's ECI file (CALIBRATION_PAIRS; fitted 2026-10-16 on the ECI
-    vintage of 2026-10-15: 4.415 ECI points per doubling, R^2 0.971, residual sd 0.46
-    doublings). Frontier ECI above the top calibration pair (156.76) is an extrapolation.
+  software: log2(METR horizon minutes) = a + b * ECI (ECI_CAL), one OLS fit per success level
+    over the 21 models in both METR's TH1.1 file and Epoch's ECI file (CALIBRATION_PAIRS; fitted
+    2026-10-16 on the ECI vintage of 2026-10-15): p50 4.415 ECI points per doubling, R^2 0.971,
+    residual sd 0.46 doublings; p80 4.492, R^2 0.966, 0.49. Frontier ECI above the top
+    calibration pair (156.76) is an extrapolation. METR's series is discontinued, so this
+    overlap will not grow; new calibration points must come from our own horizon fits (TODO.md).
   remote work: METR's method for benchmarks with only an overall score ("How Does Time
     Horizon Vary Across Domains?", METR 2025-07-14): P(success on a task of human length t)
     = 1 / (1 + exp(-BETA * (log2 h - log2 t))) with METR's average slope BETA = 0.6 per
     doubling; h = the horizon at which the mean predicted success over RLI's projects equals
-    the automation rate. RLI's project lengths: the completion-time histogram of the RLI paper
+    the automation rate; the 80% horizon of the same model is h50 / 2^(ln 4 / BETA) (4.96x
+    shorter). RLI's project lengths: the completion-time histogram of the RLI paper
     (arXiv 2510.26787 v1, Fig. 4; RLI_HIST, decoded from the vector figure: 12 equal log bins,
     199 projects, median 11.6 h vs the stated 11.5 h) plus the stated min 0.2 h and max 450 h,
     which lie outside the plotted bins (199 + 2 = 84% of 240 projects have times, as stated).
     Each bin's projects are spread evenly in log time. Far from RLI's median length (low
     automation rates, early 2025) the result is very sensitive to BETA (METR's caveat).
-  blend: sqrt(software x remote) as of each date on which either component changed, from the
-    first date both exist.
+  blend: sqrt(software x remote) at one success level, as of each date on which either
+    component changed, from the first date both exist.
 
 SERIES CHOICES
   - obs = the model's release date (the files have no evaluation dates): "best among models
@@ -93,6 +97,10 @@ ECI_MEMBER = "epoch_capabilities_index/eci_scores.csv"
 RLI_MEMBER = "rli_external.csv"
 ECI, RLI = "eci-frontier-by-release", "rli-automation-by-release"
 SOFTWARE, REMOTE, BLEND = "horizon-50-software-eci", "horizon-50-remote-rli", "horizon-50-blended"
+SOFTWARE80, REMOTE80, BLEND80 = "horizon-80-software-eci", "horizon-80-remote-rli", "horizon-80-blended"
+# horizon metric -> (component kind, success level); the blends combine the two kinds at one level
+HORIZONS = {SOFTWARE: ("software", "p50"), REMOTE: ("remote", "p50"), BLEND: ("blend", "p50"),
+            SOFTWARE80: ("software", "p80"), REMOTE80: ("remote", "p80"), BLEND80: ("blend", "p80")}
 ECI_START = "2023-03-14"
 
 # METR TH1.1 model id -> Epoch ECI model name (models in both files; Mythos Preview, GPT-5.1
@@ -108,7 +116,8 @@ CALIBRATION_PAIRS = {
     "gpt_5_2": "GPT-5.2", "claude_opus_4_6_inspect": "Claude Opus 4.6", "gpt_5_3_codex": "GPT-5.3 Codex",
     "gemini_3_1_pro": "Gemini 3.1 Pro", "gpt_5_4": "GPT-5.4",
 }
-ECI_A, ECI_B = -26.366541, 0.226507   # log2(p50 minutes) = ECI_A + ECI_B * ECI (see --calibrate)
+# log2(METR horizon minutes) = a + b * ECI, per success level (see --calibrate)
+ECI_CAL = {"p50": (-26.366541, 0.226507), "p80": (-28.242299, 0.222614)}
 BETA = 0.6
 RLI_HIST = {"log10_lo": -0.31, "log10_hi": 2.43, "counts": [1, 9, 5, 10, 38, 36, 31, 27, 14, 16, 8, 4],
             "extremes_h": [0.2, 450.0]}
@@ -242,9 +251,10 @@ def at(step: list[dict], when: dt.date) -> dict | None:
     return pool[-1] if pool else None
 
 
-def eci_hours(eci) -> float:
-    """METR-equivalent 50% horizon (hours) of an ECI score (frozen calibration)."""
-    return 2 ** (ECI_A + ECI_B * float(eci)) / 60
+def eci_hours(eci, q: str = "p50") -> float:
+    """METR-equivalent 50% (q=p50) or 80% (p80) horizon (hours) of an ECI score (frozen calibration)."""
+    a, b = ECI_CAL[q]
+    return 2 ** (a + b * float(eci)) / 60
 
 
 def rli_tasks() -> list[float]:
@@ -272,11 +282,18 @@ def rli_hours(rate_pct) -> float | None:
     return 2 ** ((lo + hi) / 2)
 
 
-def calibrate(metr_models: list[dict], eci: list[dict]) -> dict:
-    """OLS of log2(METR p50 minutes) on ECI over CALIBRATION_PAIRS present in both files."""
-    by_id = {m["id"]: m for m in metr_models if "p50" in m}
+def rli_hours80(rate_pct) -> float | None:
+    """80% horizon of the same logistic model: success 80% at a task 2^(ln 4 / BETA) times shorter."""
+    h = rli_hours(rate_pct)
+    return None if h is None else h * 2 ** (-math.log(4) / BETA)
+
+
+def calibrate(metr_models: list[dict], eci: list[dict], q: str = "p50") -> dict:
+    """OLS of log2(METR q-horizon minutes) on ECI over CALIBRATION_PAIRS present in both files;
+    pred_se(eci) = the standard error of a new model's log2 horizon at that ECI (doublings)."""
+    by_id = {m["id"]: m for m in metr_models if q in m}
     by_name = {m["id"]: float(m["value"]) for m in eci}
-    pts = [(by_name[e], math.log2(by_id[mid]["p50"]["estimate"]))
+    pts = [(by_name[e], math.log2(by_id[mid][q]["estimate"]))
            for mid, e in CALIBRATION_PAIRS.items() if mid in by_id and e in by_name]
     n = len(pts)
     if n < 10:
@@ -286,8 +303,9 @@ def calibrate(metr_models: list[dict], eci: list[dict]) -> dict:
     b = sum((x - mx) * (y - my) for x, y in pts) / sxx
     a = my - b * mx
     res = [y - a - b * x for x, y in pts]
-    return {"n": n, "a": a, "b": b, "eci_per_doubling": 1 / b,
-            "resid_sd": math.sqrt(sum(r * r for r in res) / (n - 2)),
+    sd = math.sqrt(sum(r * r for r in res) / (n - 2))
+    return {"n": n, "a": a, "b": b, "eci_per_doubling": 1 / b, "resid_sd": sd,
+            "pred_se": lambda e: sd * math.sqrt(1 + 1 / n + (e - mx) ** 2 / sxx),
             "r2": 1 - sum(r * r for r in res) / sum((y - my) ** 2 for _, y in pts),
             "top_eci": max(x for x, _ in pts)}
 
@@ -330,19 +348,24 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
     if not eci or not rli_h:
         raise SystemExit(f"{EPOCH_URL}: empty ECI or RLI series")
 
-    def horizon(metric: str, m: dict) -> tuple[float, str]:
-        if metric == SOFTWARE:
-            return eci_hours(m["value"]), f"ECI {common.round_half_up(m['value'], 2)} of {m['id']}"
-        return rli_hours(m["value"]), f"RLI automation rate {common.round_half_up(m['value'], 2)}% of {m['id']}"
+    def horizon(kind: str, q: str, m: dict) -> tuple[float, str]:
+        if kind == "software":
+            return eci_hours(m["value"], q), f"ECI {common.round_half_up(m['value'], 2)} of {m['id']}"
+        return ((rli_hours if q == "p50" else rli_hours80)(m["value"]),
+                f"RLI automation rate {common.round_half_up(m['value'], 2)}% of {m['id']}")
 
-    series = {ECI: eci, RLI: rli, SOFTWARE: eci, REMOTE: rli_h}
+    series = {ECI: eci, RLI: rli}
+    for metric, (kind, q) in HORIZONS.items():
+        if kind != "blend":
+            series[metric] = eci if kind == "software" else rli_h
 
     def emit(metric: str, obs: str, when: dt.date, fresh: bool) -> None:
         """One row of `metric` for `obs`, from the frontier step(s) in force on `when`. A date
         already in the ledger that no model in the current vintage covers fails loudly: the
         source dropped or re-dated the models behind it, and a human must withdraw the rows."""
         tag = "new" if fresh else f"re-stated as of {obs} per the current file:"
-        parts = [at(series[c], when) for c in ((SOFTWARE, REMOTE) if metric == BLEND else (metric,))]
+        kind, q = HORIZONS.get(metric, ("raw", ""))
+        parts = [at(eci, when), at(rli_h, when)] if kind == "blend" else [at(series[metric], when)]
         if None in parts:
             raise SystemExit(f"{metric} {obs}: held in the ledger, but no model of the current "
                              f"{EPOCH_URL} vintage covers that date (withdraw the rows by hand)")
@@ -350,20 +373,21 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
         if metric in (ECI, RLI):
             add(metric, obs, m["value"], 2, EPOCH_URL,
                 f"{tag} best by release date: {m['id']} (released {m['release']}{m['ci']})")
-        elif metric in (SOFTWARE, REMOTE):
-            h, what = horizon(metric, m)
+        elif kind in ("software", "remote"):
+            h, what = horizon(kind, q, m)
             add(metric, obs, h, 3, EPOCH_URL, f"{tag} best by release date: {what} (released {m['release']}) "
-                + ("-> METR-equivalent via the frozen ECI calibration" if metric == SOFTWARE
-                   else f"-> METR overall-score method (slope {BETA}, RLI paper's project lengths)"))
-        else:  # BLEND, from the unrounded components
-            (hs, ws), (hr, wr) = horizon(SOFTWARE, parts[0]), horizon(REMOTE, parts[1])
-            add(BLEND, obs, math.sqrt(hs * hr), 3, EPOCH_URL,
+                + (f"-> METR-equivalent via the frozen ECI calibration ({q})" if kind == "software"
+                   else f"-> METR overall-score method (slope {BETA}, RLI paper's project lengths; {q})"))
+        else:  # a blend, from the unrounded components
+            (hs, ws), (hr, wr) = horizon("software", q, parts[0]), horizon("remote", q, parts[1])
+            add(metric, obs, math.sqrt(hs * hr), 3, EPOCH_URL,
                 f"{tag} geometric mean of software {hs:.3f} h ({ws}) and remote work {hr:.3f} h ({wr})")
 
     new = {k: [m["release"] for m in v] for k, v in series.items()}
     first = max(eci[0]["release"], rli_h[0]["release"])
-    new[BLEND] = sorted({d for d in new[SOFTWARE] + new[REMOTE] if d >= first})
-    for metric in (ECI, RLI, SOFTWARE, REMOTE, BLEND):
+    for b in (BLEND, BLEND80):
+        new[b] = sorted({d for d in new[ECI] + [m["release"] for m in rli_h] if d >= first})
+    for metric in (ECI, RLI, *HORIZONS):
         for obs in new[metric]:
             emit(metric, obs, dt.date.fromisoformat(obs), True)
         for obs in sorted(held.get(metric, set()) - set(new[metric])):
@@ -379,10 +403,14 @@ def main() -> int:
     ap.add_argument("--fixture")
     a = ap.parse_args()
     _, ms = models(common.fetch(URL, a.fixture))
-    c = calibrate(ms, eci_models(epoch_members(common.fetch_bytes(EPOCH_URL, a.fixture))[ECI_MEMBER]))
-    print(f"pairs {c['n']}: a {c['a']:.6f} b {c['b']:.6f} ({c['eci_per_doubling']:.3f} ECI per doubling), "
-          f"R^2 {c['r2']:.3f}, residual sd {c['resid_sd']:.3f} doublings, top pair ECI {c['top_eci']:.2f}")
-    print(f"frozen: a {ECI_A:.6f} b {ECI_B:.6f}")
+    eci = eci_models(epoch_members(common.fetch_bytes(EPOCH_URL, a.fixture))[ECI_MEMBER])
+    top = max(eci, key=lambda m: m["value"])
+    for q in ECI_CAL:
+        c = calibrate(ms, eci, q)
+        print(f"{q} pairs {c['n']}: a {c['a']:.6f} b {c['b']:.6f} ({c['eci_per_doubling']:.3f} ECI per doubling), "
+              f"R^2 {c['r2']:.3f}, residual sd {c['resid_sd']:.3f} doublings, top pair ECI {c['top_eci']:.2f}; "
+              f"prediction se at the frontier ECI {float(top['value']):.2f}: {c['pred_se'](float(top['value'])):.3f} doublings")
+        print(f"  frozen: a {ECI_CAL[q][0]:.6f} b {ECI_CAL[q][1]:.6f}")
     return 0
 
 
