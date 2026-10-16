@@ -196,6 +196,11 @@ paced and backed off) into a cache, LLM judges per batch on the cache only
 document, every figure and year of a new claim in a quote), then `ledger.py merge`.
 Per-event results: `ledger/reverify/<section>.<date>[-<pass>].jsonl`, with the judges'
 quotes and the fetched documents (URL, status, fetch time, sha256 of the cached text).
+Legacy observations need no supersedes: any non-legacy row for the same metric@obs
+outranks them. A single pass on 2026-10-16 re-verified the unshadowed ones. Each row
+was checked against a quote in a cached document and added as a `verified` or
+`corrected` row (`ledger/reverify/<section>.2026-10-16-obs.jsonl`).
+Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decision).
 
 ## 4. Gather (`gather/gather.sh <section>`; env UNTIL, SINCE, ITEMS, OVERLAP_DAYS)
 

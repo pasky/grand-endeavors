@@ -28,11 +28,10 @@ Choices:
     publication date, so the series answers "best horizon among models RELEASED
     by that date", computed from the current file vintage (METR re-estimates
     earlier models when the task suite changes; re-runs then append revisions).
-    This is a release-cohort reconstruction, NOT metr-*-horizon-frontier ("best
-    of any model publicly evaluated as of the obs date": METR's evaluation of a
-    model is published some time after its release, and later vintages re-score
-    old models). Hence its own registry ids (*-by-release); the *-frontier ids
-    keep only the pilot-2025 report values (legacy).
+    The *-frontier ids also date models, but they are frozen: they keep only the
+    pilot-2025 values from METR's v1 file, re-verified on 2026-10-16. Later
+    vintages re-score old models, so the current file gets its own ids
+    (*-by-release) instead of revising that history.
   - Append-only safety: every date the ledger already holds for these metrics
     (earlier runs, incl. YYYY-MM dates) is re-stated as the best among models
     released by that date per the current file, so if METR revises a model down, the stale peak
