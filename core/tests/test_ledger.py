@@ -395,10 +395,21 @@ def main():
     achieved = ledger.check_notes("climate", [old, dict(cur, status="achieved")])
     open(rev, "w").write("x\nMAJOR: 0\n")
     clean_rev = ledger.check_notes("climate", [old, cur])
+    # per-target counts: only the Remaining block's lines count (round 1's own lines are history)
+    open(rev, "w").write("# Review round 1\n\nx\nMAJOR milestone:the-bend: 2\nMAJOR milestone:other: 0\nMAJOR: 2\n\n"
+                         "# Remaining\n\nMAJOR milestone:other: 1\nMAJOR milestone:the-bend: 0\nMAJOR: 1\n")
+    per = [ledger.review_major("climate", "20260929T120000Z", t) for t in
+           ("milestone:the-bend", "milestone:other", "milestone:unlisted", None)]
+    other = dict(cur, id="dv-o", target="milestone:other")
+    per_warn = ledger.check_notes("climate", [old, cur, other])
     os.remove(rev)
     os.remove(note)
     case("notes: a current run's last review round with MAJOR findings left warns; its review file is no orphan",
          len(left) == 1 and has(left, "1 unresolved MAJOR") and clean_rev == [] and has(achieved, "unresolved MAJOR"))
+    case("notes: per-target review counts (old files: the run total for every target) warn only the target "
+         "with findings left",
+         per == [0, 1, 1, 1] and [w.split(":")[0] for w in per_warn if "unresolved MAJOR" in w] == ["assessment dv-o"]
+         and has(left, "milestone:the-bend has 1 unresolved MAJOR"))
     cev = {i: ev(i, d, f"Claim {i} about emissions.") for i, d in
            (("2026-01-01-x", "2026-01-01"), ("2026-01-01-x-rv", "2026-05-01"), ("2026-02-01-y-wd", "2026-02-01"))}
     cev["2026-02-01-y-wd"]["withdrawn"] = True

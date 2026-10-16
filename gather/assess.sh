@@ -220,11 +220,15 @@ as_complete || exit 1
 # another mode (ASSESS_REVIEW_MODE, default deep; the same mode as a deep-fallback assessor, which is
 # then not "another" model) audits the staged milestone records + notes; MAJOR findings get ONE fix
 # attempt by the assessor and one re-review. What remains is committed with the run: the accepted
-# review rounds, then a final "MAJOR: <n>" = findings left (a fix whose re-review failed counts as
-# unresolved); ledger.py check warns while it is > 0. A failed or blocked review is noted, never
+# review rounds, then the findings left: a "MAJOR <target>: <n>" line per milestone target and a final
+# "MAJOR: <n>" = their total (both from the last accepted round; a fix whose re-review failed keeps
+# round 1's counts; a round whose per-target lines do not list exactly the milestone targets or do not
+# sum to its total contributes the total only); ledger.py check warns per current target while its
+# count (else the total) is > 0. A failed or blocked review is noted, never
 # fatal; the one fatal case is a reviewer that edits what it reviews. REVIEW=0 skips the stage.
 # --- review stage (core/tests/test_review.sh runs this block with stubs) ---
 REVIEW_FILE="$NOTES_DIR/$SECTION/$RUN_ID.review.md"  # = ledger.review_path
+REVIEW_TARGETS="$(printf '%s\n' "$TARGETS" | awk -F'|' '$1 ~ /^milestone:/ {print $1}' | sort)"
 review_prompt() {  # $1 = output file, $2 = the previous round's report (re-review after a fix)
 cat <<EOF2
 Audit the ETA assessments that another agent just staged for "$SECTION" as of $UNTIL, before they
@@ -262,13 +266,21 @@ evidence in the median). NOT major: a disclosed assumption with its
 sensitivity, an incomplete minor sensitivity, wording.
 
 Write $1: per MAJOR finding the target, what is wrong (with numbers / ids) and what would fix it;
-then minor findings briefly. Paraphrase the notes, never copy long passages. The LAST line of
-$1 must be exactly "MAJOR: <count>".
+then minor findings briefly. Paraphrase the notes, never copy long passages. End $1 with one line
+per milestone target, "MAJOR <target>: <its MAJOR count>", for exactly these targets:
+$(printf '%s\n' "$REVIEW_TARGETS" | sed 's/^/    /')
+e.g. "MAJOR milestone:<slug>: 0", and then the LAST line of $1 must be exactly "MAJOR: <count>"
+(the total, = the sum of the per-target counts).
 Never run git add/commit: the pipeline commits your report (a commit by you aborts the run).
 EOF2
 }
-run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the review failed)
-	rev="$STAGE/review-$1.md"; rm -f "$rev"; REV_MAJOR=""
+per_target() {  # $1 = report: "<target> <n>" per "MAJOR <target>: <n>" line right before its last line
+	awk 'NF { l[++n] = $0 } END { for (i = n - 1; i > 0 && l[i] ~ /^MAJOR [^ ]+: [0-9]+$/; i--) {
+		k = l[i]; sub(/^MAJOR /, "", k); sub(/: [0-9]+$/, "", k); v = l[i]; sub(/^.*: /, "", v); print k, v } }' "$1" | sort
+}
+run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the review failed) and
+	# REV_TARGETS ("<target> <n>" lines; empty when they do not cover exactly the milestone targets or sum to REV_MAJOR)
+	rev="$STAGE/review-$1.md"; rm -f "$rev"; REV_MAJOR=""; REV_TARGETS=""
 	if ! PI_MODEL="$(pi_mode_model "$REVIEW_MODE")"; then
 		PI_MODEL="$ASSESS_MODEL"; echo "WARN: review $1 failed: no pi mode '$REVIEW_MODE'" >&2; return 0
 	fi
@@ -281,6 +293,13 @@ run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the 
 	if [ "$PI_RC" != 0 ] || [ -n "${PI_BLOCKED:-}" ] || [ -z "$REV_MAJOR" ]; then
 		echo "WARN: review $1 failed (pi exit $PI_RC$( [ -n "${PI_BLOCKED:-}" ] && echo ', provider block'), or no 'MAJOR: <n>' last line)" >&2
 		REV_MAJOR=""; if [ -f "$rev" ]; then mv "$rev" "$rev.rejected"; fi   # a failed round is never committed
+		return 0
+	fi
+	REV_TARGETS="$(per_target "$rev")"
+	if [ "$(printf '%s\n' "$REV_TARGETS" | cut -d' ' -f1)" != "$REVIEW_TARGETS" ] \
+		|| [ "$(printf '%s\n' "$REV_TARGETS" | awk '{s += $2} END {print s + 0}')" != "$REV_MAJOR" ]; then
+		echo "WARN: review $1: its 'MAJOR <target>: <n>' lines do not list exactly the milestone targets or do not sum to 'MAJOR: $REV_MAJOR'; only the total counts" >&2
+		REV_TARGETS=""
 	fi
 }
 review_stage() {  # updates NOTE; writes $STAGE/review.md (nothing when round 1 failed)
@@ -288,7 +307,7 @@ review_stage() {  # updates NOTE; writes $STAGE/review.md (nothing when round 1 
 	rm -f "$STAGE/review.md"
 	run_review 1
 	if [ -z "$REV_MAJOR" ]; then NOTE="$NOTE (review failed)"; return 0; fi
-	left="$REV_MAJOR"; tail_note=""
+	left="$REV_MAJOR"; left_targets="$REV_TARGETS"; tail_note=""
 	if [ "$REV_MAJOR" -gt 0 ]; then
 		cp "$AS" "$AS.draft"; cp "$STAGE/eta-notes.md" "$STAGE/eta-notes.md.draft"
 		PI_SOFT_FAIL=1
@@ -302,9 +321,10 @@ notes. Change only what a finding requires (RUBRIC.md rule 7 applies to your own
 		if [ "$PI_RC" = 0 ] && [ -z "${PI_BLOCKED:-}" ] && as_complete; then
 			rm -f "$AS.draft" "$STAGE/eta-notes.md.draft"
 			run_review 2 "$STAGE/review-1.md"
-			if [ -n "$REV_MAJOR" ]; then NOTE="$NOTE (review: $left MAJOR, $REV_MAJOR after one fix)"; left="$REV_MAJOR"
+			if [ -n "$REV_MAJOR" ]; then NOTE="$NOTE (review: $left MAJOR, $REV_MAJOR after one fix)"
+				left="$REV_MAJOR"; left_targets="$REV_TARGETS"
 			else NOTE="$NOTE (review: $left MAJOR, fixed once, re-review failed)"
-				tail_note="The re-review failed: the fix is unverified, so round 1's count stands."; fi
+				tail_note="The re-review failed: the fix is unverified, so round 1's counts stand."; fi
 		else  # a failed, blocked or broken fix never replaces the complete draft
 			mv "$AS.draft" "$AS"; mv "$STAGE/eta-notes.md.draft" "$STAGE/eta-notes.md"
 			echo "WARN: the fix attempt failed (pi exit $PI_RC$( [ -n "${PI_BLOCKED:-}" ] && echo ', provider block'), or incomplete); committing the reviewed draft" >&2
@@ -317,9 +337,13 @@ notes. Change only what a finding requires (RUBRIC.md rule 7 applies to your own
 		for r in 1 2; do
 			if [ -s "$STAGE/review-$r.md" ]; then printf '# Review round %s\n\n' "$r"; cat "$STAGE/review-$r.md"; echo; fi
 		done
-		printf '# Remaining\n\n%s\nMAJOR: %s\n' "$tail_note" "$left"
+		printf '# Remaining\n\n%s\n' "$tail_note"
+		if [ -n "$left_targets" ]; then printf '%s\n' "$left_targets" | awk '{print "MAJOR " $1 ": " $2}'; fi
+		printf 'MAJOR: %s\n' "$left"
 	} > "$STAGE/review.md"
-	if [ "$left" -gt 0 ]; then echo "WARN: $left MAJOR review finding(s) remain; see $REVIEW_FILE" >&2; fi
+	if [ "$left" -gt 0 ]; then
+		echo "WARN: $left MAJOR review finding(s) remain$( [ -n "$left_targets" ] && printf '%s\n' "$left_targets" | awk '$2 > 0 {printf "%s %s", (n++ ? "," : " in"), $1}'); see $REVIEW_FILE" >&2
+	fi
 }
 # --- end review stage ---
 case "$TARGETS" in *milestone:*) if [ "${REVIEW:-1}" != 0 ]; then review_stage; fi ;; esac

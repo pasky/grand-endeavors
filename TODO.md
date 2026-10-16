@@ -17,8 +17,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       per affected milestone. Fix: milestones declare their drivers (drivers.yaml `used_by`
       now does, for the shared ones); stale + hysteresis follow them. Likewise a
       drivers.yaml edit, or an anchor moving past a gap threshold, re-assesses nothing.
-- [ ] 🤖 `ledger.py check` charges an assess run's unresolved review MAJOR count to every
-      milestone of that run. Make the reviewer's count per target.
 - [ ] **External anchors cover 1 of 20 milestones** (2026-10-15, data
       ledger/audits/2026-10-15-anchors): a deep-mode review standing in for the owner accepted
       only strict implications (two `weaker` Manifold bounds for the-first-watt) and rejected

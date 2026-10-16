@@ -271,8 +271,13 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    against a checklist and a fixed severity bar, without editing them. MAJOR
    findings get one fix attempt by the assessor (a failed fix restores the
    draft) and one re-review; the rounds are committed as
-   `notes/<section>/<run id>.review.md`, each ending "MAJOR: <n>", and
-   `ledger.py check` warns while a current run has MAJOR findings left.
+   `notes/<section>/<run id>.review.md`. Each round ends with a
+   "MAJOR <target>: <n>" line per milestone target and "MAJOR: <n>" (their
+   total); the file ends with the findings left, in the same format (the last
+   accepted round's counts). `ledger.py check` warns per current milestone
+   with MAJOR findings left (files without per-target lines, and rounds whose
+   per-target lines do not list exactly the targets or do not add up to the
+   total, charge the total to every milestone of the run).
    A failed review is noted in the commit message, never fatal. `REVIEW=0`
    skips it.
 7. Each step commits only its own paths. The write-scope guard (cooperative,

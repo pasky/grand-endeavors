@@ -104,19 +104,31 @@ def notes_path(section: str, run_id: str) -> str:
 
 
 def review_path(section: str, run_id: str) -> str:
-    """assess.sh's review of the run (rounds; each ends with 'MAJOR: <n>'), next to its notes."""
+    """assess.sh's review of the run (rounds; each ends with 'MAJOR <target>: <n>' lines and 'MAJOR: <n>'),
+    next to its notes."""
     return os.path.join(DATA, NOTES_DIR, section, f"{run_id}.review.md")
 
 
-def review_major(section: str, run_id: str) -> int | None:
-    """MAJOR findings the run left: the review file's LAST line "MAJOR: <n>" (assess.sh writes it after
-    the accepted rounds; an unverified fix keeps round 1's count). None: no review, or no such line."""
+def review_major(section: str, run_id: str, target: str | None = None) -> int | None:
+    """MAJOR findings the run left (assess.sh writes them after the accepted rounds; an unverified fix
+    keeps round 1's counts): the review file's LAST line "MAJOR: <n>" is the run's total, and the
+    "MAJOR <target>: <n>" lines right before it the per-target counts. With a target: its own count;
+    the total when the file has no line for it (files predating per-target counts, or a round whose
+    per-target lines were inconsistent). None: no review, or no final "MAJOR: <n>" line."""
     p = review_path(section, run_id)
     if not os.path.isfile(p):
         return None
     lines = [ln.strip() for ln in open(p, encoding="utf-8") if ln.strip()]
     m = re.fullmatch(r"MAJOR: (\d+)", lines[-1]) if lines else None
-    return int(m.group(1)) if m else None
+    if not m:
+        return None
+    per: dict[str, int] = {}
+    for ln in reversed(lines[:-1]):
+        pm = re.fullmatch(r"MAJOR (\S+): (\d+)", ln)
+        if not pm:
+            break
+        per.setdefault(pm.group(1), int(pm.group(2)))
+    return per.get(target, int(m.group(1))) if target else int(m.group(1))
 
 
 def assess_run(rec: dict) -> str | None:
@@ -888,8 +900,9 @@ def check_notes(section: str, ass: list[dict]) -> list[str]:
     warns = []
     for t, a in sorted(latest.items(), key=lambda kv: str(kv[0])):
         run = assess_run(a)
-        if str(t).startswith("milestone:") and run and review_major(section, run):  # whatever the status
-            warns.append(f"assessment {a.get('id')}: current {t} has {review_major(section, run)} unresolved "
+        major = review_major(section, run, str(t)) if str(t).startswith("milestone:") and run else None
+        if major:  # whatever the status
+            warns.append(f"assessment {a.get('id')}: current {t} has {major} unresolved "
                          f"MAJOR review finding(s) in {os.path.relpath(review_path(section, run), DATA)}")
         if not str(t).startswith("milestone:") or a.get("rubric") not in RUBRICS[1:] \
                 or a.get("status") in ("unknown", "achieved"):
