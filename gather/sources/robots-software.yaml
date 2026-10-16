@@ -19,6 +19,16 @@ sources:
     cadence: batches about monthly, typically 2-3 weeks after a frontier release (manual grading)
     tier: primary
     collector: true
+  - name: SWE-Marathon (Abundant AI) — long-task software benchmark
+    url: https://www.swe-marathon.org/
+    items: [kpi, milestone:the-linux-kernel-patch]
+    covers: >-
+      Per-trial results of frontier agents on 20 software tasks of 4-400 expert hours (rewrites, clones,
+      compilers); the collector fits METR-style horizons per model (swe-marathon-h80/h50-by-release), the
+      direct check on the KPI's ECI conversion at the frontier.
+    cadence: new models within days to weeks of release
+    tier: primary
+    collector: true
   - name: METR — task-completion time horizons
     url: https://metr.org/time-horizons/
     items: [kpi]

@@ -17,7 +17,10 @@ among models RELEASED by the obs date, from the current file vintages):
                              Capabilities Index frontier (eci-frontier-by-release)
   horizon-80-remote-rli      remote-freelance-work horizon converted from the Remote Labor
                              Index automation-rate frontier (rli-automation-by-release)
-The same three at 50% success (horizon-50-*) are collected alongside.
+The same three at 50% success (horizon-50-*) are collected alongside, and so are directly
+measured horizons on SWE-Marathon (swe-marathon-h80/h50-by-release: METR's method on 20 long
+software tasks, gather/collectors/swe_marathon.py), the check on the ECI conversion at the
+frontier, where METR's calibration models end.
 
 SOURCES
   https://epoch.ai/data/benchmark_data.zip (Epoch AI Benchmarking Hub, CC-BY 4.0; refreshed
@@ -85,6 +88,7 @@ import csv
 import datetime as dt
 import io
 import math
+import os
 import re
 import sys
 import zipfile
@@ -92,6 +96,7 @@ from decimal import Decimal, InvalidOperation
 
 import common
 import kpi
+import swe_marathon
 
 SECTION = "robots-software"
 URL = "https://metr.org/assets/benchmark_results_1_1.yaml"
@@ -106,6 +111,8 @@ SOFTWARE80, REMOTE80, BLEND80 = "horizon-80-software-eci", "horizon-80-remote-rl
 HORIZONS = {SOFTWARE: ("software", "p50"), REMOTE: ("remote", "p50"), BLEND: ("blend", "p50"),
             SOFTWARE80: ("software", "p80"), REMOTE80: ("remote", "p80"), BLEND80: ("blend", "p80")}
 ECI_START = "2023-03-14"
+SWE80, SWE50 = "swe-marathon-h80-by-release", "swe-marathon-h50-by-release"
+SWE_VERSION = "v1.1"   # the suite the swe-marathon-* ids measure; another version = new ids
 
 # METR TH1.1 model id -> Epoch ECI model name (models in both files; Mythos Preview, GPT-5.1
 # Codex Max and pre-2023 models have no ECI score).
@@ -358,7 +365,24 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
         return ((rli_hours if q == "p50" else rli_hours80)(m["value"]),
                 f"RLI automation rate {common.round_half_up(m['value'], 2)}% of {m['id']}")
 
-    series = {ECI: eci, RLI: rli}
+    # SWE-Marathon: directly measured horizons (METR's method on 20 long tasks; swe_marathon.py)
+    sw = swe_marathon.fetch(os.path.join(fixture, "swe-marathon") if fixture else None)
+    if sw["version"] != SWE_VERSION:
+        raise SystemExit(f"{swe_marathon.INDEX_URL}: suite {sw['version']}, the swe-marathon-* ids measure "
+                         f"{SWE_VERSION}: register new ids for the new suite (and retire these)")
+    released = {m["id"]: m["release"] for m in eci_models(files[ECI_MEMBER])}
+    swm = {SWE80: [], SWE50: []}
+    for model, f in swe_marathon.best_by_model(swe_marathon.configs(sw["trials"], sw["tasks"])).items():
+        rel = released.get(model) or f["first"][:10]
+        how = "its release date (Epoch)" if model in released else "its first SWE-Marathon trial (release date unknown)"
+        ci = (f"; {f['agent']}, effort {f['effort'] or 'default'}, {f['successes']}/{f['n']} trials on {f['tasks']} tasks, "
+              f"beta {f['beta']:.2f}, h80 95% CI {f['h80_lo']:.2f}-{f['h80_hi']:.2f} h"
+              + (f", h80 extrapolated {f['extrapolated']} the task lengths" if f["extrapolated"] else "")
+              + f"; dated by {how}")
+        for metric, q in ((SWE80, "h80"), (SWE50, "h50")):
+            swm[metric].append({"id": model, "release": rel, "value": Decimal(repr(f[q])), "ci": ci})
+
+    series = {ECI: eci, RLI: rli, SWE80: steps(swm[SWE80]), SWE50: steps(swm[SWE50])}
     for metric, (kind, q) in HORIZONS.items():
         if kind != "blend":
             series[metric] = eci if kind == "software" else rli_h
@@ -371,12 +395,16 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
         kind, q = HORIZONS.get(metric, ("raw", ""))
         parts = [at(eci, when), at(rli_h, when)] if kind == "blend" else [at(series[metric], when)]
         if None in parts:
+            src = swe_marathon.INDEX_URL if metric in (SWE80, SWE50) else EPOCH_URL
             raise SystemExit(f"{metric} {obs}: held in the ledger, but no model of the current "
-                             f"{EPOCH_URL} vintage covers that date (withdraw the rows by hand)")
+                             f"{src} vintage covers that date (withdraw the rows by hand)")
         m = parts[0]
         if metric in (ECI, RLI):
             add(metric, obs, m["value"], 2, EPOCH_URL,
                 f"{tag} best by release date: {m['id']} (released {m['release']}{m['ci']})")
+        elif metric in (SWE80, SWE50):
+            add(metric, obs, m["value"], 3, swe_marathon.INDEX_URL,
+                f"{tag} best by release date: {m['id']} (best configuration by h80{m['ci']})")
         elif kind in ("software", "remote"):
             h, what = horizon(kind, q, m)
             add(metric, obs, h, 3, EPOCH_URL, f"{tag} best by release date: {what} (released {m['release']}) "
@@ -391,7 +419,7 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
     first = max(eci[0]["release"], rli_h[0]["release"])
     for b in (BLEND, BLEND80):
         new[b] = sorted({d for d in new[ECI] + [m["release"] for m in rli_h] if d >= first})
-    for metric in (ECI, RLI, *HORIZONS):
+    for metric in (ECI, RLI, *HORIZONS, SWE80, SWE50):
         for obs in new[metric]:
             emit(metric, obs, dt.date.fromisoformat(obs), True)
         for obs in sorted(held.get(metric, set()) - set(new[metric])):

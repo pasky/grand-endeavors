@@ -193,6 +193,7 @@ with tempfile.TemporaryDirectory() as tmp:
     with open(os.path.join(tmp, "benchmark_results_1_1.yaml"), "w") as f:
         f.write(v2)
     shutil.copy(os.path.join(FIX, "benchmark_data.zip"), tmp)
+    shutil.copytree(os.path.join(FIX, "swe-marathon"), os.path.join(tmp, "swe-marathon"))
     v1_rows = robots_software.collect(FIX, dt.date(2026, 9, 1), "v1")
     v2_rows = robots_software.collect(tmp, TODAY, "v2", v1_rows)
 restated = by_key(v2_rows).get(("metr-80-horizon-by-release", "2026-02-19"))
@@ -251,6 +252,7 @@ case("epoch: a non-zip download (an HTML error page) is rejected",
 def epoch_variant(tmp, rli_extra="", rli_drop=None, eci_extra=""):
     """A copy of the fixtures with rows added to (or a model dropped from) the Epoch zip."""
     shutil.copy(os.path.join(FIX, "benchmark_results_1_1.yaml"), tmp)
+    shutil.copytree(os.path.join(FIX, "swe-marathon"), os.path.join(tmp, "swe-marathon"))
     src = zipfile.ZipFile(os.path.join(FIX, "benchmark_data.zip"))
     with zipfile.ZipFile(os.path.join(tmp, "benchmark_data.zip"), "w") as z:
         eci_txt = src.read(rs.ECI_MEMBER).decode() + eci_extra
@@ -275,6 +277,18 @@ with tempfile.TemporaryDirectory() as tmp:
     case("rli: a held date that the current vintage no longer covers fails loudly (no stale peak kept)",
          raises_exit(rs.collect, epoch_variant(tmp, rli_drop="gemini-2.5-pro-preview-06-05"), TODAY, "x",
                      [{"metric": rs.BLEND, "obs": "2025-06-05"}]))
+sk = {(r["metric"], r["obs"]): r for r in mrow if r["metric"] in (rs.SWE80, rs.SWE50)}
+case("swe-marathon: measured horizons (best configuration per model) enter as release-cohort series, h80 <= h50",
+     bool(sk) and {m for m, _ in sk} == {rs.SWE80, rs.SWE50}
+     and all(float(sk[(rs.SWE80, o)]["value"]) <= float(sk[(rs.SWE50, o)]["value"]) for m, o in sk if (rs.SWE50, o) in sk and m == rs.SWE80)
+     and all("best configuration by h80" in r["note"] for r in sk.values()))
+with tempfile.TemporaryDirectory() as tmp:
+    shutil.copytree(FIX, tmp, dirs_exist_ok=True)
+    b2 = os.path.join(tmp, "swe-marathon", "index-BMEz9I0h.js")
+    text = open(b2, encoding="utf-8").read()
+    open(b2, "w", encoding="utf-8").write(text.replace("version:`v1.1`", "version:`v1.2`", 1))
+    case("swe-marathon: another suite version fails loudly (new ids, not a silent redefinition)",
+         raises_exit(rs.collect, tmp, TODAY, "x"))
 case("rli: percentages are exact decimals, so half-up rounding holds at ties (0.07035 -> 7.04)",
      common.round_half_up(rs.rli_models([{"Model version": "m", "Score": "0.07035", "Release date": "2026-01-01"}])
                           [0]["value"], 2) == "7.04")
@@ -735,11 +749,14 @@ case("revisions: a re-run against its own output is a no-op (all rows dedup)",
 # --- CLI: staged file loads with the exact ledger header ------------------------------------
 with tempfile.TemporaryDirectory() as tmp:
     ok = True
+    # a scratch data repo (the registry, no ledger): fixtures need not cover the real ledger's dates
+    shutil.copytree(os.path.join(ledger.DATA, "metrics"), os.path.join(tmp, "data", "metrics"))
+    env = dict(os.environ, GE_DATA=os.path.join(tmp, "data"))
     for script, section, fix in (("climate.py", "climate", FIX), ("robots_software.py", "robots-software", FIX),
                                  ("rockets.py", "rockets", FIX), ("fusion.py", "fusion", FFIX)):
         out = os.path.join(tmp, f"{section}.csv")
         p = subprocess.run([sys.executable, os.path.join(GATHER, "collectors", script), "--fixture", fix,
-                            "--out", out, "--today", "2026-09-28"], capture_output=True, text=True)
+                            "--out", out, "--today", "2026-09-28"], capture_output=True, text=True, env=env)
         try:
             rows = ledger.load_obs(out)  # raises unless the header is exactly OBS_COLUMNS
             ok &= p.returncode == 0 and bool(rows) and all(r["verification"] == "collector" for r in rows)

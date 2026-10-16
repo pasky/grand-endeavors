@@ -103,11 +103,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       Consider adding a local-currency or PPP variant.
 - [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
       needs a definition that can actually be observed.
-- [ ] Robots-software KPI (horizon-80-blended): its ECI-to-hours calibration can no longer grow,
-      because METR stopped publishing. Add calibration points from our own horizon fits on
-      benchmarks that publish human time per task: SWE-Marathon; Terminal-Bench 4.x if Harbor
-      Hub exposes per-task results. Recalibrating means new metric ids
-      (gather/collectors/robots_software.py).
 
 ## Roadmap
 
