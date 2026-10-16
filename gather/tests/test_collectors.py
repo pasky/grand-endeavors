@@ -214,9 +214,10 @@ rs = robots_software
 epoch = rs.epoch_members(common.fetch_bytes(rs.EPOCH_URL, FIX))
 eci_ms = rs.eci_models(epoch[rs.ECI_MEMBER])
 _, full_metr = rs.models(common.fetch(rs.URL, os.path.join(FIX, "eci-calibration")))
-cal = rs.calibrate(full_metr, eci_ms)
-case("eci: the frozen calibration is the OLS fit over all 21 METR/ECI pairs (provenance of ECI_A, ECI_B)",
-     cal["n"] == 21 and abs(cal["a"] - rs.ECI_A) < 1e-6 and abs(cal["b"] - rs.ECI_B) < 1e-6)
+cals = {q: rs.calibrate(full_metr, eci_ms, q) for q in rs.ECI_CAL}
+case("eci: the frozen calibrations are the OLS fits over all 21 METR/ECI pairs, per success level (provenance)",
+     all(c["n"] == 21 and abs(c["a"] - rs.ECI_CAL[q][0]) < 1e-6 and abs(c["b"] - rs.ECI_CAL[q][1]) < 1e-6
+         for q, c in cals.items()))
 tasks = sorted(rs.rli_tasks())
 case("rli: decoded project lengths reproduce the paper (201 projects with times, median 11.5 h within 3%)",
      len(tasks) == 201 and abs(2 ** tasks[100] / 11.5 - 1) < 0.03)
@@ -227,17 +228,19 @@ case("rli: the horizon reproduces the automation rate under the logistic model; 
 hk = {(r["metric"], r["obs"]): r for r in mrow if not r["metric"].startswith("metr-")}
 case("eci: series start at GPT-4 (earlier small models are not a frontier); score-less rows are skipped",
      min(o for m, o in hk if m == rs.ECI) == rs.ECI_START and not any("No Score" in r["note"] for r in hk.values()))
-blend_dates = sorted(o for m, o in hk if m == rs.BLEND)
-sw = {o: float(r["value"]) for (m, o), r in hk.items() if m == rs.SOFTWARE}
-rw = {o: float(r["value"]) for (m, o), r in hk.items() if m == rs.REMOTE}
 def in_force(series, d):
     return series[max(o for o in series if o <= d)]
-def blend_ok(d):  # the blend uses unrounded components; the registered ones are rounded to 3 dp
-    s, w, v = in_force(sw, d), in_force(rw, d), float(hk[(rs.BLEND, d)]["value"])
-    return abs(v - math.sqrt(s * w)) <= math.sqrt(s * w) * 0.00025 * (1 / s + 1 / w) + 0.0005 + 1e-9
-case("blend: one row per component change from the first date both exist, = sqrt(software x remote)",
-     blend_dates[0] == min(rw) and set(blend_dates) == {d for d in set(sw) | set(rw) if d >= min(rw)}
-     and all(blend_ok(d) for d in blend_dates))
+for blend, soft, rem in ((rs.BLEND, rs.SOFTWARE, rs.REMOTE), (rs.BLEND80, rs.SOFTWARE80, rs.REMOTE80)):
+    dates = sorted(o for m, o in hk if m == blend)
+    sw = {o: float(r["value"]) for (m, o), r in hk.items() if m == soft}
+    rw = {o: float(r["value"]) for (m, o), r in hk.items() if m == rem}
+    def blend_ok(d):  # the blend uses unrounded components; the registered ones are rounded to 3 dp
+        s, w, v = in_force(sw, d), in_force(rw, d), float(hk[(blend, d)]["value"])
+        return abs(v - math.sqrt(s * w)) <= math.sqrt(s * w) * 0.00025 * (1 / s + 1 / w) + 0.0005 + 1e-9
+    case(f"{blend}: one row per component change from the first date both exist, = sqrt(software x remote)",
+         dates[0] == min(rw) and set(dates) == {d for d in set(sw) | set(rw) if d >= min(rw)}
+         and all(blend_ok(d) for d in dates))
+blend_dates = sorted(o for m, o in hk if m == rs.BLEND)
 case("eci/rli: a held ledger date between frontier steps is re-stated as of that date",
      by_key(rs.collect(FIX, TODAY, "x", [{"metric": rs.BLEND, "obs": "2026-08"}]))[(rs.BLEND, "2026-08")]["value"]
      == hk[(rs.BLEND, max(d for d in blend_dates if d <= "2026-08-31"))]["value"])

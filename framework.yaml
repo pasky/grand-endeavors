@@ -46,7 +46,7 @@ endeavors:
     sections:
       - id: robots-software
         title: Software
-        kpi: AI task horizon at 50% success (Human-hours; geometric mean of the software and remote-work horizons)
+        kpi: AI task horizon at 80% success (Human-hours; geometric mean of the software and remote-work horizons)
         milestones:
           - slug: the-linux-kernel-patch
             name: Automated Software Engineer

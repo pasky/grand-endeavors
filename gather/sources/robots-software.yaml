@@ -23,9 +23,9 @@ sources:
     url: https://metr.org/time-horizons/
     items: [kpi]
     covers: >-
-      50%/80% time horizons of frontier models (the KPI's calibration source); the data file
+      50%/80% time horizons of frontier models (the KPI's frozen calibration source); the data file
       benchmark_results_*.yaml behind it. No longer updated since 2026-09 (last model released 2026-04-07).
-    cadence: discontinued (watch for a successor suite)
+    cadence: discontinued (no resumption assumed)
     tier: primary
     collector: true
   - name: METR — research and notes
