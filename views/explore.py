@@ -1238,12 +1238,8 @@ def _value(t: sqlite3.Row, named: bool = False) -> str:
             + (f' <span class="mute">{esc(label)}</span>' if named else "") + "</span>")
 
 
-def _headline(db, g: dict, w: int, h: int, has_kpi: bool = True, axis: str = "below") -> str:
+def _headline(db, g: dict, w: int, h: int, axis: str = "below") -> str:
     t = g["head"]
-    if not has_kpi:  # no KPI: the first indicator with data, else the major events
-        if g["inds"]:
-            return _value(g["inds"][0], True) + sparkline(*spark_points(db, g["inds"][0]), w=w, h=h, pad=2, axis=axis)
-        return f'<span class="mute">no KPI · {len(g["major"])} major events</span>'
     if t is None or t["obs"] is None:
         return f'<span class="mute">{"no KPI data yet" if t is not None else "no KPI metric yet"}</span>'
     return _value(t) + sparkline(*spark_points(db, t), w=w, h=h, pad=2, axis=axis)
@@ -1255,10 +1251,12 @@ def _kpi_dot(g: dict) -> str:
 
 
 def nav_rows(db, sec: str, g: dict, has_kpi: bool) -> str:
-    """The KPI line (status dot, latest value, series) and the milestone dots; without a
-    KPI, no dot: the first indicator, or the count of major events."""
+    """The KPI line (status dot, latest value, series) and the milestone dots; none without
+    a KPI (a supplemental section: no one value stands for it)."""
+    if not has_kpi:
+        return ""
     dots = "".join(topic_dot(m) for m in g["mils"])
-    return (f'<span class="nk">{_kpi_dot(g) if has_kpi else ""}{_headline(db, g, 70, 16, has_kpi, "left")}</span>'
+    return (f'<span class="nk">{_kpi_dot(g)}{_headline(db, g, 70, 16, "left")}</span>'
             + (f'<span class="nd" title="milestones">{dots}</span>' if dots else ""))
 
 

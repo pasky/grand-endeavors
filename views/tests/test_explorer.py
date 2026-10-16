@@ -463,7 +463,7 @@ def main():
                        r'<span class="hv"[^>]*><b>429.25</b> ppm</span><svg.*?<span class="nd" title="milestones">'
                        r'<span class="dot s-green" title="The Bend: Peak in sight"></span>'
                        r'<span class="dot s-red" title="The Balance: Distant"></span></span></a>', nav) is not None
-             and 'href="#knowledge-beyond"' in nav and "no KPI · 0 major events" in nav and "#intro" in nav
+             and 'href="#knowledge-beyond"' in nav and "#intro" in nav
              and '<span class="rc r-cold" title="latest news published 2026-08-15 (6 weeks ago)">6w ago</span>' in nav
              and nav.index('href="#climate"') < nav.index('<div class="ng">Supplemental</div>')
              < nav.index('href="#knowledge-beyond"'))
@@ -493,8 +493,8 @@ def main():
              "<h3>Indicators we track</h3>" in kpane and kpane.count('<div class="tile ') + kpane.count('<div class="tile"') == 2
              and "Notable developments" in kpane and "The 2 latest of 2 major" in kpane
              and kpane.index("KB claim 3.") < kpane.index("KB claim 1.") < kpane.index("<summary>Beyond the framework"))
-        case("supplemental: nav = first indicator with data (no status dot), card = indicators + major events",
-             "<b>48</b> qubits" in knav and "<svg" in knav and 'class="dot' not in knav
+        case("supplemental: nav = title + news freshness only, card = indicators + major events",
+             'class="nk"' not in knav and 'class="dot' not in knav and 'class="rc ' in knav
              and "Indicators we track:" in kcard and "<b>48</b> qubits" in kcard and "Never observed" not in kcard
              and kcard.index("KB claim 3.") < kcard.index("KB claim 1.") and "KB claim 2." not in kcard)
         gdir = os.path.join(root, "grouped")

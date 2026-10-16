@@ -44,9 +44,8 @@ phone the navigation becomes a strip on top).
   (labelled with the year it starts); one status dot per milestone (hover:
   name and status label). An endeavor of several sections (Robots and
   Automation) is one item with a sub-item per section (Software, Hardware);
-  the supplemental sections are listed apart, under "Supplemental", with no
-  status dot: the latest value of their first indicator with data (else the
-  count of their major events).
+  the supplemental sections are listed apart, under "Supplemental", by title
+  and news freshness only (no KPI, so no one value stands for them).
   Clicking shows that endeavor in the middle.
 - **Middle, one pane at a time**: the overview by default, or the endeavor
   clicked. Switching is pure CSS (`:target`, `:has()`; the page has no
