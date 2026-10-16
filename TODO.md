@@ -116,6 +116,11 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       - **Watch:** a METR successor suite (TH 2.0); RLI's per-project times, if released, to replace the
         decoded histogram; and Epoch rescaling ECI (`--calibrate` refits against the current vintage).
       Recalibrating means new metric ids, plus `retired_after` on the old ones.
+- [ ] 🤖 `ledger.py check` charges an assess run's unresolved review MAJOR count to EVERY milestone of
+      that run: the review file ends in one run-level `MAJOR: <n>` line. Example: run 20261016T033429Z left
+      one MAJOR, on the-10m-solopreneur (fixed by audit 2026-10-16-task-horizon), yet the kernel-patch
+      and Nature-author records of that run still warn. Fix: the reviewer emits per-target counts
+      (`MAJOR <target>: <n>`), and `review_major` reads the record's own target.
 
 ## Roadmap
 
