@@ -26,6 +26,7 @@ import fusion  # noqa: E402
 import ledger  # noqa: E402
 import robots_software  # noqa: E402
 import rockets  # noqa: E402
+import terminal_bench  # noqa: E402
 
 FAILS = []
 TODAY = dt.date(2026, 9, 28)
@@ -298,10 +299,15 @@ case("terminal-bench: release-cohort frontier of the 4.0 resolution rate (any co
 with tempfile.TemporaryDirectory() as tmp:
     shutil.copytree(FIX, tmp, dirs_exist_ok=True)
     p = os.path.join(tmp, "tbench", "4.0")
-    open(p, "w", encoding="utf-8").write(open(p, encoding="utf-8").read().replace('\\"title\\":\\"Terminal-Bench 4.0\\"',
-                                                                                    '\\"title\\":\\"Terminal-Bench 4.1\\"', 1))
+    page = open(p, encoding="utf-8").read()
+    open(p, "w", encoding="utf-8").write(page.replace('\\"title\\":\\"Terminal-Bench 4.0\\"', '\\"title\\":\\"Terminal-Bench 4.1\\"', 1))
+    try:
+        terminal_bench.rows(open(p, encoding="utf-8").read())
+        why = ""
+    except SystemExit as e:
+        why = str(e)
     case("terminal-bench: another leaderboard version fails loudly (new ids, not a silent redefinition)",
-         raises_exit(rs.collect, tmp, TODAY, "x"))
+         "Terminal-Bench 4.1" in why and "register new ids" in why and raises_exit(rs.collect, tmp, TODAY, "x"))
 eci_pts = [("2026-01-10", 150.0), ("2026-03-05", 158.0), ("2026-05-01", 162.0)]
 gm = rs.gap_months([("a", "2026-02-01", 150.0, rs.eci_hours(150.0, "p80") * 2),
                     ("b", "2026-03-20", 157.0, rs.eci_hours(157.0, "p80") / 2)], eci_pts, dt.date(2026, 5, 15))
@@ -309,6 +315,9 @@ case("gap: monthly mean of log2(measured / converted) over models within 5 ECI p
      list(gm) == ["2026-02", "2026-03", "2026-04", "2026-05"] and abs(gm["2026-02"][0] - 1) < 1e-9
      and abs(gm["2026-03"][0] + 1) < 1e-9 and [p[0] for p in gm["2026-03"][1]] == ["b"]
      and abs(gm["2026-05"][0] + 1) < 1e-9)
+with tempfile.TemporaryDirectory() as tmp:
+    case("gap: a held month that no frontier model covers any more fails loudly (a stale gap could fake the tripwire)",
+         raises_exit(rs.collect, epoch_variant(tmp), TODAY, "x", [{"metric": rs.GAP_METR, "obs": "2026-09"}]))
 case("gap: a month whose frontier left every measured model behind has no row",
      "2026-05" not in rs.gap_months([("a", "2026-02-01", 150.0, 1.0)], eci_pts, dt.date(2026, 5, 15))
      and rs.gap_months([], eci_pts, dt.date(2026, 5, 15)) == {})

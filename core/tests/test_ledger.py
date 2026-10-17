@@ -540,6 +540,10 @@ def main():
          and not fires([("2026-07", 1.2), ("2026-09", 1.5)], [("2026-07", 1.1), ("2026-09", 2.0)])
          and not fires(up, [("2026-07", 1.1), ("2026-08", 2.0)]) and not fires(up, [])
          and len(fires(up, [], min_series=1)) == 1 and not drivers.tripwires(one, lambda s, x: []))
+    case("drivers: an invalid tripwire is reported by check, never evaluated (no crash)",
+         not drivers.tripwires({"drivers": {"co2": dict(spec["drivers"]["co2"], tripwire=True)}}, lambda s, x: up)
+         and not drivers.tripwires({"drivers": {"co2": dict(spec["drivers"]["co2"], tripwire={k: v for k, v in tw.items()
+                                                                                          if k != "consecutive"})}}, lambda s, x: up))
     yaml.safe_dump(spec, open(f"{root}/drivers.yaml", "w"), sort_keys=False)
     sup_ev = ev("2026-06-01-gcb-final-rv", "2026-06-01", "Corrected GCB final: 2025 fossil CO2 at 38.2 GtCO2.",
                 supersedes=["2026-05-13-gcb-final"])

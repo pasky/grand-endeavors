@@ -221,7 +221,7 @@ def tripwires(spec: dict | None, values) -> list[str]:
     out = []
     for did, d in ((spec or {}).get("drivers") or {}).items():
         t = d.get("tripwire") if isinstance(d, dict) else None
-        if not t:
+        if not t or check_tripwire(did, t, lambda sec, m: True):   # invalid: check reports it
             continue
         ser = {s: sorted(values(*str(s).split("/", 1)), key=lambda r: kpi.obs_range(r[0])) for s in t["series"]}
         ends = [kpi.obs_range(v[-1][0])[1] for v in ser.values() if v]

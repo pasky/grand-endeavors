@@ -71,8 +71,8 @@ CROSS-CHECKS (not KPI inputs; the task-horizon driver's tripwire in data drivers
     (SWE-Marathon: best configuration by h80; METR: its TH1.1 file, models mapped to ECI names in
     CALIBRATION_PAIRS, so they are in-sample residuals) released by then with an ECI score within
     GAP_WINDOW points of the ECI frontier then. No such model: no row; a held month that loses its
-    models (an ECI refit moved the window) keeps its last row (a diagnostic, not a KPI series:
-    warned, not fatal). A new METR model needs its ECI name in CALIBRATION_PAIRS (that is the
+    models (an ECI refit moved the window) fails loudly like any held date (a stale row could fake
+    the tripwire's consecutive months): withdraw it by hand. A new METR model needs its ECI name in CALIBRATION_PAIRS (that is the
     out-of-sample check if METR resumes); refitting on it is a reviewed change (--calibrate).
   terminal-bench-4-pass-by-release: release-cohort frontier of the Terminal-Bench 4.0 resolution
     rate (%, any agent/effort configuration; terminal_bench.py). Its expert time estimates do not
@@ -420,9 +420,9 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
                 f"mean of log2(measured / ECI-converted 80% horizon) over {len(pool)} model(s) within {GAP_WINDOW} "
                 f"ECI points of the ECI frontier as of {min(kpi.obs_range(obs)[1], today)}: "
                 + ", ".join(f"{i} (ECI {e:.2f}, {h:.2f} h vs {eci_hours(e, 'p80'):.2f} h)" for i, e, h in pool))
-        for obs in sorted(held.get(metric, set()) - set(gaps)):
-            print(f"warning: {metric} {obs}: no frontier model of the current vintages; the held row stays",
-                  file=sys.stderr)
+        for obs in sorted(held.get(metric, set()) - set(gaps)):   # a stale gap could fake consecutive months
+            raise SystemExit(f"{metric} {obs}: held in the ledger, but no frontier model of the current vintages "
+                             f"covers that month (withdraw the rows by hand)")
     tb = [{"id": f"{r['model']} ({r['agent']}, effort {r['effort']})", "release": r["release"],
            "value": Decimal(repr(r["accuracy"])),
            "ci": f"; {r['n_trials']} trials, 95% CI +-{r['ci95']} pp"} for r in
