@@ -52,7 +52,7 @@ def main():
          [ln.split("|")[0] for ln in out] == [t for t, _, _ in ledger.framework_items("robots-hardware")]
          and any(" • No teleoperation" in ln for ln in out))
     bad_fw = {"title": "t", "tagline": "t", "manifesto": "m", "endeavors": [
-        {"id": "x", "title": "X", "milestones": [{"slug": "a", "name": "A", "description": "d"},
+        {"id": "x", "title": "X", "milestones_order": "chain", "milestones": [{"slug": "a", "name": "A", "description": "d"},
                                                 {"slug": "a", "name": "B", "description": "d"},
                                                 {"slug": "Bad Slug", "name": "C", "description": "d"},
                                                 {"slug": "g", "name": "G", "description": "d", "assumes": ""}],
@@ -62,6 +62,7 @@ def main():
          has(errs, "duplicate section id") and has(errs, "duplicate milestones slug")
          and has(errs, "bad slug 'Bad Slug'") and has(errs, "name and description required"))
     case("framework check: assumes must be a non-empty string", has(errs, "g: assumes must be"))
+    case("framework check: milestones_order is sequence or parallel", has(errs, "x: milestones_order must be"))
     case("an assumed gate is shown as the last description line",
          ledger.fw_description({"description": "P.", "details": ["x"], "assumes": "policy yields"})
          == "P.\n- x\n- *ETA assumes:* policy yields")

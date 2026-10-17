@@ -165,6 +165,8 @@ def check_framework(fw: dict) -> list[str]:
     for s in secs:
         if not s.get("id") or not s.get("title"):
             errs.append(f"section without id/title: {s}")
+        if s.get("milestones_order", "parallel") not in ("sequence", "parallel"):
+            errs.append(f"{s.get('id')}: milestones_order must be sequence or parallel")
         for kind in ("milestones", "challenges"):
             slugs = [t.get("slug") for t in s.get(kind) or []]
             if len(set(slugs)) != len(slugs):

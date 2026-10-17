@@ -518,12 +518,9 @@ font-weight:600;color:var(--ink);text-decoration:none}.en:hover{color:var(--acc)
 .ed{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--c);
 border:2px solid var(--c);box-sizing:border-box}.ed.ho{background:var(--card)}
 .ena{position:absolute;top:50%;transform:translateY(-50%);color:var(--mute);font-size:12px}
-.dep{position:absolute;top:-7px;height:20px;border:0 solid var(--mute);border-width:0 0 1.5px 1.5px}
-.dep.l{border-width:0 1.5px 1.5px 0}.dep.d{height:12px;border-width:0 0 0 1.5px}
-.dep::after{content:"";position:absolute;border:4px solid transparent}
-.dep.r::after{right:-7px;bottom:-4.75px;border-left:7px solid var(--mute);border-right:0}
-.dep.l::after{left:-7px;bottom:-4.75px;border-right:7px solid var(--mute);border-left:0}
-.dep.d::after{left:-4.75px;bottom:-6px;border-top:7px solid var(--mute);border-bottom:0}
+.dep{position:absolute;top:-7px;height:7.75px;margin-left:-.75px;border:0 solid var(--mute);border-width:0 0 1.5px 1.5px}
+.dep.bk{border-width:0 1.5px 1.5px 0}
+.dpa{position:absolute;top:0;margin-left:-4px;border:4px solid transparent;border-top:6.5px solid var(--mute);border-bottom:0}
 .ea{height:18px}.ea .et span{position:absolute;top:2px;transform:translateX(-50%);font-size:11px;color:var(--mute);white-space:nowrap}
 .nd.seq .dot{margin-right:0}.nd .lk{display:inline-block;width:6px;height:2px;background:var(--mute);margin:0 1px}
 .cm.seq li{position:relative}.cm.seq li:not(:last-child)::after{content:"";position:absolute;left:4px;top:16px;height:8px;width:2px;background:var(--mute)}
@@ -963,53 +960,72 @@ def _eta(m: sqlite3.Row | None) -> dict | None:
 
 
 def eta_x(year: float | None, now: float) -> float:
-    """Position (% of the track) of a year on the timeline; None = after 2100."""
+    """Position (% of the track) of a moment on the timeline; None or past 2100 = after 2100."""
     if year is None or year > 2100:
         return 100 - ETA_LATER / 2
-    span = math.log1p(max(2100 - now, 1) / ETA_K)
-    return (100 - ETA_LATER) * math.log1p(min(max(year - now, 0), 2100 - now) / ETA_K) / span
+    horizon = max(2100 - now, 0)
+    return (100 - ETA_LATER) * math.log1p(min(max(year - now, 0), horizon) / ETA_K) / math.log1p(max(horizon, 1) / ETA_K)
+
+
+def _year_x(y: float | None, now: float) -> float:
+    """A forecast year's position: mid-year, or the after-2100 zone (None, or a year past 2100)."""
+    return eta_x(None if y is None or y > 2100 else min(y + .5, 2100), now)
+
+
+def _achieved(m: sqlite3.Row | None) -> bool:
+    return bool(m and m["assessment_id"] and m["status"] == "achieved")
+
+
+def eta_order(items: list, by_topic: dict) -> list:
+    """Independent milestones soonest first: achieved, then by median year (one after 2100
+    by its chance by 2100, the likelier first), then those without an ETA."""
+    def key(it):
+        m = by_topic.get(f"milestone:{it['slug']}")
+        e = _eta(m)
+        if _achieved(m):
+            return (0, 0)
+        if e and e["p50"] is not None and e["p50"] <= 2100:
+            return (1, e["p50"])
+        return (2, -(e["p_achieved"] or 0)) if e else (3, 0)
+    return sorted(items, key=key)
 
 
 def eta_chart(sec: str, items: list, by_topic: dict, seq: bool, as_of: dt.date) -> str:
     """The milestones on one (compressed) time axis: dot = median year (hollow: after 2100),
     bar = 80% range. A sequence keeps its order, with arrows from each milestone to the
-    next; parallel milestones are sorted soonest first."""
+    next; independent milestones are sorted soonest first (eta_order)."""
     now = as_of.year + (as_of.timetuple().tm_yday - .5) / 365.25
-    rows = [(it, m, _eta(m)) for it in items for m in [by_topic.get(f"milestone:{it['slug']}")]]
-    done = lambda m: bool(m and m["assessment_id"] and m["status"] == "achieved")
-    if not any(e or done(m) for _, m, e in rows):
+    rows = [(it, m, _eta(m)) for it in (items if seq else eta_order(items, by_topic))
+            for m in [by_topic.get(f"milestone:{it['slug']}")]]
+    if not any(e or _achieved(m) for _, m, e in rows):
         return ""
-    if not seq:
-        rows.sort(key=lambda r: (0, 0) if done(r[1]) else (1, r[2]["p50"]) if r[2] and r[2]["p50"]
-                  else (2, -(r[2]["p_achieved"] or 0)) if r[2] else (3, 0))
-    mid = lambda y: None if y is None else y + .5  # a year's dot sits mid-year
+    after = lambda y: y is None or y > 2100
+    yr = lambda y: "after 2100" if after(y) else str(y)
     out, prev = [], None
     for it, m, e in rows:
         st = m["status"] if m and m["assessment_id"] else "none"
-        x, marks = None, []
-        if done(m):
+        x, marks, hollow = None, [], ""
+        if _achieved(m):
             x, tip = 0.0, f'{it["name"]}: achieved'
         elif e:
-            x = eta_x(mid(e["p50"]), now)
+            x = _year_x(e["p50"], now)
+            hollow = " ho" if after(e["p50"]) else ""
             pa = f'; {round(100 * e["p_achieved"])}% chance by 2100' if e["p_achieved"] is not None else ""
-            tip = (f'{it["name"]}: median {e["p50"] or "after 2100"}, 80% range {e["p10"] or "?"}–'
-                   f'{e["p90"] or "after 2100"}{pa}')
-            if e["p10"]:
-                a = eta_x(mid(e["p10"]), now)
-                b = eta_x(mid(e["p90"]), now) if e["p90"] else 100.0
+            # no p10 by 2100: even the 10% quantile is after 2100 (or never)
+            rng = f'{yr(e["p10"])}–{yr(e["p90"])}' if not after(e["p10"]) else "after 2100 or never"
+            tip = f'{it["name"]}: median {yr(e["p50"])}, 80% range {rng}{pa}'
+            if not after(e["p10"]):
+                a, b = _year_x(e["p10"], now), (100.0 if after(e["p90"]) else _year_x(e["p90"], now))
                 marks.append(f'<i class="eb" style="left:{a:.1f}%;width:{max(b - a, .6):.1f}%"></i>')
         if x is None:
             marks.append('<span class="ena">no ETA yet</span>')
         else:
-            hollow = " ho" if e and not done(m) and e["p50"] is None else ""
             marks.append(f'<i class="ed{hollow}" style="left:{x:.1f}%" title="{esc(tip)}"></i>')
         if seq and prev is not None and x is not None:
-            if abs(x - prev) < 2:  # straight down
-                marks.append(f'<i class="dep d" style="left:{prev:.1f}%"></i>')
-            elif x > prev:
-                marks.append(f'<i class="dep r" style="left:{prev:.1f}%;width:calc({x - prev:.1f}% - 8px)"></i>')
-            else:  # earlier than its predecessor: the arrow runs back
-                marks.append(f'<i class="dep l" style="left:calc({x:.1f}% + 8px);width:calc({prev - x:.1f}% - 8px)"></i>')
+            # down from the previous dot to the row boundary, along it, then down into this dot
+            way = "fw" if x >= prev else "bk"  # back: expected before its predecessor
+            marks.append(f'<i class="dep {way}" style="left:{min(x, prev):.1f}%;width:{abs(x - prev):.1f}%"></i>'
+                         f'<i class="dpa" style="left:{x:.1f}%"></i>')
         prev = x
         out.append(f'<div class="er e-{esc(st)}"><a class="en" href="#t-{esc(sec)}-milestone-{esc(it["slug"])}" '
                    f'title="{esc(it["name"])}">{plain_md(it["name"])}</a><div class="et">{"".join(marks)}</div></div>')
@@ -1137,11 +1153,12 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
             if framework:
                 out.append(f'<h3>{esc(title)}</h3><div class="gap">none listed in the framework</div>')
             continue
-        lis = [topic_li(db, sec, it, by_topic.get(f"{kind}:{it['slug']}"), kind, names, succ, shown) for it in items]
+        seq = sequential(fsec)
+        ordered = items if kind == "challenge" or seq else eta_order(items, by_topic)
+        lis = [topic_li(db, sec, it, by_topic.get(f"{kind}:{it['slug']}"), kind, names, succ, shown) for it in ordered]
         if kind == "challenge":
             out.append(f'<h3>{md_inline(title)}</h3><ul class="topics">{"".join(lis)}</ul>')
             continue
-        seq = sequential(fsec)
         as_of = D(db.execute("SELECT value FROM build_info WHERE key='as_of'").fetchone()[0])
         out.append(f'<h3>{md_inline(title)}</h3><div class="mute small">'
                    + ("A sequence: each milestone is expected after the one before it." if seq else

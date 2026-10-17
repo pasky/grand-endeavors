@@ -109,10 +109,12 @@ section with its own activity line), then:
   coloured by status (an achieved one sits at "now"; one without an ETA says
   so). A sequence keeps the framework order, with an arrow from each
   milestone to the next (pointing back when a step's median comes before its
-  predecessor's); independent fronts are sorted soonest first. The axis runs
+  predecessor's); independent fronts are sorted soonest first (achieved, then
+  by median year, then by the chance by 2100), in the timeline and the cards. The axis runs
   from the as-of date to 2100, compressed (log of 1 + years from now / 2), so
   near and far milestones fit: next year gets room, 2075 vs 2080 does not;
-  medians after 2100 sit in a hatched zone at the right end. A phone keeps
+  medians after 2100 sit in a hatched zone at the right end (a range with
+  no 10% year by 2100 has no bar). A phone keeps
   the 2030 and 2050 labels only. Milestone names link to their entries.
   Then the entries: a sequence as a numbered rail, independent fronts as
   cards (an opened card spans the row). Each shows its status dot, name and

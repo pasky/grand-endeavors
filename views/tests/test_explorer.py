@@ -426,22 +426,26 @@ def main():
              "since corrected</span>" in ev_sec and "\u21b3 since corrected: <a href=\"events-climate.html#ev-climate-2026-05-01-pledge-coverage-corrected\"" in ev_sec and "cover 90%" in ev_sec
              and "nope: not in the ledger as of this date" in ev_sec and "Other events (2)" in ev_sec)
         row = lambda st, eta: {"assessment_id": "x", "status": st, "basis": json.dumps({"eta": eta})}
-        tl_items = [{"slug": s, "name": n} for s, n in (("a", "Alpha"), ("b", "Beta"), ("c", "Gamma"), ("d", "Delta"))]
+        tl_items = [{"slug": s, "name": n} for s, n in (("a", "Alpha"), ("b", "Beta"), ("c", "Gamma"), ("d", "Delta"),
+                                                        ("e", "Epsilon"))]
         tl_rows = {"milestone:a": row("yellow", {"p10": 2030, "p50": 2040, "p90": None}),
                    "milestone:b": row("yellow", {"p10": 2028, "p50": 2031, "p90": 2035}),
-                   "milestone:c": row("red", {"p_achieved": 0.3, "p10": 2080, "p50": None, "p90": None})}
+                   "milestone:c": row("red", {"p_achieved": 0.3, "p10": 2080, "p50": None, "p90": None}),
+                   "milestone:e": row("red", {"p_achieved": 0.2, "p10": 2090, "p50": 2150, "p90": 2300})}  # legacy: years past 2100
         names_in = lambda h: re.findall(r'class="en"[^>]*>([^<]+)</a>', h)
         seq_h = explore.eta_chart("climate", tl_items, tl_rows, True, D("2026-10-10"))
         par_h = explore.eta_chart("climate", tl_items, tl_rows, False, D("2026-10-10"))
         case("timeline: a sequence keeps its order, with arrows forward, back (a step expected before its "
              "predecessor) and to a median after 2100 (hollow)",
-             names_in(seq_h) == ["Alpha", "Beta", "Gamma", "Delta"] and seq_h.count('class="dep l"') == 1
-             and seq_h.count('class="dep r"') == 1 and seq_h.count('class="ed ho"') == 1 and "no ETA yet" in seq_h)
+             names_in(seq_h) == ["Alpha", "Beta", "Gamma", "Delta", "Epsilon"] and seq_h.count('class="dep bk"') == 1
+             and seq_h.count('class="dep fw"') == 1 and seq_h.count('class="ed ho"') == 2 and "no ETA yet" in seq_h)
         case("timeline: parallel milestones sorted soonest first (no ETA last), no arrows",
-             names_in(par_h) == ["Beta", "Alpha", "Gamma", "Delta"] and 'class="dep' not in par_h)
+             names_in(par_h) == ["Beta", "Alpha", "Gamma", "Epsilon", "Delta"] and 'class="dep' not in par_h)
         x = lambda y: explore.eta_x(y, 2026.8)
         case("timeline axis: compressed (a near year wider than a far one), clamped at now, after 2100 apart",
-             x(2028) - x(2027) > x(2080) - x(2075) > 0 and x(2020) == 0 and x(2100) < x(None) < 100)
+             x(2028) - x(2027) > x(2080) - x(2075) > 0 and x(2020) == 0 and x(2100) < x(None) < 100
+             and explore._year_x(2100, 2026.8) == x(2100) and explore._year_x(2101, 2026.8) == x(None)
+             and explore.eta_x(2100, 2102.5) == 0)
         case("no timeline without any ETA", explore.eta_chart("climate", tl_items, {}, True, D("2026-10-10")) == "")
         s_row = db.execute("SELECT * FROM sections WHERE section='climate'").fetchone()
         case("milestones: a sequence is a numbered rail, the default independent cards",
