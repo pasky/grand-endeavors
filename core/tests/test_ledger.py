@@ -518,6 +518,28 @@ def main():
     case("drivers: a passed review_by is due (a fit that expires, e.g. a proponent date)",
          drivers.review_due({"drivers": {"co2": dict(spec["drivers"]["co2"], review_by="2027-06-30")}}, dt.date(2027, 7, 1))
          and not drivers.review_due({"drivers": {"co2": dict(spec["drivers"]["co2"], review_by="2027-06-30")}}, dt.date(2027, 6, 30)))
+    tw = {"series": ["climate/co2-mlo-annual", "climate/co2-mlo-monthly"], "threshold": 1.0, "min_series": 2, "consecutive": 2}
+    bad = yaml.safe_load(yaml.safe_dump(spec, sort_keys=False))
+    bad["drivers"]["co2"]["tripwire"] = dict(tw, series=["climate/unregistered"], threshold=0, min_series=3, typo=1)
+    yaml.safe_dump(bad, open(f"{root}/drivers.yaml", "w"), sort_keys=False)
+    errs = ledger.check_drivers()
+    case("drivers: check catches a bad tripwire (unknown series, threshold <= 0, min_series above the series count, unknown key)",
+         all(has(errs, n) for n in ("tripwire: series 'climate/unregistered'", "threshold must be", "min_series must be",
+                                    "unknown key(s) ['typo']")))
+    one = {"drivers": {"co2": dict(spec["drivers"]["co2"], tripwire=tw)}}
+    def fires(a, m, **kw):
+        t = dict(tw, **kw)
+        return drivers.tripwires({"drivers": {"co2": dict(spec["drivers"]["co2"], tripwire=t)}},
+                                 lambda s, x: {"co2-mlo-annual": a, "co2-mlo-monthly": m}[x])
+    up = [("2026-08", 1.2), ("2026-09", 1.5)]
+    case("drivers: a tripwire fires when min_series series sit beyond the threshold on one side for the last C periods",
+         len(fires(up, [("2026-07", 0.0), ("2026-08", 1.1), ("2026-09", 2.0)])) == 1
+         and "2 series above +1" in fires(up, [("2026-08", 1.1), ("2026-09", 2.0)])[0])
+    case("drivers: a tripwire does not fire on opposite sides, one series short, a gap in the periods or a stale series",
+         not fires(up, [("2026-08", -1.1), ("2026-09", -2.0)]) and not fires(up, [("2026-08", 0.9), ("2026-09", 2.0)])
+         and not fires([("2026-07", 1.2), ("2026-09", 1.5)], [("2026-07", 1.1), ("2026-09", 2.0)])
+         and not fires(up, [("2026-07", 1.1), ("2026-08", 2.0)]) and not fires(up, [])
+         and len(fires(up, [], min_series=1)) == 1 and not drivers.tripwires(one, lambda s, x: []))
     yaml.safe_dump(spec, open(f"{root}/drivers.yaml", "w"), sort_keys=False)
     sup_ev = ev("2026-06-01-gcb-final-rv", "2026-06-01", "Corrected GCB final: 2025 fossil CO2 at 38.2 GtCO2.",
                 supersedes=["2026-05-13-gcb-final"])

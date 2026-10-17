@@ -194,6 +194,7 @@ with tempfile.TemporaryDirectory() as tmp:
         f.write(v2)
     shutil.copy(os.path.join(FIX, "benchmark_data.zip"), tmp)
     shutil.copytree(os.path.join(FIX, "swe-marathon"), os.path.join(tmp, "swe-marathon"))
+    shutil.copytree(os.path.join(FIX, "tbench"), os.path.join(tmp, "tbench"))
     v1_rows = robots_software.collect(FIX, dt.date(2026, 9, 1), "v1")
     v2_rows = robots_software.collect(tmp, TODAY, "v2", v1_rows)
 restated = by_key(v2_rows).get(("metr-80-horizon-by-release", "2026-02-19"))
@@ -253,6 +254,7 @@ def epoch_variant(tmp, rli_extra="", rli_drop=None, eci_extra=""):
     """A copy of the fixtures with rows added to (or a model dropped from) the Epoch zip."""
     shutil.copy(os.path.join(FIX, "benchmark_results_1_1.yaml"), tmp)
     shutil.copytree(os.path.join(FIX, "swe-marathon"), os.path.join(tmp, "swe-marathon"))
+    shutil.copytree(os.path.join(FIX, "tbench"), os.path.join(tmp, "tbench"))
     src = zipfile.ZipFile(os.path.join(FIX, "benchmark_data.zip"))
     with zipfile.ZipFile(os.path.join(tmp, "benchmark_data.zip"), "w") as z:
         eci_txt = src.read(rs.ECI_MEMBER).decode() + eci_extra
@@ -289,6 +291,29 @@ with tempfile.TemporaryDirectory() as tmp:
     open(b2, "w", encoding="utf-8").write(text.replace("version:`v1.1`", "version:`v1.2`", 1))
     case("swe-marathon: another suite version fails loudly (new ids, not a silent redefinition)",
          raises_exit(rs.collect, tmp, TODAY, "x"))
+tk = sorted((o, r["value"]) for (m, o), r in by_key(mrow).items() if m == rs.TB4)
+case("terminal-bench: release-cohort frontier of the 4.0 resolution rate (any configuration), strictly increasing",
+     tk[0] == ("2026-05-28", "23.64") and tk[-1] == ("2026-09-22", "64.85") and len(tk) == 6
+     and all(float(a) < float(b) for (_, a), (_, b) in zip(tk, tk[1:])))
+with tempfile.TemporaryDirectory() as tmp:
+    shutil.copytree(FIX, tmp, dirs_exist_ok=True)
+    p = os.path.join(tmp, "tbench", "4.0")
+    open(p, "w", encoding="utf-8").write(open(p, encoding="utf-8").read().replace('\\"title\\":\\"Terminal-Bench 4.0\\"',
+                                                                                    '\\"title\\":\\"Terminal-Bench 4.1\\"', 1))
+    case("terminal-bench: another leaderboard version fails loudly (new ids, not a silent redefinition)",
+         raises_exit(rs.collect, tmp, TODAY, "x"))
+eci_pts = [("2026-01-10", 150.0), ("2026-03-05", 158.0), ("2026-05-01", 162.0)]
+gm = rs.gap_months([("a", "2026-02-01", 150.0, rs.eci_hours(150.0, "p80") * 2),
+                    ("b", "2026-03-20", 157.0, rs.eci_hours(157.0, "p80") / 2)], eci_pts, dt.date(2026, 5, 15))
+case("gap: monthly mean of log2(measured / converted) over models within 5 ECI points of the frontier then",
+     list(gm) == ["2026-02", "2026-03", "2026-04", "2026-05"] and abs(gm["2026-02"][0] - 1) < 1e-9
+     and abs(gm["2026-03"][0] + 1) < 1e-9 and [p[0] for p in gm["2026-03"][1]] == ["b"]
+     and abs(gm["2026-05"][0] + 1) < 1e-9)
+case("gap: a month whose frontier left every measured model behind has no row",
+     "2026-05" not in rs.gap_months([("a", "2026-02-01", 150.0, 1.0)], eci_pts, dt.date(2026, 5, 15))
+     and rs.gap_months([], eci_pts, dt.date(2026, 5, 15)) == {})
+case("gap: METR's cross-check comes from the calibration pairs (the fixture's SWE-Marathon models have no ECI: no row)",
+     rs.GAP_METR in {m for m, _ in by_key(mrow)} and rs.GAP_SWE not in {m for m, _ in by_key(mrow)})
 case("rli: percentages are exact decimals, so half-up rounding holds at ties (0.07035 -> 7.04)",
      common.round_half_up(rs.rli_models([{"Model version": "m", "Score": "0.07035", "Release date": "2026-01-01"}])
                           [0]["value"], 2) == "7.04")

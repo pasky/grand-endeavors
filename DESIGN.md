@@ -89,7 +89,12 @@ milestones agree draw by draw). `check` validates the file (references must
 be registered series and effective events, and a sample of draws must
 evaluate) and warns when a current v6 milestone in a `used_by` does not name
 the driver in `basis.eta.calc`, or when a driver's `review_by` date (its fit
-expires, e.g. a proponent date in it passes) is past.
+expires, e.g. a proponent date in it passes) is past. A driver may also declare a
+`tripwire`: registered series of measured-minus-fitted gaps (e.g. task-horizon's
+`horizon-80-gap-*`, a measured horizon vs the ECI conversion, in doublings);
+`check` and `driver-draws` warn "re-open the fit" while at least `min_series` of
+them sit beyond `threshold` on the same side for their last `consecutive`
+contiguous observations, ending at the latest observation among them.
 
 **External anchors** (rubric v6, RUBRIC.md §4.1 step 4): a milestone's
 `anchors:` in framework.yaml names community forecasts (Manifold, Metaculus)

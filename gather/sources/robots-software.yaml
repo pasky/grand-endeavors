@@ -41,8 +41,31 @@ sources:
   - name: METR — research and notes
     url: https://metr.org/research
     items: [kpi, challenge:reliability, challenge:agency]
-    covers: METR evaluation reports of new models, methodology changes to the time-horizon suite, agent failure analyses.
+    covers: >-
+      METR evaluation reports of new models (per-model time horizons, e.g. GPT-5.6 Sol 2026-06-26, an
+      out-of-sample check of the KPI's ECI calibration; a new METR model needs its ECI name in
+      robots_software.py CALIBRATION_PAIRS to enter horizon-80-gap-metr), methodology changes to the
+      time-horizon suite, agent failure analyses.
     cadence: irregular
+    tier: primary
+  - name: Terminal-Bench 4.0 leaderboard (Stanford / Laude Institute / Harbor)
+    url: https://www.tbench.ai/leaderboard/terminal-bench/4.0
+    items: [kpi]
+    covers: >-
+      Resolution rates of agent/model configurations on 66 terminal tasks (expert estimates 0.75-60 h,
+      5 trials each; per-trial results on hub.harborframework.com); the collector keeps the release-cohort
+      frontier (terminal-bench-4-pass-by-release), a pace cross-check of the KPI independent of ECI.
+    cadence: new models within days to weeks of release
+    tier: primary
+    collector: true
+  - name: UK AI Security Institute — cyber time horizons
+    url: https://www.aisi.gov.uk/blog/how-fast-is-autonomous-ai-cyber-capability-advancing
+    items: [kpi]
+    covers: >-
+      AISI's 80%-reliability time horizon on its narrow cyber task suite (2.5M-token budget) and its
+      doubling time (4.7 months in its 2026-02 estimate); the only other active horizon tracker, a pace
+      cross-check of the KPI (its level is cyber-specific and not comparable).
+    cadence: irregular (a few times a year)
     tier: primary
   - name: Epoch AI — benchmarking hub
     url: https://epoch.ai/benchmarks

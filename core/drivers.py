@@ -30,6 +30,14 @@ drivers.yaml:
       sourced / assumed; quote it in a flow mapping when it contains a comma).
       review_by: YYYY-MM-DD   optional: the fit expires (e.g. a proponent date in it passes);
                               check and driver-draws warn after it
+      tripwire:               optional: measured cross-checks that re-open the fit when they agree
+        series: [<section>/<metric>, ...]   registered series of (measured - fitted) gaps, e.g. doublings
+        threshold: T          > 0: a value beyond +-T counts
+        min_series: K         it fires when at least K series (1 <= K <= len(series)) ...
+        consecutive: C        ... each have C consecutive observations (contiguous obs periods)
+                              ending at the latest obs label among all the series, all beyond T on
+                              the same side (the K series on one side); a series whose latest obs
+                              is older does not count. check and driver-draws warn while it fires.
 """
 from __future__ import annotations
 
@@ -140,6 +148,8 @@ def check(spec: dict | None, series_ok, event_ok, milestone_ok) -> list[str]:
                 dt.date.fromisoformat(str(d["review_by"]))
             except ValueError:
                 errs.append(f"{at}: review_by must be YYYY-MM-DD")
+        if "tripwire" in d:
+            errs += check_tripwire(at, d["tripwire"], series_ok)
         for u in d.get("used_by") or []:
             sec, _, slug = str(u).partition("/")
             if not milestone_ok(sec, slug):
@@ -177,6 +187,62 @@ def check(spec: dict | None, series_ok, event_ok, milestone_ok) -> list[str]:
             except Exception as e:  # a derived expression failing at run time (1 / 0, a str + a number, ...)
                 errs.append(f"{at}: draws fail: {type(e).__name__}: {e}")
     return errs
+
+
+def check_tripwire(at: str, t, series_ok) -> list[str]:
+    at = f"{at}: tripwire"
+    if not isinstance(t, dict):
+        return [f"{at}: must be a mapping"]
+    errs = []
+    if set(t) - {"series", "threshold", "min_series", "consecutive"}:
+        errs.append(f"{at}: unknown key(s) {sorted(map(str, set(t) - {'series', 'threshold', 'min_series', 'consecutive'}))}")
+    ser = t.get("series")
+    if not (isinstance(ser, list) and ser and len(set(map(str, ser))) == len(ser)):
+        errs.append(f"{at}: needs a non-empty list of distinct series")
+        ser = []
+    for s in ser:
+        sec, _, m = str(s).partition("/")
+        if not series_ok(sec, m):
+            errs.append(f"{at}: series {s!r} is not a registered <section>/<metric>")
+    if not (_num(t.get("threshold")) and t["threshold"] > 0):
+        errs.append(f"{at}: threshold must be a number > 0")
+    k, c = t.get("min_series"), t.get("consecutive")
+    if not (isinstance(k, int) and not isinstance(k, bool) and 1 <= k <= max(len(ser), 1)):
+        errs.append(f"{at}: min_series must be an integer from 1 to the number of series")
+    if not (isinstance(c, int) and not isinstance(c, bool) and c >= 1):
+        errs.append(f"{at}: consecutive must be an integer >= 1")
+    return errs
+
+
+def tripwires(spec: dict | None, values) -> list[str]:
+    """Warnings of the drivers whose tripwire fires. values(section, metric) -> [(obs, float)] of the
+    series' effective observations."""
+    import kpi
+    out = []
+    for did, d in ((spec or {}).get("drivers") or {}).items():
+        t = d.get("tripwire") if isinstance(d, dict) else None
+        if not t:
+            continue
+        ser = {s: sorted(values(*str(s).split("/", 1)), key=lambda r: kpi.obs_range(r[0])) for s in t["series"]}
+        ends = [kpi.obs_range(v[-1][0])[1] for v in ser.values() if v]
+        if not ends:
+            continue
+        last, sides = max(ends), {1: [], -1: []}
+        for s, v in ser.items():
+            tail = v[-t["consecutive"]:]
+            if len(tail) < t["consecutive"] or kpi.obs_range(tail[-1][0])[1] != last:
+                continue
+            if any(kpi.obs_range(b[0])[0] != kpi.obs_range(a[0])[1] + dt.timedelta(days=1) for a, b in zip(tail, tail[1:])):
+                continue
+            for side in (1, -1):
+                if all(side * x > t["threshold"] for _, x in tail):
+                    sides[side].append(f"{s} ({', '.join(f'{o} {x:+g}' for o, x in tail)})")
+        for side, hit in sides.items():
+            if len(hit) >= t["min_series"]:
+                out.append(f"{DRIVERS_FILE}: driver {did}: tripwire fired: {len(hit)} series {'above' if side > 0 else 'below'} "
+                           f"{'+' if side > 0 else '-'}{t['threshold']:g} for {t['consecutive']} consecutive observations "
+                           f"({'; '.join(hit)}): re-open the fit (a reviewed edit)")
+    return out
 
 
 def review_due(spec: dict | None, when: dt.date) -> list[str]:

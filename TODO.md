@@ -27,6 +27,13 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       forbid systematic compilation without written permission while its API docs allow
       non-commercial use: consider asking data@manifold.markets.
 
+- [ ] 🤖 **The task-horizon tripwire has one live source** (owner decision 2026-10-17, option D,
+      data drivers.yaml): it needs two measured gap series beyond one doubling, but only
+      SWE-Marathon (`horizon-80-gap-swe-marathon`) measures hours at the ECI frontier;
+      METR's gap series ended 2026-03 (it resumes if METR publishes: add the model's ECI name to
+      robots_software.py CALIBRATION_PAIRS). Add a second source when one appears (a suite whose
+      hour labels predict failures across a wide task-length range; Terminal-Bench 4.0's do not).
+
 ## Owner decisions
 
 - [ ] **Scheduling budget**: how often each section's gather runs (a full

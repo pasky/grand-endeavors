@@ -811,6 +811,18 @@ def check_drivers() -> list[str]:
                          milestone_ok)
 
 
+def driver_tripwires(spec: dict | None, when: dt.date | None = None) -> list[str]:
+    """drivers.tripwires() over the effective observations (as of `when`; None = everything)."""
+    import drivers
+    tables: dict[str, dict] = {}
+
+    def values(sec: str, metric: str) -> list[tuple[str, float]]:
+        if sec not in tables:
+            tables[sec] = obs_as_of(sec, when) if sec in SECTIONS else {}
+        return [(o, float(r["value"])) for (m, o), r in tables[sec].items() if m == metric]
+    return drivers.tripwires(spec, values)
+
+
 def check_assumed_gates(section: str, ass: list[dict]) -> list[str]:
     """gather/RUBRIC.md §4.2: the LATEST assessment of a milestone whose framework entry `assumes:`
     a gate away carries basis.eta.assumes and an asterisked ETA in its label. A warning, not an
@@ -1651,7 +1663,7 @@ def main() -> int:
                 for e in check_drivers():
                     print(f"  ERROR [drivers] {e}")
                     n_e += 1
-                for w in drivers.review_due(drivers.load(DATA), dt.date.today()):
+                for w in drivers.review_due(drivers.load(DATA), dt.date.today()) + driver_tripwires(drivers.load(DATA)):
                     print(f"  WARN  [drivers] {w}")
             print(f"\nledger check: {n_e} error(s)")
             return 1 if n_e else 0
@@ -1716,8 +1728,9 @@ def main() -> int:
                     if a.section is None or any(str(u).startswith(a.section + "/") for u in d["used_by"]):
                         print(f"{did}|{' '.join(d['used_by'])}|{' '.join(d['params'])}")
                 return 0
-            for w in drivers.review_due({"drivers": {a.driver: spec["drivers"].get(a.driver)}},
-                                        day(a.as_of) if a.as_of else dt.date.today()):
+            one = {"drivers": {a.driver: spec["drivers"].get(a.driver)}}
+            for w in (drivers.review_due(one, day(a.as_of) if a.as_of else dt.date.today())
+                      + driver_tripwires(one, day(a.as_of) if a.as_of else None)):
                 print(f"WARN: {w}", file=sys.stderr)
             cols, rows = drivers.draws(spec, a.driver, a.seed, a.n, day(a.as_of) if a.as_of else None)
             print(",".join(["draw", *cols]))

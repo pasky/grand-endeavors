@@ -64,6 +64,24 @@ CONVERSIONS (frozen; changing one changes what the horizon ids mean -> new ids)
   blend: sqrt(software x remote) at one success level, as of each date on which either
     component changed, from the first date both exist.
 
+CROSS-CHECKS (not KPI inputs; the task-horizon driver's tripwire in data drivers.yaml reads the gaps)
+  horizon-80-gap-swe-marathon / -metr: per month (obs YYYY-MM, as of the month end or today), the
+    mean over the source's frontier models of log2(measured 80% horizon) - log2(the ECI-converted
+    80% horizon of the same model), in doublings. Frontier models = models measured by the source
+    (SWE-Marathon: best configuration by h80; METR: its TH1.1 file, models mapped to ECI names in
+    CALIBRATION_PAIRS, so they are in-sample residuals) released by then with an ECI score within
+    GAP_WINDOW points of the ECI frontier then. No such model: no row; a held month that loses its
+    models (an ECI refit moved the window) keeps its last row (a diagnostic, not a KPI series:
+    warned, not fatal). A new METR model needs its ECI name in CALIBRATION_PAIRS (that is the
+    out-of-sample check if METR resumes); refitting on it is a reviewed change (--calibrate).
+  terminal-bench-4-pass-by-release: release-cohort frontier of the Terminal-Bench 4.0 resolution
+    rate (%, any agent/effort configuration; terminal_bench.py). Its expert time estimates do not
+    predict failures, so it gives no horizon, only an independent (non-ECI) pace signal.
+  Calibration lab effects at 80% (recorded, not applied; 2026-10-17): mean residual of the 21
+  calibration pairs Anthropic +0.19 +- 0.18 doublings (8 models), OpenAI -0.16 +- 0.14 (11),
+  Google +0.13 (2); at 50% Anthropic +0.39 +- 0.12, OpenAI -0.24 +- 0.10 (Epoch, 2025-12-12:
+  ECI underpredicted Claude horizons by ~30%).
+
 SERIES CHOICES
   - obs = the model's release date (the files have no evaluation dates): "best among models
     released by that date" per the CURRENT vintage. Epoch refits ECI as benchmarks are added
@@ -97,6 +115,7 @@ from decimal import Decimal, InvalidOperation
 import common
 import kpi
 import swe_marathon
+import terminal_bench
 
 SECTION = "robots-software"
 URL = "https://metr.org/assets/benchmark_results_1_1.yaml"
@@ -113,6 +132,10 @@ HORIZONS = {SOFTWARE: ("software", "p50"), REMOTE: ("remote", "p50"), BLEND: ("b
 ECI_START = "2023-03-14"
 SWE80, SWE50 = "swe-marathon-h80-by-release", "swe-marathon-h50-by-release"
 SWE_VERSION = "v1.1"   # the suite the swe-marathon-* ids measure; another version = new ids
+# cross-checks of the frozen ECI calibration (the task-horizon driver's tripwire, data drivers.yaml)
+GAP_SWE, GAP_METR = "horizon-80-gap-swe-marathon", "horizon-80-gap-metr"
+GAP_WINDOW = 5   # ECI points below the month's ECI frontier that still count as frontier (~1 doubling)
+TB4 = "terminal-bench-4-pass-by-release"
 
 # METR TH1.1 model id -> Epoch ECI model name (models in both files; Mythos Preview, GPT-5.1
 # Codex Max and pre-2023 models have no ECI score).
@@ -382,7 +405,30 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
         for metric, q in ((SWE80, "h80"), (SWE50, "h50")):
             swm[metric].append({"id": model, "release": rel, "value": Decimal(repr(f[q])), "ci": ci})
 
-    series = {ECI: eci, RLI: rli, SWE80: steps(swm[SWE80]), SWE50: steps(swm[SWE50])}
+    # cross-checks of the calibration: monthly gaps (measured - converted), Terminal-Bench 4.0 rates
+    eci_all = [(m["release"], float(m["value"])) for m in eci_models(files[ECI_MEMBER])]
+    eci_of = {m["id"]: float(m["value"]) for m in eci_models(files[ECI_MEMBER])}
+    measured = {
+        GAP_SWE: [(m["id"], m["release"], eci_of[m["id"]], float(m["value"])) for m in swm[SWE80] if m["id"] in eci_of],
+        GAP_METR: [(mid, m["release"], eci_of[CALIBRATION_PAIRS[mid]], m["p80"]["estimate"] / 60) for m in ms
+                   if "p80" in m and (mid := m["id"]) in CALIBRATION_PAIRS and CALIBRATION_PAIRS[mid] in eci_of]}
+    src_of = {GAP_SWE: swe_marathon.INDEX_URL, GAP_METR: URL}
+    for metric, pts in measured.items():
+        gaps = gap_months(pts, eci_all, today)
+        for obs, (g, pool) in gaps.items():
+            add(metric, obs, g, 2, src_of[metric],
+                f"mean of log2(measured / ECI-converted 80% horizon) over {len(pool)} model(s) within {GAP_WINDOW} "
+                f"ECI points of the ECI frontier as of {min(kpi.obs_range(obs)[1], today)}: "
+                + ", ".join(f"{i} (ECI {e:.2f}, {h:.2f} h vs {eci_hours(e, 'p80'):.2f} h)" for i, e, h in pool))
+        for obs in sorted(held.get(metric, set()) - set(gaps)):
+            print(f"warning: {metric} {obs}: no frontier model of the current vintages; the held row stays",
+                  file=sys.stderr)
+    tb = [{"id": f"{r['model']} ({r['agent']}, effort {r['effort']})", "release": r["release"],
+           "value": Decimal(repr(r["accuracy"])),
+           "ci": f"; {r['n_trials']} trials, 95% CI +-{r['ci95']} pp"} for r in
+          terminal_bench.rows(common.fetch(terminal_bench.URL, os.path.join(fixture, "tbench") if fixture else None))]
+
+    series = {ECI: eci, RLI: rli, SWE80: steps(swm[SWE80]), SWE50: steps(swm[SWE50]), TB4: steps(tb)}
     for metric, (kind, q) in HORIZONS.items():
         if kind != "blend":
             series[metric] = eci if kind == "software" else rli_h
@@ -395,7 +441,8 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
         kind, q = HORIZONS.get(metric, ("raw", ""))
         parts = [at(eci, when), at(rli_h, when)] if kind == "blend" else [at(series[metric], when)]
         if None in parts:
-            src = swe_marathon.INDEX_URL if metric in (SWE80, SWE50) else EPOCH_URL
+            src = (swe_marathon.INDEX_URL if metric in (SWE80, SWE50) else terminal_bench.URL if metric == TB4
+                   else EPOCH_URL)
             raise SystemExit(f"{metric} {obs}: held in the ledger, but no model of the current "
                              f"{src} vintage covers that date (withdraw the rows by hand)")
         m = parts[0]
@@ -405,6 +452,10 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
         elif metric in (SWE80, SWE50):
             add(metric, obs, m["value"], 3, swe_marathon.INDEX_URL,
                 f"{tag} best by release date: {m['id']} (best configuration by h80{m['ci']})")
+        elif metric == TB4:
+            add(metric, obs, m["value"], 2, terminal_bench.URL,
+                f"{tag} best Terminal-Bench 4.0 resolution rate by model release date: {m['id']}, released "
+                f"{m['release']}{m['ci']}")
         elif kind in ("software", "remote"):
             h, what = horizon(kind, q, m)
             add(metric, obs, h, 3, EPOCH_URL, f"{tag} best by release date: {what} (released {m['release']}) "
@@ -419,12 +470,32 @@ def collect(fixture: str | None, today: dt.date, collector: str, existing=()) ->
     first = max(eci[0]["release"], rli_h[0]["release"])
     for b in (BLEND, BLEND80):
         new[b] = sorted({d for d in new[ECI] + [m["release"] for m in rli_h] if d >= first})
-    for metric in (ECI, RLI, *HORIZONS, SWE80, SWE50):
+    for metric in (ECI, RLI, *HORIZONS, SWE80, SWE50, TB4):
         for obs in new[metric]:
             emit(metric, obs, dt.date.fromisoformat(obs), True)
         for obs in sorted(held.get(metric, set()) - set(new[metric])):
             emit(metric, obs, kpi.obs_range(obs)[1], False)
     return rows
+
+
+def gap_months(pts: list[tuple], eci_all: list[tuple[str, float]], today: dt.date) -> dict[str, tuple]:
+    """{YYYY-MM: (mean gap in doublings, [(model, eci, measured h80)])} from the month of the first
+    measured model to today's: pts [(model, release, eci, measured 80% horizon h)], eci_all
+    [(release, eci)] of every ECI model (the frontier). Months without a frontier model are absent."""
+    if not pts:
+        return {}
+    out = {}
+    y, mo = map(int, min(p[1] for p in pts)[:7].split("-"))
+    while (y, mo) <= (today.year, today.month):
+        obs = f"{y:04d}-{mo:02d}"
+        end = min(kpi.obs_range(obs)[1], today)
+        top = max((e for d, e in eci_all if dt.date.fromisoformat(d) <= end), default=None)
+        pool = sorted(((i, e, h) for i, d, e, h in pts if dt.date.fromisoformat(d) <= end and top is not None
+                       and e >= top - GAP_WINDOW), key=lambda p: (-p[1], p[0]))
+        if pool:
+            out[obs] = (sum(math.log2(h / eci_hours(e, "p80")) for _, e, h in pool) / len(pool), pool)
+        y, mo = (y + 1, 1) if mo == 12 else (y, mo + 1)
+    return out
 
 
 def main() -> int:
