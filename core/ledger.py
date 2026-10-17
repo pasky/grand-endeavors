@@ -895,7 +895,26 @@ def check_section(section: str) -> tuple[list[str], list[str]]:
         errs, warns = validate_state(section, events(section), observations(section), assessments(section))
     except ValueError as e:
         return [str(e)], []
-    return errs, warns + check_notes(section, assessments(section))
+    return errs + check_kpi_spec(section, dt.date.today()), warns + check_notes(section, assessments(section))
+
+
+def check_kpi_spec(section: str, today: dt.date) -> list[str]:
+    """The KPI's assessed metric (metrics/kpi-assessment.csv) must be a registered metric that
+    is required today: else the dashboard does not headline it, bulletins skip it and its
+    new values do not make the KPI stale (required_from = a period's END, e.g. 26H2 = Dec 31)."""
+    import kpi
+    spec = kpi_assessment_spec(section)
+    if not spec:
+        return []
+    m = spec["assessed_metric"]
+    row = (kpi.load_registry(section)[0] or {}).get(m)
+    if row is None:
+        return [f"metrics/kpi-assessment.csv: assessed metric '{m}' is not in metrics/{section}.csv"]
+    if not kpi.required_active(row, today):
+        return [f"metrics/kpi-assessment.csv: assessed metric '{m}' is not required as of {today} "
+                f"(required_from '{row['required_from']}', retired_after '{row['retired_after']}'; "
+                "a period counts from its END: use the current week, e.g. {today:%G-W%V}, to require it now)"]
+    return []
 
 
 def _words(text: str) -> set[str]:

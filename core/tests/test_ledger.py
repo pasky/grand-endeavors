@@ -436,6 +436,16 @@ def main():
     kf = dict(A(id="kf", target="kpi", status="red", label="Regressing: x", made_at="2026-02-01"), basis=kb)
     case("hysteresis: a KPI status change may rest on a newer observation of its assessed metric",
          ledger.check_hysteresis("climate", [kp, kf], evs2, ledger.observations("climate")) == [])
+    case("kpi spec: an assessed metric that is not required (yet) is an error",
+         has(ledger.check_kpi_spec("climate", dt.date(2026, 10, 17)), "not required as of 2026-10-17"))
+    write_csv(f"{kpi.ROOT}/metrics/kpi-assessment.csv", ["section", "assessed_metric", "goal_direction", "trend_window",
+              "pace_benchmark", "benchmark_tier", "benchmark_source"], [["climate", "co2-mlo-monthly", "down", "x", "x", "1", "x"],
+                                                                     ["health", "nope", "up", "x", "x", "1", "x"]])
+    case("kpi spec: required from a period whose END has passed is clean, not before it",
+         ledger.check_kpi_spec("climate", dt.date(2026, 6, 30)) == []
+         and has(ledger.check_kpi_spec("climate", dt.date(2026, 6, 29)), "not required"))
+    case("kpi spec: an assessed metric missing from the registry is an error",
+         has(ledger.check_kpi_spec("health", dt.date(2026, 10, 17)), "not in metrics/health.csv"))
     os.remove(f"{kpi.ROOT}/metrics/kpi-assessment.csv")
     kpi_a = dict(A(id="k", target="kpi", label="Off track: x"), basis={k: "x" for k in ledger.BASIS_KPI})
     case("rubric: KPI assessment needs the section's spec in metrics/kpi-assessment.csv",

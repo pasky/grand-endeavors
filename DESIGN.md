@@ -181,7 +181,8 @@ a structured `basis` and verdict-bound labels. Hysteresis (a status change needs
 newer evidence, or a once-per-target `rubric_correction` / per-audit
 `audit_correction`) is enforced by
 `ledger.py check`. Each KPI's assessed metric, window and benchmark are fixed in
-`metrics/kpi-assessment.csv`. `gather/assess.sh` runs the assessment stage (called by
+`metrics/kpi-assessment.csv`; `ledger.py check` requires that metric to be registered
+and required today (`required_from` counts from the period's END). `gather/assess.sh` runs the assessment stage (called by
 gather.sh; standalone with FORCE=1 / CORRECTION=1 after a rubric change).
 
 `legacy` records were converted from the pilot-2025 reports. They are useful
