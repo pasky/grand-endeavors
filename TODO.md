@@ -28,27 +28,11 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       non-commercial use: consider asking data@manifold.markets.
 
 - [ ] 🤖 **The task-horizon tripwire has one live source** (owner decision 2026-10-17, option D,
-      data drivers.yaml): it needs two measured gap series beyond one doubling, but only
-      SWE-Marathon (`horizon-80-gap-swe-marathon`) measures hours at the ECI frontier;
-      METR's gap series ended 2026-03 (it resumes if METR publishes: add the model's ECI name to
-      robots_software.py CALIBRATION_PAIRS). Add a second source when one appears.
-      **Acceptance test** for a candidate suite (all three, or it cannot measure hours):
-      (1) public per-trial (or per-task) results of frontier models, and a human time per task;
-      (2) the hours must predict failure: fit METR's logistic per configuration
-      (`swe_marathon.fit()` takes any trials + hours) and require a slope beta >= 0.25 for most
-      configurations (METR's cut-off, "How does time horizon vary across domains", 2025-07-14;
-      METR's own suite ~0.6, SWE-Marathon ~0.8); (3) it resolves the frontier: its tasks span the
-      frontier's 80% horizon (~8 h in 2026-10) widely, with many tasks between always-solved and
-      never-solved, and its models have ECI scores.
-      **Already checked and rejected (2026-10-17):** Terminal-Bench 4.0 fails (2): its per-trial
-      results are public (hub.harborframework.com leaderboard rows, `?page=N`), but in 30 of 35
-      configurations the fitted slope is <= 0 (success does not fall with the task-author
-      estimates, 0.75-60 h), median 0.04 for the rest; so only its pass rate is tracked
-      (terminal_bench.py). SWE-bench Verified fails (3): tasks <= ~4 h, saturated, and Epoch
-      stopped running it in 2026-06. GDPval, OSWorld 2.0, FrontierSWE, FrontierCode, DeepSWE,
-      APEX-Agents, GSO, TheAgentCompany, SWE-Lancer fail (1): no per-task human times and/or
-      no per-task results. Terminal-Bench 2.0 and RLI have aggregate scores only (an assumed
-      slope, not a measurement). MirrorCode: no task-length distribution.
+      data drivers.yaml): only SWE-Marathon measures hours at the ECI frontier (METR's gap
+      series resumes if METR does: add the model to robots_software.py CALIBRATION_PAIRS).
+      A second source needs per-trial results, hours that predict failure (METR's logistic
+      slope >= 0.25 for most configurations, via `swe_marathon.fit()`) and tasks spanning the
+      frontier horizon. Terminal-Bench 4.0 fails the slope test (terminal_bench.py docstring).
 
 ## Owner decisions
 
