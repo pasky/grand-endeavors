@@ -40,6 +40,7 @@ import calendar
 import datetime as dt
 import html
 import json
+import math
 import os
 import re
 import sqlite3
@@ -493,6 +494,39 @@ details>summary:hover::before{background:var(--acc)}details>summary:hover::after
 details[open]>summary::after{transform:rotate(90deg)}
 li.topic summary,.kpid summary{color:var(--ink)}
 li.topic{border-bottom:1px solid var(--line)}ul.topics{margin:0 0 4px}
+/* milestones: a sequence = a numbered rail; parallel = cards (an open one spans the row) */
+ol.topics{list-style:none;padding:0;margin:4px 0;counter-reset:step}
+ol.seq>li.topic{position:relative;padding-left:32px;counter-increment:step;border:0}
+ol.seq>li.topic::before{content:counter(step);position:absolute;left:0;top:7px;width:22px;height:22px;
+border:2px solid var(--mute);border-radius:50%;color:var(--mute);font:700 12px/18px system-ui,sans-serif;text-align:center}
+ol.seq>li.topic:not(:last-child)::after{content:"";position:absolute;left:10px;top:31px;bottom:-5px;width:2px;background:var(--line)}
+ul.par{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin:8px 0}
+ul.par>li.topic{border:1px solid var(--line);border-radius:10px;padding:0 10px 0 8px;background:var(--tile)}
+ul.par>li.topic:has(details[open]){grid-column:1/-1}
+/* the milestone timeline */
+.ec{position:relative;--lw:12em;margin:8px 0 6px;font-size:13px}
+.eg{position:absolute;top:0;bottom:18px;left:calc(var(--lw) + 8px);right:8px;pointer-events:none}
+.eg i{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.eg .lz{position:absolute;top:0;bottom:0;right:0;background:repeating-linear-gradient(135deg,transparent 0 4px,var(--line) 4px 5px);opacity:.6}
+.er{display:grid;grid-template-columns:var(--lw) 1fr;align-items:center;height:26px}
+.en{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;padding-right:10px;
+font-weight:600;color:var(--ink);text-decoration:none}.en:hover{color:var(--acc)}
+.et{position:relative;height:100%;margin:0 8px}
+.e-green{--c:var(--green)}.e-yellow{--c:var(--yellow)}.e-red{--c:var(--red)}.e-achieved{--c:var(--green)}
+.e-unknown,.e-none{--c:var(--unk)}
+.eb{position:absolute;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:var(--c);opacity:.35}
+.ed{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--c);
+border:2px solid var(--c);box-sizing:border-box}.ed.ho{background:var(--card)}
+.ena{position:absolute;top:50%;transform:translateY(-50%);color:var(--mute);font-size:12px}
+.dep{position:absolute;top:-7px;height:20px;border:0 solid var(--mute);border-width:0 0 1.5px 1.5px}
+.dep.l{border-width:0 1.5px 1.5px 0}.dep.d{height:12px;border-width:0 0 0 1.5px}
+.dep::after{content:"";position:absolute;border:4px solid transparent}
+.dep.r::after{right:-7px;bottom:-4.75px;border-left:7px solid var(--mute);border-right:0}
+.dep.l::after{left:-7px;bottom:-4.75px;border-right:7px solid var(--mute);border-left:0}
+.dep.d::after{left:-4.75px;bottom:-6px;border-top:7px solid var(--mute);border-bottom:0}
+.ea{height:18px}.ea .et span{position:absolute;top:2px;transform:translateX(-50%);font-size:11px;color:var(--mute);white-space:nowrap}
+.nd.seq .dot{margin-right:0}.nd .lk{display:inline-block;width:6px;height:2px;background:var(--mute);margin:0 1px}
+.cm.seq li{position:relative}.cm.seq li:not(:last-child)::after{content:"";position:absolute;left:4px;top:16px;height:8px;width:2px;background:var(--mute)}
 .st{display:block;font-size:13px}ul.md{list-style:disc;padding-left:22px;margin:4px 0}
 h4{font-size:12px;color:var(--mute);margin:10px 0 4px}.ass{margin:6px 0}
 dl.basis{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;font-size:13px;margin:6px 0}
@@ -524,7 +558,7 @@ body:not(:has(.pane:target,.pane :target)) .nv.ov,body:has(#intro:target) .nv.ov
 @media (max-width:1280px){body{grid-template-columns:248px minmax(0,1fr)}
 .stream{grid-column:2;position:static;height:auto;border-left:0;background:none;padding:0 28px 24px}
 .dh{position:static;background:none}}
-@media (max-width:780px){html{scroll-padding-top:64px}body{display:block}main{padding:12px}
+@media (max-width:780px){html{scroll-padding-top:64px}.ec{--lw:8.5em}.ea .mn{display:none}body{display:block}main{padding:12px}
 .side{position:sticky;top:0;z-index:5;height:auto;display:flex;overflow-x:auto;gap:4px;padding:6px;
 border-right:0;border-bottom:1px solid var(--line)}
 .brand,.ng,.nleg,.nk{display:none}.nv{flex:none;padding:4px 8px}.nd{margin-left:26px}
@@ -903,6 +937,102 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
             f'<div class="more">{body}</div></details></li>')
 
 
+# The milestone timeline's time axis runs from the as-of date to 2100, compressed (log of
+# 1 + years-from-now / ETA_K): next year gets room, 2075 vs 2080 does not, so near and far
+# milestones share one axis. Right of 2100, a zone for medians after 2100.
+ETA_K = 2.0
+ETA_LATER = 9.0  # % of the track
+ETA_TICKS = (2027, 2028, 2030, 2035, 2040, 2050, 2060, 2075, 2100)
+ETA_MAJOR = (2030, 2050)  # the tick labels kept on a phone
+
+
+def sequential(fsec: dict | None) -> bool:
+    """framework.yaml milestones_order: a sequence (each after the one before) or parallel."""
+    return (fsec or {}).get("milestones_order") == "sequence"
+
+
+def _eta(m: sqlite3.Row | None) -> dict | None:
+    """A milestone assessment's forecast (rubric v2+: p10/p50/p90 years, p_achieved by 2100)."""
+    if not (m and m["assessment_id"]):
+        return None
+    eta = (json.loads(m["basis"] or "null") or {}).get("eta")
+    if not isinstance(eta, dict) or "p50" not in eta:
+        return None
+    year = lambda v: v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+    return {k: year(eta.get(k)) for k in ("p10", "p50", "p90", "p_achieved")}
+
+
+def eta_x(year: float | None, now: float) -> float:
+    """Position (% of the track) of a year on the timeline; None = after 2100."""
+    if year is None or year > 2100:
+        return 100 - ETA_LATER / 2
+    span = math.log1p(max(2100 - now, 1) / ETA_K)
+    return (100 - ETA_LATER) * math.log1p(min(max(year - now, 0), 2100 - now) / ETA_K) / span
+
+
+def eta_chart(sec: str, items: list, by_topic: dict, seq: bool, as_of: dt.date) -> str:
+    """The milestones on one (compressed) time axis: dot = median year (hollow: after 2100),
+    bar = 80% range. A sequence keeps its order, with arrows from each milestone to the
+    next; parallel milestones are sorted soonest first."""
+    now = as_of.year + (as_of.timetuple().tm_yday - .5) / 365.25
+    rows = [(it, m, _eta(m)) for it in items for m in [by_topic.get(f"milestone:{it['slug']}")]]
+    done = lambda m: bool(m and m["assessment_id"] and m["status"] == "achieved")
+    if not any(e or done(m) for _, m, e in rows):
+        return ""
+    if not seq:
+        rows.sort(key=lambda r: (0, 0) if done(r[1]) else (1, r[2]["p50"]) if r[2] and r[2]["p50"]
+                  else (2, -(r[2]["p_achieved"] or 0)) if r[2] else (3, 0))
+    mid = lambda y: None if y is None else y + .5  # a year's dot sits mid-year
+    out, prev = [], None
+    for it, m, e in rows:
+        st = m["status"] if m and m["assessment_id"] else "none"
+        x, marks = None, []
+        if done(m):
+            x, tip = 0.0, f'{it["name"]}: achieved'
+        elif e:
+            x = eta_x(mid(e["p50"]), now)
+            pa = f'; {round(100 * e["p_achieved"])}% chance by 2100' if e["p_achieved"] is not None else ""
+            tip = (f'{it["name"]}: median {e["p50"] or "after 2100"}, 80% range {e["p10"] or "?"}–'
+                   f'{e["p90"] or "after 2100"}{pa}')
+            if e["p10"]:
+                a = eta_x(mid(e["p10"]), now)
+                b = eta_x(mid(e["p90"]), now) if e["p90"] else 100.0
+                marks.append(f'<i class="eb" style="left:{a:.1f}%;width:{max(b - a, .6):.1f}%"></i>')
+        if x is None:
+            marks.append('<span class="ena">no ETA yet</span>')
+        else:
+            hollow = " ho" if e and not done(m) and e["p50"] is None else ""
+            marks.append(f'<i class="ed{hollow}" style="left:{x:.1f}%" title="{esc(tip)}"></i>')
+        if seq and prev is not None and x is not None:
+            if abs(x - prev) < 2:  # straight down
+                marks.append(f'<i class="dep d" style="left:{prev:.1f}%"></i>')
+            elif x > prev:
+                marks.append(f'<i class="dep r" style="left:{prev:.1f}%;width:calc({x - prev:.1f}% - 8px)"></i>')
+            else:  # earlier than its predecessor: the arrow runs back
+                marks.append(f'<i class="dep l" style="left:calc({x:.1f}% + 8px);width:calc({prev - x:.1f}% - 8px)"></i>')
+        prev = x
+        out.append(f'<div class="er e-{esc(st)}"><a class="en" href="#t-{esc(sec)}-milestone-{esc(it["slug"])}" '
+                   f'title="{esc(it["name"])}">{plain_md(it["name"])}</a><div class="et">{"".join(marks)}</div></div>')
+    ticks, last = [], -99.0
+    for y in ETA_TICKS:
+        x = eta_x(y, now)
+        if x >= 6 and x - last >= 7:
+            ticks.append((y, x))
+            last = x
+    grid = ("".join(f'<i style="left:{x:.1f}%"></i>' for _, x in ticks)
+            + f'<b class="lz" style="left:{100 - ETA_LATER:.1f}%"></b>')
+    axis = ('<span style="left:0;transform:none">now</span>'
+            + "".join(f'<span{"" if y in ETA_MAJOR else ' class="mn"'} style="left:{x:.1f}%">{y}</span>'
+                      for y, x in ticks)
+            + f'<span style="left:100%;transform:translateX(-100%)">later</span>')
+    cap = ("Expected year: dot = median (hollow: after 2100), bar = 80% range"
+           + ("; arrows: each milestone is expected after the one before" if seq else "")
+           + ". The time axis is compressed: the farther out, the more years per step.")
+    return (f'<div class="ec{" seq" if seq else ""}"><div class="eg">{grid}</div>{"".join(out)}'
+            f'<div class="er ea"><span></span><div class="et">{axis}</div></div></div>'
+            f'<div class="mute small">{cap}</div>')
+
+
 def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -> str:
     tiles = db.execute("SELECT * FROM latest_kpi WHERE section=? AND NOT retired "
                        "ORDER BY required DESC, metric", (sec,)).fetchall()
@@ -1007,9 +1137,17 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
             if framework:
                 out.append(f'<h3>{esc(title)}</h3><div class="gap">none listed in the framework</div>')
             continue
-        out.append(f'<h3>{md_inline(title)}</h3><ul class="topics">')
-        out += [topic_li(db, sec, it, by_topic.get(f"{kind}:{it['slug']}"), kind, names, succ, shown) for it in items]
-        out.append("</ul>")
+        lis = [topic_li(db, sec, it, by_topic.get(f"{kind}:{it['slug']}"), kind, names, succ, shown) for it in items]
+        if kind == "challenge":
+            out.append(f'<h3>{md_inline(title)}</h3><ul class="topics">{"".join(lis)}</ul>')
+            continue
+        seq = sequential(fsec)
+        as_of = D(db.execute("SELECT value FROM build_info WHERE key='as_of'").fetchone()[0])
+        out.append(f'<h3>{md_inline(title)}</h3><div class="mute small">'
+                   + ("A sequence: each milestone is expected after the one before it." if seq else
+                      "Independent fronts: these can fall in any order.") + "</div>"
+                   + eta_chart(sec, items, by_topic, seq, as_of)
+                   + (f'<ol class="topics seq">{"".join(lis)}</ol>' if seq else f'<ul class="topics par">{"".join(lis)}</ul>'))
 
     evs = db.execute("SELECT * FROM current_events WHERE section=? "
                      "ORDER BY known_at DESC, date_end DESC, significance DESC, id DESC", (sec,)).fetchall()
@@ -1144,6 +1282,9 @@ def legend_html() -> str:
         f"<li>{dot(None)}<b>not yet assessed</b></li></ul>"
         "<p>A KPI's status is its <i>pace</i> toward the goal versus the pace the goal needs, not its level. "
         "A milestone's status is its evidence-based ETA. A status changes only on newer evidence.</p>"
+        "<p>An endeavor's milestones are either a <b>sequence</b> (each expected after the one before: "
+        "numbered, joined by a line) or <b>independent fronts</b> (any order: cards). Its timeline puts "
+        "them on one time axis: the median year and the 80% range of each ETA.</p>"
         "<p>Everything shown comes from an append-only <b>ledger</b> of verified facts, each with its "
         "sources and the date it became public. "
         f'{badge("verified")} / {badge("corrected")}: checked against the source at intake. '
@@ -1178,8 +1319,9 @@ def topic_dot(m: sqlite3.Row) -> str:
     return dot(st, f'{m["name"]}: {m["label"] if st else "not yet assessed"}')
 
 
-def glance(db: sqlite3.Connection, sec: str, as_of: dt.date) -> dict:
-    """The at-a-glance facts of a section: KPI status + headline metric, milestones, activity."""
+def glance(db: sqlite3.Connection, sec: str, as_of: dt.date, seq: bool = False) -> dict:
+    """The at-a-glance facts of a section: KPI status + headline metric, milestones (seq: a
+    sequence), activity."""
     ms = db.execute("SELECT * FROM milestone_status WHERE section=? ORDER BY ord", (sec,)).fetchall()
     # headline: a required metric (with data first); else one that becomes required later
     req = db.execute("SELECT k.* FROM latest_kpi k JOIN metrics m USING (section, metric) WHERE k.section=? "
@@ -1194,7 +1336,7 @@ def glance(db: sqlite3.Connection, sec: str, as_of: dt.date) -> dict:
             weeks[ACTIVITY_WEEKS - 1 - w] += 1
     km = next((m for m in ms if m["kind"] == "kpi"), None)
     return {"km": km if km and km["assessment_id"] else None,
-            "mils": [m for m in ms if m["kind"] == "milestone"],
+            "mils": [m for m in ms if m["kind"] == "milestone"], "seq": seq,
             "n_ch": sum(m["kind"] == "challenge" for m in ms),
             "head": req[0] if req else None, "n_ev": n_ev, "last": last, "weeks": weeks,
             # a section without a KPI: its indicators with data, its major events
@@ -1262,9 +1404,10 @@ def nav_rows(db, sec: str, g: dict, has_kpi: bool) -> str:
     a KPI (a supplemental section: no one value stands for it)."""
     if not has_kpi:
         return ""
-    dots = "".join(topic_dot(m) for m in g["mils"])
+    dots = ('<i class="lk"></i>' if g["seq"] else "").join(topic_dot(m) for m in g["mils"])
     return (f'<span class="nk">{_kpi_dot(g)}{_headline(db, g, 70, 16, "left")}</span>'
-            + (f'<span class="nd" title="milestones">{dots}</span>' if dots else ""))
+            + (f'<span class="nd{" seq" if g["seq"] else ""}" title="milestones'
+               f'{", in sequence" if g["seq"] else ""}">{dots}</span>' if dots else ""))
 
 
 def nav_item(db, sec: str, title: str, g: dict, covered: bool, has_kpi: bool, as_of: dt.date) -> str:
@@ -1305,7 +1448,7 @@ def card_track(db, kpi_line: str, g: dict) -> str:
         out = (f'<div class="ck">KPI: {plain_md(kpi_line)}</div><div class="cv">{_headline(db, g, 120, 26)}</div>'
                f'<div class="cs">{status}</div>')
     mils = "".join(f'<li>{topic_dot(m)}{plain_md(m["name"])}</li>' for m in g["mils"])
-    return out + (f'<ul class="cm">{mils}</ul>' if mils else "")
+    return out + (f'<ul class="cm{" seq" if g["seq"] else ""}">{mils}</ul>' if mils else "")
 
 
 def card_foot(m: dict, as_of: dt.date) -> str:
@@ -1447,7 +1590,7 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
     for e in fw["endeavors"]:
         if "sections" in e and not e.get("supplemental"):
             gid = slug(e["title"])
-            tracks = [(fs["id"], fs["title"], glance(db, fs["id"], as_of), secs[fs["id"]]["kpi"], fs)
+            tracks = [(fs["id"], fs["title"], glance(db, fs["id"], as_of, sequential(fs)), secs[fs["id"]]["kpi"], fs)
                       for fs in e["sections"] if fs["id"] in secs]
             if not tracks:
                 continue
@@ -1470,7 +1613,7 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
             sec = fs["id"]
             if sec not in secs:
                 continue
-            g = glance(db, sec, as_of)
+            g = glance(db, sec, as_of, sequential(fs))
             (supp_nav if supp else nav).append(nav_item(db, sec, fs["title"], g, cov(sec), bool(secs[sec]["kpi"]), as_of))
             (supp_cards if supp else cards).append(card(db, sec, fs["title"], secs[sec]["kpi"], g, as_of))
             panes.append(section_html(db, secs[sec], fs, covered=cov(sec), crumb=e["title"] if supp else "",
@@ -1514,7 +1657,7 @@ def _dashboard_html(db: sqlite3.Connection, as_of: dt.date, fw: dict, period: st
                 ("green", "on track"), ("yellow", "behind pace"), ("red", "off track"), ("achieved", "achieved"),
                 ("unknown", "unassessed"), (None, "not yet assessed")))
             + "<p>Per endeavor: the KPI's status dot and latest value (the series since the year shown), "
-              "then one dot per milestone.</p><p>"
+              "then one dot per milestone (joined when they form a sequence).</p><p>"
             + "".join(f'<span class="rc {c}">{t}</span> ' for c, t in (("r-hot", "≤ 1 week"), ("r-warm", "≤ 1 month"),
                                                                      ("r-cold", "older")))
             + "<br>how long ago its latest news was published</p></div></nav>")

@@ -42,7 +42,7 @@ phone the navigation becomes a strip on top).
   older); the KPI status dot with the latest value of its headline metric (the
   first required one, or one required from a later period) and its series
   (labelled with the year it starts); one status dot per milestone (hover:
-  name and status label). An endeavor of several sections (Robots and
+  name and status label), joined by a line when the milestones are a sequence. An endeavor of several sections (Robots and
   Automation) is one item with a sub-item per section (Software, Hardware);
   the supplemental sections are listed apart, under "Supplemental", by title
   and news freshness only (no KPI, so no one value stands for them).
@@ -70,7 +70,7 @@ to read this page" (the status colours, KPI vs milestone status, verified vs
 legacy, what "as of" means), then **At a glance**: a card per endeavor (Robots
 and Automation: its two sections side by side) with how fresh its news is, the
 KPI definition, the latest value and its series, the KPI status label, the
-milestones with their dots, the event and challenge counts, and the news per
+milestones with their dots (a sequence: joined by a line), the event and challenge counts, and the news per
 week over the last 16 weeks; the supplemental sections' cards follow apart,
 with their first four indicators (latest value, the period it is for) and their
 three latest major (significance 3) events instead of a KPI.
@@ -101,8 +101,22 @@ section with its own activity line), then:
     assessed quantity, data window, benchmark, rubric rule, ETA method and
     calculation, …); its cited
     evidence, and the other KPI-tagged events.
-- **Milestone Countdown**: per milestone its status dot, name and definition,
-  then the status label, assessment date and event count. Expanded: the
+- **Milestone Countdown**: whether the milestones are a **sequence** (each
+  expected after the one before; `milestones_order: sequence` in
+  framework.yaml: Rockets, Fusion, Climate) or **independent fronts** (the
+  default), then the **timeline**: every milestone's ETA on one time axis,
+  a dot at the median year (hollow: after 2100) and a bar over the 80% range,
+  coloured by status (an achieved one sits at "now"; one without an ETA says
+  so). A sequence keeps the framework order, with an arrow from each
+  milestone to the next (pointing back when a step's median comes before its
+  predecessor's); independent fronts are sorted soonest first. The axis runs
+  from the as-of date to 2100, compressed (log of 1 + years from now / 2), so
+  near and far milestones fit: next year gets room, 2075 vs 2080 does not;
+  medians after 2100 sit in a hatched zone at the right end. A phone keeps
+  the 2030 and 2050 labels only. Milestone names link to their entries.
+  Then the entries: a sequence as a numbered rail, independent fronts as
+  cards (an opened card spans the row). Each shows its status dot, name and
+  definition, then the status label, assessment date and event count. Expanded: the
   precise criteria, the assessment (as for the KPI), the **cited evidence** (every event the assessment cites,
   whatever its topic tags; one superseded or withdrawn since is flagged), then
   the milestone's latest 5 other events, with a link to the rest in the event

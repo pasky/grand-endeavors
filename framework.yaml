@@ -7,7 +7,10 @@
 #   endeavors: list of sections or groups (a group has `sections:`; a
 #     `supplemental: true` group holds sections outside the five endeavors).
 #   section: id (= ledger section, core/ledger.py SECTIONS), title, intro?,
-#     kpi?, milestones?, challenges_heading?, challenges?
+#     kpi?, milestones?, milestones_order?, challenges_heading?, challenges?
+#   milestones_order: sequence (each milestone is expected after the one before it, in the
+#     listed order; shown as a numbered chain with arrows) or parallel (the default:
+#     independent fronts that can fall in any order)
 #   milestone / challenge: slug, name, description, details? (sub-bullets:
 #     precise criteria, or tech-tree branches), assumes? (milestones: a gate
 #     in the wording that is not the point, e.g. an editorial policy; the ETA
@@ -195,6 +198,7 @@ endeavors:
     kpi: >-
       Cost to LEO ($/kg): the cheapest published price per kg to low Earth orbit of a dedicated
       launch among the rockets in service, inflation-adjusted (constant 2025 $)
+    milestones_order: sequence
     milestones:
       - slug: the-deluge
         name: The Deluge
@@ -252,6 +256,7 @@ endeavors:
     kpi: >-
       Worldwide average household (retail) electricity price ($/MWh): what people actually pay,
       population- or consumption-weighted where available, inflation-adjusted (real $)
+    milestones_order: sequence
     milestones:
       - slug: the-first-watt
         name: The First Watt
@@ -401,6 +406,7 @@ endeavors:
       Antarctica, but humanity messed up the Earth. Many historic civilizations fell to climate
       change, and we now have to clean up our mess if we are to survive into a better future.
     kpi: Atmospheric CO₂ concentration (ppm) and 10-year trend (ppm/year)
+    milestones_order: sequence
     milestones:
       - slug: the-bend
         name: The Bend
