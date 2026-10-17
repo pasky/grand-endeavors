@@ -447,8 +447,9 @@ def main():
     kf = dict(A(id="kf", target="kpi", status="red", label="Regressing: x", made_at="2026-02-01"), basis=kb)
     case("hysteresis: a KPI status change may rest on a newer observation of its assessed metric",
          ledger.check_hysteresis("climate", [kp, kf], evs2, ledger.observations("climate")) == [])
-    case("kpi spec: an assessed metric that is not required (yet) is an error",
-         has(ledger.check_kpi_spec("climate", dt.date(2026, 10, 17)), "not required as of 2026-10-17"))
+    case("kpi spec: an assessed metric that is not required (yet) is an error; the hint names an ended week",
+         has(ledger.check_kpi_spec("climate", dt.date(2026, 10, 17)), "not required as of 2026-10-17")
+         and has(ledger.check_kpi_spec("climate", dt.date(2026, 10, 17)), "last week 2026-W41"))
     write_csv(f"{kpi.ROOT}/metrics/kpi-assessment.csv", ["section", "assessed_metric", "goal_direction", "trend_window",
               "pace_benchmark", "benchmark_tier", "benchmark_source"], [["climate", "co2-mlo-monthly", "down", "x", "x", "1", "x"],
                                                                      ["health", "nope", "up", "x", "x", "1", "x"]])

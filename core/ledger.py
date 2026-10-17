@@ -963,7 +963,8 @@ def check_kpi_spec(section: str, today: dt.date) -> list[str]:
     if not kpi.required_active(row, today):
         return [f"metrics/kpi-assessment.csv: assessed metric '{m}' is not required as of {today} "
                 f"(required_from '{row['required_from']}', retired_after '{row['retired_after']}'; "
-                "a period counts from its END: use the current week, e.g. {today:%G-W%V}, to require it now)"]
+                f"a period counts from its END: use one that has ended, e.g. last week "
+                f"{today - dt.timedelta(days=7):%G-W%V}, to require it now)"]
     return []
 
 
