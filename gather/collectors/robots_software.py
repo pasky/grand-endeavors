@@ -52,6 +52,11 @@ CONVERSIONS (frozen; changing one changes what the horizon ids mean -> new ids)
     residual sd 0.46 doublings; p80 4.492, R^2 0.966, 0.49. Frontier ECI above the top
     calibration pair (156.76) is an extrapolation. METR's series is discontinued, so this
     overlap will not grow; new calibration points must come from our own horizon fits (TODO.md).
+    ECI is a general index (maths, knowledge, games, software, professional work) whose inputs
+    include METR's horizons and RLI themselves; refitting ECI without them moves no model by more
+    than 0.22 points (data ledger/audits/2026-10-18-eci-overlap). Only GPT-5.3 Codex matters: it
+    has 4 ECI benchmarks, one of them METR, and dropping that pair gives 4.38 ECI points per
+    doubling and a frontier horizon 14% higher (within the prediction error).
   remote work: METR's method for benchmarks with only an overall score ("How Does Time
     Horizon Vary Across Domains?", METR 2025-07-14): P(success on a task of human length t)
     = 1 / (1 + exp(-BETA * (log2 h - log2 t))) with METR's average slope BETA = 0.6 per
