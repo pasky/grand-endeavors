@@ -67,7 +67,7 @@ A status answers a different question for each kind of target:
 These are real assessments made on 2026-09-30.
 
 **Climate KPI (red).** Label: "Regressing: 427.35 ppm (2025); 10-yr growth 2.56 vs 2.15
-ppm/yr, need <=1.79 (tier 1)".
+ppm/yr, need <=1.79" (its benchmark tier, 1, is in basis.benchmark).
 - The goal is for atmospheric CO₂ to stop accumulating, so the assessed
   quantity is its growth rate, not the ppm level.
 - The 10-year mean growth was 2.56 ppm/yr for 2016–2025, against 2.15 for
@@ -112,7 +112,7 @@ is no KPI assessment (status unknown).
   Judge the current window against the previous non-overlapping window (or
   half-windows), never two adjacent points.
 - **Benchmark**: use the first tier that is available, and cite the tier and
-  source every time:
+  source every time (in basis.benchmark and basis.benchmark_source):
   1. an external required path for the endeavor goal;
   2. the pace implied by the nearest milestone at its stated horizon;
   3. the KPI's own long-run trend (≥ 5 years).
@@ -435,7 +435,27 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
 - **label** = "<Verdict>: <level>, <trend> vs <benchmark>", at most 100 chars.
   \* The verdict word must be one of those bound to the status (table in §1).
   It must also match the window trend: no "Worsening" when nothing worsened.
-- **rationale**: prose that is consistent with the basis.
+  Write it for a reader who knows only the KPI's name: plain units and words
+  ("Ahead: 1.8 h (Sep 2026), doubling every ~3 months vs ≤7 needed"), no
+  metric ids, no "OLS", no "(tier 3)" (the tier is in basis.benchmark).
+- **rationale**: the dashboard shows it, always visible, under the label, as
+  the answer to "why this status?". Write it for a general reader, in 2–4
+  sentences, consistent with the basis: (1) where the quantity stands and how
+  fast it moves, in plain units; (2) the pace needed (the benchmark, by name)
+  and hence the status; (3) what changed since the previous assessment, if
+  anything; (4) the one caveat that matters most. Name a source by what it is
+  ("Epoch's capability index"), not by an event id. No metric or event ids,
+  commit hashes, file names, commands, CI arithmetic or robustness lists, and
+  no run bookkeeping ("nothing new since…", "the same points give the same
+  statistics"): those go in the basis (`window`, `change_note`), which the
+  dashboard folds under "How the status was judged".
+- **basis.window** (KPI) is rendered as structure: nested objects as nested
+  lists, an object of date (or period) → number as a row of data cells. Keep
+  the data points in such an object, statistics as numbers (not numbers inside
+  strings) under short snake_case keys (`doubling_months_ols`), and prose
+  (method, robustness, source) in its own keys.
+- **change_note**: what moved since the previous assessment and why (or that
+  nothing did); process detail (series byte-identical, ids, gaps) belongs here.
 - **evidence**: the ids of the events relied on. Only `unknown` may have none.
   \* Cite effective records only (§4.1 step 2), here and in `basis.eta.calc`:
   never one superseded by the made_at date, and no withdrawal tombstone as evidence.

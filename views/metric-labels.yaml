@@ -8,6 +8,20 @@
 # its overview card leaves them out.
 _inputs:
   knowledge-beyond: [qday-rsa2048-qubits-needed, qday-largest-device-qubits]
+# _groups: per section, a KPI pane's tiles in named groups (title, optional note, metrics in
+# display order), shown after the required tiles; the section's other metrics fold under
+# "more metrics we track".
+_groups:
+  robots-software:
+    - title: The KPI and its two components
+      note: "KPI = √(software × remote work)"
+      metrics: [horizon-80-blended, horizon-80-software-eci, horizon-80-remote-rli]
+    - title: The indices they are converted from
+      metrics: [eci-frontier-by-release, rli-automation-by-release]
+    - title: Cross-checks
+      note: measured horizons and an independent benchmark, not part of the KPI
+      metrics: [swe-marathon-h80-by-release, horizon-80-gap-swe-marathon, horizon-80-gap-metr,
+                terminal-bench-4-pass-by-release]
 robots-software:
   horizon-80-blended: AI task horizon at 80% success, software and remote work blended
   swe-marathon-h80-by-release: AI software task horizon at 80% success, measured on SWE-Marathon

@@ -476,7 +476,12 @@ def main():
              explore.md_inline("**b** *i* <x> [t](https://a.b/?q=1&r=2) [j](javascript:x)")
              == '<b>b</b> <i>i</i> &lt;x&gt; <a href="https://a.b/?q=1&amp;r=2" target="_blank" '
                 'rel="noopener noreferrer">t</a> [j](javascript:x)'
-             and explore.md_block("a\nb\n\n* x\n* y") == '<p>a b</p><ul class="md"><li>x</li><li>y</li></ul>')
+             and explore.md_block("a\nb\n\n* x\n* y") == '<p>a b</p><ul class="md"><li>x</li><li>y</li></ul>'
+             and explore.md_block("- x\n  wraps\n- y") == '<ul class="md"><li>x wraps</li><li>y</li></ul>')
+        bh = explore.basis_html({"points": {"2025-06": 0.0431234, "2026-01": 2}, "fit": {"r2": 0.98612, "ci": [1, 2.5]}})
+        case("basis as structure: a period -> number object as data cells, nested keys in words, numbers rounded",
+             '<span class="ser"><span><i>2025-06</i>0.04312</span><span><i>2026-01</i>2</span></span>' in bh
+             and "<dt>R\u00b2</dt><dd>0.9861</dd><dt>CI</dt><dd>1, 2.5</dd>" in bh)
 
         # --- layout: sidebar navigation, one pane per endeavor, news stream ---------------
         nav = page[page.index('<nav class="side">'):page.index("</nav>")]
@@ -602,7 +607,7 @@ def main():
                                       "rationale": "R.", "by": "b", "evidence": "[]",
                                       "basis": json.dumps({"eta": "5-10 years", "window": {"n_points": 9}})})
         case("assessment basis: the outlook shown, how it was assessed folded",
-             ah.index("5-10 years") < ah.index('<details class="tech">') < ah.index("n points: 9"))
+             ah.index("5-10 years") < ah.index('<details class="tech">') < ah.index("<dt>N points</dt><dd>9</dd>"))
         bars = explore.activity_bars([0, 2, 1], D("2026-09-28"))
         case("activity bars: one per week, empty weeks marked",
              bars.count("<rect") == 3 and bars.count('class="z"') == 1 and "2026-09-28: 0, 2, 1" in bars)
@@ -624,6 +629,11 @@ def main():
              and f'#{explore.topic_anchor(topic)}">+{len(tevs) - 1} older event(s)' in one)
         case("cap does not apply to cited evidence",
              all(claim(e) in allcited for e in tevs) and "older event(s)" not in allcited)
+        oldfirst = explore.evidence_and_events(
+            db, "climate", topic, {"assessment_id": "x", "evidence": json.dumps([e["id"] for e in tevs][::-1])},
+            {}, {}, set())
+        case("cited evidence newest first, whatever the citation order",
+             oldfirst.index(claim(tevs[0])) < oldfirst.index(claim(tevs[-1])))
         db.close()
 
         write(out, "events-personal.html", "not ours")

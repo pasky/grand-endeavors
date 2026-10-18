@@ -527,7 +527,13 @@ border:2px solid var(--c);box-sizing:border-box}.ed.ho{background:var(--card)}
 .st{display:block;font-size:13px}ul.md{list-style:disc;padding-left:22px;margin:4px 0}
 h4{font-size:12px;color:var(--mute);margin:10px 0 4px}.ass{margin:6px 0}
 dl.basis{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;font-size:13px;margin:6px 0}
-dl.basis dt{color:var(--mute)}dl.basis dd{margin:0}.b-cited{color:var(--acc)}
+dl.basis dt{color:var(--mute)}dl.basis dd{margin:0;min-width:0}.b-cited{color:var(--acc)}
+dl.basis.sub{margin:0 0 4px;padding-left:8px;border-left:2px solid var(--line);grid-template-columns:fit-content(13em) minmax(0,1fr)}
+dl.basis dt{overflow-wrap:anywhere}
+.ser{display:flex;flex-wrap:wrap;gap:2px;margin:2px 0}.ser>span{border:1px solid var(--line);border-radius:4px;
+padding:0 5px;font-size:12px;text-align:right;line-height:1.35}.ser i{display:block;font-style:normal;font-size:10.5px;color:var(--mute)}
+.kst{margin:8px 0 2px;font-size:15px}p.why{margin:4px 0 8px}h4.tg{margin:12px 0 2px}.tgn{font-weight:400}
+.about .md p{margin:6px 0}.about .md li{margin:3px 0}
 footer{margin:24px 0}.news{margin-top:10px}li.ev.ref,li.ev.more-ev{font-size:13px;padding:3px 0}
 /* event log pages: one plain column */
 body.log{display:block}body.log header,body.log main{max-width:980px;margin:0 auto;padding:16px}
@@ -586,6 +592,9 @@ def _metric_labels() -> dict[str, dict[str, str]]:
 
 METRIC_LABELS = _metric_labels()
 METRIC_INPUTS: dict[str, list[str]] = METRIC_LABELS.pop("_inputs", None) or {}  # section -> fine-print metrics
+# section -> [{title, note?, metrics}]: a KPI pane's tiles in named groups (the KPI and its parts,
+# cross-checks, ...) instead of one "more metrics" heap
+METRIC_GROUPS: dict[str, list[dict]] = METRIC_LABELS.pop("_groups", None) or {}
 _UNLABELLED: set[tuple[str, str]] = set()
 
 
@@ -656,13 +665,14 @@ def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200,
 
 def human_value(value_text, unit) -> tuple[str, str]:
     """A value in a readable unit: minutes from 2 hours on as hours (METR task horizons:
-    1044.78 min -> 17.4 hours); hours (task horizons: 9.567 h) as hours, under 2 hours as minutes."""
+    1044.78 min -> 17.4 hours); hours (task horizons: 9.567 h) as hours, under 1 hour as minutes
+    (1.79 h stays 1.8 hours, as the assessment label quotes it)."""
     if unit in ("min", "minutes", "h"):
         try:
             v = float(value_text) * (60 if unit == "h" else 1)
         except (TypeError, ValueError):
             return str(value_text), unit
-        if v >= 120:
+        if v >= (60 if unit == "h" else 120):
             return f"{v / 60:.1f}" if v < 6000 else f"{v / 60:.0f}", "hours"
         if unit == "h":
             return f"{v:.0f}", "min"
@@ -794,7 +804,18 @@ def md_inline(text) -> str:
 def md_block(text) -> str:
     out = []
     for blk in re.split(r"\n\s*\n", str(text or "").strip()):
-        lines = [ln.strip() for ln in blk.splitlines() if ln.strip()]
+        raw = [ln for ln in blk.splitlines() if ln.strip()]
+        if raw and re.match(r"^[*-]\s", raw[0]) and all(re.match(r"^([*-]|\s)\s", ln) for ln in raw):
+            # a bullet list whose items may wrap onto indented continuation lines
+            items: list[str] = []
+            for ln in raw:
+                if re.match(r"^[*-]\s", ln):
+                    items.append(ln[1:].strip())
+                else:
+                    items[-1] += " " + ln.strip()
+            lines = ["- " + it for it in items]
+        else:
+            lines = [ln.strip() for ln in raw]
         if lines and all(re.match(r"^[*-]\s", ln) for ln in lines):
             out.append('<ul class="md">' + "".join(f"<li>{md_inline(ln[1:].strip())}</li>" for ln in lines) + "</ul>")
         elif lines:
@@ -814,12 +835,48 @@ ETA_LABELS = {"method": "ETA method", "calc": "ETA calculation", "cruxes": "ETA 
 OUTLOOK_KEYS = ("eta", "eta_cruxes", "path", "blockers", "reason")
 
 
-def _plain(v) -> str:
+# basis keys as an assessor writes them (snake_case, stats shorthand) -> words for a reader
+KEY_WORDS = {"ols": "OLS", "95ci": "95% CI", "ci": "CI", "sd": "SD", "se": "SE", "r2": "R²", "n": "n",
+             "h": "(h)", "eci": "ECI", "rli": "RLI", "metr": "METR", "yoy": "year on year",
+             "pct": "%", "yr": "yr", "usd2025": "2025 $", "kg": "kg", "mo": "months"}
+_PERIOD_RE = re.compile(r"\d{4}(-\d{2}(-\d{2})?|-[QH]\d)?")
+
+
+def _key(k) -> str:
+    s = str(k)
+    if " " in s or "(" in s or not re.fullmatch(r"[a-z0-9_]+", s):
+        return s  # already prose ("horizon-80-software-eci (2025-06-10..2026-09-22, n=13)")
+    words = [KEY_WORDS.get(w, w) for w in s.split("_")]
+    out = " ".join(words)
+    return out[:1].upper() + out[1:]
+
+
+def _num(v) -> str:
+    """A number as an assessor's script printed it (0.5431226585424532) at 4 significant digits."""
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, int) or v == int(v) and abs(v) >= 1000:
+        return f"{int(v):,}" if abs(v) >= 10000 else str(int(v))
+    return f"{v:.4g}"
+
+
+def basis_html(v, depth: int = 0) -> str:
+    """A basis value as structure, not one run-on string: a dict as a nested definition list
+    (a dict of period -> number, i.e. a data series, as a row of date/value cells), a list of numbers
+    comma-separated, numbers rounded."""
     if isinstance(v, dict):
-        return "; ".join(f"{str(k).replace('_', ' ')}: {_plain(x)}" for k, x in v.items() if x not in (None, "", [], {}))
+        items = [(k, x) for k, x in v.items() if x not in (None, "", [], {})]
+        if items and all(_PERIOD_RE.fullmatch(str(k)) for k, _ in items) \
+                and all(isinstance(x, (int, float)) and not isinstance(x, bool) for _, x in items):
+            return ('<span class="ser">' + "".join(f"<span><i>{esc(k)}</i>{esc(_num(x))}</span>" for k, x in items)
+                    + "</span>")
+        return ('<dl class="basis sub">' + "".join(f"<dt>{esc(_key(k))}</dt><dd>{basis_html(x, depth + 1)}</dd>"
+                                                    for k, x in items) + "</dl>")
     if isinstance(v, list):
-        return "; ".join(_plain(x) for x in v)
-    return str(v)
+        if all(not isinstance(x, (dict, list)) for x in v):
+            return esc(", ".join(_num(x) for x in v))
+        return "<ul class=\"md\">" + "".join(f"<li>{basis_html(x, depth + 1)}</li>" for x in v) + "</ul>"
+    return esc(_num(v))
 
 
 def dot(status, title: str | None = None) -> str:
@@ -827,20 +884,26 @@ def dot(status, title: str | None = None) -> str:
     return f'<span class="dot s-{esc(st)}" title="{esc(title or STATUS_WORDS.get(st, "not yet assessed"))}"></span>'
 
 
-def assessment_html(m: sqlite3.Row) -> str:
-    """The judgment behind a status (shown under its status line): the previous status,
-    rationale and the structured basis."""
-    if not m["assessment_id"]:
-        return '<div class="gap">not yet assessed</div>'
+def assessment_note(m) -> str:
+    """The previous status if it changed, and a legacy-only flag (a small line, or "")."""
     prev = (f'Previously {dot(m["prev_status"])}{esc(m["prev_status"])} (assessed {esc(m["prev_made_at"])}).'
             if m["prev_status"] and m["prev_status"] != m["status"] else "")
     note = " ".join(x for x in (prev, badge("legacy") + " rests on unverified evidence only"
                                 if m["legacy_evidence"] else "") if x)
+    return f'<div class="mute small">{note}</div>' if note else ""
+
+
+def assessment_html(m: sqlite3.Row, rationale: bool = True,
+                    tech_title: str = "How this was assessed: the data, the benchmark and the rubric rule") -> str:
+    """The judgment behind a status (shown under its status line): the previous status,
+    rationale (unless the caller shows it) and the structured basis."""
+    if not m["assessment_id"]:
+        return '<div class="gap">not yet assessed</div>'
     # the status line it expands from already shows the dot, label and date
-    out = ['<div class="ass">' + (f'<div class="mute small">{note}</div>' if note else ""),
-           f'<div>{esc(m["rationale"])}</div>']
+    out = ['<div class="ass">' + (assessment_note(m) if rationale else ""),
+           f'<div>{esc(m["rationale"])}</div>' if rationale else ""]
     basis = json.loads(m["basis"] or "null") or {}
-    rows = [(k, BASIS_LABELS[k], _plain(basis[k])) for k in BASIS_LABELS if basis.get(k) not in (None, "", [], {})]
+    rows = [(k, BASIS_LABELS[k], basis_html(basis[k])) for k in BASIS_LABELS if basis.get(k) not in (None, "", [], {})]
     eta = basis.get("eta")
     if isinstance(eta, dict) and "p50" in eta:  # rubric v2+ forecast: median + 80% range (+ v4 chance), reasoning
         yr = lambda k: eta[k] if eta.get(k) is not None else "never/after 2100"
@@ -850,15 +913,15 @@ def assessment_html(m: sqlite3.Row) -> str:
                 if eta.get("p50") is not None else
                 f"unlikely by 2100 (P {pct or '?'}" + (f"; 10% chance by {eta['p10']}" if eta.get("p10") is not None else "") + ")")
         i = next(i for i, (k, _, _) in enumerate(rows) if k == "eta")
-        rows[i:i + 1] = [("eta", "ETA", head)] + [
-            (f"eta_{k}", ETA_LABELS[k], _plain(eta[k])) for k in ETA_LABELS if eta.get(k) not in (None, "", [], {})]
-    dl = lambda rs: "".join(f"<dt>{esc(label)}</dt><dd>{esc(v)}</dd>" for _, label, v in rs)
+        rows[i:i + 1] = [("eta", "ETA", esc(head))] + [
+            (f"eta_{k}", ETA_LABELS[k], basis_html(eta[k])) for k in ETA_LABELS if eta.get(k) not in (None, "", [], {})]
+    dl = lambda rs: "".join(f"<dt>{esc(label)}</dt><dd>{v}</dd>" for _, label, v in rs)
     # the outlook (a milestone's ETA and its cruxes, path, blockers) is for every reader; how the
     # status was derived (the data window, benchmark, rubric rule, ETA method, ...) is audit detail: folded
     if outlook := [r for r in rows if r[0] in OUTLOOK_KEYS]:
         out.append(f'<dl class="basis">{dl(outlook)}</dl>')
     if tech := [r for r in rows if r[0] not in OUTLOOK_KEYS]:
-        out.append('<details class="tech"><summary>How this was assessed: the data, the benchmark and the rubric rule'
+        out.append(f'<details class="tech"><summary>{esc(tech_title)}'
                    f'</summary><dl class="basis">{dl(tech)}</dl></details>')
     out.append(f'<div class="mute small">by {esc(m["by"])} · {len(json.loads(m["evidence"] or "[]"))} evidence event(s)</div></div>')
     return "".join(out)
@@ -891,6 +954,10 @@ def evidence_and_events(db, sec: str, topic: str, m: sqlite3.Row | None, names, 
         rows = {r["id"]: r for r in db.execute(
             f"SELECT * FROM events WHERE section=? AND id IN ({','.join('?' * len(cited))})", (sec, *cited))}
         lis = []
+        # newest first, like every other event list (the assessor's citation order is arbitrary:
+        # a years-old benchmark source must not head the list); unknown ids last
+        cited = sorted(cited, key=lambda i: (i in rows, rows[i]["date_end"] or "" if i in rows else "",
+                                             rows[i]["known_at"] or "" if i in rows else ""), reverse=True)
         for eid in cited:
             e = rows.get(eid)
             if e is None:
@@ -1051,35 +1118,57 @@ def eta_chart(sec: str, items: list, by_topic: dict, seq: bool, as_of: dt.date) 
             f'<div class="mute small">{cap}</div>')
 
 
-def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -> str:
+def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set, fsec: dict | None = None) -> str:
+    """The KPI, top down: its definition (and, folded, what it measures: framework.yaml
+    kpi_about), the status and why (the rationale, always shown), the numbers (tiles, in
+    the metric-labels.yaml _groups when the section has them), then folded: how the status
+    was judged (the basis) and the evidence and news."""
     tiles = db.execute("SELECT * FROM latest_kpi WHERE section=? AND NOT retired "
                        "ORDER BY required DESC, metric", (sec,)).fetchall()
     km = next((m for m in ms if m["kind"] == "kpi"), None)
-    out = [f'<div class="kpi"><b>KPI:</b> {md_inline(s["kpi"])}</div>']
-    heads = [t for t in tiles if t["required"]]
+    assessed = bool(km and km["assessment_id"])
+    out = [f'<div class="kpiblk" id="t-{esc(sec)}-kpi"><div class="kpi"><b>KPI:</b> {md_inline(s["kpi"])}</div>']
+    if about := (fsec or {}).get("kpi_about"):
+        out.append('<details class="about"><summary>What this measures and how it is judged</summary>'
+                   f'<div class="more md">{md_block(about)}</div></details>')
     status = (f'{dot(km["status"])}<b>{esc(km["label"])}</b> <span class="mute">· assessed {esc(km["made_at"])}</span>'
-              if km and km["assessment_id"] else f'{dot(None)}<span class="gap">not yet assessed</span>')
-    # the status line expands to the assessment (rationale, basis, evidence) and the KPI-tagged events
-    n_ev = len({e["id"] for e in topic_events(db, sec, "kpi")}
-               | (set(json.loads(km["evidence"] or "[]")) if km and km["assessment_id"] else set()))
-    out.append(f'<details class="kpid" id="t-{esc(sec)}-kpi"><summary>{status}'
-               f'<span class="st mute">the reasoning, its evidence and {n_ev} related event(s)</span></summary>'
-               f'<div class="more">{assessment_html(km) if km else ""}'
-               f'{evidence_and_events(db, sec, "kpi", km, names, succ, shown)}</div></details>')
-    # always shown: every required/gap tile; the rest of the registry folds
+              if assessed else f'{dot(None)}<span class="gap">not yet assessed</span>')
+    out.append(f'<div class="kst">{status}</div>')
+    if assessed:
+        out.append(f'{assessment_note(km)}<p class="why">{esc(km["rationale"])}</p>')
+    heads = [t for t in tiles if t["required"]]
+    # always shown: every required/gap tile (and the section's named groups); the rest of the registry folds
     main = [t for t in tiles if t["required"] or t["status"] in ("overdue", "no data")]
     if not heads:
         main = tiles
-    rest = [t for t in tiles if t not in main]
+    by_id = {t["metric"]: t for t in tiles}
+    groups = [(g, [by_id[m] for m in g.get("metrics") or [] if m in by_id]) for g in METRIC_GROUPS.get(sec, [])]
+    grouped = {t["metric"] for _, ts in groups for t in ts}
+    main = [t for t in main if t["metric"] not in grouped]
+    rest = [t for t in tiles if t not in main and t["metric"] not in grouped]
     if not tiles:
         out.append('<div class="gap">no KPI metric tracked yet</div>')
     elif not heads:
         out.append('<div class="mute">none of these metrics is the official KPI yet</div>')
     if main:
         out.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in main) + "</div>")
+    for g, ts in groups:
+        if ts:
+            note = f' <span class="tgn">· {md_inline(g["note"])}</span>' if g.get("note") else ""
+            out.append(f'<h4 class="tg">{md_inline(g["title"])}{note}</h4>'
+                       '<div class="tiles">' + "".join(kpi_tile(db, t) for t in ts) + "</div>")
     if rest:
         out.append(f"<details><summary>{len(rest)} more metric(s) we track</summary>"
                    '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
+    if assessed:
+        out.append(assessment_html(km, rationale=False,
+                                   tech_title="How the status was judged: the data window, the pace benchmark, the rule"))
+    n_cited = len(json.loads(km["evidence"] or "[]")) if assessed else 0
+    n_other = len({e["id"] for e in topic_events(db, sec, "kpi")} - set(json.loads(km["evidence"] or "[]") if assessed else []))
+    what = ", ".join(x for x in ((f"{n_cited} cited by the assessment" if n_cited else ""),
+                                 (f"{n_other} other KPI news" if n_other else "")) if x) or "none yet"
+    out.append(f'<details class="kev"><summary>Evidence and news: {what}</summary><div class="more">'
+               f'{evidence_and_events(db, sec, "kpi", km, names, succ, shown)}</div></details></div>')
     return "".join(out)
 
 
@@ -1145,7 +1234,7 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
                    'as of the cutoff, for reference.</div>')
     out.append(md_block(fsec.get("intro")))
     if s["kpi"]:
-        out.append(kpi_block(db, sec, s, ms, names, succ, shown))
+        out.append(kpi_block(db, sec, s, ms, names, succ, shown, fsec))
     elif not framework:
         out.append(supplemental_html(db, sec, names, succ))
     for kind, title in (("milestone", "Milestone Countdown"),

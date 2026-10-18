@@ -78,14 +78,20 @@ three latest major (significance 3) events instead of a KPI.
 **Endeavor pane**: its event count, latest news and news per week; the intro
 (Robots and Automation: the group intro, links to its sections, then each
 section with its own activity line), then:
-- **KPI**: its definition, and its status line (the latest assessment's
-  label), which expands to the reasoning (below) and the KPI-tagged events;
-  then, always shown:
-  - **KPI tiles**, one per required metric (others fold under "more metrics
-    we track"). A tile shows the metric's name (`views/metric-labels.yaml`;
+- **KPI**, top down: its definition; folded under it, **what it measures and
+  how it is judged** (framework.yaml `kpi_about`, markdown: the quantity, its
+  sources with links, how they combine, the benchmark, the cross-checks); the
+  **status line** (the latest assessment's label) with its **rationale**
+  always shown under it; the tiles; then, folded, **how the status was
+  judged** (the assessment basis) and **evidence and news** (the cited
+  evidence, newest first, then the other KPI-tagged events):
+  - **KPI tiles**, one per required metric, then the section's named tile
+    groups (`_groups` in `views/metric-labels.yaml`, e.g. Software: the KPI and
+    its two components, the indices they are converted from, the
+    cross-checks); the rest fold under "more metrics we track". A tile shows the metric's name (`views/metric-labels.yaml`;
     hover: its id and full registry definition), the latest value (minutes
-    from 2 hours on shown as hours; hover: the recorded value), the period
-    it is for (hover: when it was published), a `source` link and a `legacy`
+    from 2 hours on shown as hours, a value in hours under 1 hour as minutes; hover: the
+    recorded value), the period it is for (hover: when it was published), a `source` link and a `legacy`
     badge for values from the unverified 2025 report; for monthly series the
     like-for-like change vs the same month a year earlier (the change vs the
     previous observation is not shown: the series shows the trend, and
@@ -94,13 +100,13 @@ section with its own activity line), then:
     "update overdue since …" (the tile is then dashed) or "no data yet".
     The change vs the previous observation, with its comparability flag,
     stays in Datasette (`latest_kpi`).
-  - the **assessment** (expanded from the status line, which is its label):
-    the previous status if it changed, the rationale, the outlook (the ETA:
-    median year + 80% range, or the chance by 2100, and its cruxes; path,
-    blockers, or why it is unassessed) and, folded, how it was assessed (the
-    assessed quantity, data window, benchmark, rubric rule, ETA method and
-    calculation, …); its cited
-    evidence, and the other KPI-tagged events.
+  - the **assessment basis** (a milestone's: expanded from its status line):
+    the previous status if it changed, the outlook (the ETA: median year + 80%
+    range, or the chance by 2100, and its cruxes; path, blockers, or why it is
+    unassessed) and, folded, how it was assessed (the assessed quantity, data
+    window, benchmark, rubric rule, ETA method and calculation, …), rendered as
+    structure: nested objects as nested lists, a date → number object as a row
+    of data cells, numbers at 4 significant digits.
 - **Milestone Countdown**: whether the milestones are a **sequence** (each
   expected after the one before; `milestones_order: sequence` in
   framework.yaml: Rockets, Fusion, Climate) or **independent fronts** (the
