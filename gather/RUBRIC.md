@@ -437,7 +437,10 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   It must also match the window trend: no "Worsening" when nothing worsened.
   Write it for a reader who knows only the KPI's name: plain units and words
   ("Ahead: 1.8 h (Sep 2026), doubling every ~3 months vs ≤7 needed"), no
-  metric ids, no "OLS", no "(tier 3)" (the tier is in basis.benchmark).
+  metric ids, no "OLS", no "(tier 3)" (the tier is in basis.benchmark). The
+  trend is the window's; leave out a sub-window's pace (the sparkline shows
+  it) unless the halves clearly differ (their ranges do not overlap), and then
+  in a word ("accelerating", "slowing"), never as a second number.
 - **rationale**: the dashboard shows it, always visible, under the label, as
   the answer to "why this status?". Write it for a general reader, in 2–4
   sentences, consistent with the basis: (1) where the quantity stands and how

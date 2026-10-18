@@ -935,7 +935,7 @@ def check_notes(section: str, ass: list[dict]) -> list[str]:
     runs = {assess_run(a) for a in ass}
     d = os.path.join(DATA, NOTES_DIR, section)
     for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
-        if not (f.endswith(".md") and f.removesuffix(".md").removesuffix(".review") in runs):
+        if not (f.endswith(".md") and f.removesuffix(".md").removesuffix(".review").removesuffix(".reader") in runs):
             warns.append(f"{NOTES_DIR}/{section}/{f}: no assessment record of this section is by its run")
     return warns
 

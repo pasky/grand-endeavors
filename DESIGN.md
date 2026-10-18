@@ -285,6 +285,14 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    total, charge the total to every milestone of the run).
    A failed review is noted in the commit message, never fatal. `REVIEW=0`
    skips it.
+   **Reader pass** (since 2026-10-18): every run, a reviewer from another lab
+   (`ASSESS_READER_MODE`, default `best`) reads only the staged labels and
+   rationales, as the dashboard's reader (RUBRIC.md §6: every sentence tells a
+   general reader something; the words match the numbers), without editing
+   them; it ends "EDITS: <n>". Records it would change get one fix by the
+   assessor, limited to label and rationale (a fix that changes anything else,
+   or fails, is discarded). Committed as `notes/<section>/<run id>.reader.md`;
+   never fatal (a reviewer that edits the records aborts); `READER=0` skips it.
 7. Each step commits only its own paths. The write-scope guard (cooperative,
    not isolation) lets agents touch only staging and the registry. It checks
    committed changes, uncommitted changes and already-dirty files, and runs
@@ -410,6 +418,7 @@ tests in its own `tests/` directory:
 - `core/tests/test_guard.sh`: the write-scope guard; `core/tests/test_lock.sh`:
   the pipeline lock (§4a); `core/tests/test_review.sh`: assess.sh's review
   stage (fix, rollback, blocked and failed rounds, with stubbed stages);
+  `core/tests/test_reader.sh`: its reader pass (text-only fix, discarded fixes);
 - `core/tests/test_paths.py`: every `$ROOT/...` path and module the pipeline
   scripts use exists (a broken one inside a prompt heredoc fails silently),
   and every runnable script declares `pyyaml` in its PEP 723 block (`uv run`
@@ -425,7 +434,7 @@ Run them all (offline) with:
 
 ```sh
 f=0; for t in */tests/test_*.py; do uv run "$t" >/dev/null || { echo "FAIL $t"; f=1; }; done
-for t in core/tests/test_guard.sh core/tests/test_review.sh; do sh "$t" >/dev/null || { echo "FAIL $t"; f=1; }; done; [ $f = 0 ]
+for t in core/tests/test_guard.sh core/tests/test_review.sh core/tests/test_reader.sh; do sh "$t" >/dev/null || { echo "FAIL $t"; f=1; }; done; [ $f = 0 ]
 ```
 
 Verification happens at ingest (step 4), so it is done once per fact rather

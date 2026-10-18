@@ -17,6 +17,8 @@
 #                            Usually with FORCE=1 ONLY="<milestones>" (the audited targets are not stale)
 #         REVIEW=0           skip the review stage (default: on when milestones are assessed)
 #         ASSESS_REVIEW_MODE the reviewer's pi mode (default deep)
+#         READER=0           skip the reader pass (labels and rationales read as a reader; default on)
+#         ASSESS_READER_MODE the reader reviewer's pi mode (default best)
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
@@ -348,14 +350,93 @@ notes. Change only what a finding requires (RUBRIC.md rule 7 applies to your own
 # --- end review stage ---
 case "$TARGETS" in *milestone:*) if [ "${REVIEW:-1}" != 0 ]; then review_stage; fi ;; esac
 
+# READER PASS: the label and rationale are the dashboard's always-visible answer to "where are we, and
+# why?"; a reviewer from another lab (ASSESS_READER_MODE, default best) reads only those, as a reader
+# (gather/RUBRIC.md §6: every sentence must tell a general reader something, the words must match the
+# numbers). Records it would change get ONE fix by the assessor, limited to label and rationale (anything
+# else changed = the fix is discarded). Never fatal, except a reviewer that edits the records; READER=0
+# skips it. Added 2026-10-18 after an editorial review caught run bookkeeping ("no new measurements have
+# arrived since the previous assessment") that the ETA review, judging numbers, had passed.
+# --- reader pass (core/tests/test_reader.sh runs this block with stubs) ---
+READER_FILE="$NOTES_DIR/$SECTION/$RUN_ID.reader.md"
+reader_prompt() {  # $1 = output file
+cat <<EOF3
+Read, as a general reader of the dashboard, the status label and rationale of each assessment record
+another agent just staged for "$SECTION" in $AS (one JSON object per line). Do NOT modify it; write only $1.
+The dashboard shows, always visible: the KPI or milestone name and definition ($ROOT/framework.yaml),
+then the label, then the rationale. The reader is smart and technical but not a specialist; the numbers'
+derivation (basis) is folded away. Writing rules: $ROOT/gather/RUBRIC.md §6 (label, rationale).
+For every sentence and label clause ask what it tells this reader. Flag: run or process bookkeeping
+("no new measurements since the previous assessment", "the same points give the same statistics"),
+internal ids, file or metric names, commit hashes, statistics jargon, restating the definition shown just
+above, words that claim more than the numbers in the record's basis support (e.g. "accelerating" when
+the halves' ranges overlap), and anything a reader cannot understand from what is on the page. Do not
+push for completeness: no new caveats or numbers unless the reader would otherwise misread a number;
+shorter is better when nothing is lost. Never change the status, the verdict word or a number.
+For each record you would change, write a section "## <target>" with the exact current text, your
+proposed label and/or rationale (full text), and one line why. Records you would leave as they are: list
+them in one line. The LAST line of $1 must be exactly "EDITS: <the number of records you would change>".
+Never run git add/commit.
+EOF3
+}
+fix_prompt() {
+cat <<EOF4
+You staged the assessment records $AS for "$SECTION" in this run. A reader review ($STAGE/reader.md)
+proposes better labels and rationales for the dashboard. Rewrite ONLY the "label" and "rationale" fields
+of the records it names, adopting each proposal where it is right under $ROOT/gather/RUBRIC.md §6 (and
+keeping the label's verdict word, at most 100 characters, consistent with the basis). Change nothing else
+in $AS: no other field, record or file. Then validate:
+    uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
+Never run git add/commit.
+EOF4
+}
+same_but_text() {  # $1, $2 = records files: identical except label and rationale (same records, same order)
+	uv run python -c 'import json, sys
+r = [[{k: v for k, v in json.loads(l).items() if k not in ("label", "rationale")} for l in open(f) if l.strip()] for f in sys.argv[1:]]
+sys.exit(r[0] != r[1])' "$1" "$2"
+}
+reader_pass() {  # updates NOTE; writes $STAGE/reader.md (nothing when the review failed)
+	READER_MODE="${ASSESS_READER_MODE:-best}"; ASSESS_MODEL="${PI_MODEL:-}"
+	rm -f "$STAGE/reader.md"
+	if ! PI_MODEL="$(pi_mode_model "$READER_MODE")"; then
+		PI_MODEL="$ASSESS_MODEL"; echo "WARN: reader pass skipped: no pi mode '$READER_MODE'" >&2
+		NOTE="$NOTE (reader pass failed)"; return 0
+	fi
+	sums="$(cksum "$AS")"
+	PI_SOFT_FAIL=1
+	pi_run reader "$(reader_prompt "$STAGE/reader.md")"
+	PI_SOFT_FAIL=; PI_MODEL="$ASSESS_MODEL"
+	[ "$(cksum "$AS")" = "$sums" ] || { echo "ERROR: the reader reviewer modified $AS" >&2; exit 1; }
+	edits="$(tail -n 1 "$STAGE/reader.md" 2>/dev/null | sed -n 's/^EDITS: 0*\([0-9][0-9]*\)$/\1/p')"
+	if [ "$PI_RC" != 0 ] || [ -n "${PI_BLOCKED:-}" ] || [ -z "$edits" ]; then
+		echo "WARN: reader pass failed (pi exit $PI_RC, or no 'EDITS: <n>' last line)" >&2
+		rm -f "$STAGE/reader.md"; NOTE="$NOTE (reader pass failed)"; return 0
+	fi
+	if [ "$edits" = 0 ]; then NOTE="$NOTE (reader: 0 edits)"; return 0; fi
+	cp "$AS" "$AS.draft"
+	PI_SOFT_FAIL=1
+	pi_run reader-fix "$(fix_prompt)"
+	PI_SOFT_FAIL=
+	if [ "$PI_RC" = 0 ] && [ -z "${PI_BLOCKED:-}" ] && as_complete && same_but_text "$AS.draft" "$AS"; then
+		rm -f "$AS.draft"; NOTE="$NOTE (reader: $edits record(s) reworded)"
+	else  # a failed fix, or one that touched more than label and rationale, never replaces the draft
+		mv "$AS.draft" "$AS"
+		echo "WARN: the reader fix failed or changed more than label/rationale; committing the draft unchanged" >&2
+		NOTE="$NOTE (reader: $edits suggested, fix discarded)"
+	fi
+}
+# --- end reader pass ---
+if [ "${READER:-1}" != 0 ]; then reader_pass; fi
+
 for t in $(echo "$TARGETS" | cut -d'|' -f1 | grep '^milestone:' || true); do
 	grep -qE "^## $t([^a-z0-9-]|\$)" "$STAGE/eta-notes.md" || echo "WARN: $STAGE/eta-notes.md has no '## $t' section" >&2
 done
 uv run $ROOT/core/ledger.py merge "$SECTION" --assessments "$AS"
 if [ -s "$STAGE/eta-notes.md" ]; then mkdir -p "$NOTES_DIR/$SECTION"; cp "$STAGE/eta-notes.md" "$NOTES"; fi
 if [ -s "$STAGE/review.md" ]; then mkdir -p "$NOTES_DIR/$SECTION"; cp "$STAGE/review.md" "$REVIEW_FILE"; fi
+if [ -s "$STAGE/reader.md" ]; then mkdir -p "$NOTES_DIR/$SECTION"; cp "$STAGE/reader.md" "$READER_FILE"; fi
 uv run $ROOT/core/ledger.py check "$SECTION"
 commit "assess $SECTION as of $UNTIL$( [ "${CORRECTION:-}" = 1 ] && echo " (rubric $RUBRIC correction)"): $(echo "$TARGETS" | cut -d'|' -f1 | tr '\n' ' ')$NOTE$( [ -n "${AUDIT:-}" ] && echo " (audit: $AUDIT)")" \
-	"ledger/assessments/$SECTION.jsonl" "$NOTES" "$REVIEW_FILE"
+	"ledger/assessments/$SECTION.jsonl" "$NOTES" "$REVIEW_FILE" "$READER_FILE"
 warn_drivers
 echo ">>> done: assess $SECTION as of $UNTIL"

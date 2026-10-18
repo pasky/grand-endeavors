@@ -1,2 +1,3 @@
 - Never rewrite ./data history (rebase, reset --hard, --amend), even unpushed: fix with a new commit.
 - Show site changes via the worktree preview URL (views/EXPLORER.md "Previews"), never file://.
+- Reader-facing prose (framework.yaml intros, KPI explainers `kpi_about`, dashboard text): before committing a change, get an editorial review in `best` mode (another lab than the author), asking what each sentence tells the reader, with a guardrail against both padding and over-trimming. Fact/code reviews do not catch bookkeeping prose.
