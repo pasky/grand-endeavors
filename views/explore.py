@@ -535,7 +535,7 @@ dl.basis.sub{margin:0 0 4px;padding-left:8px;border-left:2px solid var(--line);g
 dl.basis dt{overflow-wrap:anywhere}
 .ser{display:flex;flex-wrap:wrap;gap:2px;margin:2px 0}.ser>span{border:1px solid var(--line);border-radius:4px;
 padding:0 5px;font-size:12px;text-align:right;line-height:1.35}.ser i{display:block;font-style:normal;font-size:10.5px;color:var(--mute)}
-.kst{margin:8px 0 2px;font-size:15px}p.why{margin:4px 0 8px}h4.tg{margin:12px 0 2px}.tgn{font-weight:400}
+.kst{margin:8px 0 2px;font-size:15px}p.why{margin:4px 0 8px}
 .about .md p{margin:6px 0}.about .md li{margin:3px 0}h4.ab{font-size:14px;color:var(--ink);margin:16px 0 4px}
 .khead{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:14px;align-items:start;margin:6px 0}.khead .tiles{margin:0;grid-template-columns:1fr}.khead .kst{margin-top:0}
 @media (max-width:780px){.khead{grid-template-columns:1fr}}
@@ -683,7 +683,7 @@ def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200,
         txt = f"{fmt(pv)} · {spark_label(pd_, kind)}"
         mark = ""
         if axis == "below":
-            anchor = "start" if xs[j] < w * .25 else "end" if xs[j] > w * .75 else "middle"
+            anchor = "start" if xs[j] < w * .34 else "end" if xs[j] > w * .66 else "middle"  # labels fit
             mark = (f'<circle cx="{xs[j]:.1f}" cy="{sy(pv):.1f}" r="3"/>'
                     f'<text x="{xs[j]:.1f}" y="{th - 1}" text-anchor="{anchor}">{esc(txt)}</text>')
         tip = "" if mark else f"<title>{esc(txt)}</title>"  # a visible label needs no tooltip too
@@ -724,7 +724,8 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
     body = (f'<div class="v" title="{esc(k["value_text"])} {esc(k["unit"])}">{esc(v)} <small>{esc(u)}</small></div>'
             f'<div class="d"><span title="published {esc(k["known_at"])}">{esc(fmt_period(k["obs"]))}</span> · '
             f'{link(k["source"], "source")}{badge("legacy") if k["verification"] == "legacy" else ""}</div>')
-    if k["year_ago_obs"] is not None:  # monthly: the like-for-like change (the seasonal cycle cancels)
+    if k["year_ago_obs"] is not None and k["unit"] != "doublings":  # monthly: the like-for-like change (the
+        # seasonal cycle cancels); not for a gap series (a cross-check's residual has no year-on-year meaning)
         body += (f'<div class="c" title="{esc(fmt_period(k["year_ago_obs"]))}: {esc(k["year_ago_value_text"])}">'
                  f'{_arrow(k["year_ago_change_text"])} vs {esc(fmt_period(k["year_ago_obs"]))}</div>')
     body += sparkline(*spark_points(db, k), fmt=lambda x: " ".join(human_value(f"{x:.6g}", k["unit"])))
@@ -1194,12 +1195,12 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set, f
     assessed = bool(km and km["assessment_id"])
     out = [f'<div class="kpiblk" id="t-{esc(sec)}-kpi"><div class="kpi"><b>KPI:</b> {md_inline(s["kpi"])}</div>']
     heads = [t for t in tiles if t["required"]]
-    # always shown: every required/gap tile; the explainer's tiles go with it, the rest folds
-    main = [t for t in tiles if t["required"] or t["status"] in ("overdue", "no data")]
-    if not heads:
-        main = tiles
+    # shown: the required metric(s) only (or every tile, while none is required); the explainer
+    # places its tiles; the rest folds (an overdue or empty one keeps its warning in the fold)
+    main = heads or tiles
     about, placed = kpi_about_html(db, sec, (fsec or {}).get("kpi_about"),
-                                   {t["metric"]: t for t in tiles if t not in main})
+                                   {t["metric"]: t for t in tiles if t not in heads})
+    main = [t for t in main if t in heads or t["metric"] not in placed]
     rest = [t for t in tiles if t not in main and t["metric"] not in placed]
     status = (f'{dot(km["status"])}<b>{esc(km["label"])}</b> <span class="mute">· assessed {esc(km["made_at"])}</span>'
               if assessed else f'{dot(None)}<span class="gap">not yet assessed</span>')

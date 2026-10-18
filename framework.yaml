@@ -50,14 +50,14 @@ endeavors:
         title: Software
         kpi: AI task horizon at 80% success (Human-hours; geometric mean of the software and remote-work horizons)
         kpi_about:
-          summary: "How the KPI is built: task horizons, the two indices (ECI, RLI) and how each becomes hours, the cross-checks"
+          summary: "How the KPI is built: ECI, RLI, their conversions to hours, the cross-checks"
           sections:
             - text: |-
                 **Task horizon** ([METR 2025](https://arxiv.org/abs/2503.14499)): the length of task, in the
                 hours a skilled human professional needs for it, that AI completes on its own at a given
                 success rate. We track the **80% horizon**: the task length at which the best released model
                 succeeds four times out of five. It grows as AI can be trusted with longer stretches of work,
-                which is what all three milestones below need.
+                which is what this endeavor's milestones need.
 
                 METR measured horizons directly, but stopped updating in September 2026; the shaded span below
                 covers the models it measured, by release date (the last one was released in April 2026). The
@@ -70,14 +70,15 @@ endeavors:
             - title: "Software: the Epoch Capabilities Index (ECI), converted to hours"
               text: |-
                 [ECI](https://epoch.ai/eci), by Epoch AI, merges dozens of benchmarks (coding, maths, science,
-                agentic tasks) into one capability score per model, on a scale that keeps working after any
-                single benchmark saturates. It says nothing about hours by itself.
+                agentic tasks) into one capability score per model (anchored at Claude 3.5 Sonnet = 130,
+                GPT-5 = 150), on a scale that keeps working after any single benchmark saturates. It says
+                nothing about hours by itself.
 
                 **The conversion** is a straight-line fit on the 21 models that both METR and Epoch scored
                 (chart): each **+4.5 ECI points doubles METR's 80% horizon**, i.e. log₂(horizon in minutes) =
                 −28.24 + 0.2226 × ECI. ECI 150 → 36 min, 160 → 2.8 h, 166.8 → 7.9 h. The fit is tight
                 (R² 0.97), and a single model typically lands within half a doubling of the line (the band).
-                It was frozen on 2026-10-16 (a refit would be a new series). Its weak point: today's frontier
+                Its weak point: today's frontier
                 is ~10 ECI points (about two doublings) beyond the highest-scoring model of that sample, and
                 METR's series has ended, so the line is extrapolated. The cross-checks below test it there.
               chart: eci-calibration
@@ -90,18 +91,16 @@ endeavors:
                 number per model: the **automation rate**, the share of deliverables expert graders judge as
                 good as the professional's. It measures messy, economically real work end to end.
 
-                **The conversion** uses METR's model for suites that report only an overall score
+                **The conversion** uses METR's model of how success falls with task length
                 ([METR 2025](https://metr.org/blog/2025-07-14-how-does-time-horizon-vary-across-domains/)):
-                a model's chance of success falls with task length along a logistic curve, each doubling of the
-                task cutting the odds by a fixed factor (slope 0.6 per doubling, METR's cross-domain average). We
-                find the 50% horizon at which that curve, averaged over RLI's project lengths (the bars: the 201
-                of its 240 projects with a time, reconstructed from the paper's histogram), equals the measured
-                rate; the 80% horizon is the same curve
-                read at 80%, 5× shorter. So 21% of mostly day-long projects done means: reliable (80%) on
-                ~25-minute tasks, a coin flip (50%) at ~2 hours, and the long projects mostly fail. The slope is
-                assumed (on METR's own models it spans 0.50–0.69, 10th to 90th percentile, which moves the 80%
-                level by −0.8/+0.6 doublings), so the remote side's level is the less certain one; its trend is
-                less affected.
+                each doubling of a task cuts a model's odds of success by about 1.8× (METR's cross-domain
+                average). We slide that curve along the length axis until its average success over RLI's project
+                lengths (the bars) equals the measured automation rate; the curve's 50% point is then the 50%
+                horizon, and its 80% point, always 5× shorter, the 80% horizon. Under this model, 21% of mostly
+                day-long projects done means: reliable (80%) on 24-minute tasks, a coin flip (50%) at 2 hours,
+                and the long projects mostly fail. The odds factor is assumed: across METR's own models it varies
+                enough to put the 80% level anywhere from ~1.8× lower to ~1.5× higher, so the remote side's
+                level is the less certain one; its trend is less affected.
               chart: rli-conversion
               metrics: [horizon-80-remote-rli, rli-automation-by-release]
             - title: The blend, and how the status is judged
@@ -120,28 +119,29 @@ endeavors:
             - title: "Cross-checks: is the ECI conversion still right at the frontier?"
               text: |-
                 - **[SWE-Marathon](https://www.swe-marathon.org/)** runs METR's method on 20 long software
-                  tasks (4–400 h), so it measures 80% horizons directly. The *check* tile compares, for frontier
-                  models, the horizon SWE-Marathon measures with the one the ECI line gives the same model:
-                  log₂(measured ÷ converted), averaged over the month's frontier models. 0 means they agree,
-                  +1 that the measured horizon is twice the converted one, −1 half. At the frontier it is about 0,
-                  but SWE-Marathon is too coarse to track the pace (frontier models all land around 10–16 h:
-                  a few tasks are almost always solved, many almost never).
-                - **METR check:** the same comparison for METR's own measurements; it ends in March 2026 and is
-                  in-sample (the line was fitted on these models).
-                - **Tripwire:** if two such measured checks sit more than one doubling off on the same side
-                  for two months running, the conversion is reviewed. Only SWE-Marathon still reports, so it
-                  cannot fire now.
+                  tasks (4–400 h), so it measures 80% horizons directly. The *check* tile compares the horizon
+                  SWE-Marathon measures with the one the ECI line gives the same model: log₂(measured ÷
+                  converted), averaged over the models within 5 ECI points of the frontier. 0 means they agree,
+                  +1 that the measured horizon is twice the converted one, −1 half. It is now about 0 across nine
+                  frontier models (single models scatter about ±1 doubling), after +2.2 in May 2026 on one model
+                  alone. The diamonds in the first chart are SWE-Marathon's best model each time, some without an
+                  ECI score, so they sit above that average. With a few tasks almost always solved and many
+                  almost never, it is too coarse to track the pace.
+                - **METR check:** the same comparison for METR's own models, in-sample (the line was fitted on
+                  them). It ends in March 2026 (METR's last model has no ECI score) at −0.4: its newest models
+                  measured somewhat shorter than the line gives them.
                 - **[Terminal-Bench 4.0](https://www.tbench.ai/leaderboard/terminal-bench/4.0)** (long
-                  command-line tasks, not part of ECI): an independent success rate. Its hour labels do not
-                  predict which tasks fail, so it gives no horizon, only an independent pace signal.
+                  command-line tasks, not part of ECI): an independent success rate. Its tasks' human-time
+                  estimates do not predict which tasks fail, so it yields no horizon, only a second pace signal.
               metrics: [swe-marathon-h80-by-release, horizon-80-gap-swe-marathon, horizon-80-gap-metr,
                         terminal-bench-4-pass-by-release]
-            - title: "UK AISI's cyber time horizon: a check on the slope, not on the level"
+            - title: "UK AISI's cyber time horizon: checks the conversion's slope (hours per ECI point), not its level"
               text: |-
                 The [UK AI Security Institute](https://www.aisi.gov.uk/blog/how-fast-is-autonomous-ai-cyber-capability-advancing)
                 measures 80% horizons on its own capture-the-flag cyber tasks: doubling every 4.7 months since
-                late 2024 (its February 2026 estimate), with Claude Mythos Preview and GPT-5.5 above that trend
-                (red triangles in the charts above).
+                late 2024 (fitted through February 2026), with Claude Mythos Preview and GPT-5.5 above that
+                trend (red triangles in the charts above). AISI publishes only a chart, so its values here are
+                read off the figure.
 
                 **Why its hours are not comparable:** each task run is capped at 2.5M tokens with a simple agent
                 scaffold, which lowers success on purpose (AISI: uncapped horizons "would be significantly
@@ -151,15 +151,13 @@ endeavors:
                 be pooled into the software calibration: that would mix two scales of hours.
 
                 **What it can check is the slope**, the part the frontier extrapolation rests on. Across the 9
-                models that also have an ECI score (the triangles in the ECI chart), AISI's horizons rise
-                **0.22 ± 0.03 doublings per ECI point** against the conversion's 0.223, but that leans on GPT-5.5,
-                which AISI calls highly uncertain; without it, 0.18 ± 0.03 (about 20% flatter), and no model
-                beyond the calibration range is left. So: compatible with the conversion's slope, too uncertain to
-                validate its extrapolation. If only the slope beyond the calibration range were that flatter one,
-                today's software horizon would be about 0.45 doublings (~1.4×) too high, inside the conversion
-                error the forecasts already carry. AISI publishes only a chart image, so the series (its frontier
-                steps) is read off its figure (one value in its text, Claude Sonnet 4.5 at 16 min, checks the
-                reading; ledger audit 2026-10-18-aisi-cyber).
+                models that also have an ECI score (the triangles in the ECI chart; Mythos Preview, the 4.8 h in
+                the tile below, has none), AISI's horizons **double every 4.6 ECI points**, against the
+                conversion's 4.5. But that leans on GPT-5.5, which AISI calls highly uncertain; without it, every
+                5.6 points (about 20% flatter), and no model beyond the calibration range is left. So: compatible
+                with the conversion's slope, too uncertain to validate its extrapolation. If only the slope
+                beyond the calibration range were that flatter one, today's software horizon would be about 1.4×
+                too high, within the half-doubling a single model typically misses the line by.
               metrics: [aisi-cyber-h80-by-release]
         milestones:
           - slug: the-linux-kernel-patch

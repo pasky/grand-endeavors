@@ -448,6 +448,15 @@ def main():
              and explore.eta_x(2100, 2102.5) == 0)
         case("no timeline without any ETA", explore.eta_chart("climate", tl_items, {}, True, D("2026-10-10")) == "")
         s_row = db.execute("SELECT * FROM sections WHERE section='climate'").fetchone()
+        about = dict(fsec, kpi_about={"summary": "How it is built", "sections": [
+            {"title": "Part one", "text": "- a\n  wraps", "chart": "no-such-chart", "metrics": ["co2-nolag"]}]})
+        ab = explore.section_html(db, s_row, about, 1)
+        fold = ab[ab.index("How it is built"):ab.index("Evidence and news")]
+        case("kpi_about sections: one fold with titled parts, their tiles placed there (not under more metrics, "
+             "not in the headline), an unknown chart skipped; the headline keeps the required tile",
+             "<h4 class=\"ab\">Part one</h4>" in fold and "<li>a wraps</li>" in fold
+             and ab.count('title="co2-nolag:') == fold.count('title="co2-nolag:') == 1
+             and 'title="co2-never:' in ab[:ab.index("How it is built")])
         case("milestones: a sequence is a numbered rail, the default independent cards",
              '<ol class="topics seq">' in explore.section_html(db, s_row, dict(fsec, milestones_order="sequence"), 1)
              and '<ul class="topics par">' in explore.section_html(db, s_row, fsec, 1))

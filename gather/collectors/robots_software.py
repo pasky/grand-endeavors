@@ -529,6 +529,13 @@ def main() -> int:
                  for mid, e in CALIBRATION_PAIRS.items() if mid in by_id and e in by_name
                  and "p80" in by_id[mid] and "p50" in by_id[mid]]
         fits = {q: {k: v for k, v in calibrate(ms, eci, q).items() if k != "pred_se"} for q in ECI_CAL}
+        # the file draws the frozen line through these pairs: write it only while they still give that line
+        # (an ECI refit that moves it is a review of the calibration and new metric ids, not a new file)
+        drift = [q for q, f in fits.items() if f["n"] != len(CALIBRATION_PAIRS)
+                 or abs(f["a"] - ECI_CAL[q][0]) > 1e-6 or abs(f["b"] - ECI_CAL[q][1]) > 1e-6]
+        if drift:
+            raise SystemExit(f"--write: the refit ({', '.join(drift)}) differs from the frozen calibration; "
+                             f"keep {a.write} as it is and review the calibration (new metric ids)")
         out = {"about": "robots-software horizon conversions (robots_software.py): the frozen ECI -> METR "
                         "calibration (fitted on that date) with its pairs (METR TH1.1 x Epoch ECI, the ECI values "
                         "as of pairs_vintage; refit = their fit, which must equal the frozen one), and the RLI "

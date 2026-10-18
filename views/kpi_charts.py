@@ -57,11 +57,29 @@ def _series(db, metric: str, unit_h: float = 1.0) -> list[tuple[dt.date, float, 
         "AND obs_end <= (SELECT value FROM build_info WHERE key='as_of') ORDER BY obs", (SEC, metric))]
 
 
+def pretty_model(mid: str) -> str:
+    """A source's model id as a name: claude-opus-5-5 -> Claude Opus 5.5, gpt_5_2025_08_07_inspect -> GPT 5,
+    claude_mythos_preview_early_inspect -> Claude Mythos Preview Early; names with capitals are kept."""
+    mid = re.sub(r"(_inspect|_unknown)$", "", mid.strip())
+    if re.search(r"[A-Z]", mid):
+        return mid
+    mid = re.sub(r"[-_](20\d{2}[-_]?\d{2}[-_]?\d{2}|\d{8}|preview[-_]\d{2}[-_]\d{2})$", "", mid)
+    out = []
+    for w in re.split(r"[-_]", mid):
+        if out and re.fullmatch(r"\d+(\.\d+)?", w) and re.fullmatch(r".*\d", out[-1]) and out[-1] != "GPT":
+            out[-1] += "." + w          # 5-5 -> 5.5
+        elif w in ("gpt", "o1", "o3"):
+            out.append(w.upper() if w == "gpt" else w)
+        else:
+            out.append(w if re.match(r"\d", w) else w.capitalize())
+    return re.sub(r"^GPT (\S)", r"GPT-\1", " ".join(out))
+
+
 def _model(note: str) -> str:
     """The model a collector note names ('... ECI 166.82 of Claude Opus 5.5 (released ...')."""
     m = (re.search(r"\bof (.+?) \(released", note) or re.search(r"frontier: (\S+) \(", note)
          or re.search(r"release date: (.+?) \((?:best|released)", note))
-    return re.sub(r"-20\d{6}$", "", m[1].replace("_inspect", "").replace("_unknown", "")) if m else ""
+    return pretty_model(m[1]) if m else ""
 
 
 class Plot:
@@ -218,9 +236,8 @@ def task_horizon_timeline(db, as_of: dt.date) -> str:
         yb = p.h - p.mb - 6
         p.add(f'<rect class="era" x="{a:.1f}" y="{p.mt}" width="{b - a:.1f}" height="{p.h - p.mt - p.mb}"/>'
               f'<text class="ann" x="{a + 4:.1f}" y="{p.mt + 11}">models METR measured (by release date)</text>'
-              f'<text class="ann" x="{b + 4:.1f}" y="{yb - 22}">after METR\'s last</text>'
-              f'<text class="ann" x="{b + 4:.1f}" y="{yb - 11}">model: conversions</text>'
-              f'<text class="ann" x="{b + 4:.1f}" y="{yb}">only</text>')
+              f'<text class="ann" x="{b + 4:.1f}" y="{yb - 11}">no METR</text>'
+              f'<text class="ann" x="{b + 4:.1f}" y="{yb}">data after</text>')
     # right-hand axes: the raw indices, placed where the frozen conversions put them
     if cal:
         a_, b_ = cal["eci_cal"]["p80"]["a"], cal["eci_cal"]["p80"]["b"]
@@ -249,8 +266,11 @@ def task_horizon_timeline(db, as_of: dt.date) -> str:
         p.dot(_year(d), v, C_SW, f"{d}: {_model(n)}, ECI {eci.get(d, '?')} → software {hours(v)}", r=2.2)
     for d, v, n in rw:
         p.dot(_year(d), v, C_RW, f"{d}: {_model(n)}, RLI {rli.get(d, '?')}% → remote work {hours(v)}", r=2.2)
-    for d, v, n in bl:
-        p.dot(_year(d), v, C_BL, f"{d}: the KPI, √(software × remote work) = {hours(v)}", r=2.6)
+    for d, v, n in bl:  # its note names both components' models
+        ms = re.findall(r"\(ECI [\d.]+ of (.+?)\)|\(RLI automation rate [\d.]+% of (.+?)\)", n)
+        names = " + ".join(pretty_model(a or b) for a, b in ms)
+        p.dot(_year(d), v, C_BL, f"{d}: the KPI, √(software × remote work) = {hours(v)}"
+              + (f" ({names})" if names else ""), r=2.6)
     for d, v, n in metr:
         p.dot(_year(d), v, C_METR, f"{d}: {_model(n)}, METR measured {hours(v)}", r=3, hollow=True)
     for d, v, n in swm:
@@ -260,7 +280,8 @@ def task_horizon_timeline(db, as_of: dt.date) -> str:
     return p.svg("AI task horizon at 80% success, the KPI and its parts over time (log scale)",
                  [(C_BL, "line", "the KPI (blend)"), (C_SW, "line", "software, from ECI"),
                   (C_RW, "line", "remote work, from RLI"), (C_METR, "hollow", "METR measured"),
-                  (C_SWM, "diamond", "SWE-Marathon measured"), (C_AISI, "tri", "UK AISI cyber (capped)")],
+                  (C_SWM, "diamond", "SWE-Marathon measured, best model"),
+                  (C_AISI, "tri", "UK AISI cyber (level not comparable)")],
                  ylabel="80% task horizon (log scale)")
 
 
@@ -305,14 +326,14 @@ def eci_calibration(db, as_of: dt.date) -> str:
         e, v, n = front
         p.dot(e, v, C_SW, f"today's frontier, {_model(n)}: ECI {e:.2f} → {hours(v)} (on the line, by construction)",
               r=4.5)
-        p.add(f'<text class="ann" x="{p.X(e) - 7:.1f}" y="{p.Y(v) + 4:.1f}" text-anchor="end">{esc(_model(n))}: '
+        p.add(f'<text class="ann" x="{p.X(e) - 6:.1f}" y="{p.Y(v) - 8:.1f}" text-anchor="end">{esc(_model(n))}: '
               f'{esc(hours(v))}</text>')
     return p.svg("Converting ECI to a METR-equivalent 80% horizon: the calibration fit",
                  [(C_METR, "hollow", f"METR measured ({len(pairs)} models Epoch also scored)"),
                   (C_SW, "line", f"the fit: ×2 every {1 / b:.1f} ECI points"),
                   (C_SW, "bar", f"±{sd:.1f} doublings (typical miss)"), (C_SW, "dot", "today's frontier"),
-                  (C_AISI, "tri", "UK AISI cyber, same models (a slope check)")],
-                 ylabel="METR 80% horizon (log scale)")
+                  (C_AISI, "tri", "UK AISI cyber, models with an ECI score (compare the slope, not the level)")],
+                 ylabel="80% horizon (human hours, log scale)")
 
 
 def rli_conversion(db, as_of: dt.date) -> str:
@@ -329,7 +350,7 @@ def rli_conversion(db, as_of: dt.date) -> str:
     if not dates:
         return ""
     last = dates[-1]
-    early = next((d for d in dates if rli[d] >= 2), dates[0])
+    early = next((d for d in dates if rli[d] >= 2), dates[0])  # the first model past RLI's 2% launch noise
     h80 = {d: v for d, v, _ in rw}
     x0 = min(-1.3, math.floor(math.log10(min(h80[early], h80[last])) * 2) / 2 - .1)
     p = Plot(680, 280, x0, 2.75, 0, 1, ml=52, mr=50, mt=22, ylog=False)  # x = log10 hours, y = probability
@@ -343,13 +364,13 @@ def rli_conversion(db, as_of: dt.date) -> str:
     p.add(f'<text class="ax" transform="translate({p.w - 6},{p.mt + (p.h - p.mt - p.mb) / 2:.0f}) rotate(90)" '
           f'text-anchor="middle" style="fill:{C_RW}">RLI projects per bar</text>')
     for i, c in enumerate(cs):
-        x0, x1 = p.X(lo + bw * i), p.X(lo + bw * (i + 1))
+        xa, xb = p.X(lo + bw * i), p.X(lo + bw * (i + 1))
         y = p.Y(c / top)
         p.add(f'<g class="cp"><title>{c} RLI projects take {hours(10 ** (lo + bw * i))}–{hours(10 ** (lo + bw * (i + 1)))}'
-              f'</title><rect x="{x0 + .5:.1f}" y="{y:.1f}" width="{x1 - x0 - 1:.1f}" height="{p.Y(0) - y:.1f}" '
+              f'</title><rect x="{xa + .5:.1f}" y="{y:.1f}" width="{xb - xa - 1:.1f}" height="{p.Y(0) - y:.1f}" '
               f'fill="{C_RW}" opacity=".22"/></g>')
 
-    def curve(h50, color, width, label_at):
+    def curve(h50, color, width):
         pts = []
         for k in range(0, 201):
             lt = p.x0 + (p.x1 - p.x0) * k / 200
@@ -358,7 +379,7 @@ def rli_conversion(db, as_of: dt.date) -> str:
         p.add(f'<polyline points="{" ".join(pts)}" fill="none" stroke="{color}" stroke-width="{width}"/>')
 
     for d, color, width in ((early, "var(--mute)", 1.4), (last, C_RW, 2.4)):
-        curve(rw50[d], color, width, d)
+        curve(rw50[d], color, width)
         x50, x80 = p.X(math.log10(rw50[d])), p.X(math.log10(h80[d]))
         p.add(f'<g class="cp"><title>{d}: RLI {rli[d]}% → 50% horizon {hours(rw50[d])}, 80% horizon {hours(h80[d])}'
               f'</title><circle cx="{x50:.1f}" cy="{p.Y(.5):.1f}" r="3.5" fill="{color}"/>'
