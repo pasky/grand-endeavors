@@ -58,8 +58,8 @@ OBS_VERIF = {"verified", "corrected", "collector", "legacy", "withdrawn"}
 STAGED_VERIF = {"verified", "corrected", "collector", "rejected", "unverified"}
 BASES = {"source", "rule", "seen"}
 # an event's optional `deployment` case (a KPI that counts deployment cases, robots-hardware;
-# DESIGN.md §3): working = the source documents the work; ended; disputed = a credible source
-# contradicts the case (it stops counting)
+# DESIGN.md §3): working = the source documents the work; ended = it stopped; disputed = a credible
+# source contradicts the case (both stop it counting until a later working event)
 DEPLOY_STATUS = {"working", "ended", "disputed"}
 DEPLOY_REQUIRED = ("maker", "platform", "customer", "job", "status")
 DEPLOY_OPTIONAL = ("form", "site", "robots", "autonomy")
@@ -459,20 +459,23 @@ def deployment_roster(evs: list[dict], until: str | None = None) -> tuple[list[d
     (YYYY-MM-DD): only events published by then.
     Events apply in publication order; all of one date apply before the count is compared, and
     within a pair a date's events apply working, then ended, then disputed (a same-day dispute
-    wins). A case counts from the publication of its first `working` event; `ended` keeps it
-    counted (a cumulative count of cases ever documented); `disputed` stops it counting until a
-    later `working` event. case = {maker, customer, platform, form, site, job, robots, autonomy,
-    since, first_event, latest_event, status (its latest event's), counted, events: [ids]}, the
-    descriptive fields from the latest event that has them (autonomy only from working events).
-    timeline = [{date, count, added, removed, events}], one entry per publication date on which
-    the counted set changed (net)."""
+    wins). A case counts from the publication of its first `working` event while its latest
+    status is `working`: an `ended` or `disputed` event stops it counting from that event's
+    publication (when it became known), a later `working` event counts it again.
+    Later reports propagate without overwriting what the work was: the descriptive fields
+    (platform, form, site, job, robots, autonomy) come from the latest `working` event that has
+    them; every `ended`/`disputed` event is kept in `updates`.
+    case = {maker, customer, platform, form, site, job, robots, autonomy, since, first_event,
+    latest_event, status (its latest event's), counted, events: [ids], updates: [{date, status,
+    event, job, site}]}. timeline = [{date, count, added, removed, events}], one entry per
+    publication date on which the counted set changed (net)."""
     order = {"working": 0, "ended": 1, "disputed": 2}
     dep = sorted((e for e in evs if isinstance(e.get("deployment"), dict)
                   and (until is None or str(e["published"]) <= until)),
                  key=lambda e: (str(e["published"]), order.get(e["deployment"].get("status"), 3), str(e["id"])))
     cases: dict[tuple[str, str], dict] = {}
     timeline: list[dict] = []
-    counted = lambda c: c["since"] is not None and not c["disputed"]
+    counted = lambda c: c["since"] is not None and c["status"] == "working"
     label = lambda c: f"{c['maker']} / {c['customer']}"
     i = 0
     while i < len(dep):
@@ -483,31 +486,30 @@ def deployment_roster(evs: list[dict], until: str | None = None) -> tuple[list[d
             e = dep[i]; i += 1
             d, k = e["deployment"], _deploy_key(e["deployment"])
             c = cases.setdefault(k, {"maker": d["maker"], "customer": d["customer"], "since": None,
-                                     "first_event": None, "disputed": False, "events": []})
+                                     "first_event": None, "events": [], "updates": []})
             c["events"].append(e["id"]); c["latest_event"] = e["id"]; c["status"] = d["status"]
             if d["status"] == "working":
-                c["disputed"] = False
                 if c["since"] is None:
                     c["since"], c["first_event"] = e["published"], e["id"]
-            elif d["status"] == "disputed":
-                c["disputed"] = True
-            for f in ("platform", "form", "site", "job", "robots", "autonomy"):
-                if d.get(f) is not None and (f != "autonomy" or d["status"] == "working"):
-                    c[f] = d[f]
+                for f in ("platform", "form", "site", "job", "robots", "autonomy"):
+                    if d.get(f) is not None:
+                        c[f] = d[f]
+            else:
+                c["updates"].append({"date": e["published"], "status": d["status"], "event": e["id"],
+                                     "job": d.get("job"), "site": d.get("site")})
             changed.append(e["id"])
         after = {k for k, c in cases.items() if counted(c)}
         if before != after:
+            key_of = {x["id"]: _deploy_key(x["deployment"]) for x in dep}
             timeline.append({"date": day_, "count": len(after),
                              "added": [label(cases[k]) for k in sorted(after - before)],
                              "removed": [label(cases[k]) for k in sorted(before - after)],
-                             "events": [x for x in changed if _deploy_key(next(
-                                 e for e in dep if e["id"] == x)["deployment"]) in after ^ before]})
+                             "events": [x for x in changed if key_of[x] in after ^ before]})
     out = []
     for c in cases.values():
         c["counted"] = counted(c)
         for f in ("platform", "form", "site", "job", "robots", "autonomy"):
             c.setdefault(f, None)
-        del c["disputed"]
         out.append(c)
     out.sort(key=lambda c: (c["since"] or "9999", c["maker"].casefold(), c["customer"].casefold()))
     return out, timeline

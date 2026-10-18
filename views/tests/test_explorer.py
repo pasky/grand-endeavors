@@ -768,13 +768,14 @@ def main():
                    ("robots-hardware", f"{pub}-e{i}", pub, eff, d))
     db.execute("INSERT INTO build_info VALUES ('as_of', '2026-10-18')")
     html = explore.cases_html(db, "robots-hardware")
-    case("cases: the table is dated", "counted case(s) as of 18 Oct 2026" in html)
-    case("cases: counted cases in order, ended marked, platform form, other customers, escaped",
-         "The 3 counted case(s)" in html and html.index("BMW") < html.index("GXO") < html.index("Schaeffler")
-         and ">ended<" in html and "(bipedal humanoid)" in html and "also at 1 other customer" in html
+    case("cases: the table is dated", "deployment(s) at work as of 18 Oct 2026" in html)
+    case("cases: at work first in order, then ended/disputed greyed; platform form, other customers, escaped",
+         "The 2 deployment(s) at work" in html and "(and 1 since reported ended or disputed)" in html
+         and html.index("GXO") < html.index("Schaeffler") < html.index("BMW")
+         and "<tr class=mute>" in html and "(bipedal humanoid)" in html and "also at 1 other customer" in html
          and "&lt;totes&gt;" in html and "Zeekr" not in html)
-    case("cases: a never-working (disputed) case is listed as not counted",
-         "Not counted: Spirit AI / CATL (no working case yet)" in html)
+    case("cases: the later report shows under the job, linked; a never-working case is not listed",
+         "ended, reported <a href=" in html and "Spirit AI" not in html)
     db.close()
 
     print(f"\n{len(FAILS)} failure(s)" if FAILS else "\nall explorer tests passed")

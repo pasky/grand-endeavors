@@ -167,13 +167,20 @@ def main():
     case("roster: one case per normalized (maker, customer) pair; a new maker at a customer is a new pair",
          len(cases) == 5 and by[("Agility", "GXO")]["events"] == ["2026-01-10-a", "2026-03-01-d"]
          and by[("Agility", "GXO")]["robots"] == 5 and by[("Galbot", "catl ")]["counted"])
-    case("roster: ended stays counted (marked ended), disputed stops counting, never-working is not counted",
-         by[("Figure", "BMW")]["counted"] and by[("Figure", "BMW")]["status"] == "ended"
+    case("roster: ended and disputed stop counting (the case stays listed), never-working is not counted",
+         not by[("Figure", "BMW")]["counted"] and by[("Figure", "BMW")]["status"] == "ended"
          and not by[("Spirit AI", "CATL")]["counted"] and not by[("UBTech", "Zeekr")]["counted"])
-    case("roster timeline: one entry per date the count changes, with the count after it",
+    case("roster timeline: one entry per date the count changes, with the count after it (an ending is a change)",
          [(t["date"], t["count"]) for t in tl]
-         == [("2026-01-10", 1), ("2026-02-01", 3), ("2026-04-01", 4), ("2026-06-01", 3)]
-         and tl[-1]["removed"] == ["Spirit AI / CATL"])
+         == [("2026-01-10", 1), ("2026-02-01", 3), ("2026-04-01", 4), ("2026-05-01", 3), ("2026-06-01", 2)]
+         and tl[-2]["removed"] == ["Figure / BMW"] and tl[-1]["removed"] == ["Spirit AI / CATL"])
+    upd = [dep("2026-01-10-a", "2026-01-10", "A", "B", job="loads parts in live production", site="Plant 1", robots=1),
+           dep("2026-03-10-b", "2026-03-10", "A", "B", status="ended", job="a later non-production test", site="Plant 2")]
+    uc = ledger.deployment_roster(upd)[0][0]
+    case("roster: a later report propagates its status and is kept as an update, without overwriting the work",
+         uc["job"] == "loads parts in live production" and uc["site"] == "Plant 1" and uc["robots"] == 1
+         and uc["status"] == "ended" and uc["updates"] == [{"date": "2026-03-10", "status": "ended", "event": "2026-03-10-b",
+                                                           "job": "a later non-production test", "site": "Plant 2"}])
     same = [dep("2026-01-10-z", "2026-01-10", "A", "B"), dep("2026-01-10-a", "2026-01-10", "A", "B", status="disputed")]
     c1, t1 = ledger.deployment_roster(same)
     case("roster: on one date a dispute wins whatever the ids; no net change, no timeline entry",
@@ -187,7 +194,7 @@ def main():
          has(ledger.check_event(dep("2026-05-13-d", "2026-05-13", "A", "B", status=[]), "climate", topics), "status must be"))
     back = evs + [dep("2026-08-01-i", "2026-08-01", "Spirit AI", "CATL")]
     case("roster: a later working event re-counts a disputed case (since = its first working event)",
-         [(t["date"], t["count"]) for t in ledger.deployment_roster(back)[1]][-1] == ("2026-08-01", 4)
+         [(t["date"], t["count"]) for t in ledger.deployment_roster(back)[1]][-1] == ("2026-08-01", 3)
          and next(c for c in ledger.deployment_roster(back)[0] if c["maker"] == "Spirit AI")["since"] == "2026-02-01")
     case("framework topics include fusion tech-tree branches as challenges",
          "challenge:d-t-fusion" in ledger.valid_topics("fusion") and "milestone:d-t-fusion" not in ledger.valid_topics("fusion"))

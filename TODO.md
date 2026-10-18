@@ -127,7 +127,7 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       Consider adding a local-currency or PPP variant.
 - [ ] Robots-hardware KPI is provisional (owner 2026-10-18; research and board memo in data
       ledger/audits/2026-10-18-hardware-kpi/): a count of documented deployment cases
-      (`gp-deployment-pairs`). Replace it with a measure of the work done (robots x hours x
+      (`gp-deployments`). Replace it with a measure of the work done (robots x hours x
       interventions) once deployments disclose that. Coverage caveat: a one-off web check
       found 2 qualifying cases the ledger had missed, mostly Chinese, where 'practical
       training' (实训) vs production work is the recurring judgment call.
