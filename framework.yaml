@@ -132,8 +132,8 @@ endeavors:
                 stalls. There is no outside pace to measure it against: METR's long-run figure, about 7 months,
                 averages the slow years before 2024 with the fast ones since, and it applies to the software
                 side only. The remote side's pace depends on the success curve we assume (see its section), but
-                a different curve would speed up or slow down both halves equally, so the halves can still be
-                compared.
+                a different curve would speed up or slow down both halves by about the same factor, so the
+                halves can still be compared.
             - title: "Cross-checks: is the ECI conversion still right at the frontier?"
               text: |-
                 - **[SWE-Marathon](https://www.swe-marathon.org/)** runs METR's method on 20 long software
