@@ -41,9 +41,9 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       App. G.2), and success is <=24% even on <45-min tasks, so length is not what limits agents.
       FrontierSWE (34 long tasks, per-task results public) has no expert-hour field in its
       Harbor task.toml files (github.com/Proximal-Labs/frontier-swe, 17 v1 tasks) and mostly
-      continuous scores. Open lead: BRIDGE (github.com/McGill-NLP/BRIDGE,
-      IRT difficulty -> human hours, R² 0.81 on METR tasks) could put hourless tasks on METR's scale,
-      but that scale ends near 16 h, so it moves the extrapolation rather than removing it.
+      continuous scores. BRIDGE (github.com/McGill-NLP/BRIDGE: IRT difficulty -> human hours) is
+      no source either: its hours scale is anchored on METR's tasks, so beyond them it extrapolates
+      just like the ECI line the tripwire checks.
 
 ## Owner decisions
 
