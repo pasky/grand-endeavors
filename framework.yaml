@@ -59,8 +59,9 @@ endeavors:
                 succeeds four times out of five. It grows as AI can be trusted with longer stretches of work,
                 which is what all three milestones below need.
 
-                METR measured horizons directly until it stopped in September 2026 (shaded below). The KPI is
-                built instead from two indices that keep being updated, each converted into METR-style hours:
+                METR measured horizons directly, but stopped updating in September 2026; the shaded span below
+                covers the models it measured, by release date (the last one was released in April 2026). The
+                KPI is built instead from two indices that keep being updated, each converted into METR-style hours:
                 **software** from the Epoch Capabilities Index (ECI) and **remote work** from the Remote Labor
                 Index (RLI); the KPI is their geometric mean. The right-hand scales show the raw index values
                 that correspond to each height. Where METR's own measurements exist (hollow dots) they track
@@ -93,12 +94,14 @@ endeavors:
                 ([METR 2025](https://metr.org/blog/2025-07-14-how-does-time-horizon-vary-across-domains/)):
                 a model's chance of success falls with task length along a logistic curve, each doubling of the
                 task cutting the odds by a fixed factor (slope 0.6 per doubling, METR's cross-domain average). We
-                find the 50% horizon at which that curve, averaged over RLI's actual project lengths (the bars,
-                decoded from the paper's figure), equals the measured rate; the 80% horizon is the same curve
+                find the 50% horizon at which that curve, averaged over RLI's project lengths (the bars: the 201
+                of its 240 projects with a time, reconstructed from the paper's histogram), equals the measured
+                rate; the 80% horizon is the same curve
                 read at 80%, 5× shorter. So 21% of mostly day-long projects done means: reliable (80%) on
                 ~25-minute tasks, a coin flip (50%) at ~2 hours, and the long projects mostly fail. The slope is
-                assumed (METR measured 0.50–0.69 on its own models, moving the 80% level by −0.8/+0.6
-                doublings), so the remote side's level is the less certain one; its trend is less affected.
+                assumed (on METR's own models it spans 0.50–0.69, 10th to 90th percentile, which moves the 80%
+                level by −0.8/+0.6 doublings), so the remote side's level is the less certain one; its trend is
+                less affected.
               chart: rli-conversion
               metrics: [horizon-80-remote-rli, rli-automation-by-release]
             - title: The blend, and how the status is judged
@@ -144,16 +147,19 @@ endeavors:
                 scaffold, which lowers success on purpose (AISI: uncapped horizons "would be significantly
                 higher"); the tasks are narrow cyber skills, not METR's software suite; and the newest models
                 saturate the suite (its longest task is 12 h, only six are 8 h or longer). Against the ECI line
-                its horizons sit about 0.8 doublings lower, model by model. So it cannot be pooled into the
-                software calibration: that would mix two scales of hours.
+                its horizons sit about 0.8 doublings lower on average (from −1.8 to +0.1 by model). So it cannot
+                be pooled into the software calibration: that would mix two scales of hours.
 
-                **What it does check is the slope**, the part the frontier extrapolation rests on. Across the 9
-                models that also have an ECI score, AISI's horizons rise **0.22 ± 0.03 doublings per ECI point**
-                (0.18 ± 0.03 without GPT-5.5, which AISI calls highly uncertain), against the conversion's 0.223.
-                That is the same slope or a somewhat flatter one, within the range the forecasts already allow;
-                if the flatter one held, today's software horizon would be about 0.45 doublings (~1.4×) too high.
-                AISI publishes only a chart image, so the series is read off its figure (one value in its text,
-                Claude Sonnet 4.5 at 16 min, checks the reading; ledger audit 2026-10-18-aisi-cyber).
+                **What it can check is the slope**, the part the frontier extrapolation rests on. Across the 9
+                models that also have an ECI score (the triangles in the ECI chart), AISI's horizons rise
+                **0.22 ± 0.03 doublings per ECI point** against the conversion's 0.223, but that leans on GPT-5.5,
+                which AISI calls highly uncertain; without it, 0.18 ± 0.03 (about 20% flatter), and no model
+                beyond the calibration range is left. So: compatible with the conversion's slope, too uncertain to
+                validate its extrapolation. If only the slope beyond the calibration range were that flatter one,
+                today's software horizon would be about 0.45 doublings (~1.4×) too high, inside the conversion
+                error the forecasts already carry. AISI publishes only a chart image, so the series (its frontier
+                steps) is read off its figure (one value in its text, Claude Sonnet 4.5 at 16 min, checks the
+                reading; ledger audit 2026-10-18-aisi-cyber).
               metrics: [aisi-cyber-h80-by-release]
         milestones:
           - slug: the-linux-kernel-patch

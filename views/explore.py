@@ -434,7 +434,7 @@ border:1px solid transparent;margin:1px 0}.nv:hover{background:var(--hov)}
 .nvg{margin:1px 0}.nv.sub{margin-left:18px;padding:4px 8px;border-left:2px solid var(--line);border-radius:0 8px 8px 0}
 .nv.sub .nt{font-weight:500;font-size:13px}.nv.sub .nk,.nv.sub .nd{margin-left:26px}
 .ax{font-size:9px;fill:var(--mute)}
-.sp rect{fill:transparent}.sp circle{fill:var(--card);stroke:currentColor;stroke-width:1.5;opacity:0}.sp text{font-size:9.5px;font-weight:600;fill:var(--ink);opacity:0}
+.sp rect{fill:transparent}.sp circle,.sp text{pointer-events:none}.sp circle{fill:var(--card);stroke:currentColor;stroke-width:1.5;opacity:0}.sp text{font-size:9.5px;font-weight:600;fill:var(--ink);opacity:0}
 .sp:hover circle,.sp:hover text{opacity:1}.spark:has(.sp:hover) .ax{opacity:0}
 .nleg{margin:18px 8px 0;display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}.nleg .dot{width:9px;height:9px;margin-right:5px}
 .nleg p{grid-column:1/-1;margin:4px 0 0}

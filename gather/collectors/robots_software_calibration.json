@@ -1,5 +1,7 @@
 {
- "about": "robots-software horizon conversions (robots_software.py): the frozen ECI -> METR calibration with its pairs (METR TH1.1 x Epoch ECI), and the RLI conversion's inputs. Written by --calibrate --write; the dashboard draws the conversion charts from it.",
+ "about": "robots-software horizon conversions (robots_software.py): the frozen ECI -> METR calibration (fitted on that date) with its pairs (METR TH1.1 x Epoch ECI, the ECI values as of pairs_vintage; refit = their fit, which must equal the frozen one), and the RLI conversion's inputs. Written by --calibrate --write; the dashboard draws the conversion charts from it.",
+ "fitted": "2026-10-16",
+ "pairs_vintage": "2026-10-18",
  "eci_cal": {
   "p50": {
    "a": -26.366541,

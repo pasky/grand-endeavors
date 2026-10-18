@@ -228,6 +228,10 @@ case("the dashboard's calibration file matches the frozen conversions (rewrite i
      {q: (v["a"], v["b"]) for q, v in cj["eci_cal"].items()} == rs.ECI_CAL and cj["rli"]["beta"] == rs.BETA
      and cj["rli"]["hist"] == rs.RLI_HIST and len(cj["pairs"]) == 21
      and all(abs(cj["refit"][q]["b"] - rs.ECI_CAL[q][1]) < 1e-6 for q in rs.ECI_CAL))
+sys.path.insert(0, os.path.join(os.path.dirname(GATHER), "views"))
+import kpi_charts  # noqa: E402
+case("the dashboard's RLI conversion (kpi_charts, from the calibration file) is the collector's",
+     all(abs(kpi_charts.rli_h50(r, cj) / rs.rli_hours(r) - 1) < 1e-9 for r in (0.83, 4.17, 21.25, 60)))
 tasks = sorted(rs.rli_tasks())
 case("rli: decoded project lengths reproduce the paper (201 projects with times, median 11.5 h within 3%)",
      len(tasks) == 201 and abs(2 ** tasks[100] / 11.5 - 1) < 0.03)

@@ -154,6 +154,7 @@ CALIBRATION_PAIRS = {
 }
 # log2(METR horizon minutes) = a + b * ECI, per success level (see --calibrate)
 ECI_CAL = {"p50": (-26.366541, 0.226507), "p80": (-28.242299, 0.222614)}
+ECI_CAL_FITTED = "2026-10-16"   # on the ECI vintage of 2026-10-15 (the module doc)
 BETA = 0.6
 CALIBRATION_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "robots_software_calibration.json")
 RLI_HIST = {"log10_lo": -0.31, "log10_hi": 2.43, "counts": [1, 9, 5, 10, 38, 36, 31, 27, 14, 16, 8, 4],
@@ -529,8 +530,11 @@ def main() -> int:
                  and "p80" in by_id[mid] and "p50" in by_id[mid]]
         fits = {q: {k: v for k, v in calibrate(ms, eci, q).items() if k != "pred_se"} for q in ECI_CAL}
         out = {"about": "robots-software horizon conversions (robots_software.py): the frozen ECI -> METR "
-                        "calibration with its pairs (METR TH1.1 x Epoch ECI), and the RLI conversion's inputs. "
-                        "Written by --calibrate --write; the dashboard draws the conversion charts from it.",
+                        "calibration (fitted on that date) with its pairs (METR TH1.1 x Epoch ECI, the ECI values "
+                        "as of pairs_vintage; refit = their fit, which must equal the frozen one), and the RLI "
+                        "conversion's inputs. Written by --calibrate --write; the dashboard draws the conversion "
+                        "charts from it.",
+               "fitted": ECI_CAL_FITTED, "pairs_vintage": str(dt.date.today()),
                "eci_cal": {q: {"a": ab[0], "b": ab[1]} for q, ab in ECI_CAL.items()}, "refit": fits,
                "pairs": sorted(pairs, key=lambda p: p["eci"]),
                "rli": {"beta": BETA, "hist": RLI_HIST, "h50_per_h80": 2 ** (math.log(4) / BETA)}}

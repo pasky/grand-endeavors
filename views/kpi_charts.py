@@ -18,8 +18,13 @@ import math
 import os
 import re
 
+import ledger
+
 CALIBRATION_JSON = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                 "gather", "collectors", "robots_software_calibration.json")
+# every model AISI's cyber figure shows (the ledger series holds only the frontier steps); read off
+# the figure in that audit, which documents and verifies it
+AISI_MODELS = os.path.join(ledger.DATA, "ledger", "audits", "2026-10-18-aisi-cyber", "models.csv")
 SEC = "robots-software"
 # series colours (also in the legends); METR measured = ink
 C_SW, C_RW, C_BL, C_METR, C_SWM, C_AISI = "#2563eb", "#d97706", "#7c3aed", "currentColor", "#0d9488", "#dc2626"
@@ -56,7 +61,7 @@ def _model(note: str) -> str:
     """The model a collector note names ('... ECI 166.82 of Claude Opus 5.5 (released ...')."""
     m = (re.search(r"\bof (.+?) \(released", note) or re.search(r"frontier: (\S+) \(", note)
          or re.search(r"release date: (.+?) \((?:best|released)", note))
-    return m[1].replace("_inspect", "").replace("_unknown", "") if m else ""
+    return re.sub(r"-20\d{6}$", "", m[1].replace("_inspect", "").replace("_unknown", "")) if m else ""
 
 
 class Plot:
@@ -141,27 +146,52 @@ class Plot:
                 f'{"".join(self.out)}</g></svg>{cap}</figure>')
 
 
-def _calibration() -> dict | None:
+def _calibration(as_of: dt.date) -> dict | None:
+    """The frozen conversions, from the day they were fitted (an earlier as-of view must not show
+    a calibration, or METR measurements, that did not exist yet)."""
     try:
         with open(CALIBRATION_JSON, encoding="utf-8") as f:
-            return json.load(f)
+            cal = json.load(f)
     except (OSError, ValueError):
         return None
+    return cal if str(as_of) >= cal.get("fitted", "9999") else None
+
+
+def _aisi_models(as_of: dt.date) -> list[dict]:
+    import csv
+    try:
+        with open(AISI_MODELS, encoding="utf-8") as f:
+            return [r for r in csv.DictReader(f) if r["published"] <= str(as_of)]
+    except OSError:
+        return []
+
+
+def rli_h50(rate_pct: float, cal: dict) -> float | None:
+    """The RLI conversion (robots_software.rli_hours, re-implemented from the calibration file's
+    inputs; views/tests checks they agree): the 50% horizon at which METR's logistic, averaged over
+    RLI's (reconstructed) project lengths, gives the automation rate."""
+    p = rate_pct / 100
+    if not 0 < p < 1:
+        return None
+    hist, beta = cal["rli"]["hist"], cal["rli"]["beta"]
+    lo, hi, cs = hist["log10_lo"], hist["log10_hi"], hist["counts"]
+    w = (hi - lo) / len(cs)
+    tasks = [math.log2(10 ** (lo + w * (i + (k + .5) / c))) for i, c in enumerate(cs) for k in range(c)]
+    tasks += [math.log2(h) for h in hist["extremes_h"]]
+    a, b = -40.0, 60.0
+    for _ in range(100):
+        m = (a + b) / 2
+        if sum(1 / (1 + math.exp(-beta * (m - t))) for t in tasks) / len(tasks) < p:
+            a = m
+        else:
+            b = m
+    return 2 ** ((a + b) / 2)
 
 
 def _hour_ticks(lo, hi):
     cands = [(1 / 3600, "1 s"), (10 / 3600, "10 s"), (1 / 60, "1 min"), (1 / 6, "10 min"), (1, "1 h"),
              (10, "10 h"), (100, "100 h")]
     return [(v, lab) for v, lab in cands if lo <= v <= hi]
-
-
-def _interp_log(pairs, x):
-    """y at x by log-log interpolation over sorted (x, y) pairs (None outside)."""
-    for (xa, ya), (xb, yb) in zip(pairs, pairs[1:]):
-        if xa <= x <= xb and xb > xa:
-            t = (math.log(x) - math.log(xa)) / (math.log(xb) - math.log(xa))
-            return math.exp(math.log(ya) + t * (math.log(yb) - math.log(ya)))
-    return None
 
 
 def task_horizon_timeline(db, as_of: dt.date) -> str:
@@ -175,6 +205,7 @@ def task_horizon_timeline(db, as_of: dt.date) -> str:
     rli = {d: v for d, v, _ in _series(db, "rli-automation-by-release")}
     if not (sw and rw and bl):
         return ""
+    cal = _calibration(as_of)
     start = dt.date(2023, 1, 1)
     metr = [p for p in metr if p[0] >= start]
     end = max(as_of, max(p[0] for p in sw + rw + swm))
@@ -186,35 +217,30 @@ def task_horizon_timeline(db, as_of: dt.date) -> str:
         a, b = p.X(_year(metr[0][0])), p.X(_year(metr[-1][0]))
         yb = p.h - p.mb - 6
         p.add(f'<rect class="era" x="{a:.1f}" y="{p.mt}" width="{b - a:.1f}" height="{p.h - p.mt - p.mb}"/>'
-              f'<text class="ann" x="{a + 4:.1f}" y="{p.mt + 11}">METR measured horizons directly</text>'
-              f'<text class="ann" x="{b + 4:.1f}" y="{yb - 11}">METR stopped:</text>'
-              f'<text class="ann" x="{b + 4:.1f}" y="{yb}">conversions only</text>')
-    # right-hand axes: the raw indices, placed where the conversions put them (exact for ECI,
-    # whose conversion is a straight line in log hours; interpolated between frontier pairs for RLI)
-    sw_by = {d: v for d, v, _ in sw}
-    ep = sorted((eci[d], sw_by[d]) for d in sw_by if d in eci)
-    if len(ep) >= 2:
-        (e0, h0), (e1, h1) = ep[0], ep[-1]
-        b_ = (math.log2(h1) - math.log2(h0)) / (e1 - e0)
+              f'<text class="ann" x="{a + 4:.1f}" y="{p.mt + 11}">models METR measured (by release date)</text>'
+              f'<text class="ann" x="{b + 4:.1f}" y="{yb - 22}">after METR\'s last</text>'
+              f'<text class="ann" x="{b + 4:.1f}" y="{yb - 11}">model: conversions</text>'
+              f'<text class="ann" x="{b + 4:.1f}" y="{yb}">only</text>')
+    # right-hand axes: the raw indices, placed where the frozen conversions put them
+    if cal:
+        a_, b_ = cal["eci_cal"]["p80"]["a"], cal["eci_cal"]["p80"]["b"]
         xr = p.w - p.mr + 4
-        p.add(f'<text class="ax" x="{p.w - p.mr + 2}" y="{p.mt - 4}" fill="{C_SW}">ECI</text>')
+        p.add(f'<text class="ax" x="{p.w - p.mr + 2}" y="{p.mt - 4}" style="fill:{C_SW}">ECI</text>')
         for e in range(130, 175, 10):
-            hh = h0 * 2 ** (b_ * (e - e0))
+            hh = 2 ** (a_ + b_ * e) / 60
             if p.y0 <= hh <= p.y1:
                 y = p.Y(hh)
                 p.add(f'<line x1="{p.w - p.mr}" x2="{xr}" y1="{y:.1f}" y2="{y:.1f}" stroke="{C_SW}"/>'
-                      f'<text class="ax" x="{xr + 2}" y="{y + 3:.1f}" fill="{C_SW}">{e}</text>')
-    rw_by = {d: v for d, v, _ in rw}
-    rp = sorted((rli[d], rw_by[d]) for d in rw_by if d in rli)
-    if len(rp) >= 2:
+                      f'<text class="ax" x="{xr + 2}" y="{y + 3:.1f}" style="fill:{C_SW}">{e}</text>')
         xr = p.w - p.mr + 42
-        p.add(f'<text class="ax" x="{xr - 2}" y="{p.mt - 4}" fill="{C_RW}">RLI</text>')
-        for r in (1, 2, 5, 10, 20):
-            hh = _interp_log(rp, r)
-            if hh and p.y0 <= hh <= p.y1:
+        p.add(f'<text class="ax" x="{xr - 2}" y="{p.mt - 4}" style="fill:{C_RW}">RLI</text>')
+        k80 = 2 ** (-math.log(4) / cal["rli"]["beta"])
+        for r in (1, 2, 5, 10, 20, 50):
+            hh = rli_h50(r, cal) * k80
+            if p.y0 <= hh <= p.y1:
                 y = p.Y(hh)
                 p.add(f'<line x1="{xr - 4}" x2="{xr}" y1="{y:.1f}" y2="{y:.1f}" stroke="{C_RW}"/>'
-                      f'<text class="ax" x="{xr + 2}" y="{y + 3:.1f}" fill="{C_RW}">{r}%</text>')
+                      f'<text class="ax" x="{xr + 2}" y="{y + 3:.1f}" style="fill:{C_RW}">{r}%</text>')
     xe = _year(end)
     p.steps([(_year(d), v) for d, v, _ in sw], xe, C_SW)
     p.steps([(_year(d), v) for d, v, _ in rw], xe, C_RW)
@@ -239,7 +265,7 @@ def task_horizon_timeline(db, as_of: dt.date) -> str:
 
 
 def eci_calibration(db, as_of: dt.date) -> str:
-    cal = _calibration()
+    cal = _calibration(as_of)
     sw = _series(db, "horizon-80-software-eci")
     eci = {d: v for d, v, _ in _series(db, "eci-frontier-by-release")}
     if not cal or not cal.get("pairs"):
@@ -270,10 +296,11 @@ def eci_calibration(db, as_of: dt.date) -> str:
         p.dot(q["eci"], q["metr_p80_min"] / 60, C_METR,
               f"{q['eci_model']} ({q['release']}): ECI {q['eci']:.2f}, METR measured {hours(q['metr_p80_min'] / 60)}; "
               f"the line says {hours(conv(q['eci']))}", hollow=True)
-    for d, v, n in _series(db, "aisi-cyber-h80-by-release"):
-        if m := re.search(r"ECI ([\d.]+) per Epoch", n):
-            p.dot(float(m[1]), v, C_AISI, f"{_model(n)}: ECI {m[1]}, UK AISI cyber horizon {hours(v)} "
-                  "(2.5M-token cap: its level sits lower, its rise per ECI point is what it checks)", shape="tri", r=2.8)
+    for r in _aisi_models(as_of):
+        if r["eci"]:
+            v = float(r["aisi_cyber_h80_h"])
+            p.dot(float(r["eci"]), v, C_AISI, f"{r['model']}: ECI {r['eci']}, UK AISI cyber horizon {hours(v)} "
+                  "(2.5M-token cap: its level sits lower; its rise per ECI point is what it checks)", shape="tri", r=2.8)
     if front:
         e, v, n = front
         p.dot(e, v, C_SW, f"today's frontier, {_model(n)}: ECI {e:.2f} → {hours(v)} (on the line, by construction)",
@@ -289,7 +316,7 @@ def eci_calibration(db, as_of: dt.date) -> str:
 
 
 def rli_conversion(db, as_of: dt.date) -> str:
-    cal = _calibration()
+    cal = _calibration(as_of)
     rw = _series(db, "horizon-80-remote-rli")
     rw50 = {d: v for d, v, _ in _series(db, "horizon-50-remote-rli")}
     rli = {d: v for d, v, _ in _series(db, "rli-automation-by-release")}
@@ -298,19 +325,29 @@ def rli_conversion(db, as_of: dt.date) -> str:
     beta, hist = cal["rli"]["beta"], cal["rli"]["hist"]
     lo, hi, cs = hist["log10_lo"], hist["log10_hi"], hist["counts"]
     bw = (hi - lo) / len(cs)
-    p = Plot(680, 280, -1.3, 2.75, 0, 1, ml=52, mr=44, mt=22, ylog=False)  # x = log10 hours, y = probability
-    p.xticks([(math.log10(v), lab) for v, lab in ((1 / 12, "5 min"), (.5, "30 min"), (2, "2 h"), (10, "10 h"),
-                                                  (50, "50 h"), (250, "250 h"))])
+    dates = [d for d, _, _ in rw if d in rw50 and d in rli]
+    if not dates:
+        return ""
+    last = dates[-1]
+    early = next((d for d in dates if rli[d] >= 2), dates[0])
+    h80 = {d: v for d, v, _ in rw}
+    x0 = min(-1.3, math.floor(math.log10(min(h80[early], h80[last])) * 2) / 2 - .1)
+    p = Plot(680, 280, x0, 2.75, 0, 1, ml=52, mr=50, mt=22, ylog=False)  # x = log10 hours, y = probability
+    p.xticks([(math.log10(v), lab) for v, lab in ((1 / 60, "1 min"), (1 / 6, "10 min"), (1, "1 h"), (10, "10 h"),
+                                                  (100, "100 h")) if math.log10(v) >= x0])
     p.yticks([(f, f"{f:.0%}") for f in (0, .2, .5, .8, 1)], grid=True)
-    top = max(cs)
+    top = 40 if max(cs) <= 40 else max(cs)   # the bars' own scale, on the right
+    for c in range(0, top + 1, 10):
+        y = p.Y(c / top)
+        p.add(f'<text class="ax" x="{p.w - p.mr + 4}" y="{y + 3:.1f}" style="fill:{C_RW}">{c}</text>')
+    p.add(f'<text class="ax" transform="translate({p.w - 6},{p.mt + (p.h - p.mt - p.mb) / 2:.0f}) rotate(90)" '
+          f'text-anchor="middle" style="fill:{C_RW}">RLI projects per bar</text>')
     for i, c in enumerate(cs):
         x0, x1 = p.X(lo + bw * i), p.X(lo + bw * (i + 1))
-        y = p.Y(.95 * c / top)
+        y = p.Y(c / top)
         p.add(f'<g class="cp"><title>{c} RLI projects take {hours(10 ** (lo + bw * i))}–{hours(10 ** (lo + bw * (i + 1)))}'
               f'</title><rect x="{x0 + .5:.1f}" y="{y:.1f}" width="{x1 - x0 - 1:.1f}" height="{p.Y(0) - y:.1f}" '
               f'fill="{C_RW}" opacity=".22"/></g>')
-    p.add(f'<text class="ann" x="{p.X(hi) + 3:.1f}" y="{p.Y(.3):.1f}">RLI\'s</text>'
-          f'<text class="ann" x="{p.X(hi) + 3:.1f}" y="{p.Y(.3) + 11:.1f}">projects</text>')
 
     def curve(h50, color, width, label_at):
         pts = []
@@ -320,12 +357,6 @@ def rli_conversion(db, as_of: dt.date) -> str:
             pts.append(f"{p.X(lt):.1f},{p.Y(pr):.1f}")
         p.add(f'<polyline points="{" ".join(pts)}" fill="none" stroke="{color}" stroke-width="{width}"/>')
 
-    dates = [d for d, _, _ in rw if d in rw50 and d in rli]
-    if not dates:
-        return ""
-    last = dates[-1]
-    early = next((d for d in dates if rli[d] >= 2), dates[0])
-    h80 = {d: v for d, v, _ in rw}
     for d, color, width in ((early, "var(--mute)", 1.4), (last, C_RW, 2.4)):
         curve(rw50[d], color, width, d)
         x50, x80 = p.X(math.log10(rw50[d])), p.X(math.log10(h80[d]))
@@ -340,7 +371,7 @@ def rli_conversion(db, as_of: dt.date) -> str:
     return p.svg("Converting the RLI automation rate to a horizon: METR's success-vs-length curve over RLI's projects",
                  [(C_RW, "line", f"{last.strftime('%b %Y')} ({name(last)}): {rli[last]}% of RLI projects done"),
                   ("#888", "line", f"{early.strftime('%b %Y')} ({name(early)}): {rli[early]}%"),
-                  (C_RW, "bar", "how many RLI projects take that long")],
+                  (C_RW, "bar", "RLI's projects by length (240; 201 with times, reconstructed)")],
                  ylabel="chance of success")
 
 
@@ -352,5 +383,5 @@ figure.kc{margin:8px 0 10px;max-width:760px}figure.kc figcaption{font-size:12px;
 .kc .gr{stroke:var(--line);stroke-width:1}.kc .gr2{stroke:var(--mute);stroke-width:1;stroke-dasharray:2 3}
 .kc .ax{font-size:10px;fill:var(--mute)}.kc .lg{font-size:10.5px;fill:var(--ink)}.kc .ann{font-size:10px;fill:var(--mute)}
 .kc .era{fill:var(--sel);opacity:.6}.kc .band{fill:#2563eb;opacity:.10}
-.kc .cp{cursor:default}.kc .cp:hover circle,.kc .cp:hover path{stroke-width:3}.kc .cp:hover rect{opacity:.45}
+.kc .cp{cursor:default}.kc text{pointer-events:none}.kc .cp:hover circle,.kc .cp:hover path{stroke-width:3}.kc .cp:hover rect{opacity:.45}
 """
