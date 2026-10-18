@@ -115,7 +115,10 @@ is no KPI assessment (status unknown).
   source every time (in basis.benchmark and basis.benchmark_source):
   1. an external required path for the endeavor goal;
   2. the pace implied by the nearest milestone at its stated horizon;
-  3. the KPI's own long-run trend (≥ 5 years).
+  3. the KPI's own long-run trend (≥ 5 years). A KPI with a shorter history
+     uses its own earlier pace (first vs second half of the window) when no
+     longer series is on its scale; its registry row says why (clarified
+     2026-10-18, owner: robots-software).
 - **green**: the window trend moves in the goal direction at or above the
   benchmark pace.
 - **yellow**: the window trend moves clearly in the goal direction (beyond
@@ -436,7 +439,7 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   \* The verdict word must be one of those bound to the status (table in §1).
   It must also match the window trend: no "Worsening" when nothing worsened.
   Write it for a reader who knows only the KPI's name: plain units and words
-  ("Ahead: 1.8 h (Sep 2026), doubling every ~3 months vs ≤7 needed"), no
+  ("Off track: 421 ppm, +2.4 ppm/yr vs ≤0 needed"), no
   metric ids, no "OLS", no "(tier 3)" (the tier is in basis.benchmark). The
   trend is the window's; leave out a sub-window's pace (the sparkline shows
   it) unless the halves clearly differ (the confidence intervals of their

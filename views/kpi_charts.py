@@ -28,6 +28,9 @@ AISI_MODELS = os.path.join(ledger.DATA, "ledger", "audits", "2026-10-18-aisi-cyb
 SEC = "robots-software"
 # series colours (also in the legends); METR measured = ink
 C_SW, C_RW, C_BL, C_METR, C_SWM, C_AISI = "#2563eb", "#d97706", "#7c3aed", "currentColor", "#0d9488", "#dc2626"
+# METR's measured pace broke here (two-segment fit of its frontier: ~9 months per doubling before,
+# ~3.5 after; data ledger/audits/2026-10-18-horizon-pace); its trend line starts here
+METR_BREAK = dt.date(2024, 5, 1)
 
 
 def esc(s) -> str:
@@ -139,15 +142,17 @@ class Plot:
         self.add(f'<g class="cp"><title>{esc(tip)}</title>{g}</g>')
 
     def svg(self, title: str, legend: list[tuple[str, str, str]] = (), ylabel: str = "", caption: str = "") -> str:
-        """legend: (colour, kind 'line'|'dot'|'hollow'|'diamond'|'tri'|'bar', label), along the top
+        """legend: (colour, kind 'line'|'dash'|'dot'|'hollow'|'diamond'|'tri'|'bar', label), along the top
         (wrapping; the plot moves down to make room); ylabel: the left axis title."""
         x, row, items = 4, 0, []
         for color, kind, lab in legend:
-            wd = 26 + 5.7 * len(lab)
+            wd = 30 + 5.9 * len(lab)
             if x + wd > self.w and x > 4:
                 x, row = 4, row + 1
             y = 10 + 15 * row
             mark = {"line": f'<line x1="{x}" x2="{x + 14}" y1="{y}" y2="{y}" stroke="{color}" stroke-width="2.4"/>',
+                    "dash": f'<line x1="{x}" x2="{x + 14}" y1="{y}" y2="{y}" stroke="{color}" stroke-width="1.3" '
+                            f'stroke-dasharray="4 3" opacity=".55"/>',
                     "dot": f'<circle cx="{x + 7}" cy="{y}" r="3.2" fill="{color}"/>',
                     "hollow": f'<circle cx="{x + 7}" cy="{y}" r="3.2" fill="none" stroke="{color}" stroke-width="1.4"/>',
                     "diamond": f'<path d="M{x + 7},{y - 4}L{x + 11},{y}L{x + 7},{y + 4}L{x + 3},{y}Z" fill="{color}"/>',
@@ -206,6 +211,26 @@ def rli_h50(rate_pct: float, cal: dict) -> float | None:
     return 2 ** ((a + b) / 2)
 
 
+def pace(pts: list[tuple[dt.date, float, str]], start: dt.date) -> tuple[float, float, dt.date] | None:
+    """OLS of log2(value) on months (30.44 days) over the frontier rows from `start` (the value in
+    force at `start` counts from `start`): (months per doubling, log2 value at start, start); None
+    with fewer than 3 rows or no rise. The KPI assessment measures the window pace the same way."""
+    rows = [(d, v) for d, v, _ in pts if d >= start]
+    prior = [(d, v) for d, v, _ in pts if d < start]
+    if prior and (not rows or rows[0][0] > start):
+        rows = [(start, prior[-1][1])] + rows
+    if len(rows) < 3:
+        return None
+    xy = [((d - start).days / 30.44, math.log2(v)) for d, v in rows]
+    mx, my = sum(x for x, _ in xy) / len(xy), sum(y for _, y in xy) / len(xy)
+    k = sum((x - mx) * (y - my) for x, y in xy) / sum((x - mx) ** 2 for x, _ in xy)
+    return (1 / k, my - k * mx, start) if k > 0 else None
+
+
+def _mo(fit) -> str:
+    return f"×2 every {fit[0]:.1f} months" if fit else ""
+
+
 def _hour_ticks(lo, hi):
     cands = [(1 / 3600, "1 s"), (10 / 3600, "10 s"), (1 / 60, "1 min"), (1 / 6, "10 min"), (1, "1 h"),
              (10, "10 h"), (100, "100 h")]
@@ -259,6 +284,17 @@ def task_horizon_timeline(db, as_of: dt.date) -> str:
                 p.add(f'<line x1="{xr - 4}" x2="{xr}" y1="{y:.1f}" y2="{y:.1f}" stroke="{C_RW}"/>'
                       f'<text class="ax" x="{xr + 2}" y="{y + 3:.1f}" style="fill:{C_RW}">{r}%</text>')
     xe = _year(end)
+    # METR's measured trend since its pace broke, extended past its last measurement: where the
+    # software line runs along it, ECI has kept METR's pace
+    mfit = pace(_series(db, "metr-80-horizon-by-release", 1 / 60), METR_BREAK)
+    if mfit:
+        dbl, y0, d0 = mfit
+        at = lambda x: 2 ** (y0 + (x - _year(d0)) * 12 / dbl)
+        x1 = min(xe, _year(d0) + math.log2(p.y1 / 2 ** y0) * dbl / 12)  # stop at the top edge
+        p.add(f'<g class="cp"><title>METR measured: the trend of its frontier since {d0:%B %Y}, {_mo(mfit)}, '
+              f'extended past its last measurement</title><line x1="{p.X(_year(d0)):.1f}" y1="{p.Y(at(_year(d0))):.1f}" '
+              f'x2="{p.X(x1):.1f}" y2="{p.Y(at(x1)):.1f}" stroke="{C_METR}" stroke-width="1.3" '
+              f'stroke-dasharray="5 4" opacity=".55"/></g>')
     p.steps([(_year(d), v) for d, v, _ in sw], xe, C_SW)
     p.steps([(_year(d), v) for d, v, _ in rw], xe, C_RW)
     p.steps([(_year(d), v) for d, v, _ in bl], xe, C_BL, width=3)
@@ -277,12 +313,21 @@ def task_horizon_timeline(db, as_of: dt.date) -> str:
         p.dot(_year(d), v, C_SWM, f"{d}: {_model(n)}, SWE-Marathon measured {hours(v)}", shape="diamond")
     for d, v, n in aisi:
         p.dot(_year(d), v, C_AISI, f"{d}: {_model(n)}, UK AISI cyber (2.5M-token cap) {hours(v)}", shape="tri", r=2.6)
+    # each line's pace over the KPI's window (from the blend's first date), as the assessment judges it
+    w0 = bl[0][0]
+    tag = lambda f: f": {_mo(f)}" if f else ""
     return p.svg("AI task horizon at 80% success, the KPI and its parts over time (log scale)",
-                 [(C_BL, "line", "the KPI (blend)"), (C_SW, "line", "software, from ECI"),
-                  (C_RW, "line", "remote work, from RLI"), (C_METR, "hollow", "METR measured"),
+                 [(C_BL, "line", f"the KPI (blend){tag(pace(bl, w0))}"),
+                  (C_SW, "line", f"software, from ECI{tag(pace(sw, w0))}"),
+                  (C_RW, "line", f"remote work, from RLI{tag(pace(rw, w0))}"),
+                  (C_METR, "hollow", "METR measured")]
+                 + ([(C_METR, "dash", f"METR's trend since {mfit[2]:%b %Y}: {_mo(mfit)}")] if mfit else [])
+                 + [
                   (C_SWM, "diamond", "SWE-Marathon measured, best model"),
                   (C_AISI, "tri", "UK AISI cyber (level not comparable)")],
-                 ylabel="80% task horizon (log scale)")
+                 ylabel="80% task horizon (log scale)",
+                 caption=f"Solid-line paces are since {w0:%B %Y}, the KPI's window. The remote-work pace rests on "
+                         "an assumed curve (see the remote-work section).")
 
 
 def eci_calibration(db, as_of: dt.date) -> str:

@@ -66,6 +66,11 @@ endeavors:
                 Index (RLI); the KPI is their geometric mean. The right-hand scales show the raw index values
                 that correspond to each height. Where METR's own measurements exist (hollow dots) they track
                 the ECI line: the conversion was fitted on them. Hover over any point for the model.
+
+                **Pace:** the legend gives each solid line's doubling time since June 2025. METR's measurements
+                doubled about every 9 months until May 2024, then every 3.4 months (the dashed line). The
+                software line keeps that pace. Up to February 2026 (the newest model the conversion was fitted
+                on) the match is built in; since then it means ECI has kept climbing at the same rate.
               chart: task-horizon-timeline
             - title: "Software: the Epoch Capabilities Index (ECI), converted to hours"
               text: |-
@@ -105,8 +110,9 @@ endeavors:
                 horizon, and its 80% point, always 5× shorter, the 80% horizon. Under this model, 21% of mostly
                 day-long projects done means: reliable (80%) on 24-minute tasks, a coin flip (50%) at 2 hours,
                 and the long projects mostly fail. The odds factor is assumed: across METR's own models it varies
-                enough to put the 80% level anywhere from ~1.8× lower to ~1.5× higher, so the remote side's
-                level is the less certain one; its trend is less affected.
+                enough to put the 80% level anywhere from ~1.8× lower to ~1.5× higher, and its doubling time
+                anywhere from 2.2 to 2.9 months (2.5 with the factor we use). So the remote side's level is the less certain
+                one, and its pace is an estimate, not a measurement.
               chart: rli-conversion
               metrics: [horizon-80-remote-rli, rli-automation-by-release]
             - title: The blend, and how the status is judged
@@ -115,13 +121,19 @@ endeavors:
                 each side counts equally in doublings. Each side takes the best released model in its own
                 domain (they may be different models), so the blend is a composite of two estimates, not one
                 model's measured horizon. A doubling of either raises the KPI by √2; while both grow steadily,
-                the KPI's doubling time is the harmonic mean of theirs. The gap between the sides (about 20× in
+                the KPI's doubling time is the harmonic mean of theirs (since June 2025: software 3.6 months,
+                remote work 2.5, the KPI 2.9). The gap between the sides (about 20× in
                 2026, two benchmarks and two conversions apart) is roughly the gap between "AI can code it" and
                 "AI can do the job".
 
-                **Status:** green when the blend keeps doubling at least as fast as METR's long-run software
-                trend, about every 7 months (2019–2025); the assessment compares the first and the second half
-                of the data since June 2025.
+                **Status:** whether the KPI keeps its own pace. The assessment compares the doubling time in
+                the second half of the data since June 2025 with the first half. Green while it holds or speeds
+                up (a difference within noise counts as holding), yellow when it clearly slows, red when it
+                stalls. There is no outside pace to measure it against: METR's long-run figure, about 7 months,
+                averages the slow years before 2024 with the fast ones since, and it applies to the software
+                side only. The remote side's pace depends on the success curve we assume (see its section), but
+                a different curve would speed up or slow down both halves equally, so the halves can still be
+                compared.
             - title: "Cross-checks: is the ECI conversion still right at the frontier?"
               text: |-
                 - **[SWE-Marathon](https://www.swe-marathon.org/)** runs METR's method on 20 long software
