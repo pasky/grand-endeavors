@@ -71,8 +71,11 @@ endeavors:
               text: |-
                 [ECI](https://epoch.ai/eci), by Epoch AI, merges dozens of benchmarks (coding, maths, science,
                 agentic tasks) into one capability score per model (anchored at Claude 3.5 Sonnet = 130,
-                GPT-5 = 150), on a scale that keeps working after any single benchmark saturates. It says
-                nothing about hours by itself.
+                GPT-5 = 150), on a scale that keeps working after any single benchmark saturates. It is a
+                general score, not a software one, and says nothing about hours: both come from the
+                conversion below, which is fitted on METR's software tasks. ECI's own inputs include METR's
+                horizons and RLI (the KPI's other half); refitting it without them moves no model by more
+                than 0.22 points, a twentieth of a doubling.
 
                 **The conversion** is a straight-line fit on the 21 models that both METR and Epoch scored
                 (chart): each **+4.5 ECI points doubles METR's 80% horizon**, i.e. log₂(horizon in minutes) =
@@ -80,7 +83,10 @@ endeavors:
                 (R² 0.97), and a single model typically lands within half a doubling of the line (the band).
                 Its weak point: today's frontier
                 is ~10 ECI points (about two doublings) beyond the highest-scoring model of that sample, and
-                METR's series has ended, so the line is extrapolated. The cross-checks below test it there.
+                METR's series has ended, so the line is extrapolated. Its top end is also thin: GPT-5.3 Codex,
+                the sample's highest model, has an ECI from just four benchmarks; without it, today's horizon
+                would read 14% higher (9.1 h, not 7.9 h), well inside the band. The cross-checks below test
+                the line at the frontier.
               chart: eci-calibration
               metrics: [horizon-80-software-eci, eci-frontier-by-release]
             - title: "Remote work: the Remote Labor Index (RLI), converted to hours"
