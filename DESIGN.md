@@ -285,14 +285,17 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    total, charge the total to every milestone of the run).
    A failed review is noted in the commit message, never fatal. `REVIEW=0`
    skips it.
-   **Reader pass** (since 2026-10-18): every run, a reviewer from another lab
-   (`ASSESS_READER_MODE`, default `best`) reads only the staged labels and
+   **Reader pass** (since 2026-10-18): every run, a reviewer on another model
+   than the assessor (`ASSESS_READER_MODE`, default `best`; `oracle` when `best`
+   is the assessor's own model) reads only the staged labels and
    rationales, as the dashboard's reader (RUBRIC.md §6: every sentence tells a
    general reader something; the words match the numbers), without editing
    them; it ends "EDITS: <n>". Records it would change get one fix by the
-   assessor, limited to label and rationale (a fix that changes anything else,
-   or fails, is discarded). Committed as `notes/<section>/<run id>.reader.md`;
-   never fatal (a reviewer that edits the records aborts); `READER=0` skips it.
+   assessor, limited to label and rationale text: the verdict word stays, every
+   number in the new text occurs in the drafted record, and no other staged file
+   changes (else the fix is discarded and the draft restored). Committed as
+   `notes/<section>/<run id>.reader.md`; never fatal (a reviewer that edits any
+   staged file aborts); `READER=0` skips it.
 7. Each step commits only its own paths. The write-scope guard (cooperative,
    not isolation) lets agents touch only staging and the registry. It checks
    committed changes, uncommitted changes and already-dirty files, and runs

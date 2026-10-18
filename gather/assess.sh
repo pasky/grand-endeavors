@@ -18,7 +18,8 @@
 #         REVIEW=0           skip the review stage (default: on when milestones are assessed)
 #         ASSESS_REVIEW_MODE the reviewer's pi mode (default deep)
 #         READER=0           skip the reader pass (labels and rationales read as a reader; default on)
-#         ASSESS_READER_MODE the reader reviewer's pi mode (default best)
+#         ASSESS_READER_MODE the reader reviewer's pi mode (default best; oracle when best is the
+#                            assessor's own model)
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: assess.sh <section>}"
@@ -350,29 +351,34 @@ notes. Change only what a finding requires (RUBRIC.md rule 7 applies to your own
 # --- end review stage ---
 case "$TARGETS" in *milestone:*) if [ "${REVIEW:-1}" != 0 ]; then review_stage; fi ;; esac
 
-# READER PASS: the label and rationale are the dashboard's always-visible answer to "where are we, and
-# why?"; a reviewer from another lab (ASSESS_READER_MODE, default best) reads only those, as a reader
-# (gather/RUBRIC.md §6: every sentence must tell a general reader something, the words must match the
-# numbers). Records it would change get ONE fix by the assessor, limited to label and rationale (anything
-# else changed = the fix is discarded). Never fatal, except a reviewer that edits the records; READER=0
-# skips it. Added 2026-10-18 after an editorial review caught run bookkeeping ("no new measurements have
-# arrived since the previous assessment") that the ETA review, judging numbers, had passed.
+# READER PASS: the label and rationale are the dashboard's answer to "where are we, and why?"; a
+# reviewer on ANOTHER MODEL than the assessor (ASSESS_READER_MODE, default best; oracle when best is the
+# assessor's own model) reads only those, as a reader (gather/RUBRIC.md §6: every sentence must tell a
+# general reader something, the words must match the numbers). Records it would change get ONE fix by
+# the assessor, limited to label and rationale: the verdict word stays, every number in the new text
+# occurs in the record as drafted (a number may go, none may appear or change), and nothing else in the
+# staged files changes; else the fix is discarded. Never fatal, except a reviewer that edits any staged
+# file; READER=0 skips it. Added 2026-10-18 after an editorial review (best, oracle) caught run bookkeeping
+# ("no new measurements have arrived since the previous assessment") that the ETA review had passed.
 # --- reader pass (core/tests/test_reader.sh runs this block with stubs) ---
 READER_FILE="$NOTES_DIR/$SECTION/$RUN_ID.reader.md"
 reader_prompt() {  # $1 = output file
 cat <<EOF3
 Read, as a general reader of the dashboard, the status label and rationale of each assessment record
-another agent just staged for "$SECTION" in $AS (one JSON object per line). Do NOT modify it; write only $1.
-The dashboard shows, always visible: the KPI or milestone name and definition ($ROOT/framework.yaml),
-then the label, then the rationale. The reader is smart and technical but not a specialist; the numbers'
+another agent just staged for "$SECTION" in $AS (one JSON object per line). Do NOT modify any file in
+$STAGE; write only $1.
+What the dashboard shows: the KPI's name and definition ($ROOT/framework.yaml), its label and, always
+visible, its rationale; a milestone's name, definition and label, with its rationale shown once the
+reader opens the milestone. The reader is smart and technical but not a specialist; the numbers'
 derivation (basis) is folded away. Writing rules: $ROOT/gather/RUBRIC.md §6 (label, rationale).
 For every sentence and label clause ask what it tells this reader. Flag: run or process bookkeeping
 ("no new measurements since the previous assessment", "the same points give the same statistics"),
 internal ids, file or metric names, commit hashes, statistics jargon, restating the definition shown just
 above, words that claim more than the numbers in the record's basis support (e.g. "accelerating" when
-the halves' ranges overlap), and anything a reader cannot understand from what is on the page. Do not
-push for completeness: no new caveats or numbers unless the reader would otherwise misread a number;
-shorter is better when nothing is lost. Never change the status, the verdict word or a number.
+the halves' rate intervals overlap), and anything a reader cannot understand from what is on the page.
+Keep the level, the pace, the benchmark it is judged against and the one caveat that matters; beyond
+that, shorter is better when nothing is lost, and add no new caveats or numbers unless the reader would
+otherwise misread one. Never change the status, the verdict word or a number (dropping one is fine).
 For each record you would change, write a section "## <target>" with the exact current text, your
 proposed label and/or rationale (full text), and one line why. Records you would leave as they are: list
 them in one line. The LAST line of $1 must be exactly "EDITS: <the number of records you would change>".
@@ -383,47 +389,81 @@ fix_prompt() {
 cat <<EOF4
 You staged the assessment records $AS for "$SECTION" in this run. A reader review ($STAGE/reader.md)
 proposes better labels and rationales for the dashboard. Rewrite ONLY the "label" and "rationale" fields
-of the records it names, adopting each proposal where it is right under $ROOT/gather/RUBRIC.md §6 (and
-keeping the label's verdict word, at most 100 characters, consistent with the basis). Change nothing else
-in $AS: no other field, record or file. Then validate:
+of the records it names, adopting each proposal where it is right under $ROOT/gather/RUBRIC.md §6.
+Keep each label's verdict word (the text before its first colon) and at most 100 characters; introduce
+or change no number (an ETA year, a level, a rate: dropping one is fine); change nothing else in $AS and
+no other file. Then validate:
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
 Never run git add/commit.
 EOF4
 }
-same_but_text() {  # $1, $2 = records files: identical except label and rationale (same records, same order)
-	uv run python -c 'import json, sys
-r = [[{k: v for k, v in json.loads(l).items() if k not in ("label", "rationale")} for l in open(f) if l.strip()] for f in sys.argv[1:]]
-sys.exit(r[0] != r[1])' "$1" "$2"
+bare_model() {  # provider/model[:thinking] -> provider/model (the thinking level does not make another model)
+	echo "${1%%:*}"
+}
+assessor_model() {  # the model the assessor ran on: PI_MODEL, else pi's default (settings.json)
+	if [ -n "${PI_MODEL:-}" ]; then echo "$PI_MODEL"; return; fi
+	python3 -c 'import json, sys
+s = json.load(open(sys.argv[1]))
+print(s.get("defaultProvider", "?") + "/" + s.get("defaultModel", "?"))' "$AGENT_DIR/settings.json" 2>/dev/null || echo "?/?"
+}
+staged_sums() {  # every staged file the run commits (a reviewer or a fix must not touch the others)
+	for f in "$AS" "$STAGE/eta-notes.md" "$STAGE/review.md"; do [ -e "$f" ] && cksum "$f"; done; true
+}
+text_fix_ok() {  # $1 = draft, $2 = fixed records: only label/rationale changed, verdict words kept, no
+	# number that the drafted record lacks; prints the number of records whose text changed
+	uv run python -c 'import json, re, sys
+a, b = ([json.loads(l) for l in open(f) if l.strip()] for f in sys.argv[1:])
+rest = lambda r: {k: v for k, v in r.items() if k not in ("label", "rationale")}
+verdict = lambda r: str(r.get("label", "")).split(":", 1)[0]
+nums = lambda t: re.findall(r"\d+(?:[.,]\d+)*", str(t))
+ok = len(a) == len(b) and all(rest(x) == rest(y) and verdict(x) == verdict(y)
+                              and all(n in json.dumps(x, ensure_ascii=False) for n in nums(y.get("label")) + nums(y.get("rationale")))
+                              for x, y in zip(a, b))
+print(sum((x.get("label"), x.get("rationale")) != (y.get("label"), y.get("rationale")) for x, y in zip(a, b)))
+sys.exit(not ok)' "$1" "$2"
 }
 reader_pass() {  # updates NOTE; writes $STAGE/reader.md (nothing when the review failed)
-	READER_MODE="${ASSESS_READER_MODE:-best}"; ASSESS_MODEL="${PI_MODEL:-}"
+	ASSESS_MODEL="${PI_MODEL:-}"
+	amodel="$(bare_model "$(assessor_model)")"
+	READER_MODE="${ASSESS_READER_MODE:-}"
+	if [ -z "$READER_MODE" ]; then
+		for m in best oracle; do
+			if mm="$(pi_mode_model "$m" 2>/dev/null)" && [ "$(bare_model "$mm")" != "$amodel" ]; then READER_MODE="$m"; break; fi
+		done
+	fi
 	rm -f "$STAGE/reader.md"
-	if ! PI_MODEL="$(pi_mode_model "$READER_MODE")"; then
-		PI_MODEL="$ASSESS_MODEL"; echo "WARN: reader pass skipped: no pi mode '$READER_MODE'" >&2
+	if [ -z "$READER_MODE" ] || ! PI_MODEL="$(pi_mode_model "$READER_MODE")"; then
+		PI_MODEL="$ASSESS_MODEL"; echo "WARN: reader pass skipped: no pi mode '${READER_MODE:-}' on a model other than the assessor's ($amodel)" >&2
 		NOTE="$NOTE (reader pass failed)"; return 0
 	fi
-	sums="$(cksum "$AS")"
+	[ "$(bare_model "$PI_MODEL")" != "$amodel" ] || echo "WARN: the reader reviewer runs the assessor's own model ($amodel)" >&2
+	sums="$(staged_sums)"
 	PI_SOFT_FAIL=1
 	pi_run reader "$(reader_prompt "$STAGE/reader.md")"
 	PI_SOFT_FAIL=; PI_MODEL="$ASSESS_MODEL"
-	[ "$(cksum "$AS")" = "$sums" ] || { echo "ERROR: the reader reviewer modified $AS" >&2; exit 1; }
+	[ "$(staged_sums)" = "$sums" ] || { echo "ERROR: the reader reviewer modified the staged records, notes or review" >&2; exit 1; }
 	edits="$(tail -n 1 "$STAGE/reader.md" 2>/dev/null | sed -n 's/^EDITS: 0*\([0-9][0-9]*\)$/\1/p')"
 	if [ "$PI_RC" != 0 ] || [ -n "${PI_BLOCKED:-}" ] || [ -z "$edits" ]; then
 		echo "WARN: reader pass failed (pi exit $PI_RC, or no 'EDITS: <n>' last line)" >&2
 		rm -f "$STAGE/reader.md"; NOTE="$NOTE (reader pass failed)"; return 0
 	fi
 	if [ "$edits" = 0 ]; then NOTE="$NOTE (reader: 0 edits)"; return 0; fi
-	cp "$AS" "$AS.draft"
+	mkdir -p "$STAGE/reader-draft"
+	for f in "$AS" "$STAGE/eta-notes.md" "$STAGE/review.md"; do [ -e "$f" ] && cp "$f" "$STAGE/reader-draft/"; done
 	PI_SOFT_FAIL=1
 	pi_run reader-fix "$(fix_prompt)"
 	PI_SOFT_FAIL=
-	if [ "$PI_RC" = 0 ] && [ -z "${PI_BLOCKED:-}" ] && as_complete && same_but_text "$AS.draft" "$AS"; then
-		rm -f "$AS.draft"; NOTE="$NOTE (reader: $edits record(s) reworded)"
-	else  # a failed fix, or one that touched more than label and rationale, never replaces the draft
-		mv "$AS.draft" "$AS"
-		echo "WARN: the reader fix failed or changed more than label/rationale; committing the draft unchanged" >&2
+	others="$(staged_sums | grep -v " $AS\$" || true)"
+	if [ "$PI_RC" = 0 ] && [ -z "${PI_BLOCKED:-}" ] && as_complete \
+		&& [ "$others" = "$(printf '%s\n' "$sums" | grep -v " $AS\$" || true)" ] \
+		&& changed="$(text_fix_ok "$STAGE/reader-draft/$(basename "$AS")" "$AS")"; then
+		NOTE="$NOTE (reader: $edits suggested, $changed record(s) reworded)"
+	else  # a failed fix, or one that changed more than label/rationale text, never replaces the draft
+		for f in "$STAGE/reader-draft/"*; do cp "$f" "$STAGE/$(basename "$f")"; done
+		echo "WARN: the reader fix failed or changed more than label/rationale text; committing the draft unchanged" >&2
 		NOTE="$NOTE (reader: $edits suggested, fix discarded)"
 	fi
+	rm -rf "$STAGE/reader-draft"
 }
 # --- end reader pass ---
 if [ "${READER:-1}" != 0 ]; then reader_pass; fi

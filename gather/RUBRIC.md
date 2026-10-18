@@ -439,8 +439,10 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   ("Ahead: 1.8 h (Sep 2026), doubling every ~3 months vs ≤7 needed"), no
   metric ids, no "OLS", no "(tier 3)" (the tier is in basis.benchmark). The
   trend is the window's; leave out a sub-window's pace (the sparkline shows
-  it) unless the halves clearly differ (their ranges do not overlap), and then
-  in a word ("accelerating", "slowing"), never as a second number.
+  it) unless the halves clearly differ (the confidence intervals of their
+  rates or doubling times in basis.window do not overlap; without intervals,
+  leave it out), and then in a word ("accelerating", "slowing"), never as a
+  second number.
 - **rationale**: the dashboard shows it, always visible, under the label, as
   the answer to "why this status?". Write it for a general reader, in 2–4
   sentences, consistent with the basis: (1) where the quantity stands and how
