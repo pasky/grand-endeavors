@@ -741,24 +741,24 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
                             and _valid_day(r.get("published")) and known_at(r) <= known_at(w) for r in obs):
             errs.append(f"obs {w['metric']}@{w['obs']} (line {w.get('_line')}): withdrawal of value {w['value']}, "
                         "but no such row was known by its date")
-    eff: dict[tuple, dict] = {}   # the effective row per metric@obs so far, in ledger (append) order
+    prefix: dict[tuple, list] = {}   # the rows so far per metric@obs, in ledger (append) order
     for r in obs:
         row_errs = check_obs_row(r, reg, staged=staged_statuses)
         errs += row_errs
         k = (r.get("metric"), r.get("obs"), r.get("published"), r.get("value"), r.get("verification"))
         mo = (r.get("metric"), r.get("obs"))
-        cur = eff.get(mo)
-        # a repeat is a duplicate, except a same-day REVERT: a later row re-asserting a value
-        # that a different, not higher-ranked row had displaced (a derived series going
-        # 11 -> 12 -> 11 within one day; the later of equal rank is effective). Withdrawal
-        # records are never exempt.
-        reassert = (not row_errs and r.get("verification") != "withdrawn" and cur is not None
-                    and not _same_value(cur, r) and _rank(r) >= _rank(cur))
-        if k in keys and not reassert:
-            errs.append(f"obs {r.get('metric')}@{r.get('obs')}: exact duplicate row (line {r.get('_line')})")
+        before = prefix.setdefault(mo, [])
+        # a repeat is a duplicate, except a same-day REVERT: a later row re-asserting a value that
+        # a different, not higher-ranked effective row had displaced (a derived series going
+        # 11 -> 12 -> 11 within one day; the later of equal rank is effective). "Effective" is
+        # obs_as_of over the rows so far (withdrawals applied). Withdrawal records are never exempt.
+        if k in keys:
+            cur = obs_as_of("", rows=before).get(mo) if not row_errs else None
+            if r.get("verification") == "withdrawn" or cur is None or _same_value(cur, r) or _rank(r) < _rank(cur):
+                errs.append(f"obs {r.get('metric')}@{r.get('obs')}: exact duplicate row (line {r.get('_line')})")
         keys.add(k)
-        if not row_errs and r.get("verification") != "withdrawn" and (cur is None or _rank(r) >= _rank(cur)):
-            eff[mo] = r
+        if not row_errs:
+            before.append(r)
     aids = set()
     for a in ass:
         errs += check_assessment(a, topics, ids)

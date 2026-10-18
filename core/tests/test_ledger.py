@@ -118,7 +118,11 @@ def main():
     b_old = obs("co2-mlo-annual", "2024", "424.7", "2026-09-27", basis="seen", retrieved="2026-09-27")
     w = obs("co2-mlo-annual", "2024", "424.6", "2026-09-28", basis="seen", verification="withdrawn")
     errs_of = {}
-    for name, rows in [("stale", [a1, b_new, a1]), ("lower", [a1, b_old, a1]), ("wd", [a1, w, w])]:
+    wb = obs("co2-mlo-annual", "2024", "424.7", "2026-09-30", basis="seen", verification="withdrawn", retrieved="2026-09-30")
+    wb[-1] = "wrong: a test withdrawal"
+    c1 = obs("co2-mlo-annual", "2024", "424.8", "2026-09-28", basis="seen")
+    for name, rows in [("stale", [a1, b_new, a1]), ("lower", [a1, b_old, a1]), ("wd", [a1, w, w]),
+                       ("wd-revert", [a1, b_new, wb, c1, a1]), ("wd-noop", [a1, b_new, wb, a1])]:
         write_csv(op, ledger.OBS_COLUMNS, rows)
         errs_of[name] = ledger.check_section("climate")[0]
     with open(op, "w") as f:
@@ -128,6 +132,9 @@ def main():
     case("still duplicates: a repeat that cannot re-assert (displaced by a newer row), one past a "
          "lower-ranked row, and repeated withdrawal records",
          all(has(errs_of[n], "exact duplicate") for n in ("stale", "lower", "wd")))
+    case("the duplicate check applies withdrawals: a revert past a withdrawn value is fine, a repeat of the "
+         "value a withdrawal already restored is a duplicate",
+         not has(errs_of["wd-revert"], "exact duplicate") and has(errs_of["wd-noop"], "exact duplicate"))
 
     # --- deployment cases (robots-hardware KPI) ----------------------------------------
     def dep(id_, published, maker, customer, status="working", **kw):

@@ -13,8 +13,8 @@ gp-deployment-pairs (derived from events)
   not while it is disputed). Monthly: one row per month from START to the current month (the
   current one in progress), value = the cases counted among the events published by the month's
   end (or today), source = the ledger's events file (the derivation's input), note = the cases
-  added/removed that month with their event ids, the total and a fingerprint of the roster
-  state (roster_state: a replay is a no-op, a new state appends even a value seen before).
+  added/removed that month with their event ids, the total and a fingerprint of the known
+  event history (roster_state: a replay is a no-op, a new history appends even a value seen before).
   Events are taken as of the run (--today): no later correction applies.
   No case ever counted: no rows. Once the series exists, every month always has a row (zeros
   too, if the roster empties), so a change in the roster (a backfilled earlier case, a
@@ -52,24 +52,26 @@ def months(start: str, today: dt.date) -> list[str]:
     return out
 
 
-def roster_state(eff: list[dict]) -> str:
-    """A fingerprint of the derivation's input: the effective events with deployment cases
-    (ids and cases). Rows derived from the same state are identical (a replay is a no-op);
-    a different state gives a different note, so a revision equal to an earlier, since
-    displaced one is still appended (merge's exact-replay test would otherwise drop it)."""
-    dep = sorted((e["id"], str(e["published"]), json.dumps(e["deployment"], sort_keys=True, ensure_ascii=False))
-                 for e in eff if isinstance(e.get("deployment"), dict))
-    return hashlib.sha256(json.dumps(dep, ensure_ascii=False).encode()).hexdigest()[:12]
+def roster_state(known: list[dict]) -> str:
+    """A fingerprint of the derivation's input HISTORY: the ids of the known events that carry a
+    deployment case or supersede one (corrections, withdrawals). The ledger is append-only, so
+    the history only grows: rows derived from the same history are identical (a replay is a
+    no-op), and any change gives a new note, so a revision equal to an earlier, since displaced
+    one is still appended (merge's exact-replay test would otherwise drop it)."""
+    dep = {e["id"] for e in known if isinstance(e.get("deployment"), dict)}
+    ids = sorted(e["id"] for e in known if e["id"] in dep or set(e.get("supersedes") or ()) & dep)
+    return hashlib.sha256(json.dumps(ids).encode()).hexdigest()[:12]
 
 
 def pair_rows(reg: dict, events: list[dict], collector: str, today: dt.date, existing=()) -> list[dict]:
     """existing: the section's ledger rows; once the series exists, every month keeps a row
     (zeros included) even if the roster empties, so the last count cannot stay effective."""
-    eff = ledger.effective_events(events, today)   # as of the run: no later correction applies
+    known = [e for e in events if ledger.known_at(e) <= today]   # as of the run: no later correction
+    eff = ledger.effective_events(known)
     _, timeline = ledger.deployment_roster(eff)
     if not timeline and not any(r["metric"] == M_PAIRS for r in existing):
         return []   # no case ever counted: no series yet (not a run of zeros to revise later)
-    state = roster_state(eff)
+    state = roster_state(known)
     rows, count = [], 0
     for mo in months(START, today):
         end = str(min(kpi.obs_range(mo)[1], today))

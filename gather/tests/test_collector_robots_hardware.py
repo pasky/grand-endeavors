@@ -124,6 +124,11 @@ try:
     case("same-day reverts (1 -> 2 -> 1 -> 2 in the current month) merge and are effective",
          e1 == e2 == e3 == e4 == [] and [s1["2026-06"], s2["2026-06"], s3["2026-06"], s4["2026-06"]] == ["1", "2", "1", "2"]
          and ledger.check_section(rh.SECTION)[0] == [])
+    z_out = plus + [wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y"), ev("2026-06-08-z", "2026-06-08", "E", "F"),
+                    wd("2026-06-08-z-wd", "2026-06-09", "2026-06-08-z")]
+    e6, s6 = run(z_out, day)
+    case("a fifth same-day state equal in count to the third (1 -> 2 -> 1 -> 2 -> 1) still appends",
+         e6 == [] and s6["2026-06"] == "1")
     e5, s5 = run([ev("2026-05-01-x", "2026-05-01", "A", "B"), wd("2026-05-01-x-wd", "2026-06-09", "2026-05-01-x"),
                   wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y")], dt.date(2026, 6, 11))
     case("once the series exists, an emptied roster gives zeros (the last count does not stay effective)",
