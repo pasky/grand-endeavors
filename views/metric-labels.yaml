@@ -8,27 +8,14 @@
 # its overview card leaves them out.
 _inputs:
   knowledge-beyond: [qday-rsa2048-qubits-needed, qday-largest-device-qubits]
-# _groups: per section, a KPI pane's tiles in named groups (title, optional note, metrics in
-# display order), shown after the required tiles; the section's other metrics fold under
-# "more metrics we track".
-_groups:
-  robots-software:
-    - title: The KPI and its two components
-      note: "KPI = √(software × remote work)"
-      metrics: [horizon-80-blended, horizon-80-software-eci, horizon-80-remote-rli]
-    - title: The indices they are converted from
-      metrics: [eci-frontier-by-release, rli-automation-by-release]
-    - title: Cross-checks
-      note: measured horizons and an independent benchmark, not part of the KPI
-      metrics: [swe-marathon-h80-by-release, horizon-80-gap-swe-marathon, horizon-80-gap-metr,
-                terminal-bench-4-pass-by-release]
 robots-software:
   horizon-80-blended: AI task horizon at 80% success, software and remote work blended
   swe-marathon-h80-by-release: AI software task horizon at 80% success, measured on SWE-Marathon
   swe-marathon-h50-by-release: AI software task horizon at 50% success, measured on SWE-Marathon
-  horizon-80-gap-swe-marathon: Cross-check, SWE-Marathon measured vs ECI-converted 80% horizon (doublings)
-  horizon-80-gap-metr: Cross-check, METR measured vs ECI-converted 80% horizon (doublings)
-  terminal-bench-4-pass-by-release: Cross-check, best Terminal-Bench 4.0 resolution rate
+  horizon-80-gap-swe-marathon: "SWE-Marathon check: measured vs ECI-converted horizon, in doublings (0 = they agree)"
+  horizon-80-gap-metr: "METR check: measured vs ECI-converted horizon, in doublings (0 = they agree)"
+  terminal-bench-4-pass-by-release: "Terminal-Bench 4.0: best success rate (not part of ECI)"
+  aisi-cyber-h80-by-release: "UK AISI cyber task horizon at 80% success (2.5M-token cap; not METR-comparable)"
   ai-contribution-lines-merged-max: Largest AI-written code contribution merged (lines)
   ai-paper-venue-tier-max: Highest venue tier of an accepted AI-generated paper
   solo-company-arr-max: Highest reported ARR of a one-person company

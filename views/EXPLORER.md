@@ -78,17 +78,23 @@ three latest major (significance 3) events instead of a KPI.
 **Endeavor pane**: its event count, latest news and news per week; the intro
 (Robots and Automation: the group intro, links to its sections, then each
 section with its own activity line), then:
-- **KPI**, top down: its definition; folded under it, **what it measures and
-  how it is judged** (framework.yaml `kpi_about`, markdown: the quantity, its
-  sources with links, how they combine, the benchmark, the cross-checks); the
-  **status line** (the latest assessment's label) with its **rationale**
-  always shown under it; the tiles; then, folded, **how the status was
-  judged** (the assessment basis) and **evidence and news** (the cited
-  evidence, newest first, then the other KPI-tagged events):
-  - **KPI tiles**, one per required metric, then the section's named tile
-    groups (`_groups` in `views/metric-labels.yaml`, e.g. Software: the KPI and
-    its two components, the indices they are converted from, the
-    cross-checks); the rest fold under "more metrics we track". A tile shows the metric's name (`views/metric-labels.yaml`;
+- **KPI**, top down. Shown: its definition, then the headline tile (the
+  required metric) next to the **status line** (the latest assessment's label)
+  and its **rationale**. Folded:
+  - **how the KPI is built** (framework.yaml `kpi_about`: markdown, or
+    `{summary, sections: [{title, text, chart, metrics}]}`): the derivation
+    story, section by section, each with its chart (a `views/kpi_charts.py`
+    id) and the tiles of the metrics it explains. Software's charts: the KPI
+    and its parts over time with METR's own measurements and the raw indices
+    (ECI, RLI) on right-hand scales; the ECI → METR calibration fit
+    (`gather/collectors/robots_software_calibration.json`, written by the
+    collector's `--calibrate --write`); the RLI conversion (METR's
+    success-vs-length curve over RLI's project lengths). Static SVG; hovering a
+    point shows the model and value (tooltips);
+  - **how the status was judged** (the assessment basis), **evidence and
+    news** (the cited evidence, newest first, then the other KPI-tagged
+    events) and **more metrics we track** (the section's other metrics):
+  - **KPI tiles**: a tile shows the metric's name (`views/metric-labels.yaml`;
     hover: its id and full registry definition), the latest value (minutes
     from 2 hours on shown as hours, a value in hours under 1 hour as minutes; hover: the
     recorded value), the period it is for (hover: when it was published), a `source` link and a `legacy`
@@ -96,6 +102,8 @@ section with its own activity line), then:
     like-for-like change vs the same month a year earlier (the change vs the
     previous observation is not shown: the series shows the trend, and
     consecutive months are not comparable); the series of one granularity
+    (hovering shows a point's value and date in place of the axis labels; a
+    long series is thinned to 60 hover points, the nav's tiny ones show them as tooltips)
     with its first and last date under it; and "next update due by …",
     "update overdue since …" (the tile is then dashed) or "no data yet".
     The change vs the previous observation, with its comparability flag,

@@ -64,7 +64,9 @@ sources:
     covers: >-
       AISI's 80%-reliability time horizon on its narrow cyber task suite (2.5M-token budget) and its
       doubling time (4.7 months in its 2026-02 estimate); the only other active horizon tracker, a pace
-      cross-check of the KPI (its level is cyber-specific and not comparable).
+      and ECI-slope cross-check of the KPI (its level is cyber- and token-budget-specific, not comparable).
+      Series aisi-cyber-h80-by-release: no data file, so values are read off the post's figure (data
+      ledger/audits/2026-10-18-aisi-cyber/digitize.py); re-read it when AISI updates the figure.
     cadence: irregular (a few times a year)
     tier: primary
   - name: Epoch AI — benchmarking hub

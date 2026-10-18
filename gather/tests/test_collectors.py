@@ -9,6 +9,7 @@ Run:  uv run gather/tests/test_collectors.py     (no network; sources come from 
 """
 import datetime as dt
 import math
+import json
 import os
 import shutil
 import subprocess
@@ -221,6 +222,12 @@ cals = {q: rs.calibrate(full_metr, eci_ms, q) for q in rs.ECI_CAL}
 case("eci: the frozen calibrations are the OLS fits over all 21 METR/ECI pairs, per success level (provenance)",
      all(c["n"] == 21 and abs(c["a"] - rs.ECI_CAL[q][0]) < 1e-6 and abs(c["b"] - rs.ECI_CAL[q][1]) < 1e-6
          for q, c in cals.items()))
+with open(rs.CALIBRATION_JSON, encoding="utf-8") as f:
+    cj = json.load(f)
+case("the dashboard's calibration file matches the frozen conversions (rewrite it: --calibrate --write)",
+     {q: (v["a"], v["b"]) for q, v in cj["eci_cal"].items()} == rs.ECI_CAL and cj["rli"]["beta"] == rs.BETA
+     and cj["rli"]["hist"] == rs.RLI_HIST and len(cj["pairs"]) == 21
+     and all(abs(cj["refit"][q]["b"] - rs.ECI_CAL[q][1]) < 1e-6 for q in rs.ECI_CAL))
 tasks = sorted(rs.rli_tasks())
 case("rli: decoded project lengths reproduce the paper (201 projects with times, median 11.5 h within 3%)",
      len(tasks) == 201 and abs(2 ** tasks[100] / 11.5 - 1) < 0.03)

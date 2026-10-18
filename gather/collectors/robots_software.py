@@ -6,9 +6,11 @@
 Epoch AI's ECI and the Remote Labor Index, plus the (discontinued) METR horizon series.
 
 Usage:  uv run gather/collectors/robots_software.py --out FILE [--fixture DIR] [--today YYYY-MM-DD]
-        uv run gather/collectors/robots_software.py --calibrate [--fixture DIR]
+        uv run gather/collectors/robots_software.py --calibrate [--fixture DIR] [--write JSON]
             refit the ECI -> METR calibration from the METR file and the current ECI file and
-            print it next to the frozen constants (a changed calibration is a NEW metric id)
+            print it next to the frozen constants (a changed calibration is a NEW metric id);
+            --write gather/collectors/robots_software_calibration.json keeps the pairs and the
+            conversions' inputs for the dashboard's conversion charts
 
 The KPI (framework.yaml, metrics/kpi-assessment.csv) is horizon-80-blended: the geometric
 mean of two 80%-success task horizons in human-hours, both release-cohort series (the best
@@ -153,6 +155,7 @@ CALIBRATION_PAIRS = {
 # log2(METR horizon minutes) = a + b * ECI, per success level (see --calibrate)
 ECI_CAL = {"p50": (-26.366541, 0.226507), "p80": (-28.242299, 0.222614)}
 BETA = 0.6
+CALIBRATION_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "robots_software_calibration.json")
 RLI_HIST = {"log10_lo": -0.31, "log10_hi": 2.43, "counts": [1, 9, 5, 10, 38, 36, 31, 27, 14, 16, 8, 4],
             "extremes_h": [0.2, 450.0]}
 
@@ -504,6 +507,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--calibrate", action="store_true")
     ap.add_argument("--fixture")
+    ap.add_argument("--write", metavar="JSON", help="also write the calibration pairs and the frozen conversions "
+                    f"(the dashboard's conversion charts read {os.path.basename(CALIBRATION_JSON)})")
     a = ap.parse_args()
     _, ms = models(common.fetch(URL, a.fixture))
     eci = eci_models(epoch_members(common.fetch_bytes(EPOCH_URL, a.fixture))[ECI_MEMBER])
@@ -514,6 +519,25 @@ def main() -> int:
               f"R^2 {c['r2']:.3f}, residual sd {c['resid_sd']:.3f} doublings, top pair ECI {c['top_eci']:.2f}; "
               f"prediction se at the frontier ECI {float(top['value']):.2f}: {c['pred_se'](float(top['value'])):.3f} doublings")
         print(f"  frozen: a {ECI_CAL[q][0]:.6f} b {ECI_CAL[q][1]:.6f}")
+    if a.write:
+        import json
+        by_id = {m["id"]: m for m in ms}
+        by_name = {m["id"]: m for m in eci}
+        pairs = [{"metr_id": mid, "eci_model": e, "eci": float(by_name[e]["value"]), "release": by_id[mid]["release"],
+                  "metr_p80_min": by_id[mid]["p80"]["estimate"], "metr_p50_min": by_id[mid]["p50"]["estimate"]}
+                 for mid, e in CALIBRATION_PAIRS.items() if mid in by_id and e in by_name
+                 and "p80" in by_id[mid] and "p50" in by_id[mid]]
+        fits = {q: {k: v for k, v in calibrate(ms, eci, q).items() if k != "pred_se"} for q in ECI_CAL}
+        out = {"about": "robots-software horizon conversions (robots_software.py): the frozen ECI -> METR "
+                        "calibration with its pairs (METR TH1.1 x Epoch ECI), and the RLI conversion's inputs. "
+                        "Written by --calibrate --write; the dashboard draws the conversion charts from it.",
+               "eci_cal": {q: {"a": ab[0], "b": ab[1]} for q, ab in ECI_CAL.items()}, "refit": fits,
+               "pairs": sorted(pairs, key=lambda p: p["eci"]),
+               "rli": {"beta": BETA, "hist": RLI_HIST, "h50_per_h80": 2 ** (math.log(4) / BETA)}}
+        with open(a.write, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=1)
+            f.write("\n")
+        print(f"wrote {a.write}: {len(pairs)} pairs")
     return 0
 
 

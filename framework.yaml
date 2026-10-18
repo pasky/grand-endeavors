@@ -49,57 +49,112 @@ endeavors:
       - id: robots-software
         title: Software
         kpi: AI task horizon at 80% success (Human-hours; geometric mean of the software and remote-work horizons)
-        kpi_about: |-
-          **Task horizon.** The length of task, in the hours a skilled human professional needs for it,
-          that an AI agent completes on its own with a given success rate
-          ([METR 2025](https://arxiv.org/abs/2503.14499)). We track the 80% horizon: the task length
-          at which the best released model succeeds four times out of five. It grows as AI can be
-          trusted with longer stretches of work, which is what all three milestones below need.
+        kpi_about:
+          summary: "How the KPI is built: task horizons, the two indices (ECI, RLI) and how each becomes hours, the cross-checks"
+          sections:
+            - text: |-
+                **Task horizon** ([METR 2025](https://arxiv.org/abs/2503.14499)): the length of task, in the
+                hours a skilled human professional needs for it, that AI completes on its own at a given
+                success rate. We track the **80% horizon**: the task length at which the best released model
+                succeeds four times out of five. It grows as AI can be trusted with longer stretches of work,
+                which is what all three milestones below need.
 
-          METR, who measured horizons directly, stopped updating them in September 2026 (last point:
-          3.1 h at 80%, April 2026). The KPI is therefore built from two indices that are still updated,
-          each converted to hours:
+                METR measured horizons directly until it stopped in September 2026 (shaded below). The KPI is
+                built instead from two indices that keep being updated, each converted into METR-style hours:
+                **software** from the Epoch Capabilities Index (ECI) and **remote work** from the Remote Labor
+                Index (RLI); the KPI is their geometric mean. The right-hand scales show the raw index values
+                that correspond to each height. Where METR's own measurements exist (hollow dots) they track
+                the ECI line: the conversion was fitted on them. Hover over any point for the model.
+              chart: task-horizon-timeline
+            - title: "Software: the Epoch Capabilities Index (ECI), converted to hours"
+              text: |-
+                [ECI](https://epoch.ai/eci), by Epoch AI, merges dozens of benchmarks (coding, maths, science,
+                agentic tasks) into one capability score per model, on a scale that keeps working after any
+                single benchmark saturates. It says nothing about hours by itself.
 
-          - **Software: from the Epoch Capabilities Index (ECI).** [ECI](https://epoch.ai/eci), by Epoch
-            AI, merges dozens of benchmarks (coding, maths, science, agentic tasks) into one capability
-            score per model. On the 21 models both METR and Epoch scored, every +4.5 ECI points doubled
-            METR's 80% horizon (R² 0.97; a single model typically lands within half a doubling of the
-            line). It tells you how long a *software* task the frontier handles, in METR's terms. Today's
-            frontier sits about 10 ECI points above the highest-scoring model of that calibration
-            sample, so it is an extrapolation of the fit.
-          - **Remote work: from the Remote Labor Index (RLI).** [RLI](https://remotelabor.ai/), by the
-            Center for AI Safety and Scale AI ([paper](https://arxiv.org/abs/2510.26787)), gives AI
-            agents 240 real paid freelance projects from Upwork (design, video, 3D, data analysis, games,
-            …; median 11.5 human hours) and counts the share whose deliverable expert graders judge as
-            good as the professional's. That automation rate is converted to a horizon with METR's model
-            of how success falls with task length
-            ([METR 2025](https://metr.org/blog/2025-07-14-how-does-time-horizon-vary-across-domains/)).
-            It tells you how long a piece of *messy, economically real* work AI delivers end to end, and
-            it is far lower than the software horizon.
-          - **The blend** is their geometric mean, √(software × remote): the average on a log scale, so
-            each counts equally in doublings. Each side takes the best released model in its own domain
-            (they may be different models), so the blend is a composite of two estimates, not one
-            model's measured horizon. A doubling of either raises the KPI by √2, and while both grow
-            steadily the KPI's doubling time is the harmonic mean of theirs. The gap between them (about
-            20× in 2026, two benchmarks and two conversions apart) is roughly the gap between "AI can
-            code it" and "AI can do the job".
+                **The conversion** is a straight-line fit on the 21 models that both METR and Epoch scored
+                (chart): each **+4.5 ECI points doubles METR's 80% horizon**, i.e. log₂(horizon in minutes) =
+                −28.24 + 0.2226 × ECI. ECI 150 → 36 min, 160 → 2.8 h, 166.8 → 7.9 h. The fit is tight
+                (R² 0.97), and a single model typically lands within half a doubling of the line (the band).
+                It was frozen on 2026-10-16 (a refit would be a new series). Its weak point: today's frontier
+                is ~10 ECI points (about two doublings) beyond the highest-scoring model of that sample, and
+                METR's series has ended, so the line is extrapolated. The cross-checks below test it there.
+              chart: eci-calibration
+              metrics: [horizon-80-software-eci, eci-frontier-by-release]
+            - title: "Remote work: the Remote Labor Index (RLI), converted to hours"
+              text: |-
+                [RLI](https://remotelabor.ai/), by the Center for AI Safety and Scale AI
+                ([paper](https://arxiv.org/abs/2510.26787)), gives AI agents 240 real paid Upwork projects
+                (design, video, 3D, data analysis, games, …; median 11.5 human hours, mean 29 h) and reports one
+                number per model: the **automation rate**, the share of deliverables expert graders judge as
+                good as the professional's. It measures messy, economically real work end to end.
 
-          **How it is judged.** Green when the blend keeps doubling at least as fast as METR's long-run
-          software trend, about every 7 months (2019–2025); the assessment compares the first and the
-          second half of the data since June 2025. The tiles below show both components and the raw
-          indices.
+                **The conversion** uses METR's model for suites that report only an overall score
+                ([METR 2025](https://metr.org/blog/2025-07-14-how-does-time-horizon-vary-across-domains/)):
+                a model's chance of success falls with task length along a logistic curve, each doubling of the
+                task cutting the odds by a fixed factor (slope 0.6 per doubling, METR's cross-domain average). We
+                find the 50% horizon at which that curve, averaged over RLI's actual project lengths (the bars,
+                decoded from the paper's figure), equals the measured rate; the 80% horizon is the same curve
+                read at 80%, 5× shorter. So 21% of mostly day-long projects done means: reliable (80%) on
+                ~25-minute tasks, a coin flip (50%) at ~2 hours, and the long projects mostly fail. The slope is
+                assumed (METR measured 0.50–0.69 on its own models, moving the 80% level by −0.8/+0.6
+                doublings), so the remote side's level is the less certain one; its trend is less affected.
+              chart: rli-conversion
+              metrics: [horizon-80-remote-rli, rli-automation-by-release]
+            - title: The blend, and how the status is judged
+              text: |-
+                The KPI is the **geometric mean**, √(software × remote work): the average on a log scale, so
+                each side counts equally in doublings. Each side takes the best released model in its own
+                domain (they may be different models), so the blend is a composite of two estimates, not one
+                model's measured horizon. A doubling of either raises the KPI by √2; while both grow steadily,
+                the KPI's doubling time is the harmonic mean of theirs. The gap between the sides (about 20× in
+                2026, two benchmarks and two conversions apart) is roughly the gap between "AI can code it" and
+                "AI can do the job".
 
-          **Cross-checks** (tiles below; not part of the KPI). [SWE-Marathon](https://www.swe-marathon.org/)
-          measures 80% horizons directly, METR's way, on 20 long software tasks (4–400 h); at the frontier
-          it agrees with the ECI conversion, though it is too coarse to measure the pace. METR's own
-          measurements give a second gap series, but it ends in March 2026, so SWE-Marathon is the only
-          measured check still reporting. If two such series sit more than one doubling off the
-          conversion on the same side for two months running, a tripwire calls for a review of the
-          conversion (it cannot fire while only one reports). [Terminal-Bench 4.0](https://www.tbench.ai/leaderboard/terminal-bench/4.0) (long
-          command-line tasks, not part of ECI) gives an independent success rate, not hours. The
-          [UK AI Security Institute's cyber time horizon](https://www.aisi.gov.uk/blog/how-fast-is-autonomous-ai-cyber-capability-advancing)
-          doubled every 4.7 months at 80% (its February 2026 estimate; later models beat that trend): a
-          pace check only, not tracked as a series here, since its cyber-task hours are not comparable.
+                **Status:** green when the blend keeps doubling at least as fast as METR's long-run software
+                trend, about every 7 months (2019–2025); the assessment compares the first and the second half
+                of the data since June 2025.
+            - title: "Cross-checks: is the ECI conversion still right at the frontier?"
+              text: |-
+                - **[SWE-Marathon](https://www.swe-marathon.org/)** runs METR's method on 20 long software
+                  tasks (4–400 h), so it measures 80% horizons directly. The *check* tile compares, for frontier
+                  models, the horizon SWE-Marathon measures with the one the ECI line gives the same model:
+                  log₂(measured ÷ converted), averaged over the month's frontier models. 0 means they agree,
+                  +1 that the measured horizon is twice the converted one, −1 half. At the frontier it is about 0,
+                  but SWE-Marathon is too coarse to track the pace (frontier models all land around 10–16 h:
+                  a few tasks are almost always solved, many almost never).
+                - **METR check:** the same comparison for METR's own measurements; it ends in March 2026 and is
+                  in-sample (the line was fitted on these models).
+                - **Tripwire:** if two such measured checks sit more than one doubling off on the same side
+                  for two months running, the conversion is reviewed. Only SWE-Marathon still reports, so it
+                  cannot fire now.
+                - **[Terminal-Bench 4.0](https://www.tbench.ai/leaderboard/terminal-bench/4.0)** (long
+                  command-line tasks, not part of ECI): an independent success rate. Its hour labels do not
+                  predict which tasks fail, so it gives no horizon, only an independent pace signal.
+              metrics: [swe-marathon-h80-by-release, horizon-80-gap-swe-marathon, horizon-80-gap-metr,
+                        terminal-bench-4-pass-by-release]
+            - title: "UK AISI's cyber time horizon: a check on the slope, not on the level"
+              text: |-
+                The [UK AI Security Institute](https://www.aisi.gov.uk/blog/how-fast-is-autonomous-ai-cyber-capability-advancing)
+                measures 80% horizons on its own capture-the-flag cyber tasks: doubling every 4.7 months since
+                late 2024 (its February 2026 estimate), with Claude Mythos Preview and GPT-5.5 above that trend
+                (red triangles in the charts above).
+
+                **Why its hours are not comparable:** each task run is capped at 2.5M tokens with a simple agent
+                scaffold, which lowers success on purpose (AISI: uncapped horizons "would be significantly
+                higher"); the tasks are narrow cyber skills, not METR's software suite; and the newest models
+                saturate the suite (its longest task is 12 h, only six are 8 h or longer). Against the ECI line
+                its horizons sit about 0.8 doublings lower, model by model. So it cannot be pooled into the
+                software calibration: that would mix two scales of hours.
+
+                **What it does check is the slope**, the part the frontier extrapolation rests on. Across the 9
+                models that also have an ECI score, AISI's horizons rise **0.22 ± 0.03 doublings per ECI point**
+                (0.18 ± 0.03 without GPT-5.5, which AISI calls highly uncertain), against the conversion's 0.223.
+                That is the same slope or a somewhat flatter one, within the range the forecasts already allow;
+                if the flatter one held, today's software horizon would be about 0.45 doublings (~1.4×) too high.
+                AISI publishes only a chart image, so the series is read off its figure (one value in its text,
+                Claude Sonnet 4.5 at 16 min, checks the reading; ledger audit 2026-10-18-aisi-cyber).
+              metrics: [aisi-cyber-h80-by-release]
         milestones:
           - slug: the-linux-kernel-patch
             name: Automated Software Engineer

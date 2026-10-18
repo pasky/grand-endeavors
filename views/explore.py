@@ -48,6 +48,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "core"))
 import kpi  # noqa: E402
+import kpi_charts  # noqa: E402
 import ledger  # noqa: E402
 
 SCHEMA = """
@@ -433,6 +434,8 @@ border:1px solid transparent;margin:1px 0}.nv:hover{background:var(--hov)}
 .nvg{margin:1px 0}.nv.sub{margin-left:18px;padding:4px 8px;border-left:2px solid var(--line);border-radius:0 8px 8px 0}
 .nv.sub .nt{font-weight:500;font-size:13px}.nv.sub .nk,.nv.sub .nd{margin-left:26px}
 .ax{font-size:9px;fill:var(--mute)}
+.sp rect{fill:transparent}.sp circle{fill:var(--card);stroke:currentColor;stroke-width:1.5;opacity:0}.sp text{font-size:9.5px;font-weight:600;fill:var(--ink);opacity:0}
+.sp:hover circle,.sp:hover text{opacity:1}.spark:has(.sp:hover) .ax{opacity:0}
 .nleg{margin:18px 8px 0;display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}.nleg .dot{width:9px;height:9px;margin-right:5px}
 .nleg p{grid-column:1/-1;margin:4px 0 0}
 /* center */
@@ -533,7 +536,9 @@ dl.basis dt{overflow-wrap:anywhere}
 .ser{display:flex;flex-wrap:wrap;gap:2px;margin:2px 0}.ser>span{border:1px solid var(--line);border-radius:4px;
 padding:0 5px;font-size:12px;text-align:right;line-height:1.35}.ser i{display:block;font-style:normal;font-size:10.5px;color:var(--mute)}
 .kst{margin:8px 0 2px;font-size:15px}p.why{margin:4px 0 8px}h4.tg{margin:12px 0 2px}.tgn{font-weight:400}
-.about .md p{margin:6px 0}.about .md li{margin:3px 0}
+.about .md p{margin:6px 0}.about .md li{margin:3px 0}h4.ab{font-size:14px;color:var(--ink);margin:16px 0 4px}
+.khead{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:14px;align-items:start;margin:6px 0}.khead .tiles{margin:0;grid-template-columns:1fr}.khead .kst{margin-top:0}
+@media (max-width:780px){.khead{grid-template-columns:1fr}}
 footer{margin:24px 0}.news{margin-top:10px}li.ev.ref,li.ev.more-ev{font-size:13px;padding:3px 0}
 /* event log pages: one plain column */
 body.log{display:block}body.log header,body.log main{max-width:980px;margin:0 auto;padding:16px}
@@ -567,7 +572,7 @@ border-right:0;border-bottom:1px solid var(--line)}
 .brand,.ng,.nleg,.nk{display:none}.nv{flex:none;padding:4px 8px}.nd{margin-left:26px}
 .nvg{display:contents}.nv.sub{margin:1px 0;border-left:0;border-radius:8px}.nv.sub .nd{margin-left:26px}
 .stream{padding:0 12px 24px}.pane{padding:12px 14px}}
-"""
+""" + kpi_charts.CSS
 
 
 def esc(s) -> str:
@@ -592,9 +597,7 @@ def _metric_labels() -> dict[str, dict[str, str]]:
 
 METRIC_LABELS = _metric_labels()
 METRIC_INPUTS: dict[str, list[str]] = METRIC_LABELS.pop("_inputs", None) or {}  # section -> fine-print metrics
-# section -> [{title, note?, metrics}]: a KPI pane's tiles in named groups (the KPI and its parts,
-# cross-checks, ...) instead of one "more metrics" heap
-METRIC_GROUPS: dict[str, list[dict]] = METRIC_LABELS.pop("_groups", None) or {}
+
 _UNLABELLED: set[tuple[str, str]] = set()
 
 
@@ -634,10 +637,22 @@ def fmt_period(obs) -> str:
     return s
 
 
+SPARK_HOVER = 60  # most hover targets per sparkline (a long series is thinned evenly: page weight)
+
+
+def spark_label(d: dt.date, kind: str) -> str:
+    """A point's date as its series counts it: 2026, Mar 2026, 22 Sep 2026."""
+    return str(d.year) if kind == "annual" else f"{MON[d.month - 1]} {d.year}" if kind == "monthly" else fmt_date(d)
+
+
 def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200, h: int = 34, pad: int = 3,
-              axis: str = "below") -> str:
+              axis: str = "below", fmt=None) -> str:
     """A line of the series; axis: "below" = its first and last date under the line,
-    "left" = the first year left of it (tiny ones), "" = none."""
+    "left" = the first year left of it (tiny ones), "" = none. Hovering shows a point: a
+    vertical strip per point (at most SPARK_HOVER) marks the point and writes its value and date
+    in place of the axis labels (axis "below"), or carries them as a tooltip (the tiny ones);
+    pure CSS, no script.
+    fmt: value -> display text (with its unit)."""
     if len(points) < 2:
         return ""
     (a, _), (b, _) = points[0], points[-1]
@@ -656,11 +671,28 @@ def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200,
                   f'<text x="{w - pad}" y="{th - 1}" class="ax" text-anchor="end">{short(b)}</text>')
     elif axis == "left":
         labels = f'<text x="0" y="{h / 2 + 3:.1f}" class="ax">{a.year}</text>'
+    fmt = fmt or (lambda x: f"{x:.4g}")
+    n = len(points)
+    idx = sorted({round(i * (n - 1) / (SPARK_HOVER - 1)) for i in range(SPARK_HOVER)}) if n > SPARK_HOVER else range(n)
+    hov = []
+    xs = [sx(points[i][0]) for i in idx]
+    for j, i in enumerate(idx):
+        pd_, pv = points[i]
+        left = lw if j == 0 else (xs[j - 1] + xs[j]) / 2
+        right = w if j == len(xs) - 1 else (xs[j] + xs[j + 1]) / 2
+        txt = f"{fmt(pv)} · {spark_label(pd_, kind)}"
+        mark = ""
+        if axis == "below":
+            anchor = "start" if xs[j] < w * .25 else "end" if xs[j] > w * .75 else "middle"
+            mark = (f'<circle cx="{xs[j]:.1f}" cy="{sy(pv):.1f}" r="3"/>'
+                    f'<text x="{xs[j]:.1f}" y="{th - 1}" text-anchor="{anchor}">{esc(txt)}</text>')
+        tip = "" if mark else f"<title>{esc(txt)}</title>"  # a visible label needs no tooltip too
+        hov.append(f'<g class="sp">{tip}<rect x="{left:.1f}" width="{max(right - left, .5):.1f}" height="{th}"/>{mark}</g>')
     return (f'<svg class="spark" width="{w}" height="{th}" viewBox="0 0 {w} {th}" role="img">'
-            f'<title>{len(points)} {esc(kind + " " if kind else "")}values, {a} to {d}; '
+            f'<title>{n} {esc(kind + " " if kind else "")}values, {a} to {d}; '
             f'range {lo:g} to {hi:g}</title>{labels}'
             f'<polyline points="{pts}" fill="none" stroke="currentColor" stroke-width="1.5"/>'
-            f'<circle cx="{sx(d):.1f}" cy="{sy(v):.1f}" r="2.5" fill="currentColor"/></svg>')
+            f'<circle cx="{sx(d):.1f}" cy="{sy(v):.1f}" r="2.5" fill="currentColor"/>{"".join(hov)}</svg>')
 
 
 def human_value(value_text, unit) -> tuple[str, str]:
@@ -695,7 +727,7 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
     if k["year_ago_obs"] is not None:  # monthly: the like-for-like change (the seasonal cycle cancels)
         body += (f'<div class="c" title="{esc(fmt_period(k["year_ago_obs"]))}: {esc(k["year_ago_value_text"])}">'
                  f'{_arrow(k["year_ago_change_text"])} vs {esc(fmt_period(k["year_ago_obs"]))}</div>')
-    body += sparkline(*spark_points(db, k))
+    body += sparkline(*spark_points(db, k), fmt=lambda x: " ".join(human_value(f"{x:.6g}", k["unit"])))
     if k["overdue"]:
         body += f'<div class="gap">update overdue since {esc(fmt_date(k["next_expected"]))}</div>'
     elif k["next_expected"]:
@@ -1125,48 +1157,66 @@ def eta_chart(sec: str, items: list, by_topic: dict, seq: bool, as_of: dt.date) 
             f'<div class="mute small">{cap}</div>')
 
 
+def kpi_about_html(db, sec: str, about, tiles: dict) -> tuple[str, set[str]]:
+    """framework.yaml kpi_about: markdown, or {summary, sections: [{title?, text?, chart?, metrics?}]}
+    (a chart id of views/kpi_charts.py; metrics = tiles shown with the section). Returns the
+    folded explainer and the metrics it placed."""
+    if not about:
+        return "", set()
+    if isinstance(about, str):
+        about = {"sections": [{"text": about}]}
+    placed: set[str] = set()
+    as_of = D(db.execute("SELECT value FROM build_info WHERE key='as_of'").fetchone()[0])
+    body = []
+    for part in about.get("sections") or []:
+        if part.get("title"):
+            body.append(f'<h4 class="ab">{md_inline(part["title"])}</h4>')
+        body.append(md_block(part.get("text")))
+        if (ch := part.get("chart")) and ch in kpi_charts.CHARTS:
+            body.append(kpi_charts.CHARTS[ch](db, as_of))
+        ts = [tiles[m] for m in part.get("metrics") or [] if m in tiles]
+        placed |= {t["metric"] for t in ts}
+        if ts:
+            body.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in ts) + "</div>")
+    summary = about.get("summary") or "What this measures and how it is judged"
+    return (f'<details class="about"><summary>{md_inline(summary)}</summary>'
+            f'<div class="more md">{"".join(body)}</div></details>'), placed
+
+
 def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set, fsec: dict | None = None) -> str:
-    """The KPI, top down: its definition (and, folded, what it measures: framework.yaml
-    kpi_about), the status and why (the rationale, always shown), the numbers (tiles, in
-    the metric-labels.yaml _groups when the section has them), then folded: how the status
-    was judged (the basis) and the evidence and news."""
+    """The KPI, top down. Shown: its definition, the headline tile(s) next to the status and
+    why (the rationale). Folded: how the KPI is built (framework.yaml kpi_about: the story,
+    charts and the tiles of its parts), how the status was judged (the basis), the evidence
+    and news, and the section's other metrics."""
     tiles = db.execute("SELECT * FROM latest_kpi WHERE section=? AND NOT retired "
                        "ORDER BY required DESC, metric", (sec,)).fetchall()
     km = next((m for m in ms if m["kind"] == "kpi"), None)
     assessed = bool(km and km["assessment_id"])
     out = [f'<div class="kpiblk" id="t-{esc(sec)}-kpi"><div class="kpi"><b>KPI:</b> {md_inline(s["kpi"])}</div>']
-    if about := (fsec or {}).get("kpi_about"):
-        out.append('<details class="about"><summary>What this measures and how it is judged</summary>'
-                   f'<div class="more md">{md_block(about)}</div></details>')
-    status = (f'{dot(km["status"])}<b>{esc(km["label"])}</b> <span class="mute">· assessed {esc(km["made_at"])}</span>'
-              if assessed else f'{dot(None)}<span class="gap">not yet assessed</span>')
-    out.append(f'<div class="kst">{status}</div>')
-    if assessed:
-        out.append(f'{assessment_note(km)}<p class="why">{esc(km["rationale"])}</p>')
     heads = [t for t in tiles if t["required"]]
-    # always shown: every required/gap tile (and the section's named groups); the rest of the registry folds
+    # always shown: every required/gap tile; the explainer's tiles go with it, the rest folds
     main = [t for t in tiles if t["required"] or t["status"] in ("overdue", "no data")]
     if not heads:
         main = tiles
-    by_id = {t["metric"]: t for t in tiles}
-    groups = [(g, [by_id[m] for m in g.get("metrics") or [] if m in by_id]) for g in METRIC_GROUPS.get(sec, [])]
-    grouped = {t["metric"] for _, ts in groups for t in ts}
-    main = [t for t in main if t["metric"] not in grouped]
-    rest = [t for t in tiles if t not in main and t["metric"] not in grouped]
+    about, placed = kpi_about_html(db, sec, (fsec or {}).get("kpi_about"),
+                                   {t["metric"]: t for t in tiles if t not in main})
+    rest = [t for t in tiles if t not in main and t["metric"] not in placed]
+    status = (f'{dot(km["status"])}<b>{esc(km["label"])}</b> <span class="mute">· assessed {esc(km["made_at"])}</span>'
+              if assessed else f'{dot(None)}<span class="gap">not yet assessed</span>')
+    why = f'{assessment_note(km)}<p class="why">{esc(km["rationale"])}</p>' if assessed else ""
+    lead = ""
     if not tiles:
-        out.append('<div class="gap">no KPI metric tracked yet</div>')
+        lead = '<div class="gap">no KPI metric tracked yet</div>'
     elif not heads:
-        out.append('<div class="mute">none of these metrics is the official KPI yet</div>')
-    if main:
-        out.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in main) + "</div>")
-    for g, ts in groups:
-        if ts:
-            note = f' <span class="tgn">· {md_inline(g["note"])}</span>' if g.get("note") else ""
-            out.append(f'<h4 class="tg">{md_inline(g["title"])}{note}</h4>'
-                       '<div class="tiles">' + "".join(kpi_tile(db, t) for t in ts) + "</div>")
-    if rest:
-        out.append(f"<details><summary>{len(rest)} more metric(s) we track</summary>"
-                   '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
+        lead = '<div class="mute">none of these metrics is the official KPI yet</div>'
+    if main and len(main) <= 2:  # the headline next to its status
+        out.append(f'<div class="khead"><div class="tiles">{"".join(kpi_tile(db, t) for t in main)}</div>'
+                   f'<div><div class="kst">{status}</div>{why}{lead}</div></div>')
+    else:
+        out.append(f'<div class="kst">{status}</div>{why}{lead}')
+        if main:
+            out.append('<div class="tiles">' + "".join(kpi_tile(db, t) for t in main) + "</div>")
+    out.append(about)
     if assessed:
         out.append(assessment_html(km, rationale=False,
                                    tech_title="How the status was judged: the data window, the pace benchmark, the rule"))
@@ -1175,8 +1225,11 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set, f
     what = ", ".join(x for x in ((f"{n_cited} cited by the assessment" if n_cited else ""),
                                  (f"{n_other} other KPI news" if n_other else "")) if x) or "none yet"
     out.append(f'<details class="kev"><summary>Evidence and news: {what}</summary><div class="more">'
-               f'{evidence_and_events(db, sec, "kpi", km, names, succ, shown)}</div></details></div>')
-    return "".join(out)
+               f'{evidence_and_events(db, sec, "kpi", km, names, succ, shown)}</div></details>')
+    if rest:
+        out.append(f"<details><summary>{len(rest)} more metric(s) we track</summary>"
+                   '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
+    return "".join(out) + "</div>"
 
 
 SUPP_MAJOR = 10  # a supplemental pane's notable developments (significance 3) shown before the event log
@@ -1506,7 +1559,8 @@ def _headline(db, g: dict, w: int, h: int, axis: str = "below") -> str:
     t = g["head"]
     if t is None or t["obs"] is None:
         return f'<span class="mute">{"no KPI data yet" if t is not None else "no KPI metric yet"}</span>'
-    return _value(t) + sparkline(*spark_points(db, t), w=w, h=h, pad=2, axis=axis)
+    return _value(t) + sparkline(*spark_points(db, t), w=w, h=h, pad=2, axis=axis,
+                                 fmt=lambda x: " ".join(human_value(f"{x:.6g}", t["unit"])))
 
 
 def _kpi_dot(g: dict) -> str:

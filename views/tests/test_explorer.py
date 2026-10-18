@@ -611,6 +611,34 @@ def main():
         case("assessment basis: the outlook shown, how it was assessed folded",
              ah.index("5-10 years") < ah.index('<details class="tech">') < ah.index("<dt>N points</dt><dd>9</dd>"))
         bars = explore.activity_bars([0, 2, 1], D("2026-09-28"))
+        long = [(D("2020-01-01") + dt.timedelta(days=i), float(i)) for i in range(200)]
+        sl = explore.sparkline(long, "daily", fmt=lambda v: f"{v:g} ppm")
+        tiny = explore.sparkline(long[:3], "daily", axis="left", fmt=lambda v: f"{v:g} ppm")
+        case("sparkline hover: a strip per point (thinned to SPARK_HOVER), the point's value and date shown; "
+             "tiny ones as tooltips",
+             sl.count('<g class="sp">') == explore.SPARK_HOVER and ">199 ppm · 18 Jul 2020</text>" in sl
+             and "<title>2 ppm · 3 Jan 2020</title>" in tiny and tiny.count('<g class="sp">') == 3)
+        cdb = sqlite3.connect(":memory:")
+        cdb.executescript("CREATE TABLE current_obs (section, metric, obs, obs_kind, obs_end, value, note);"
+                          "CREATE TABLE build_info (key, value); INSERT INTO build_info VALUES ('as_of', '2026-10-18');")
+        for m, rows in {"horizon-80-software-eci": [("2025-06-10", .394), ("2026-09-22", 7.93)],
+                        "eci-frontier-by-release": [("2025-06-10", 147.37), ("2026-09-22", 166.82)],
+                        "horizon-80-remote-rli": [("2025-06-05", .005), ("2026-09-22", .404)],
+                        "horizon-50-remote-rli": [("2025-06-05", .025), ("2026-09-22", 2.005)],
+                        "rli-automation-by-release": [("2025-06-05", .83), ("2026-09-22", 21.25)],
+                        "horizon-80-blended": [("2025-06-10", .045), ("2026-09-22", 1.79)]}.items():
+            cdb.executemany("INSERT INTO current_obs VALUES ('robots-software', ?, ?, '9999-99-99', ?, ?, ?)",
+                            [(m, o, o, v, "new best by release date: ECI 1 of Opus X (released x)") for o, v in rows])
+        charts = {k: f(cdb, D("2026-10-18")) for k, f in explore.kpi_charts.CHARTS.items()}
+        case("KPI derivation charts draw from the ledger (and the frozen calibration file), hover = tooltips",
+             all(c.startswith('<figure class="kc"><svg') for c in charts.values())
+             and "Opus X, ECI 166.82 → software 7.9 h" in charts["task-horizon-timeline"]
+             and charts["eci-calibration"].count("METR measured") >= 21)
+        cdb.execute("DELETE FROM current_obs")
+        case("KPI derivation charts: nothing to draw without the series (the calibration needs only its file)",
+             explore.kpi_charts.task_horizon_timeline(cdb, D("2026-10-18")) == ""
+             and explore.kpi_charts.rli_conversion(cdb, D("2026-10-18")) == ""
+             and "today's frontier, " not in explore.kpi_charts.eci_calibration(cdb, D("2026-10-18")))
         case("activity bars: one per week, empty weeks marked",
              bars.count("<rect") == 3 and bars.count('class="z"') == 1 and "2026-09-28: 0, 2, 1" in bars)
 

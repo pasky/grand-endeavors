@@ -1,0 +1,229 @@
+{
+ "about": "robots-software horizon conversions (robots_software.py): the frozen ECI -> METR calibration with its pairs (METR TH1.1 x Epoch ECI), and the RLI conversion's inputs. Written by --calibrate --write; the dashboard draws the conversion charts from it.",
+ "eci_cal": {
+  "p50": {
+   "a": -26.366541,
+   "b": 0.226507
+  },
+  "p80": {
+   "a": -28.242299,
+   "b": 0.222614
+  }
+ },
+ "refit": {
+  "p50": {
+   "n": 21,
+   "a": -26.36654084904705,
+   "b": 0.22650721922899472,
+   "eci_per_doubling": 4.414870322473113,
+   "resid_sd": 0.45679436546595015,
+   "r2": 0.9707370356314393,
+   "top_eci": 156.76
+  },
+  "p80": {
+   "n": 21,
+   "a": -28.242298821274154,
+   "b": 0.22261427589554647,
+   "eci_per_doubling": 4.492074894914705,
+   "resid_sd": 0.48671764515720584,
+   "r2": 0.9657810880956023,
+   "top_eci": 156.76
+  }
+ },
+ "pairs": [
+  {
+   "metr_id": "gpt_4",
+   "eci_model": "GPT-4 (Mar 2023)",
+   "eci": 125.88,
+   "release": "2023-03-14",
+   "metr_p80_min": 0.889561,
+   "metr_p50_min": 3.987428
+  },
+  {
+   "metr_id": "gpt_4_1106_inspect",
+   "eci_model": "GPT-4 Turbo (Nov 2023)",
+   "eci": 126.46,
+   "release": "2023-11-06",
+   "metr_p80_min": 0.783032,
+   "metr_p50_min": 4.044959
+  },
+  {
+   "metr_id": "claude_3_opus_inspect",
+   "eci_model": "Claude 3 Opus",
+   "eci": 126.91,
+   "release": "2024-03-04",
+   "metr_p80_min": 0.638973,
+   "metr_p50_min": 3.952262
+  },
+  {
+   "metr_id": "gpt_4_turbo_inspect",
+   "eci_model": "GPT-4 Turbo (Apr 2024)",
+   "eci": 127.25,
+   "release": "2024-04-09",
+   "metr_p80_min": 0.927933,
+   "metr_p50_min": 3.732787
+  },
+  {
+   "metr_id": "gpt_4o_inspect",
+   "eci_model": "GPT-4o (May 2024)",
+   "eci": 129.05,
+   "release": "2024-05-13",
+   "metr_p80_min": 1.267009,
+   "metr_p50_min": 6.991195
+  },
+  {
+   "metr_id": "claude_3_5_sonnet_20240620_inspect",
+   "eci_model": "Claude 3.5 Sonnet",
+   "eci": 130.0,
+   "release": "2024-06-20",
+   "metr_p80_min": 1.671757,
+   "metr_p50_min": 11.395377
+  },
+  {
+   "metr_id": "claude_3_5_sonnet_20241022_inspect",
+   "eci_model": "Claude 3.5 Sonnet (October 2024)",
+   "eci": 133.53,
+   "release": "2024-10-22",
+   "metr_p80_min": 2.595677,
+   "metr_p50_min": 20.522872
+  },
+  {
+   "metr_id": "o1_preview",
+   "eci_model": "o1-preview",
+   "eci": 134.78,
+   "release": "2024-09-12",
+   "metr_p80_min": 4.420545,
+   "metr_p50_min": 20.326586
+  },
+  {
+   "metr_id": "claude_3_7_sonnet_inspect",
+   "eci_model": "Claude 3.7 Sonnet",
+   "eci": 141.14,
+   "release": "2025-02-24",
+   "metr_p80_min": 12.09179,
+   "metr_p50_min": 60.388937
+  },
+  {
+   "metr_id": "o1_inspect",
+   "eci_model": "o1",
+   "eci": 141.84,
+   "release": "2024-12-05",
+   "metr_p80_min": 7.090121,
+   "metr_p50_min": 38.831588
+  },
+  {
+   "metr_id": "claude_4_opus_inspect",
+   "eci_model": "Claude Opus 4",
+   "eci": 142.65,
+   "release": "2025-05-22",
+   "metr_p80_min": 20.429752,
+   "metr_p50_min": 100.366123
+  },
+  {
+   "metr_id": "claude_4_1_opus_inspect",
+   "eci_model": "Claude Opus 4.1",
+   "eci": 144.09,
+   "release": "2025-08-05",
+   "metr_p80_min": 23.455761,
+   "metr_p50_min": 100.472004
+  },
+  {
+   "metr_id": "o3_inspect",
+   "eci_model": "o3",
+   "eci": 146.87,
+   "release": "2025-04-16",
+   "metr_p80_min": 29.981603,
+   "metr_p50_min": 119.732634
+  },
+  {
+   "metr_id": "gpt_5_2025_08_07_inspect",
+   "eci_model": "GPT-5",
+   "eci": 150.0,
+   "release": "2025-08-07",
+   "metr_p80_min": 38.312431,
+   "metr_p50_min": 203.012577
+  },
+  {
+   "metr_id": "claude_opus_4_5_inspect",
+   "eci_model": "Claude Opus 4.5",
+   "eci": 150.17,
+   "release": "2025-11-24",
+   "metr_p80_min": 49.430584,
+   "metr_p50_min": 292.994594
+  },
+  {
+   "metr_id": "gemini_3_pro",
+   "eci_model": "Gemini 3 Pro",
+   "eci": 152.9,
+   "release": "2025-11-18",
+   "metr_p80_min": 54.142849,
+   "metr_p50_min": 224.325884
+  },
+  {
+   "metr_id": "gpt_5_2",
+   "eci_model": "GPT-5.2",
+   "eci": 153.46,
+   "release": "2025-12-11",
+   "metr_p80_min": 66.002649,
+   "metr_p50_min": 352.249302
+  },
+  {
+   "metr_id": "gemini_3_1_pro",
+   "eci_model": "Gemini 3.1 Pro",
+   "eci": 154.67,
+   "release": "2026-02-19",
+   "metr_p80_min": 89.801503,
+   "metr_p50_min": 384.147435
+  },
+  {
+   "metr_id": "claude_opus_4_6_inspect",
+   "eci_model": "Claude Opus 4.6",
+   "eci": 155.27,
+   "release": "2026-02-05",
+   "metr_p80_min": 69.874587,
+   "metr_p50_min": 718.80683
+  },
+  {
+   "metr_id": "gpt_5_4",
+   "eci_model": "GPT-5.4",
+   "eci": 156.72,
+   "release": "2026-03-05",
+   "metr_p80_min": 53.877851,
+   "metr_p50_min": 341.735276
+  },
+  {
+   "metr_id": "gpt_5_3_codex",
+   "eci_model": "GPT-5.3 Codex",
+   "eci": 156.76,
+   "release": "2026-02-05",
+   "metr_p80_min": 54.739407,
+   "metr_p50_min": 349.530732
+  }
+ ],
+ "rli": {
+  "beta": 0.6,
+  "hist": {
+   "log10_lo": -0.31,
+   "log10_hi": 2.43,
+   "counts": [
+    1,
+    9,
+    5,
+    10,
+    38,
+    36,
+    31,
+    27,
+    14,
+    16,
+    8,
+    4
+   ],
+   "extremes_h": [
+    0.2,
+    450.0
+   ]
+  },
+  "h50_per_h80": 4.960517383042077
+ }
+}
