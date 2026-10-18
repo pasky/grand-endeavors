@@ -749,6 +749,32 @@ def main():
              os.path.exists(os.path.join(site_dir, "ledger.sqlite"))
              and 'url=./' in open(os.path.join(site_dir, "dashboard.html")).read())
 
+    # the counted deployment cases table (robots-hardware KPI)
+    db = sqlite3.connect(":memory:")
+    db.row_factory = sqlite3.Row
+    db.executescript(explore.SCHEMA)
+    case("cases: no deployment events, no table", explore.cases_html(db, "robots-hardware") == "")
+    dep = lambda maker, customer, status, **kw: json.dumps(dict(
+        {"maker": maker, "platform": "Digit", "customer": customer, "job": "moves <totes>",
+         "status": status, "autonomy": "autonomously"}, **kw))
+    for i, (pub, eff, d) in enumerate([
+            ("2025-11-20", 1, dep("Agility", "GXO", "working", robots=3, form="bipedal humanoid")),
+            ("2026-03-25", 1, dep("Agility", "Schaeffler", "working", site="Cheraw, SC")),
+            ("2025-04-06", 1, dep("Figure", "BMW", "working")),
+            ("2025-11-19", 1, dep("Figure", "BMW", "ended")),
+            ("2026-01-01", 0, dep("UBTech", "Zeekr", "working")),          # superseded: not effective
+            ("2026-02-01", 1, dep("Spirit AI", "CATL", "disputed"))]):
+        db.execute("INSERT INTO events (section, id, published, effective, deployment) VALUES (?,?,?,?,?)",
+                   ("robots-hardware", f"{pub}-e{i}", pub, eff, d))
+    html = explore.cases_html(db, "robots-hardware")
+    case("cases: counted cases in order, ended marked, platform form, other customers, escaped",
+         "The 3 counted case(s)" in html and html.index("BMW") < html.index("GXO") < html.index("Schaeffler")
+         and ">ended<" in html and "(bipedal humanoid)" in html and "also at 1 other customer" in html
+         and "&lt;totes&gt;" in html and "Zeekr" not in html)
+    case("cases: a never-working (disputed) case is listed as not counted",
+         "Not counted: Spirit AI / CATL (no working case yet)" in html)
+    db.close()
+
     print(f"\n{len(FAILS)} failure(s)" if FAILS else "\nall explorer tests passed")
     return 1 if FAILS else 0
 

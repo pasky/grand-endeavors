@@ -145,7 +145,9 @@ OUTPUT (write only these files):
    include "$topic"), claim (ONE self-contained sentence, numbers WITH their exact
    metric scope; distinguish achieved vs announced vs projected), sources
    [{url,title,primary}], significance (1 minor, 2 notable, 3 major; skip trivia),
-   optional metrics [{metric,obs,value}], optional relates, optional supersedes, verification
+   optional metrics [{metric,obs,value}], optional relates, optional supersedes,
+   optional deployment (only when a registered metric's definition asks for deployment
+   cases: its fields and counting rules are in that definition), verification
    {"status":"unverified","by":"intake:$RUN_ID","at":"$TODAY"},
    collector "gather:$SECTION/$slug@$RUN_ID".
 2. OPTIONAL $ob: observations of REGISTERED metrics that the sources report
@@ -193,7 +195,9 @@ to verified|corrected|rejected. Corrections must be supported by the source;
 otherwise reject. Do not add new records. Every field (numbers, dates, names,
 kind) must be stated by a cited source. Background knowledge never counts: an
 unsupported detail must be removed or corrected from the source, or the record
-rejected.
+rejected. A "deployment" case must meet the counting rules in its metric's registry
+definition (\`uv run $ROOT/core/kpi.py registry $SECTION\`) and its autonomy quote must be
+the source's words; correct the case, or remove the field (the event can stay) if it does not.
 For registry changes: the definition must be precise and must not duplicate or
 rename an existing metric. Existing rows must be unchanged. Revert invalid
 additions and reject the rows that use them.
@@ -216,9 +220,10 @@ if [ -n "$staged_ev$staged_ob" ]; then
 fi
 uv run $ROOT/core/ledger.py check "$SECTION"
 commit "gather $SECTION: merge verified intake (until $UNTIL)" $LEDGER_PATHS
-# a collector may derive series from intake-staged observations (knowledge-beyond's Q-Day
-# gap): re-run it once intake merged observations, so they reach the derived series now
-if [ -f "$collector" ] && [ -z "${SKIP_COLLECT:-}" ] && [ -n "$staged_ob" ]; then
+# a collector may derive series from intake-staged records (knowledge-beyond's Q-Day gap from
+# observations, robots-hardware's deployment cases from events): re-run it once intake merged
+# them, so they reach the derived series now
+if [ -f "$collector" ] && [ -z "${SKIP_COLLECT:-}" ] && [ -n "$staged_ev$staged_ob" ]; then
 	echo ">>> [$RUN_NAME] re-collect after intake ($collector)"
 	sh "$ROOT/gather/collectors/run.sh" "$SECTION"
 	uv run $ROOT/core/ledger.py check "$SECTION"

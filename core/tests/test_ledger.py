@@ -103,6 +103,48 @@ def main():
     es = ledger.check_event(bad, "climate", topics)
     case("event schema: unknown topic, short claim, bad significance",
          has(es, "unknown topic") and has(es, "claim too short") and has(es, "significance"))
+    # --- deployment cases (robots-hardware KPI) ----------------------------------------
+    def dep(id_, published, maker, customer, status="working", **kw):
+        d = {"maker": maker, "platform": "P1", "customer": customer, "job": "moves totes", "status": status}
+        if status == "working":
+            d["autonomy"] = "works autonomously"
+        d.update(kw)
+        return ev(id_, published, "A robot maker deployed its humanoid at a named customer in 2026.", deployment=d)
+    ok = dep("2026-05-13-d", "2026-05-13", "Agility", "GXO", robots=3, form="bipedal humanoid")
+    case("deployment case: a valid one passes", ledger.check_event(ok, "climate", topics) == [])
+    noaut = dep("2026-05-13-d", "2026-05-13", "Agility", "GXO")
+    del noaut["deployment"]["autonomy"]
+    case("deployment case: working needs the source's autonomy words",
+         has(ledger.check_event(noaut, "climate", topics), "needs 'autonomy'"))
+    bad = dep("2026-05-13-d", "2026-05-13", "Agility", "", status="active", robots=0, colour="red")
+    es = ledger.check_event(bad, "climate", topics)
+    case("deployment case: empty customer, bad status, robots < 1, unknown field",
+         has(es, "non-empty 'customer'") and has(es, "status must be") and has(es, "positive integer")
+         and has(es, "unknown field"))
+    evs = [dep("2026-01-10-a", "2026-01-10", "Agility", "GXO"),
+           dep("2026-02-01-b", "2026-02-01", "Spirit AI", "CATL"),
+           dep("2026-02-01-c", "2026-02-01", "Galbot", "catl ", job="carries bins"),  # same customer, new maker
+           dep("2026-03-01-d", "2026-03-01", "agility", "GXO", robots=5),  # same pair, normalized
+           dep("2026-04-01-e", "2026-04-01", "Figure", "BMW"),
+           dep("2026-05-01-f", "2026-05-01", "Figure", "BMW", status="ended"),
+           dep("2026-06-01-g", "2026-06-01", "Spirit AI", "CATL", status="disputed"),
+           dep("2026-07-01-h", "2026-07-01", "UBTech", "Zeekr", status="disputed")]
+    cases, tl = ledger.deployment_roster(evs)
+    by = {(c["maker"], c["customer"]): c for c in cases}
+    case("roster: one case per normalized (maker, customer) pair; a new maker at a customer is a new pair",
+         len(cases) == 5 and by[("Agility", "GXO")]["events"] == ["2026-01-10-a", "2026-03-01-d"]
+         and by[("Agility", "GXO")]["robots"] == 5 and by[("Galbot", "catl ")]["counted"])
+    case("roster: ended stays counted (marked ended), disputed stops counting, never-working is not counted",
+         by[("Figure", "BMW")]["counted"] and by[("Figure", "BMW")]["status"] == "ended"
+         and not by[("Spirit AI", "CATL")]["counted"] and not by[("UBTech", "Zeekr")]["counted"])
+    case("roster timeline: one entry per date the count changes, with the count after it",
+         [(t["date"], t["count"]) for t in tl]
+         == [("2026-01-10", 1), ("2026-02-01", 3), ("2026-04-01", 4), ("2026-06-01", 3)]
+         and tl[-1]["removed"] == ["Spirit AI / CATL"])
+    back = evs + [dep("2026-08-01-i", "2026-08-01", "Spirit AI", "CATL")]
+    case("roster: a later working event re-counts a disputed case (since = its first working event)",
+         [(t["date"], t["count"]) for t in ledger.deployment_roster(back)[1]][-1] == ("2026-08-01", 4)
+         and next(c for c in ledger.deployment_roster(back)[0] if c["maker"] == "Spirit AI")["since"] == "2026-02-01")
     case("framework topics include fusion tech-tree branches as challenges",
          "challenge:d-t-fusion" in ledger.valid_topics("fusion") and "milestone:d-t-fusion" not in ledger.valid_topics("fusion"))
     dup = [ev("2026-05-13-a", "2026-05-13", "Global Carbon Budget final paper puts 2025 fossil CO2 at 38.1 GtCO2 up 1.0 percent."),

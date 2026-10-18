@@ -57,6 +57,12 @@ EV_VERIF = {"verified", "corrected", "legacy"}
 OBS_VERIF = {"verified", "corrected", "collector", "legacy", "withdrawn"}
 STAGED_VERIF = {"verified", "corrected", "collector", "rejected", "unverified"}
 BASES = {"source", "rule", "seen"}
+# an event's optional `deployment` case (a KPI that counts deployment cases, robots-hardware;
+# DESIGN.md §3): working = the source documents the work; ended; disputed = a credible source
+# contradicts the case (it stops counting)
+DEPLOY_STATUS = {"working", "ended", "disputed"}
+DEPLOY_REQUIRED = ("maker", "platform", "customer", "job", "status")
+DEPLOY_OPTIONAL = ("form", "site", "robots", "autonomy")
 OBS_COLUMNS = ["metric", "obs", "value", "unit", "source", "published",
                "published_basis", "retrieved", "collector", "verification", "note"]
 ASSESS_STATUS = {"green", "yellow", "red", "achieved", "unknown"}
@@ -355,9 +361,11 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
     errs += [f"{at}: missing '{k}'" for k in need if k not in e]
     if errs:
         return errs
-    extra = set(e) - set(need) - {"metrics", "relates", "supersedes", "withdrawn", "note", "_line"}
+    extra = set(e) - set(need) - {"metrics", "relates", "supersedes", "withdrawn", "note", "deployment", "_line"}
     if extra:
         errs.append(f"{at}: unknown field(s) {sorted(extra)}")
+    if "deployment" in e:
+        errs += check_deployment(at, e["deployment"])
     if not EVENT_ID_RE.match(str(e["id"])):
         errs.append(f"{at}: id must be YYYY-MM-DD-slug")
     if not _valid_date(e["date"]):
@@ -412,6 +420,84 @@ def check_event(e: dict, section: str, topics: set[str], staged: bool = False) -
         if not isinstance(m, dict) or not {"metric", "obs", "value"} <= set(m):
             errs.append(f"{at}: metrics entries need metric, obs, value")
     return errs
+
+
+def check_deployment(at: str, d) -> list[str]:
+    """An event's `deployment` case: required non-empty strings maker, platform, customer, job;
+    status in DEPLOY_STATUS; optional form, site (strings), robots (a positive integer = the
+    disclosed count), autonomy (the source's own words saying the robot works autonomously;
+    required for status working)."""
+    if not isinstance(d, dict):
+        return [f"{at}: deployment must be an object"]
+    errs = []
+    extra = set(d) - set(DEPLOY_REQUIRED) - set(DEPLOY_OPTIONAL)
+    if extra:
+        errs.append(f"{at}: deployment has unknown field(s) {sorted(extra)}")
+    for k in DEPLOY_REQUIRED:
+        if not isinstance(d.get(k), str) or not d[k].strip():
+            errs.append(f"{at}: deployment needs a non-empty '{k}'")
+    if d.get("status") not in DEPLOY_STATUS:
+        errs.append(f"{at}: deployment status must be one of {sorted(DEPLOY_STATUS)}")
+    for k in ("form", "site", "autonomy"):
+        if k in d and d[k] is not None and (not isinstance(d[k], str) or not d[k].strip()):
+            errs.append(f"{at}: deployment '{k}' must be a non-empty string or null")
+    if "robots" in d and d["robots"] is not None and (type(d["robots"]) is not int or d["robots"] < 1):
+        errs.append(f"{at}: deployment robots must be a positive integer or null")
+    if d.get("status") == "working" and not (isinstance(d.get("autonomy"), str) and d["autonomy"].strip()):
+        errs.append(f"{at}: a working deployment needs 'autonomy' (the source's words that the robot works autonomously)")
+    return errs
+
+
+def _deploy_key(d: dict) -> tuple[str, str]:
+    norm = lambda s: " ".join(str(s).casefold().split())
+    return norm(d["maker"]), norm(d["customer"])
+
+
+def deployment_roster(evs: list[dict]) -> tuple[list[dict], list[dict]]:
+    """The deployment cases of a section's EFFECTIVE events (ledger.effective_events), one per
+    (maker, customer) pair (case- and whitespace-insensitive), in order of publication:
+    (cases, timeline).
+    A case counts from the publication of its first `working` event, unless its latest event (by
+    publication) is `disputed`; `ended` keeps it counted (a cumulative count of cases ever
+    documented) and marks it ended. case = {maker, customer, platform, form, site, job, robots,
+    autonomy, since, first_event, status ('working'|'ended'|'disputed'), counted, events: [ids]},
+    the descriptive fields from the latest event that has them (the first working event's job,
+    autonomy and platform as fallback). timeline = [{date, count, added, removed, events}],
+    one entry per publication date on which the counted set changed."""
+    cases: dict[tuple[str, str], dict] = {}
+    timeline: list[dict] = []
+    dep = sorted((e for e in evs if isinstance(e.get("deployment"), dict)),
+                 key=lambda e: (str(e["published"]), str(e["id"])))
+    counted = lambda c: c["since"] is not None and c["status"] != "disputed"
+    for e in dep:
+        d, k = e["deployment"], _deploy_key(e["deployment"])
+        c = cases.setdefault(k, {"maker": d["maker"], "customer": d["customer"], "since": None,
+                                 "first_event": None, "status": None, "events": []})
+        before = counted(c) if c["status"] else False
+        c["events"].append(e["id"])
+        if d["status"] == "working" and c["since"] is None:
+            c["since"], c["first_event"] = e["published"], e["id"]
+        c["status"] = d["status"]
+        for f in ("platform", "form", "site", "job", "robots", "autonomy"):
+            if d.get(f) is not None and (f != "autonomy" or d["status"] == "working"):
+                c[f] = d[f]
+        after = counted(c)
+        if before != after:
+            day_ = str(e["published"])
+            if not timeline or timeline[-1]["date"] != day_:
+                timeline.append({"date": day_, "count": 0, "added": [], "removed": [], "events": []})
+            t = timeline[-1]
+            (t["added"] if after else t["removed"]).append(f"{c['maker']} / {c['customer']}")
+            t["events"].append(e["id"])
+            t["count"] = sum(1 for x in cases.values() if x["status"] and counted(x))
+    out = []
+    for c in cases.values():
+        c["counted"] = bool(c["status"]) and counted(c)
+        for f in ("platform", "form", "site", "job", "robots", "autonomy"):
+            c.setdefault(f, None)
+        out.append(c)
+    out.sort(key=lambda c: (c["since"] or "9999", c["maker"].casefold(), c["customer"].casefold()))
+    return out, timeline
 
 
 def check_eta(at: str, eta, status: str, made_at: str, rubric: str = RUBRIC) -> list[str]:
