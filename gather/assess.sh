@@ -161,7 +161,7 @@ leave a listed target out.
 Write $AS: one JSON object per line with fields exactly: id (EXACTLY as given),
 target, status (green|yellow|red, or achieved for milestones), label
 ("<Verdict>: ..." per RUBRIC.md, at most 100 chars), made_at "$UNTIL", rationale
-(2-4 sentences, consistent with basis), evidence [event ids], by
+(2-4 sentences for a general reader, consistent with basis: RUBRIC.md §6), evidence [event ids], by
 "$BY", rubric "$RUBRIC", basis (the keys $ROOT/DESIGN.md §3 "Assessment" lists for
 KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
 Validate until 0 errors, and fix the WARN lines it prints about your records (an unexplained
