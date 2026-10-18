@@ -109,6 +109,15 @@ try:
     case("later withdrawals revise the past months, dated first seen: as of April the count is still 2",
          errs == errs2 == [] and s["2026-03"] == "2" and s2["2026-03"] == "1" and s2["2026-01"] == "0"
          and as_of("2026-04-15")["2026-03"] == "2")
+    day = dt.date(2026, 6, 10)
+    base = [ev("2026-05-01-x", "2026-05-01", "A", "B")]
+    plus = base + [ev("2026-06-05-y", "2026-06-05", "C", "D")]
+    e1, s1 = run(base, day)
+    e2, s2 = run(plus, day)
+    e3, s3 = run(plus + [wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y")], day)
+    case("a same-day revert (1 -> 2 -> 1 in the current month) merges and is effective",
+         e1 == e2 == e3 == [] and s1["2026-06"] == "1" and s2["2026-06"] == "2" and s3["2026-06"] == "1"
+         and ledger.check_section(rh.SECTION)[0] == [])
 finally:
     ledger.DATA = REAL_DATA
     shutil.rmtree(tmp)

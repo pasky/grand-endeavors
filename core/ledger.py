@@ -741,12 +741,18 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
                             and _valid_day(r.get("published")) and known_at(r) <= known_at(w) for r in obs):
             errs.append(f"obs {w['metric']}@{w['obs']} (line {w.get('_line')}): withdrawal of value {w['value']}, "
                         "but no such row was known by its date")
+    last: dict[tuple, str] = {}   # the latest value per metric@obs, in ledger (append) order
     for r in obs:
         errs += check_obs_row(r, reg, staged=staged_statuses)
         k = (r.get("metric"), r.get("obs"), r.get("published"), r.get("value"), r.get("verification"))
-        if k in keys:
+        mo = (r.get("metric"), r.get("obs"))
+        # a repeat is a duplicate unless another value came in between: a same-day revert (a
+        # derived series that goes 11 -> 12 -> 11 within one day re-asserts 11, later = effective)
+        if k in keys and last.get(mo) == r.get("value"):
             errs.append(f"obs {r.get('metric')}@{r.get('obs')}: exact duplicate row (line {r.get('_line')})")
         keys.add(k)
+        if r.get("verification") != "withdrawn":
+            last[mo] = r.get("value")
     aids = set()
     for a in ass:
         errs += check_assessment(a, topics, ids)

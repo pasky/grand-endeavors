@@ -103,6 +103,20 @@ def main():
     es = ledger.check_event(bad, "climate", topics)
     case("event schema: unknown topic, short claim, bad significance",
          has(es, "unknown topic") and has(es, "claim too short") and has(es, "significance"))
+    # --- exact duplicate observations vs a same-day revert --------------------------------
+    op = ledger.path("observations", "climate")
+    saved = open(op).read()
+    a1 = obs("co2-mlo-annual", "2024", "424.6", "2026-09-28", basis="seen")
+    a2 = obs("co2-mlo-annual", "2024", "424.7", "2026-09-28", basis="seen")
+    write_csv(op, ledger.OBS_COLUMNS, [a1, a1])
+    dup_errs = ledger.check_section("climate")[0]
+    write_csv(op, ledger.OBS_COLUMNS, [a1, a2, a1])
+    rev_errs = ledger.check_section("climate")[0]
+    with open(op, "w") as f:
+        f.write(saved)
+    case("an exact duplicate observation row is an error; a same-day revert (a, b, a) is not",
+         has(dup_errs, "exact duplicate") and not has(rev_errs, "exact duplicate"))
+
     # --- deployment cases (robots-hardware KPI) ----------------------------------------
     def dep(id_, published, maker, customer, status="working", **kw):
         d = {"maker": maker, "platform": "P1", "customer": customer, "job": "moves totes", "status": status}
