@@ -442,8 +442,9 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   the answer to "why this status?". Write it for a general reader, in 2–4
   sentences, consistent with the basis: (1) where the quantity stands and how
   fast it moves, in plain units; (2) the pace needed (the benchmark, by name)
-  and hence the status; (3) what changed since the previous assessment, if
-  anything; (4) the one caveat that matters most. Name a source by what it is
+  and hence the status; (3) only if something moved the numbers or the status
+  since the previous assessment, what (otherwise say nothing about it: "no new
+  measurements" tells the reader nothing); (4) the one caveat that matters most. Name a source by what it is
   ("Epoch's capability index"), not by an event id. No metric or event ids,
   commit hashes, file names, commands, CI arithmetic or robustness lists, and
   no run bookkeeping ("nothing new since…", "the same points give the same
