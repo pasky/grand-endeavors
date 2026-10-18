@@ -1248,14 +1248,17 @@ def cases_html(db, sec: str) -> str:
     shown = [c for c in cases if c["counted"]]
     makers: dict[str, int] = {}
     for c in shown:
-        makers[c["maker"].casefold()] = makers.get(c["maker"].casefold(), 0) + 1
+        k = ledger._deploy_key(c)[0]
+        makers[k] = makers.get(k, 0) + 1
     rows = []
     for c in shown:
         plat = esc(c["platform"]) + (f' <span class="mute">({esc(c["form"])})</span>' if c["form"] else "")
-        other = makers[c["maker"].casefold()] - 1
+        other = makers[ledger._deploy_key(c)[0]] - 1
         if other:
             plat += f' <span class="mute">· also at {other} other customer(s)</span>'
         status = "ended" if c["status"] == "ended" else "working"
+        if c["latest_event"] != c["first_event"]:   # the latest report (job, robots or status may come from it)
+            status = f'<a href="{ev_href(sec, c["latest_event"])}">{status}</a>'
         rows.append(
             f'<tr><td><a href="{ev_href(sec, c["first_event"])}">{esc(fmt_date(c["since"]))}</a></td>'
             f'<td><b>{esc(c["maker"])}</b><br>{plat}</td>'

@@ -141,6 +141,17 @@ def main():
          [(t["date"], t["count"]) for t in tl]
          == [("2026-01-10", 1), ("2026-02-01", 3), ("2026-04-01", 4), ("2026-06-01", 3)]
          and tl[-1]["removed"] == ["Spirit AI / CATL"])
+    same = [dep("2026-01-10-z", "2026-01-10", "A", "B"), dep("2026-01-10-a", "2026-01-10", "A", "B", status="disputed")]
+    c1, t1 = ledger.deployment_roster(same)
+    case("roster: on one date a dispute wins whatever the ids; no net change, no timeline entry",
+         not c1[0]["counted"] and t1 == [])
+    late_end = [dep("2026-01-10-a", "2026-01-10", "A", "B"), dep("2026-02-10-b", "2026-02-10", "A", "B", status="disputed"),
+                dep("2026-03-10-c", "2026-03-10", "A", "B", status="ended")]
+    case("roster: an 'ended' report does not resolve a dispute",
+         not ledger.deployment_roster(late_end)[0][0]["counted"]
+         and ledger.deployment_roster(late_end, until="2026-01-31")[0][0]["counted"])
+    case("deployment case: a non-string status is a schema error, not a crash",
+         has(ledger.check_event(dep("2026-05-13-d", "2026-05-13", "A", "B", status=[]), "climate", topics), "status must be"))
     back = evs + [dep("2026-08-01-i", "2026-08-01", "Spirit AI", "CATL")]
     case("roster: a later working event re-counts a disputed case (since = its first working event)",
          [(t["date"], t["count"]) for t in ledger.deployment_roster(back)[1]][-1] == ("2026-08-01", 4)
