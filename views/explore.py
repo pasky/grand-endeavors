@@ -920,10 +920,13 @@ def assessment_html(m: sqlite3.Row, rationale: bool = True,
     # status was derived (the data window, benchmark, rubric rule, ETA method, ...) is audit detail: folded
     if outlook := [r for r in rows if r[0] in OUTLOOK_KEYS]:
         out.append(f'<dl class="basis">{dl(outlook)}</dl>')
-    if tech := [r for r in rows if r[0] not in OUTLOOK_KEYS]:
+    by = f'<div class="mute small">by {esc(m["by"])} · {len(json.loads(m["evidence"] or "[]"))} evidence event(s)</div>'
+    if tech := [r for r in rows if r[0] not in OUTLOOK_KEYS]:  # the run that made it is audit detail too
         out.append(f'<details class="tech"><summary>{esc(tech_title)}'
-                   f'</summary><dl class="basis">{dl(tech)}</dl></details>')
-    out.append(f'<div class="mute small">by {esc(m["by"])} · {len(json.loads(m["evidence"] or "[]"))} evidence event(s)</div></div>')
+                   f'</summary><dl class="basis">{dl(tech)}</dl>{by}</details>')
+    else:
+        out.append(by)
+    out.append("</div>")
     return "".join(out)
 
 
