@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # /// script
+# requires-python = ">=3.12"
 # dependencies = ["pyyaml"]
 # ///
 """Grand Endeavors explorer: derived, read-only views of the ledger
