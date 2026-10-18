@@ -39,8 +39,9 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       APEX-Agents, GDPval). OSWorld 2.0 (computer use, a remote-side candidate) fails too: its hours
       are annotators' range guesses (max 6 h), public only as 5 bins (paper arXiv 2606.29537
       App. G.2), and success is <=24% even on <45-min tasks, so length is not what limits agents.
-      Open leads: FrontierSWE (34 long tasks, per-task results and traces public) if its
-      maintainers have per-task expert-hour estimates (ask them); BRIDGE (github.com/McGill-NLP/BRIDGE,
+      FrontierSWE (34 long tasks, per-task results public) has no expert-hour field in its
+      Harbor task.toml files (github.com/Proximal-Labs/frontier-swe, 17 v1 tasks) and mostly
+      continuous scores. Open lead: BRIDGE (github.com/McGill-NLP/BRIDGE,
       IRT difficulty -> human hours, R² 0.81 on METR tasks) could put hourless tasks on METR's scale,
       but that scale ends near 16 h, so it moves the extrapolation rather than removing it.
 
