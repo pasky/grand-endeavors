@@ -466,8 +466,8 @@ def deployment_roster(evs: list[dict], until: str | None = None) -> tuple[list[d
     (platform, form, site, job, robots, autonomy) come from the latest `working` event that has
     them; every `ended`/`disputed` event is kept in `updates`.
     case = {maker, customer, platform, form, site, job, robots, autonomy, since, first_event,
-    latest_event, status (its latest event's), counted, events: [ids], updates: [{date, status,
-    event, job, site}]}. timeline = [{date, count, added, removed, events}], one entry per
+    work_event (the latest working one), latest_event, status (its latest event's), counted,
+    events: [ids], updates: [{date, status, event, job, site}]}. timeline = [{date, count, added, removed, events}], one entry per
     publication date on which the counted set changed (net)."""
     order = {"working": 0, "ended": 1, "disputed": 2}
     dep = sorted((e for e in evs if isinstance(e.get("deployment"), dict)
@@ -489,6 +489,7 @@ def deployment_roster(evs: list[dict], until: str | None = None) -> tuple[list[d
                                      "first_event": None, "events": [], "updates": []})
             c["events"].append(e["id"]); c["latest_event"] = e["id"]; c["status"] = d["status"]
             if d["status"] == "working":
+                c["work_event"] = e["id"]
                 if c["since"] is None:
                     c["since"], c["first_event"] = e["published"], e["id"]
                 for f in ("platform", "form", "site", "job", "robots", "autonomy"):
@@ -508,7 +509,7 @@ def deployment_roster(evs: list[dict], until: str | None = None) -> tuple[list[d
     out = []
     for c in cases.values():
         c["counted"] = counted(c)
-        for f in ("platform", "form", "site", "job", "robots", "autonomy"):
+        for f in ("platform", "form", "site", "job", "robots", "autonomy", "work_event"):
             c.setdefault(f, None)
         out.append(c)
     out.sort(key=lambda c: (c["since"] or "9999", c["maker"].casefold(), c["customer"].casefold()))

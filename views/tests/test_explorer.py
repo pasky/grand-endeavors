@@ -777,6 +777,21 @@ def main():
     case("cases: the later report shows under the job, linked; a never-working case is not listed",
          "ended, reported <a href=" in html and "Spirit AI" not in html)
     db.close()
+    # sparkline granularity: the longest-spanning kind, so new day points never hide years of months
+    sp = sqlite3.connect(":memory:")
+    sp.execute("CREATE TABLE headline_obs (section, metric, obs_kind, obs_start, obs_end, value)")
+    for y, mo in [(2024, m) for m in range(1, 13)] + [(2025, m) for m in range(1, 13)]:
+        end = (dt.date(y + (mo == 12), mo % 12 + 1, 1) - dt.timedelta(days=1)).isoformat()
+        sp.execute("INSERT INTO headline_obs VALUES ('s','m','9999-99',?,?,1)", (f"{y}-{mo:02d}-01", end))
+    for d in ("2026-01-10", "2026-01-17", "2026-01-24"):
+        sp.execute("INSERT INTO headline_obs VALUES ('s','m','9999-99-99',?,?,2)", (d, d))
+    pts, kind_name = explore.spark_points(sp, {"section": "s", "metric": "m", "obs_kind": "9999-99-99"})
+    case("sparkline: years of months beat a few recent day points (the headline's own kind)", len(pts) == 24)
+    sp.execute("DELETE FROM headline_obs WHERE obs_kind='9999-99'")
+    sp.execute("INSERT INTO headline_obs VALUES ('s','m','9999-99','2026-01-01','2026-01-31',3)")
+    pts, _ = explore.spark_points(sp, {"section": "s", "metric": "m", "obs_kind": "9999-99"})
+    case("sparkline: a single monthly point next to day points still gives the day series", len(pts) == 3)
+    sp.close()
 
     print(f"\n{len(FAILS)} failure(s)" if FAILS else "\nall explorer tests passed")
     return 1 if FAILS else 0

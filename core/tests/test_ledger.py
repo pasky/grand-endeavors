@@ -177,6 +177,11 @@ def main():
     upd = [dep("2026-01-10-a", "2026-01-10", "A", "B", job="loads parts in live production", site="Plant 1", robots=1),
            dep("2026-03-10-b", "2026-03-10", "A", "B", status="ended", job="a later non-production test", site="Plant 2")]
     uc = ledger.deployment_roster(upd)[0][0]
+    res = upd + [dep("2026-05-10-c", "2026-05-10", "A", "B", job="loads parts again")]
+    rc = ledger.deployment_roster(res)[0][0]
+    case("roster: a resumed deployment counts again, described and linked by its latest working report",
+         rc["counted"] and rc["job"] == "loads parts again" and rc["work_event"] == "2026-05-10-c"
+         and rc["first_event"] == "2026-01-10-a" and len(rc["updates"]) == 1)
     case("roster: a later report propagates its status and is kept as an update, without overwriting the work",
          uc["job"] == "loads parts in live production" and uc["site"] == "Plant 1" and uc["robots"] == 1
          and uc["status"] == "ended" and uc["updates"] == [{"date": "2026-03-10", "status": "ended", "event": "2026-03-10-b",

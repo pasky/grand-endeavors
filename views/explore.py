@@ -752,13 +752,17 @@ KIND_NAMES = {"9999": "annual", "9999-99": "monthly", "9999-99-99": "daily",
 
 
 def spark_points(db: sqlite3.Connection, k: sqlite3.Row) -> tuple[list[tuple[dt.date, float]], str]:
-    """Headline series of ONE granularity (never e.g. daily mixed with monthly):
-    the headline obs's own, unless it has < 2 points, then the dominant one."""
-    kinds = db.execute("SELECT obs_kind, COUNT(*) FROM headline_obs WHERE section=? AND metric=? "
-                       "GROUP BY obs_kind ORDER BY COUNT(*) DESC, obs_kind", (k["section"], k["metric"])).fetchall()
+    """Headline series of ONE granularity (never e.g. daily mixed with monthly): among those
+    with >= 2 points, the one spanning the longest period (ties: more points, then the
+    headline's own), so a few recent day points never hide years of monthly history; with
+    none, the dominant one."""
+    kinds = db.execute("SELECT obs_kind, COUNT(*), julianday(MAX(obs_end)) - julianday(MIN(obs_start)) "
+                       "FROM headline_obs WHERE section=? AND metric=? GROUP BY obs_kind "
+                       "ORDER BY COUNT(*) DESC, obs_kind", (k["section"], k["metric"])).fetchall()
     if not kinds:
         return [], ""
-    kind = k["obs_kind"] if dict(kinds).get(k["obs_kind"], 0) >= 2 else kinds[0][0]
+    multi = [x for x in kinds if x[1] >= 2]
+    kind = (max(multi, key=lambda x: (x[2], x[1], x[0] == k["obs_kind"]))[0] if multi else kinds[0][0])
     pts = [(dt.date.fromisoformat(r[0]), r[1]) for r in db.execute(
         "SELECT obs_end, value FROM headline_obs WHERE section=? AND metric=? AND obs_kind=? "
         "ORDER BY obs_end, obs_start", (k["section"], k["metric"], kind))]
@@ -1267,6 +1271,8 @@ def cases_html(db, sec: str) -> str:
                     f'<a href="{ev_href(sec, u["event"])}">{esc(fmt_date(u["date"]))}</a>'
                     + (f': {esc(u["job"])}' if u["job"] and u["job"] != c["job"] else "") + "</span>")
         status = "at work" if c["counted"] else esc(c["status"])
+        if c["counted"] and c["work_event"] != c["first_event"]:   # the latest report of it working
+            status = f'<a href="{ev_href(sec, c["work_event"])}">{status}</a>'
         rows.append(
             f'<tr{"" if c["counted"] else " class=mute"}><td><a href="{ev_href(sec, c["first_event"])}">'
             f'{esc(fmt_date(c["since"]))}</a></td><td><b>{esc(c["maker"])}</b><br>{plat}</td>'
