@@ -134,10 +134,16 @@ pi_run() {
 	mkdir -p "$SESS_DIR"
 	rc=0
 	pi_out="$(mktemp)"
-	# </dev/null: pi must not consume the caller's stdin (loops reading files).
+	# The prompt goes in on stdin (pi -p takes piped stdin as the message): as an argument
+	# it hit the kernel's 128 KiB per-argument limit (robots-software intake, 2026-10-18:
+	# "Argument list too long"). Stdin is a file, so pi never consumes the caller's stdin
+	# (loops reading files).
 	# PI_MODEL (optional): provider/model[:thinking] for this stage (e.g. a fallback, see pi_mode_model)
+	pi_in="$(mktemp)"
+	printf '%s\n' "$prompt" >"$pi_in"
 	pi -p --approve --session-dir "$SESS_DIR" --name "$RUN_NAME-$label" ${PI_MODEL:+--model "$PI_MODEL"} \
-		"$prompt" </dev/null >"$pi_out" 2>&1 || rc=$?
+		<"$pi_in" >"$pi_out" 2>&1 || rc=$?
+	rm -f "$pi_in"
 	cat "$pi_out"
 	# a provider-side false-positive refusal (intermittent; callers may retry, see assess.sh)
 	PI_BLOCKED=""; grep -q "This request was blocked" "$pi_out" && PI_BLOCKED=1
