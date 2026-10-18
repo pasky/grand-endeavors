@@ -45,6 +45,19 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
 
 ## Operations
 
+- [ ] 🤖 **A gather run that aborts mid-intake cannot resume** (2026-10-18 top-up: two intake
+      agents left helper scripts in the data root, the write-scope guard aborted the runs,
+      and the finished items' staged files were orphaned). The prompts now ask for scratch
+      files under `$STAGE/scratch/`, but nothing enforces that. The run was rescued by hand:
+      re-run the remaining items, copy the old staged files into the new staging dir before
+      verify, then record the old items' state. Fix: `RESUME=<staging dir>` in gather.sh that
+      skips the finished items and verifies and merges their files. Possibly also move stray
+      untracked files into scratch instead of aborting.
+- [ ] 🤖 **The assess review cannot be re-run alone**: when the review stage fails (2026-10-18,
+      rockets: the deep-mode reviewer died with "terminated"), the records are committed
+      unreviewed. The only remedy is a full `FORCE=1 ONLY=...` re-assessment, which doubles
+      the cost. Fix: retry a failed review once automatically, or an assess.sh mode that
+      reviews the latest committed records and notes.
 - [ ] Scheduling of the LLM stages: `gather/gather.sh <section>`, then
       `views/bulletin.sh` + `views/roundup.sh` after each cutoff (weekly cutoff =
       Sunday + 2 days); needs the scheduling-budget decision above. The
