@@ -31,8 +31,8 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       SWE-Marathon cannot resolve the frontier (its 80% horizon sits near 10 h for every frontier
       model), so the KPI's ECI line is unchecked where it extrapolates, and the task-horizon
       tripwire (two gap series, data drivers.yaml) cannot fire. No existing benchmark fills in
-      (~25 scouted 2026-10-18: no human hours, short or saturated tasks, guessed hours, or no
-      pass/fail per task). The fix is our own time-tagged benchmark: pass/fail tasks with
+      (~25 scouted 2026-10-18, each verdict in data ledger/audits/2026-10-18-horizon-sources:
+      read it before scouting again). The fix is our own time-tagged benchmark: pass/fail tasks with
       measured human hours from ~1 h to weeks (so the frontier's 80% point falls inside the
       range), run on frontier models as they ship, per-trial results public.
 

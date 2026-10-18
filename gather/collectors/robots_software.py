@@ -84,6 +84,7 @@ CROSS-CHECKS (not KPI inputs; the task-horizon driver's tripwire in data drivers
   terminal-bench-4-pass-by-release: release-cohort frontier of the Terminal-Bench 4.0 resolution
     rate (%, any agent/effort configuration; terminal_bench.py). Its expert time estimates do not
     predict failures, so it gives no horizon, only an independent (non-ECI) pace signal.
+  Other candidate horizon sources, checked and rejected: data ledger/audits/2026-10-18-horizon-sources.
   Calibration lab effects at 80% (recorded, not applied; 2026-10-17): mean residual of the 21
   calibration pairs Anthropic +0.19 +- 0.18 doublings (8 models), OpenAI -0.16 +- 0.14 (11),
   Google +0.13 (2); at 50% Anthropic +0.39 +- 0.12, OpenAI -0.24 +- 0.10 (Epoch, 2025-12-12:

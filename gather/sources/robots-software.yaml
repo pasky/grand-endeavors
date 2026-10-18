@@ -1,6 +1,8 @@
 # robots-software: reference sources for gather intake (reviewed 2026-10-12). Schema: README.md.
 sources:
   # --- KPI: blended task horizon (ECI software horizon x RLI remote-work horizon) -------------------
+  # Benchmarks already checked and rejected as direct horizon sources (OSWorld 2.0, FrontierSWE,
+  # GDPval, Cybench, ...): data ledger/audits/2026-10-18-horizon-sources.
   - name: Epoch AI — Epoch Capabilities Index (ECI)
     url: https://epoch.ai/eci
     items: [kpi]
