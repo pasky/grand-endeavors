@@ -27,23 +27,14 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       forbid systematic compilation without written permission while its API docs allow
       non-commercial use: consider asking data@manifold.markets.
 
-- [ ] 🤖 **The task-horizon tripwire has one live source** (owner decision 2026-10-17, option D,
-      data drivers.yaml): only SWE-Marathon measures hours at the ECI frontier (METR's gap
-      series resumes if METR does: add the model to robots_software.py CALIBRATION_PAIRS).
-      A second source needs per-trial results, hours that predict failure (METR's logistic
-      slope >= 0.25 for most configurations, via `swe_marathon.fit()`) and tasks spanning the
-      frontier horizon. Terminal-Bench 4.0 fails the slope test (terminal_bench.py docstring).
-      Scouted 2026-10-18 (~25 benchmarks), none qualifies: per-task results but no human hours
-      (FrontierSWE, DeepSWE, MirrorCode, FrontierCode, GSO, AlgoTune, ALE-Bench, ExploitBench), or
-      hours but short/saturated tasks or no per-task results (SWE-bench Verified, Cybench,
-      APEX-Agents, GDPval). OSWorld 2.0 (computer use, a remote-side candidate) fails too: its hours
-      are annotators' range guesses (max 6 h), public only as 5 bins (paper arXiv 2606.29537
-      App. G.2), and success is <=24% even on <45-min tasks, so length is not what limits agents.
-      FrontierSWE (34 long tasks, per-task results public) has no expert-hour field in its
-      Harbor task.toml files (github.com/Proximal-Labs/frontier-swe, 17 v1 tasks) and mostly
-      continuous scores. BRIDGE (github.com/McGill-NLP/BRIDGE: IRT difficulty -> human hours) is
-      no source either: its hours scale is anchored on METR's tasks, so beyond them it extrapolates
-      just like the ECI line the tripwire checks.
+- [ ] **Nothing measures task horizons at the frontier** (2026-10-18): METR stopped, and
+      SWE-Marathon cannot resolve the frontier (its 80% horizon sits near 10 h for every frontier
+      model), so the KPI's ECI line is unchecked where it extrapolates, and the task-horizon
+      tripwire (two gap series, data drivers.yaml) cannot fire. No existing benchmark fills in
+      (~25 scouted 2026-10-18: no human hours, short or saturated tasks, guessed hours, or no
+      pass/fail per task). The fix is our own time-tagged benchmark: pass/fail tasks with
+      measured human hours from ~1 h to weeks (so the frontier's 80% point falls inside the
+      range), run on frontier models as they ship, per-trial results public.
 
 ## Owner decisions
 
