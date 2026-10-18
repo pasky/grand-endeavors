@@ -50,9 +50,6 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       Sunday + 2 days); needs the scheduling-budget decision above. The
       deterministic collectors already run daily (`gather/collect.sh`, systemd user
       timer, DESIGN.md §4a), and so do the site refresh and the data push.
-- [ ] Gather all sections. Only climate (full), fusion (KPI), robots-software (KPI and
-      milestones, 2025-07 to 2026-10) and the re-verification pass have run; the other
-      sections' news is all 2025-report history.
 - [ ] A hosted Datasette (`datasette publish`); the dashboard itself is published
       (pasky.or.cz/grand-endeavors/ = `build/`) and linked from the round-ups'
       Quick Reference.

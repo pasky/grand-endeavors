@@ -135,7 +135,8 @@ the window; otherwise ignore):
 ${GAPS_TEXT:-(none)}
 $( [ -n "${FOCUS:-}" ] && printf '\nFOCUS OF THIS RUN (prioritize it, still within the window and this watch item):\n%s\n' "$FOCUS" )
 
-OUTPUT (write only these files):
+OUTPUT (write only these files; any helper scripts or downloaded pages go under
+$STAGE/scratch/, since a file anywhere else in the repo aborts the run):
 1. $ev: one JSON object per line (write via a small python script with
    json.dumps; create the file even if empty). Fields exactly: id
    ("YYYY-MM-DD-slug", date prefix = event date), date, published (YYYY-MM-DD),
@@ -169,8 +170,8 @@ EOF
 done 3< "$STAGE/items.txt"
 
 # --- 3. verify (fresh agent) -----------------------------------------------------------
-staged_ev="$(find "$STAGE" -name '*.events.jsonl' -size +0 | sort)"
-staged_ob="$(find "$STAGE" -name '*.obs.csv' | sort)"
+staged_ev="$(find "$STAGE" -maxdepth 1 -name '*.events.jsonl' -size +0 | sort)"
+staged_ob="$(find "$STAGE" -maxdepth 1 -name '*.obs.csv' | sort)"
 REG_DIFF="$(git diff "$RUN_START" -- "$REGISTRY"; git diff -- "$REGISTRY")"
 if [ -n "$staged_ev$staged_ob$REG_DIFF" ]; then
 	pi_run verify "$(cat <<EOF
@@ -201,6 +202,8 @@ the source's words; correct the case, or remove the field (the event can stay) i
 For registry changes: the definition must be precise and must not duplicate or
 rename an existing metric. Existing rows must be unchanged. Revert invalid
 additions and reject the rows that use them.
+Helper scripts or downloaded pages go under $STAGE/scratch/ (a file anywhere else in
+the repo aborts the run).
 Validate until 0 errors (no "unverified" may remain):
     uv run $ROOT/core/ledger.py lint $SECTION --final --events $staged_ev $( [ -n "$staged_ob" ] && echo "--obs $staged_ob" )
 Report counts: verified / corrected / rejected (with reasons). Never run git add/commit
