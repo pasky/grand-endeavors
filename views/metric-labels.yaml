@@ -30,6 +30,7 @@ robots-software:
   metr-50-horizon-by-release: AI task horizon at 50% success, by model release
   metr-50-horizon-frontier: AI task horizon at 50% success, frontier as evaluated
 robots-hardware:
+  gp-deployment-pairs: General-purpose robots at work, (maker, customer) pairs
   manifold-92rpicoun9-p: "Forecast: robot passes the Coffee Test by 2028 (Manifold)"
   manifold-za8292n5qc-p: "Forecast: robot passes the Coffee Test by 2026 (Manifold)"
 rockets:
