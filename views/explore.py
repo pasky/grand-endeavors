@@ -855,6 +855,8 @@ def _num(v) -> str:
     """A number as an assessor's script printed it (0.5431226585424532) at 4 significant digits."""
     if isinstance(v, bool) or not isinstance(v, (int, float)):
         return str(v)
+    if not math.isfinite(v):
+        return str(v)
     if isinstance(v, int) or v == int(v) and abs(v) >= 1000:
         return f"{int(v):,}" if abs(v) >= 10000 else str(int(v))
     return f"{v:.4g}"
@@ -863,7 +865,7 @@ def _num(v) -> str:
 def basis_html(v, depth: int = 0) -> str:
     """A basis value as structure, not one run-on string: a dict as a nested definition list
     (a dict of period -> number, i.e. a data series, as a row of date/value cells), a list of numbers
-    comma-separated, numbers rounded."""
+    comma-separated, any other list as bullets, numbers rounded."""
     if isinstance(v, dict):
         items = [(k, x) for k, x in v.items() if x not in (None, "", [], {})]
         if items and all(_PERIOD_RE.fullmatch(str(k)) for k, _ in items) \
@@ -873,8 +875,10 @@ def basis_html(v, depth: int = 0) -> str:
         return ('<dl class="basis sub">' + "".join(f"<dt>{esc(_key(k))}</dt><dd>{basis_html(x, depth + 1)}</dd>"
                                                     for k, x in items) + "</dl>")
     if isinstance(v, list):
-        if all(not isinstance(x, (dict, list)) for x in v):
+        if all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in v):  # numbers: one line
             return esc(", ".join(_num(x) for x in v))
+        if len(v) == 1:
+            return basis_html(v[0], depth + 1)
         return "<ul class=\"md\">" + "".join(f"<li>{basis_html(x, depth + 1)}</li>" for x in v) + "</ul>"
     return esc(_num(v))
 
@@ -960,7 +964,7 @@ def evidence_and_events(db, sec: str, topic: str, m: sqlite3.Row | None, names, 
         # newest first, like every other event list (the assessor's citation order is arbitrary:
         # a years-old benchmark source must not head the list); unknown ids last
         cited = sorted(cited, key=lambda i: (i in rows, rows[i]["date_end"] or "" if i in rows else "",
-                                             rows[i]["known_at"] or "" if i in rows else ""), reverse=True)
+                                             rows[i]["known_at"] or "" if i in rows else "", i), reverse=True)
         for eid in cited:
             e = rows.get(eid)
             if e is None:

@@ -481,7 +481,9 @@ def main():
         bh = explore.basis_html({"points": {"2025-06": 0.0431234, "2026-01": 2}, "fit": {"r2": 0.98612, "ci": [1, 2.5]}})
         case("basis as structure: a period -> number object as data cells, nested keys in words, numbers rounded",
              '<span class="ser"><span><i>2025-06</i>0.04312</span><span><i>2026-01</i>2</span></span>' in bh
-             and "<dt>R\u00b2</dt><dd>0.9861</dd><dt>CI</dt><dd>1, 2.5</dd>" in bh)
+             and "<dt>R\u00b2</dt><dd>0.9861</dd><dt>CI</dt><dd>1, 2.5</dd>" in bh
+             and explore.basis_html(["a.", "b."]) == '<ul class="md"><li>a.</li><li>b.</li></ul>'
+             and explore.basis_html([float("nan"), float("inf")]) == "nan, inf")
 
         # --- layout: sidebar navigation, one pane per endeavor, news stream ---------------
         nav = page[page.index('<nav class="side">'):page.index("</nav>")]

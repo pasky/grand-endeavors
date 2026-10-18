@@ -52,9 +52,9 @@ endeavors:
         kpi_about: |-
           **Task horizon.** The length of task, in the hours a skilled human professional needs for it,
           that an AI agent completes on its own with a given success rate
-          ([METR 2025](https://arxiv.org/abs/2503.14499)). We track the 80% horizon of the best
-          released model: work it gets right four times out of five. It grows as AI can be trusted
-          with longer stretches of work, which is what all three milestones below need.
+          ([METR 2025](https://arxiv.org/abs/2503.14499)). We track the 80% horizon: the task length
+          at which the best released model succeeds four times out of five. It grows as AI can be
+          trusted with longer stretches of work, which is what all three milestones below need.
 
           METR, who measured horizons directly, stopped updating them in September 2026 (last point:
           3.1 h at 80%, April 2026). The KPI is therefore built from two indices that are still updated,
@@ -65,8 +65,8 @@ endeavors:
             score per model. On the 21 models both METR and Epoch scored, every +4.5 ECI points doubled
             METR's 80% horizon (R² 0.97; a single model typically lands within half a doubling of the
             line). It tells you how long a *software* task the frontier handles, in METR's terms. Today's
-            frontier sits about 10 ECI points above the last model METR measured, so it is an
-            extrapolation of that fit.
+            frontier sits about 10 ECI points above the highest-scoring model of that calibration
+            sample, so it is an extrapolation of the fit.
           - **Remote work: from the Remote Labor Index (RLI).** [RLI](https://remotelabor.ai/), by the
             Center for AI Safety and Scale AI ([paper](https://arxiv.org/abs/2510.26787)), gives AI
             agents 240 real paid freelance projects from Upwork (design, video, 3D, data analysis, games,
@@ -77,9 +77,12 @@ endeavors:
             It tells you how long a piece of *messy, economically real* work AI delivers end to end, and
             it is far lower than the software horizon.
           - **The blend** is their geometric mean, √(software × remote): the average on a log scale, so
-            each counts equally in doublings. A doubling of either raises the KPI by √2, and the KPI's
-            doubling time is the harmonic mean of the two. The gap between them (about 20× in 2026) is the gap
-            between "AI can code it" and "AI can do the job".
+            each counts equally in doublings. Each side takes the best released model in its own domain
+            (they may be different models), so the blend is a composite of two estimates, not one
+            model's measured horizon. A doubling of either raises the KPI by √2, and while both grow
+            steadily the KPI's doubling time is the harmonic mean of theirs. The gap between them (about
+            20× in 2026, two benchmarks and two conversions apart) is roughly the gap between "AI can
+            code it" and "AI can do the job".
 
           **How it is judged.** Green when the blend keeps doubling at least as fast as METR's long-run
           software trend, about every 7 months (2019–2025); the assessment compares the first and the
@@ -89,9 +92,10 @@ endeavors:
           **Cross-checks** (tiles below; not part of the KPI). [SWE-Marathon](https://www.swe-marathon.org/)
           measures 80% horizons directly, METR's way, on 20 long software tasks (4–400 h); at the frontier
           it agrees with the ECI conversion, though it is too coarse to measure the pace. METR's own
-          measurements (to March 2026) give a second gap series. If two such measured series sit more
-          than one doubling off the conversion on the same side for two months running, the conversion
-          is refitted. [Terminal-Bench 4.0](https://www.tbench.ai/leaderboard/terminal-bench/4.0) (long
+          measurements give a second gap series, but it ends in March 2026, so SWE-Marathon is the only
+          measured check still reporting. If two such series sit more than one doubling off the
+          conversion on the same side for two months running, a tripwire calls for a review of the
+          conversion (it cannot fire while only one reports). [Terminal-Bench 4.0](https://www.tbench.ai/leaderboard/terminal-bench/4.0) (long
           command-line tasks, not part of ECI) gives an independent success rate, not hours. The
           [UK AI Security Institute's cyber time horizon](https://www.aisi.gov.uk/blog/how-fast-is-autonomous-ai-cyber-capability-advancing)
           doubled every 4.7 months at 80% (its February 2026 estimate; later models beat that trend): a
