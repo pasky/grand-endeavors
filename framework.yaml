@@ -221,10 +221,61 @@ endeavors:
       - id: robots-hardware
         title: Hardware
         kpi: >-
-          General-purpose robots at work: cumulative number of (robot maker, customer) pairs where a
-          humanoid or mobile manipulator does named production work for an external customer,
-          autonomously as reported. *Provisional, for the pioneering stage:* to be replaced by a
-          measure of the work done (robots × hours × interventions) once deployments disclose it.
+          General-purpose robots at work: cumulative number of robot maker–customer pairs in which a
+          humanoid or other self-moving robot with arms does production work for a named outside
+          customer, autonomously as reported. *Provisional, for the pioneering stage:* to be replaced
+          by a measure of the work done (robots × hours × interventions) once deployments disclose it.
+        kpi_about:
+          summary: "What counts as a case, why we count cases rather than robots, and the caveats"
+          sections:
+            - text: |-
+                A case is one **robot maker** whose general-purpose robot works for one **named outside
+                customer**. Four things must hold. The robot moves itself (legs, wheels, a mobile base)
+                and handles the objects of the job: a humanoid, or what the trade calls a mobile
+                manipulator, not an arm bolted in place. It works inside the customer's live operations
+                (a factory line, a warehouse, a store) and the source says what job it does there; a
+                pilot on a live line counts. The customer is an outside organization, not the maker's
+                own or affiliated plant. And a source says the robot works autonomously (on its own,
+                without remote control); not mentioning remote control is not enough.
+
+                A pair counts once: more robots, sites, jobs or newer models at the same customer add
+                nothing, while the same maker at a second customer, or a second maker at the same
+                customer, is a new case. The maker is whoever builds the robot, not whoever supplies
+                its AI. Every counted case is in the table above, with the job and the source's words
+                on autonomy.
+
+                **Not counted:** fixed arms or stations, whatever AI drives them (Dyna Robotics'
+                napkin-folding arms, a humanoid torso on a stand at a sorting conveyor); self-driving
+                carts and forklifts, which move but do not handle; robots in their maker's own or
+                affiliated plants; demos, livestreams, showrooms, training centres and tests outside
+                live operations; on-site training or trial runs, unless the source says their output
+                goes into real production; orders, contracts, plans and deliveries with no reported
+                work; a customer named only in a list of sites or users; and work no source calls
+                autonomous.
+            - title: Why a count of cases, and why it is provisional
+              text: |-
+                The goal is robots doing human work on their own, so the ideal measure is how much work
+                they do: how many robots, for how many hours, and how often a human has to step in. No
+                one publishes that yet. Analysts count humanoids shipped (about 13,000 in 2025 by
+                Omdia's count, over 18,000 by IDC's), but IDC puts more than 85% of deployments in
+                performances, education, data collection and guided tours, and a shipment says nothing
+                about autonomy. What is documented, one at a time, is deployments, so for this first
+                stage we count those. The number shows how many makers have got a robot past demos and
+                into someone else's real operations. It does not show how much work gets done: a case
+                with one robot counts the same as one with a hundred. The KPI will be replaced once
+                deployments disclose robots, hours and interventions.
+            - title: Caveats
+              text: |-
+                Autonomy is as reported by the maker, the customer or the press. Claims count unless a
+                credible source (the customer, reporters on site, a regulator) contradicts them; a
+                disputed case drops out until a new source documents it working. None of the cases has
+                published how often humans step in. A case that ends stays in the count, marked ended.
+                A case counts from the month its first qualifying source was published, not from when
+                the work began. The cases are those our news gathering finds; the history before
+                October 2026 comes from one search back to 2023, so earlier cases may be missing, most
+                likely Chinese ones.
+
+                **Status:** green when the last 12 months added more pairs than the 12 months before.
         milestones:
           - slug: robotaxi-saturation
             name: Robotaxi Saturation
