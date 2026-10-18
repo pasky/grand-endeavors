@@ -104,7 +104,11 @@ endeavors:
             description: Consistently producing original connections beyond interpolations of existing knowledge.
       - id: robots-hardware
         title: Hardware
-        kpi: Largest Active Commercial Fleet of General-Purpose Humanoids (Single Site)
+        kpi: >-
+          General-purpose robots at work: cumulative number of (robot maker, customer) pairs where a
+          humanoid or mobile manipulator does named production work for an external customer,
+          autonomously as reported. *Provisional, for the pioneering stage:* to be replaced by a
+          measure of the work done (robots × hours × interventions) once deployments disclose it.
         milestones:
           - slug: robotaxi-saturation
             name: Robotaxi Saturation

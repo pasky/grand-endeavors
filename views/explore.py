@@ -60,7 +60,7 @@ CREATE TABLE events (section TEXT, id TEXT, date TEXT, date_end TEXT, published 
     claim TEXT, verification_status TEXT, verified_by TEXT, verified_at TEXT, collector TEXT,
     note TEXT, primary_url TEXT, topics JSON, sources JSON, metrics JSON, relates JSON,
     verification JSON, supersedes JSON, superseded_by TEXT, effective INTEGER, line INTEGER,
-    PRIMARY KEY (section, id));
+    deployment JSON, PRIMARY KEY (section, id));
 CREATE TABLE event_topics (section TEXT, event_id TEXT, topic TEXT);
 CREATE TABLE event_sources (section TEXT, event_id TEXT, ord INTEGER, url TEXT, title TEXT, is_primary INTEGER);
 CREATE TABLE event_relates (section TEXT, event_id TEXT, rel TEXT, related_id TEXT);
@@ -301,7 +301,7 @@ def build_db(db: sqlite3.Connection, as_of: dt.date, fw: dict | None = None) -> 
                            e.get("collector"), e.get("note"), srcs[0].get("url") if srcs else None,
                            _j(e.get("topics")), _j(e.get("sources")), _j(e.get("metrics")),
                            _j(e.get("relates")), _j(v), _j(e.get("supersedes")), superseded_by.get(e.get("id")),
-                           int(id(e) in live), e.get("_line")))
+                           int(id(e) in live), e.get("_line"), _j(e.get("deployment"))))
             for sid in e.get("supersedes") or []:
                 ins("event_supersedes", (sec, e.get("id"), sid))
             for tp in e.get("topics") or []:
@@ -483,6 +483,8 @@ details>summary:hover{background:var(--hov)}
 .small{font-size:12px}.note{background:var(--notebg);border:1px solid var(--noteln);border-radius:6px;padding:6px 10px;margin:8px 0}
 .manifesto p{font-size:15px;margin:8px 0}.legend{margin:8px 0 4px}.more{padding:4px 0 8px 26px}
 section p{margin:6px 0}.kpi{margin:10px 0 2px}
+table.cases{border-collapse:collapse;width:100%;margin:4px 0 8px;font-size:13px}
+table.cases th,table.cases td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
 details summary{list-style:none}details summary::-webkit-details-marker{display:none}
 /* the expander: a chevron (an SVG mask, so it takes the theme colour) in a round button; turns down when open */
 details>summary::before,details>summary::after{content:"";position:absolute;left:6px;top:4px;width:24px;height:24px}
@@ -1080,7 +1082,44 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set) -
     if rest:
         out.append(f"<details><summary>{len(rest)} more metric(s) we track</summary>"
                    '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")
+    out.append(cases_html(db, sec))
     return "".join(out)
+
+
+def cases_html(db, sec: str) -> str:
+    """The deployment cases a counting KPI counts (ledger.deployment_roster over the effective
+    events as of the build), one row each: the case for counting it. Empty without any."""
+    evs = [{"id": r["id"], "published": r["published"], "deployment": json.loads(r["deployment"])}
+           for r in db.execute("SELECT id, published, deployment FROM events WHERE section=? AND effective "
+                               "AND deployment IS NOT NULL", (sec,))]
+    cases, _ = ledger.deployment_roster(evs)
+    if not cases:
+        return ""
+    shown = [c for c in cases if c["counted"]]
+    makers: dict[str, int] = {}
+    for c in shown:
+        makers[c["maker"].casefold()] = makers.get(c["maker"].casefold(), 0) + 1
+    rows = []
+    for c in shown:
+        plat = esc(c["platform"]) + (f' <span class="mute">({esc(c["form"])})</span>' if c["form"] else "")
+        other = makers[c["maker"].casefold()] - 1
+        if other:
+            plat += f' <span class="mute">· also at {other} other customer(s)</span>'
+        status = "ended" if c["status"] == "ended" else "working"
+        rows.append(
+            f'<tr><td><a href="{ev_href(sec, c["first_event"])}">{esc(fmt_date(c["since"]))}</a></td>'
+            f'<td><b>{esc(c["maker"])}</b><br>{plat}</td>'
+            f'<td>{esc(c["customer"])}' + (f'<br><span class="mute">{esc(c["site"])}</span>' if c["site"] else "")
+            + f'</td><td>{esc(c["job"])}</td><td>{esc(c["robots"] or "—")}</td>'
+            f'<td class="small">“{esc(c["autonomy"] or "")}”</td><td>{status}</td></tr>')
+    dropped = [c for c in cases if not c["counted"]]
+    tail = (f'<div class="mute small">Not counted: ' + "; ".join(
+        f'{esc(c["maker"])} / {esc(c["customer"])} ({"no working case yet" if c["since"] is None else "disputed"})'
+        for c in dropped) + "</div>") if dropped else ""
+    return (f'<details class="cases" open><summary>The {len(shown)} counted case(s)</summary>'
+            '<table class="cases"><tr><th>Since</th><th>Maker · platform</th><th>Customer</th><th>Job</th>'
+            '<th>Robots</th><th>Autonomy, as reported</th><th>Status</th></tr>' + "".join(rows) + "</table>"
+            + tail + "</details>")
 
 
 SUPP_MAJOR = 10  # a supplemental pane's notable developments (significance 3) shown before the event log

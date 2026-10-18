@@ -81,7 +81,12 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       driver fits carry over the audited v5 inputs; spreads are assumed). The robot
       capability ETAs (2027–2031) rest on the Dyna failure-rate halving (~7.6 months, ONE
       customer deployment, 2025–2026), now an explicitly assumed transfer to robot
-      reliability; more dated reliability series would firm it up.
+      reliability; more dated reliability series would firm it up. Note: Dyna's napkin
+      station is a fixed arm, NOT general-purpose under the robots-hardware KPI definition
+      (owner 2026-10-18), so the general-purpose milestones' ETAs lean on a non-GP robot.
+      At the next rubric pass, keep it as a stated analogy or switch/blend to GP series now in
+      the ledger (Robotera at China Post 100 -> 1,200 parcels/h in 6 months; Figure Helix
+      9% -> 56% full-task success in 30 unseen homes).
 - [ ] 🤖 Provider false-positive blocks ("duplicating model outputs") still hit assess runs
       (2026-10-12: 2 of 8). assess.sh now salvages a complete file, else retries, then falls
       back to the `deep` mode; commit messages record each block. The trigger is unknown (the
@@ -108,8 +113,12 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       - coverage is about 94%.
 
       Consider adding a local-currency or PPP variant.
-- [ ] Robots-hardware KPI ("largest single-site fleet"): no public series; it
-      needs a definition that can actually be observed.
+- [ ] Robots-hardware KPI is provisional (owner 2026-10-18; research and board memo in data
+      ledger/audits/2026-10-18-hardware-kpi/): a count of documented deployment cases
+      (`gp-deployment-pairs`). Replace it with a measure of the work done (robots x hours x
+      interventions) once deployments disclose that. Coverage caveat: a one-off web check
+      found 2 qualifying cases the ledger had missed, mostly Chinese, where 'practical
+      training' (实训) vs production work is the recurring judgment call.
 
 ## Roadmap
 

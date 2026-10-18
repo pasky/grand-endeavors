@@ -121,6 +121,7 @@ id, or when its notes state no pre-anchor p50. Metaculus needs an API token
 | `claim` | one self-contained factual sentence with numbers AND their metric scope |
 | `sources` | `[{url, title, primary}]`, deep links, at least one; primary sources preferred |
 | `metrics` | optional `[{metric, obs, value}]` links to registered observations |
+| `deployment` | optional deployment case `{maker, platform, customer, job, status, form?, site?, robots?, autonomy?}`, status `working` `ended` `disputed`; staged only where a registered metric's definition counts such cases (robots-hardware `gp-deployment-pairs`, whose definition holds the counting rules). `ledger.deployment_roster` derives the cases (one per maker/customer pair) for the section's collector and the dashboard's case table |
 | `significance` | 1 minor · 2 notable · 3 major |
 | `relates` | optional `[{id, rel}]`, rel ∈ `update` `retraction` `confirmation` `delay` `followup` (event lifecycle) |
 | `withdrawn` | optional `true`: a withdrawal tombstone (kind `retraction`, with `supersedes`). The superseded record disappears from views and the tombstone is not shown; the claim says why |
@@ -237,8 +238,9 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    error; each file is replaced atomically. Replays are idempotent (identical =
    no-op, conflicting = error), so a crashed merge can simply be re-run.
    Rejected records go to `rejected/`.
-   If intake merged observations, the section's collector runs again, so series it
-   derives from intake-staged ones (knowledge-beyond's Q-Day gap) are current in the same run.
+   If intake merged records, the section's collector runs again, so series it derives
+   from intake-staged ones (knowledge-beyond's Q-Day gap from observations,
+   robots-hardware's deployment-case count from events) are current in the same run.
 6. **assess**: `ledger.py stale` lists targets whose evidence is newer than
    their latest assessment (effective events tagged with the target; for the
    KPI also required-metric observations; for a milestone also the observations
