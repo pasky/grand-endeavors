@@ -43,11 +43,11 @@ endeavors:
       Humans have been looking to automate their lives in one way or another for most of their
       existence. From early domesticated animals to microwave ovens and freighter ships,
       automation adds a huge multiplier on human labor — we can either do more with our time, or
-      spend less time working. The current frontier is automating intelligence — the software (AI)
-      and the hardware (robots).
+      spend less time working. The current frontier is automating intelligence itself: in software
+      (AI) and in hardware (robots).
     sections:
       - id: robots-software
-        title: Software
+        title: AI
         kpi: AI task horizon at 80% success (Human-hours; geometric mean of the software and remote-work horizons)
         kpi_about:
           summary: "How the KPI is built: ECI, RLI, their conversions to hours, the cross-checks"
@@ -219,30 +219,31 @@ endeavors:
             name: Novelty
             description: Consistently producing original connections beyond interpolations of existing knowledge.
       - id: robots-hardware
-        title: Hardware
+        title: Robots
         kpi: >-
-          General-purpose robots at work: cumulative number of robot maker–customer pairs in which a
-          humanoid or other self-moving robot with arms does production work for a named outside
-          customer, autonomously as reported. *Provisional, for the pioneering stage:* to be replaced
-          by a measure of the work done (robots × hours × interventions) once deployments disclose it.
+          General-purpose robots at work: the number of deployments (one robot maker at one named
+          outside customer) in which a humanoid or other self-moving robot with arms does production
+          work, autonomously as reported, minus those a later source says ended or credibly disputes.
+          *Provisional, for the pioneering stage:* to be replaced by a measure of the work done
+          (robots × hours × interventions) once deployments disclose it.
         kpi_about:
-          summary: "What counts as a case, why we count cases rather than robots, and the caveats"
+          summary: "What counts as a deployment, why we count them rather than robots, and the caveats"
           sections:
             - text: |-
-                A case is one **robot maker** whose general-purpose robot works for one **named outside
-                customer**. Four things must hold. The robot moves itself (legs, wheels, a mobile base)
-                and handles the objects of the job: a humanoid, or what the trade calls a mobile
-                manipulator, not an arm bolted in place. It works inside the customer's live operations
-                (a factory line, a warehouse, a store) and the source says what job it does there; a
-                pilot on a live line counts. The customer is an outside organization, not the maker's
-                own or affiliated plant. And a source says the robot works autonomously (on its own,
-                without remote control); not mentioning remote control is not enough.
+                A deployment is one **robot maker** whose general-purpose robot works for one **named
+                outside customer**. Four things must hold. The robot moves itself (legs, wheels, a
+                mobile base) and handles the objects of the job: a humanoid, or what the trade calls a
+                mobile manipulator, not an arm bolted in place. It works inside the customer's live
+                operations (a factory line, a warehouse, a store) and the source says what job it does
+                there; a pilot on a live line counts. The customer is an outside organization, not the
+                maker's own or affiliated plant. And a source says the robot works autonomously (on its
+                own, without remote control); not mentioning remote control is not enough.
 
-                A pair counts once: more robots, sites, jobs or newer models at the same customer add
-                nothing, while the same maker at a second customer, or a second maker at the same
-                customer, is a new case. The maker is whoever builds the robot, not whoever supplies
-                its AI. Every counted case is in the table above, with the job and the source's words
-                on autonomy.
+                A deployment counts once, however many robots, sites, jobs or newer models the same
+                customer gets; the same maker at a second customer, or a second maker at the same
+                customer, is a new deployment. The maker is whoever builds the robot, not whoever
+                supplies its AI. Every deployment is in the table above, with the job and the source's
+                words on autonomy.
 
                 **Not counted:** fixed arms or stations, whatever AI drives them (Dyna Robotics'
                 napkin-folding arms, a humanoid torso on a stand at a sorting conveyor); self-driving
@@ -252,30 +253,33 @@ endeavors:
                 goes into real production; orders, contracts, plans and deliveries with no reported
                 work; a customer named only in a list of sites or users; and work no source calls
                 autonomous.
-            - title: Why a count of cases, and why it is provisional
+            - title: Why a count of deployments, and why it is provisional
               text: |-
                 The goal is robots doing human work on their own, so the ideal measure is how much work
                 they do: how many robots, for how many hours, and how often a human has to step in. No
                 one publishes that yet. Analysts count humanoids shipped (about 13,000 in 2025 by
-                Omdia's count, over 18,000 by IDC's), but IDC puts more than 85% of deployments in
+                Omdia's count, over 18,000 by IDC's), but IDC puts more than 85% of those robots in
                 performances, education, data collection and guided tours, and a shipment says nothing
                 about autonomy. What is documented, one at a time, is deployments, so for this first
-                stage we count those. The number shows how many makers have got a robot past demos and
-                into someone else's real operations. It does not show how much work gets done: a case
-                with one robot counts the same as one with a hundred. The KPI will be replaced once
-                deployments disclose robots, hours and interventions.
+                stage we count those. The number shows how many times a maker has got a robot past
+                demos and into someone else's real operations, and still has it there. It does not show
+                how much work gets done: a deployment with one robot counts the same as one with a
+                hundred. The KPI will be replaced once deployments disclose robots, hours and
+                interventions.
             - title: Caveats
               text: |-
-                Autonomy is as reported by the maker, the customer or the press. Claims count unless a
-                credible source (the customer, reporters on site, a regulator) contradicts them; a
-                disputed case drops out until a new source documents it working. None of the cases has
-                published how often humans step in. A case that ends stays in the count, marked ended.
-                A case counts from the month its first qualifying source was published, not from when
-                the work began. The cases are those our news gathering finds; the history before
-                October 2026 comes from one search back to 2023, so earlier cases may be missing, most
-                likely Chinese ones.
+                Autonomy is as reported by the maker, the customer or the press, and none of the
+                deployments has published how often humans step in. A deployment counts from the day
+                its first qualifying source was published, not from when the work began. It drops out
+                once a source reports it ended, or a credible source (the customer, reporters on site,
+                a regulator) disputes it; a disputed one counts again when a new source documents it
+                working. Both stay in the table, greyed, with that report: later reports never rewrite
+                what the work was, they change the deployment's status and are shown under it. The
+                deployments are those our news gathering finds; the history before October 2026 comes
+                from one search back to 2023, so earlier ones may be missing, most likely Chinese ones.
 
-                **Status:** green when the last 12 months added more pairs than the 12 months before.
+                **Status:** green when the count rose more in the last 12 months than in the 12 months
+                before (deployments added, less those that dropped out).
         milestones:
           - slug: robotaxi-saturation
             name: Robotaxi Saturation

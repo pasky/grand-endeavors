@@ -2,7 +2,7 @@
 # /// script
 # dependencies = ["pyyaml"]
 # ///
-"""Offline tests for gather/collectors/robots_hardware.py (gp-deployment-pairs, a monthly series
+"""Offline tests for gather/collectors/robots_hardware.py (gp-deployments, monthly plus day points,
 derived from the section's events with deployment cases), including multi-run merges through
 ledger.prepare on a scratch data repo. Reads the data repo's metric registry.
 
@@ -57,13 +57,14 @@ EVS = [ev("2025-04-06-a", "2025-04-06", "Figure", "BMW"),
 rows = rh.pair_rows(REG, EVS, "t", TODAY)
 r = {x["obs"]: x for x in rows}
 case("rows pass the registry/ledger row checks", common.check(rows, REG) == [])
-case("one row per month from START to the current month",
-     sorted(r) == rh.months(rh.START, TODAY) and sorted(r)[0] == "2023-01" and sorted(r)[-1] == "2026-10")
-case("value = cases counted among events published by the month's end (ended stays counted)",
-     [r[m]["value"] for m in ("2025-03", "2025-04", "2025-11", "2025-12", "2026-10")] == ["0", "1", "2", "3", "3"])
-case("dated by rule: month end, the current month capped at today",
+case("one row per complete month from START, then today's day point (the month in progress has none)",
+     sorted(r) == rh.months(rh.START, TODAY)[:-1] + [str(TODAY)] and sorted(r)[0] == "2023-01" and "2026-10" not in r)
+case("value = deployments at work by the period's end (an ended one stops counting)",
+     [r[m]["value"] for m in ("2025-03", "2025-04", "2025-11", "2025-12", "2026-09", "2026-10-18")]
+     == ["0", "1", "2", "2", "2", "2"])
+case("dated by rule: the period's end (the day point: today)",
      r["2025-11"]["published"] == "2025-11-30" and r["2025-11"]["published_basis"] == "rule"
-     and r["2026-10"]["published"] == "2026-10-18")
+     and r["2026-10-18"]["published"] == "2026-10-18")
 case("note names the month's changes and their events",
      "+ Agility / GXO" in r["2025-11"]["note"] and "2025-11-20-b" in r["2025-11"]["note"])
 hist = [ev("2025-01-10-h", "2025-01-10", "A", "B"), wd("2025-01-10-h-wd", "2025-02-15", "2025-01-10-h")]
@@ -82,12 +83,12 @@ def run(events, today):
     path = os.path.join(ledger.DATA, "staged.csv")
     common.write(path, staged)
     errs, _ = ledger.merge(rh.SECTION, obs_files=[path])
-    return errs, {o: rw["value"] for (m, o), rw in ledger.obs_as_of(rh.SECTION).items() if m == rh.M_PAIRS}
+    return errs, {o: rw["value"] for (m, o), rw in ledger.obs_as_of(rh.SECTION).items() if m == rh.M_DEPLOY}
 
 
 def as_of(day):
     return {o: rw["value"] for (m, o), rw in ledger.obs_as_of(rh.SECTION, dt.date.fromisoformat(day)).items()
-            if m == rh.M_PAIRS}
+            if m == rh.M_DEPLOY}
 
 
 tmp = tempfile.mkdtemp()
@@ -121,18 +122,18 @@ try:
     e3, s3 = run(plus + [wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y")], day)
     e4, s4 = run(plus + [wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y"), ev("2026-06-08-z", "2026-06-08", "E", "F")],
                  day)
-    case("same-day reverts (1 -> 2 -> 1 -> 2 in the current month) merge and are effective",
-         e1 == e2 == e3 == e4 == [] and [s1["2026-06"], s2["2026-06"], s3["2026-06"], s4["2026-06"]] == ["1", "2", "1", "2"]
+    case("same-day reverts (1 -> 2 -> 1 -> 2 in today's point) merge and are effective",
+         e1 == e2 == e3 == e4 == [] and [s1["2026-06-10"], s2["2026-06-10"], s3["2026-06-10"], s4["2026-06-10"]] == ["1", "2", "1", "2"]
          and ledger.check_section(rh.SECTION)[0] == [])
     z_out = plus + [wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y"), ev("2026-06-08-z", "2026-06-08", "E", "F"),
                     wd("2026-06-08-z-wd", "2026-06-09", "2026-06-08-z")]
     e6, s6 = run(z_out, day)
     case("a fifth same-day state equal in count to the third (1 -> 2 -> 1 -> 2 -> 1) still appends",
-         e6 == [] and s6["2026-06"] == "1")
+         e6 == [] and s6["2026-06-10"] == "1")
     e5, s5 = run([ev("2026-05-01-x", "2026-05-01", "A", "B"), wd("2026-05-01-x-wd", "2026-06-09", "2026-05-01-x"),
                   wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y")], dt.date(2026, 6, 11))
     case("once the series exists, an emptied roster gives zeros (the last count does not stay effective)",
-         e5 == [] and s5["2026-06"] == "0" and s5["2026-05"] == "0")
+         e5 == [] and s5["2026-06-11"] == "0" and s5["2026-06-10"] == "0" and s5["2026-05"] == "0")
 finally:
     ledger.DATA = REAL_DATA
     shutil.rmtree(tmp)

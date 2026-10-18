@@ -1239,44 +1239,46 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set, f
 
 def cases_html(db, sec: str) -> str:
     """The deployment cases a counting KPI counts (ledger.deployment_roster over the effective
-    events as of the build), one row each: the case for counting it. Empty without any."""
+    events as of the build), one row each: the case for counting it, the deployments at work
+    first, then those since reported ended or disputed (greyed, with that later report).
+    Empty without any."""
     evs = [{"id": r["id"], "published": r["published"], "deployment": json.loads(r["deployment"])}
            for r in db.execute("SELECT id, published, deployment FROM events WHERE section=? AND effective "
                                "AND deployment IS NOT NULL", (sec,))]
     cases, _ = ledger.deployment_roster(evs)
+    cases = [c for c in cases if c["since"]]   # documented working at least once
     if not cases:
         return ""
-    shown = [c for c in cases if c["counted"]]
+    at_work = [c for c in cases if c["counted"]]
+    other = [c for c in cases if not c["counted"]]
     makers: dict[str, int] = {}
-    for c in shown:
+    for c in cases:
         k = ledger._deploy_key(c)[0]
         makers[k] = makers.get(k, 0) + 1
     rows = []
-    for c in shown:
+    for c in at_work + other:
         plat = esc(c["platform"]) + (f' <span class="mute">({esc(c["form"])})</span>' if c["form"] else "")
-        other = makers[ledger._deploy_key(c)[0]] - 1
-        if other:
-            plat += f' <span class="mute">· also at {other} other customer(s)</span>'
-        status = "ended" if c["status"] == "ended" else "working"
-        if c["latest_event"] != c["first_event"]:   # the latest report (job, robots or status may come from it)
-            status = f'<a href="{ev_href(sec, c["latest_event"])}">{status}</a>'
+        n_other = makers[ledger._deploy_key(c)[0]] - 1
+        if n_other:
+            plat += f' <span class="mute">· also at {n_other} other customer(s)</span>'
+        job = esc(c["job"])
+        for u in c["updates"]:   # later reports: shown, never overwriting what the work was
+            job += (f'<br><span class="mute small">{esc(u["status"])}, reported '
+                    f'<a href="{ev_href(sec, u["event"])}">{esc(fmt_date(u["date"]))}</a>'
+                    + (f': {esc(u["job"])}' if u["job"] and u["job"] != c["job"] else "") + "</span>")
+        status = "at work" if c["counted"] else esc(c["status"])
         rows.append(
-            f'<tr><td><a href="{ev_href(sec, c["first_event"])}">{esc(fmt_date(c["since"]))}</a></td>'
-            f'<td><b>{esc(c["maker"])}</b><br>{plat}</td>'
+            f'<tr{"" if c["counted"] else " class=mute"}><td><a href="{ev_href(sec, c["first_event"])}">'
+            f'{esc(fmt_date(c["since"]))}</a></td><td><b>{esc(c["maker"])}</b><br>{plat}</td>'
             f'<td>{esc(c["customer"])}' + (f'<br><span class="mute">{esc(c["site"])}</span>' if c["site"] else "")
-            + f'</td><td>{esc(c["job"])}</td><td>{esc(c["robots"] or "—")}</td>'
+            + f'</td><td>{job}</td><td>{esc(c["robots"] or "—")}</td>'
             f'<td class="small">“{esc(c["autonomy"] or "")}”</td><td>{status}</td></tr>')
-    dropped = [c for c in cases if not c["counted"]]
-    tail = (f'<div class="mute small">Not counted: ' + "; ".join(
-        f'{esc(c["maker"])} / {esc(c["customer"])} ({"no working case yet" if c["since"] is None else "disputed"})'
-        for c in dropped) + "</div>") if dropped else ""
     as_of = db.execute("SELECT value FROM build_info WHERE key='as_of'").fetchone()
     when = f" as of {esc(fmt_date(as_of[0]))}" if as_of else ""
-    return (f'<details class="cases" open><summary>The {len(shown)} counted case(s){when} '
-            '<span class="mute">(the KPI value above is its latest complete month)</span></summary>'
+    more = f' <span class="mute">(and {len(other)} since reported ended or disputed)</span>' if other else ""
+    return (f'<details class="cases" open><summary>The {len(at_work)} deployment(s) at work{when}{more}</summary>'
             '<table class="cases"><tr><th>Since</th><th>Maker · platform</th><th>Customer</th><th>Job</th>'
-            '<th>Robots</th><th>Autonomy, as reported</th><th>Status</th></tr>' + "".join(rows) + "</table>"
-            + tail + "</details>")
+            '<th>Robots</th><th>Autonomy, as reported</th><th>Status</th></tr>' + "".join(rows) + "</table></details>")
 
 
 SUPP_MAJOR = 10  # a supplemental pane's notable developments (significance 3) shown before the event log

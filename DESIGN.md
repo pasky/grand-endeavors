@@ -121,7 +121,7 @@ id, or when its notes state no pre-anchor p50. Metaculus needs an API token
 | `claim` | one self-contained factual sentence with numbers AND their metric scope |
 | `sources` | `[{url, title, primary}]`, deep links, at least one; primary sources preferred |
 | `metrics` | optional `[{metric, obs, value}]` links to registered observations |
-| `deployment` | optional deployment case `{maker, platform, customer, job, status, form?, site?, robots?, autonomy?}`, status `working` `ended` `disputed`; staged only where a registered metric's definition counts such cases (robots-hardware `gp-deployment-pairs`, whose definition holds the counting rules). `ledger.deployment_roster` derives the cases (one per maker/customer pair) for the section's collector and the dashboard's case table |
+| `deployment` | optional deployment case `{maker, platform, customer, job, status, form?, site?, robots?, autonomy?}`, status `working` `ended` `disputed`; staged only where a registered metric's definition counts such cases (robots-hardware `gp-deployments`, whose definition holds the counting rules). `ledger.deployment_roster` derives the cases (one per maker/customer pair; `ended`/`disputed` stop it counting, later reports are kept as its updates, never overwriting the work) for the section's collector and the dashboard's case table |
 | `significance` | 1 minor · 2 notable · 3 major |
 | `relates` | optional `[{id, rel}]`, rel ∈ `update` `retraction` `confirmation` `delay` `followup` (event lifecycle) |
 | `withdrawn` | optional `true`: a withdrawal tombstone (kind `retraction`, with `supersedes`). The superseded record disappears from views and the tombstone is not shown; the claim says why |
