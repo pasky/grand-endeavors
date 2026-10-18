@@ -66,6 +66,10 @@ case("dated by rule: month end, the current month capped at today",
      and r["2026-10"]["published"] == "2026-10-18")
 case("note names the month's changes and their events",
      "+ Agility / GXO" in r["2025-11"]["note"] and "2025-11-20-b" in r["2025-11"]["note"])
+hist = [ev("2025-01-10-h", "2025-01-10", "A", "B"), wd("2025-01-10-h-wd", "2025-02-15", "2025-01-10-h")]
+hr = {x["obs"]: x["value"] for x in rh.pair_rows(REG, hist, "t", dt.date(2025, 1, 31))}
+case("a run as of a past day applies no later correction (January 2025 counts 1 as of Jan 31)",
+     hr.get("2025-01") == "1")
 case("no case ever counted: no rows (not a run of zeros)",
      rh.pair_rows(REG, [ev("2025-01-01-z", "2025-01-01", "A", "B", status="disputed")], "t", TODAY) == [])
 
@@ -74,7 +78,7 @@ case("no case ever counted: no rows (not a run of zeros)",
 def run(events, today):
     """One collector run + merge, as gather/collectors/run.sh does; the effective series after it."""
     existing = ledger.observations(rh.SECTION)
-    staged = common.mark_revisions(rh.pair_rows(REG, events, "t", today), existing)
+    staged = common.mark_revisions(rh.pair_rows(REG, events, "t", today, existing), existing)
     path = os.path.join(ledger.DATA, "staged.csv")
     common.write(path, staged)
     errs, _ = ledger.merge(rh.SECTION, obs_files=[path])
@@ -115,9 +119,15 @@ try:
     e1, s1 = run(base, day)
     e2, s2 = run(plus, day)
     e3, s3 = run(plus + [wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y")], day)
-    case("a same-day revert (1 -> 2 -> 1 in the current month) merges and is effective",
-         e1 == e2 == e3 == [] and s1["2026-06"] == "1" and s2["2026-06"] == "2" and s3["2026-06"] == "1"
+    e4, s4 = run(plus + [wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y"), ev("2026-06-08-z", "2026-06-08", "E", "F")],
+                 day)
+    case("same-day reverts (1 -> 2 -> 1 -> 2 in the current month) merge and are effective",
+         e1 == e2 == e3 == e4 == [] and [s1["2026-06"], s2["2026-06"], s3["2026-06"], s4["2026-06"]] == ["1", "2", "1", "2"]
          and ledger.check_section(rh.SECTION)[0] == [])
+    e5, s5 = run([ev("2026-05-01-x", "2026-05-01", "A", "B"), wd("2026-05-01-x-wd", "2026-06-09", "2026-05-01-x"),
+                  wd("2026-06-05-y-wd", "2026-06-09", "2026-06-05-y")], dt.date(2026, 6, 11))
+    case("once the series exists, an emptied roster gives zeros (the last count does not stay effective)",
+         e5 == [] and s5["2026-06"] == "0" and s5["2026-05"] == "0")
 finally:
     ledger.DATA = REAL_DATA
     shutil.rmtree(tmp)

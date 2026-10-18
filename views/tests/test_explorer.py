@@ -766,7 +766,9 @@ def main():
             ("2026-02-01", 1, dep("Spirit AI", "CATL", "disputed"))]):
         db.execute("INSERT INTO events (section, id, published, effective, deployment) VALUES (?,?,?,?,?)",
                    ("robots-hardware", f"{pub}-e{i}", pub, eff, d))
+    db.execute("INSERT INTO build_info VALUES ('as_of', '2026-10-18')")
     html = explore.cases_html(db, "robots-hardware")
+    case("cases: the table is dated", "counted case(s) as of 18 Oct 2026" in html)
     case("cases: counted cases in order, ended marked, platform form, other customers, escaped",
          "The 3 counted case(s)" in html and html.index("BMW") < html.index("GXO") < html.index("Schaeffler")
          and ">ended<" in html and "(bipedal humanoid)" in html and "also at 1 other customer" in html

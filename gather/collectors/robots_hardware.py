@@ -13,8 +13,11 @@ gp-deployment-pairs (derived from events)
   not while it is disputed). Monthly: one row per month from START to the current month (the
   current one in progress), value = the cases counted among the events published by the month's
   end (or today), source = the ledger's events file (the derivation's input), note = the cases
-  added/removed that month with their event ids and the total.
-  No case ever counted: no rows. Once there is one, every month always has a row, so a change in the roster (a backfilled earlier case, a
+  added/removed that month with their event ids, the total and a fingerprint of the roster
+  state (roster_state: a replay is a no-op, a new state appends even a value seen before).
+  Events are taken as of the run (--today): no later correction applies.
+  No case ever counted: no rows. Once the series exists, every month always has a row (zeros
+  too, if the roster empties), so a change in the roster (a backfilled earlier case, a
   correction, a superseded or withdrawn event) only ever REVISES values, never withdraws one.
   Dating: published by the registry rule (month end + 0 days, capped at retrieval: a month's
   count uses only events published by then); a value that revises the effective one is dated
@@ -26,6 +29,8 @@ gp-deployment-pairs (derived from events)
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
+import json
 import sys
 
 import common
@@ -47,11 +52,24 @@ def months(start: str, today: dt.date) -> list[str]:
     return out
 
 
-def pair_rows(reg: dict, events: list[dict], collector: str, today: dt.date) -> list[dict]:
-    eff = ledger.effective_events(events)
+def roster_state(eff: list[dict]) -> str:
+    """A fingerprint of the derivation's input: the effective events with deployment cases
+    (ids and cases). Rows derived from the same state are identical (a replay is a no-op);
+    a different state gives a different note, so a revision equal to an earlier, since
+    displaced one is still appended (merge's exact-replay test would otherwise drop it)."""
+    dep = sorted((e["id"], str(e["published"]), json.dumps(e["deployment"], sort_keys=True, ensure_ascii=False))
+                 for e in eff if isinstance(e.get("deployment"), dict))
+    return hashlib.sha256(json.dumps(dep, ensure_ascii=False).encode()).hexdigest()[:12]
+
+
+def pair_rows(reg: dict, events: list[dict], collector: str, today: dt.date, existing=()) -> list[dict]:
+    """existing: the section's ledger rows; once the series exists, every month keeps a row
+    (zeros included) even if the roster empties, so the last count cannot stay effective."""
+    eff = ledger.effective_events(events, today)   # as of the run: no later correction applies
     _, timeline = ledger.deployment_roster(eff)
-    if not timeline:   # no case ever counted: no series yet (not a run of zeros to revise later)
-        return []
+    if not timeline and not any(r["metric"] == M_PAIRS for r in existing):
+        return []   # no case ever counted: no series yet (not a run of zeros to revise later)
+    state = roster_state(eff)
     rows, count = [], 0
     for mo in months(START, today):
         end = str(min(kpi.obs_range(mo)[1], today))
@@ -64,14 +82,14 @@ def pair_rows(reg: dict, events: list[dict], collector: str, today: dt.date) -> 
         what = "; ".join(filter(None, [("+ " + ", + ".join(added)) if added else "",
                                        ("- " + ", - ".join(removed)) if removed else ""]))
         note = (f"derived from the ledger's deployment cases: {count} counted by {end}"
-                + (f" ({before} before; {what}: {', '.join(ids)})" if changes else ""))
+                + (f" ({before} before; {what}: {', '.join(ids)})" if changes else "") + f"; roster {state}")
         rows.append(common.row(reg, M_PAIRS, mo, str(count), SOURCE, note, collector, str(today)))
     return rows
 
 
 def collect(fixture: str | None, today: dt.date, collector: str, existing=(), events=None) -> list[dict]:
     reg = common.registry(SECTION)
-    return pair_rows(reg, ledger.events(SECTION) if events is None else events, collector, today)
+    return pair_rows(reg, ledger.events(SECTION) if events is None else events, collector, today, existing)
 
 
 if __name__ == "__main__":

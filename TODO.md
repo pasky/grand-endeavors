@@ -86,9 +86,9 @@ data: github.com/pasky/grand-endeavors-data (`./data`).
       reliability; more dated reliability series would firm it up. Note: Dyna's napkin
       station is a fixed arm, NOT general-purpose under the robots-hardware KPI definition
       (owner 2026-10-18), so the general-purpose milestones' ETAs lean on a non-GP robot.
-      At the next rubric pass, keep it as a stated analogy or switch/blend to GP series now in
-      the ledger (Robotera at China Post 100 -> 1,200 parcels/h in 6 months; Figure Helix
-      9% -> 56% full-task success in 30 unseen homes).
+      At the next rubric pass, keep it as a stated analogy or switch/blend to a GP series now in
+      the ledger (Figure Helix 9% -> 56% full-task success in 30 unseen homes; Robotera's
+      100 -> 1,200 parcels/h at China Post is a fixed-stand M7, not GP either).
 - [ ] 🤖 Provider false-positive blocks ("duplicating model outputs") still hit assess runs
       (2026-10-12: 2 of 8). assess.sh now salvages a complete file, else retries, then falls
       back to the `deep` mode; commit messages record each block. The trigger is unknown (the

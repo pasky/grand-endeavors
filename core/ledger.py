@@ -741,18 +741,24 @@ def validate_state(section: str, evs: list[dict], obs: list[dict], ass: list[dic
                             and _valid_day(r.get("published")) and known_at(r) <= known_at(w) for r in obs):
             errs.append(f"obs {w['metric']}@{w['obs']} (line {w.get('_line')}): withdrawal of value {w['value']}, "
                         "but no such row was known by its date")
-    last: dict[tuple, str] = {}   # the latest value per metric@obs, in ledger (append) order
+    eff: dict[tuple, dict] = {}   # the effective row per metric@obs so far, in ledger (append) order
     for r in obs:
-        errs += check_obs_row(r, reg, staged=staged_statuses)
+        row_errs = check_obs_row(r, reg, staged=staged_statuses)
+        errs += row_errs
         k = (r.get("metric"), r.get("obs"), r.get("published"), r.get("value"), r.get("verification"))
         mo = (r.get("metric"), r.get("obs"))
-        # a repeat is a duplicate unless another value came in between: a same-day revert (a
-        # derived series that goes 11 -> 12 -> 11 within one day re-asserts 11, later = effective)
-        if k in keys and last.get(mo) == r.get("value"):
+        cur = eff.get(mo)
+        # a repeat is a duplicate, except a same-day REVERT: a later row re-asserting a value
+        # that a different, not higher-ranked row had displaced (a derived series going
+        # 11 -> 12 -> 11 within one day; the later of equal rank is effective). Withdrawal
+        # records are never exempt.
+        reassert = (not row_errs and r.get("verification") != "withdrawn" and cur is not None
+                    and not _same_value(cur, r) and _rank(r) >= _rank(cur))
+        if k in keys and not reassert:
             errs.append(f"obs {r.get('metric')}@{r.get('obs')}: exact duplicate row (line {r.get('_line')})")
         keys.add(k)
-        if r.get("verification") != "withdrawn":
-            last[mo] = r.get("value")
+        if not row_errs and r.get("verification") != "withdrawn" and (cur is None or _rank(r) >= _rank(cur)):
+            eff[mo] = r
     aids = set()
     for a in ass:
         errs += check_assessment(a, topics, ids)

@@ -1270,7 +1270,10 @@ def cases_html(db, sec: str) -> str:
     tail = (f'<div class="mute small">Not counted: ' + "; ".join(
         f'{esc(c["maker"])} / {esc(c["customer"])} ({"no working case yet" if c["since"] is None else "disputed"})'
         for c in dropped) + "</div>") if dropped else ""
-    return (f'<details class="cases" open><summary>The {len(shown)} counted case(s)</summary>'
+    as_of = db.execute("SELECT value FROM build_info WHERE key='as_of'").fetchone()
+    when = f" as of {esc(fmt_date(as_of[0]))}" if as_of else ""
+    return (f'<details class="cases" open><summary>The {len(shown)} counted case(s){when} '
+            '<span class="mute">(the KPI value above is its latest complete month)</span></summary>'
             '<table class="cases"><tr><th>Since</th><th>Maker · platform</th><th>Customer</th><th>Job</th>'
             '<th>Robots</th><th>Autonomy, as reported</th><th>Status</th></tr>' + "".join(rows) + "</table>"
             + tail + "</details>")

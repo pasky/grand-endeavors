@@ -114,8 +114,20 @@ def main():
     rev_errs = ledger.check_section("climate")[0]
     with open(op, "w") as f:
         f.write(saved)
+    b_new = obs("co2-mlo-annual", "2024", "424.7", "2026-09-29", basis="seen", retrieved="2026-09-29")
+    b_old = obs("co2-mlo-annual", "2024", "424.7", "2026-09-27", basis="seen", retrieved="2026-09-27")
+    w = obs("co2-mlo-annual", "2024", "424.6", "2026-09-28", basis="seen", verification="withdrawn")
+    errs_of = {}
+    for name, rows in [("stale", [a1, b_new, a1]), ("lower", [a1, b_old, a1]), ("wd", [a1, w, w])]:
+        write_csv(op, ledger.OBS_COLUMNS, rows)
+        errs_of[name] = ledger.check_section("climate")[0]
+    with open(op, "w") as f:
+        f.write(saved)
     case("an exact duplicate observation row is an error; a same-day revert (a, b, a) is not",
          has(dup_errs, "exact duplicate") and not has(rev_errs, "exact duplicate"))
+    case("still duplicates: a repeat that cannot re-assert (displaced by a newer row), one past a "
+         "lower-ranked row, and repeated withdrawal records",
+         all(has(errs_of[n], "exact duplicate") for n in ("stale", "lower", "wd")))
 
     # --- deployment cases (robots-hardware KPI) ----------------------------------------
     def dep(id_, published, maker, customer, status="working", **kw):
