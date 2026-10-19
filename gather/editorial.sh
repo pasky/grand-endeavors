@@ -129,6 +129,10 @@ only_changed() {  # $1 = before (sums), $2 = the one staged file the stage may w
 }
 OUTCOME=""
 if [ "$edits" != 0 ]; then
+	# every stage's output is cleared before it runs (the editor could plant a later stage's files),
+	# and apply reads round 2 only when this script ran it
+	rm -f "$STAGE/factcheck.md" "$STAGE/proposals-2.jsonl" "$STAGE/factcheck-2.md"
+	ROUNDS=1
 	before="$(sums)"
 	pi_run check "$(check_prompt "$STAGE/proposals.jsonl" "$STAGE/factcheck.md")"
 	only_changed "$before" "$STAGE/factcheck.md"
@@ -136,6 +140,7 @@ if [ "$edits" != 0 ]; then
 	# one revision round: the editor corrects (or gives up) the rejected proposals, and the fact
 	# check reads the corrections
 	if grep -q '^REJECT ' "$STAGE/factcheck.md"; then
+		rm -f "$STAGE/proposals-2.jsonl" "$STAGE/factcheck-2.md"
 		before="$(sums)"
 		PI_MODEL="$emodel"
 		pi_run revise "$(cat <<EOF
@@ -153,16 +158,18 @@ EOF
 		PI_MODEL=""
 		only_changed "$before" "$STAGE/proposals-2.jsonl"
 		if [ -s "$STAGE/proposals-2.jsonl" ]; then
+			rm -f "$STAGE/factcheck-2.md"
 			before="$(sums)"
 			pi_run check-2 "$(check_prompt "$STAGE/proposals-2.jsonl" "$STAGE/factcheck-2.md")"
 			only_changed "$before" "$STAGE/factcheck-2.md"
 			[ -s "$STAGE/factcheck-2.md" ] || { echo "ERROR: the fact check wrote no $STAGE/factcheck-2.md" >&2; exit 1; }
+			ROUNDS=2
 		fi
 	fi
 	# the copies go to a directory created after both agents finished (staging is theirs to write),
 	# and only the sections apply names are merged
 	OUT="$(mktemp -d)"
-	OUTCOME="$(uv run $ROOT/gather/editorial.py apply "$STAGE" "$RUN_ID" "$TODAY" "$OUT")"
+	OUTCOME="$(uv run $ROOT/gather/editorial.py apply "$STAGE" "$RUN_ID" "$TODAY" "$OUT" "$ROUNDS")"
 	echo "$OUTCOME"
 fi
 

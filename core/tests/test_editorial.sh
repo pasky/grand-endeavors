@@ -77,6 +77,9 @@ PLANT='mkdir -p "$S/out"; uv run --no-project python -c "import json, sys
 r = json.loads(open(sys.argv[1]).readline())[\"record\"]
 print(json.dumps(r | {\"id\": r[\"id\"] + \"-x\", \"rationale\": \"Hijacked.\"}))" "$S/current.jsonl" > "$S/out/robots-software.jsonl"'
 t "agent-written copies in staging are never merged"          0 "$ORIG"     "$PLANT; $E0" ""
+# the editor plants a round-2 revision and its own acceptance; the real check accepts nothing
+PLANT2="$E1; printf '%s\n' '$(printf '%s' "$PROP" | sed 's/Plainer[.]/Planted./')' > \"\$S/proposals-2.jsonl\"; echo 'ACCEPT robots-software' > \"\$S/factcheck-2.md\""
+t "planted round-2 files are never applied"                   0 "$ORIG"     "$PLANT2" 'echo "no verdict" > "$S/factcheck.md"'
 t "a fact check that edits the proposals: fails"              1 "$ORIG"     "$E1" "$A; echo x >> \"\$S/proposals.jsonl\""
 MODE=astest t "an editor mode on the assessor's model: refused" 1 "$ORIG"   "$E1" "$A"
 

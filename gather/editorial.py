@@ -10,10 +10,10 @@ labels and rationales (DESIGN.md §4b). Run with cwd = the data repo.
                                           judged (not unknown): {section, kpi, record}; prints how
                                           many of them no earlier pass has read (the "Read:" line of
                                           <notes dir>/*.md)
-  editorial.py apply <stage> <run id> <made at> <out dir>
+  editorial.py apply <stage> <run id> <made at> <out dir> <rounds>
                                           for every proposal the fact check accepted (proposals.jsonl
-                                          by factcheck.md, then, for sections not yet reworded,
-                                          proposals-2.jsonl by factcheck-2.md): re-check it
+                                          by factcheck.md, then, with rounds 2, for sections not yet
+                                          reworded, proposals-2.jsonl by factcheck-2.md): re-check it
                                           mechanically (core/textcheck.py: only label/rationale,
                                           verdict word kept, numbers from the record, as is or
                                           rounded) against the still-current record, and write
@@ -77,10 +77,11 @@ PREFIX_RE = re.compile(r"Label and rationale reworded by the cross-section edito
                        r"the judgment is (\S+)'s, unchanged \(by ([^)]*)\)\. ?")
 
 
-def apply(stage: str, run_id: str, made: str, out: str) -> int:
+def apply(stage: str, run_id: str, made: str, out: str, n_rounds: str) -> int:
     cur = {r["section"]: r["record"] for r in current_kpis(dt.date.fromisoformat(made))}
     rounds = []
-    for props, check in (("proposals.jsonl", "factcheck.md"), ("proposals-2.jsonl", "factcheck-2.md")):
+    files = (("proposals.jsonl", "factcheck.md"), ("proposals-2.jsonl", "factcheck-2.md"))
+    for props, check in files[:int(n_rounds)]:  # only the rounds editorial.sh ran
         pp, cp = os.path.join(stage, props), os.path.join(stage, check)
         if os.path.exists(pp):
             rounds.append((accepted(cp) if os.path.exists(cp) else set(),
@@ -139,6 +140,6 @@ if __name__ == "__main__":
     cmd, *args = sys.argv[1:] or ["?"]
     if cmd == "collect" and len(args) == 2:
         sys.exit(collect(*args))
-    if cmd == "apply" and len(args) == 4:
+    if cmd == "apply" and len(args) == 5:
         sys.exit(apply(*args))
     sys.exit(__doc__)
