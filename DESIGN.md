@@ -382,7 +382,8 @@ An editor on another model than the assessor's (`EDITORIAL_MODE`, default
 proposals. It may restructure a text freely under RUBRIC.md §6, and it edits
 nothing else. A fact check on the assessor's model then accepts or rejects each
 proposal against the full record (basis included), on facts, meanings, missing
-essentials and §6, not on taste.
+essentials and §6, not on taste. Rejected proposals get one revision by the
+editor (or are given up) and one more check.
 An accepted proposal must also pass `core/textcheck.py`, the same mechanical
 check the reader fix gets. It is then appended as a copy of the current record
 with only label and rationale changed: same status, made_at, evidence, digest
