@@ -500,15 +500,19 @@ details>summary:hover::before{background:var(--acc)}details>summary:hover::after
 details[open]>summary::after{transform:rotate(90deg)}
 li.topic summary,.kpid summary{color:var(--ink)}
 li.topic{border-bottom:1px solid var(--line)}ul.topics{margin:0 0 4px}
-/* milestones: a sequence = a numbered rail; parallel = cards that fill their row (an open one
-   takes a row of its own, so the card left alone before it widens with it) */
+/* milestones: a sequence = a numbered rail; parallel = cards in columns of >=280px (an open one
+   takes a row of its own; the cards before it fill their row, the trailing ones keep the column width) */
 ol.topics{list-style:none;padding:0;margin:4px 0;counter-reset:step}
 ol.seq>li.topic{position:relative;padding-left:32px;counter-increment:step;border:0}
 ol.seq>li.topic::before{content:counter(step);position:absolute;left:0;top:7px;width:22px;height:22px;
 border:2px solid var(--mute);border-radius:50%;color:var(--mute);font:700 12px/18px system-ui,sans-serif;text-align:center}
 ol.seq>li.topic:not(:last-child)::after{content:"";position:absolute;left:10px;top:31px;bottom:-5px;width:2px;background:var(--line)}
-ul.par{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
-ul.par>li.topic{flex:1 1 280px;min-width:0;border:1px solid var(--line);border-radius:10px;padding:0 10px 0 8px;background:var(--tile)}
+ul.par{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;container-type:inline-size}
+ul.par>li.topic{flex:0 0 100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:0 10px 0 8px;background:var(--tile)}
+@container (min-width:568px){ul.par>li.topic{flex-basis:calc((100% - 8px)/2 - .1px)}}
+@container (min-width:856px){ul.par>li.topic{flex-basis:calc((100% - 16px)/3 - .1px)}}
+@container (min-width:1144px){ul.par>li.topic{flex-basis:calc((100% - 24px)/4 - .1px)}}
+ul.par>li.topic:has(~li.topic details[open]){flex-grow:1}
 ul.par>li.topic:has(details[open]){flex-basis:100%}
 /* the milestone timeline */
 .ec{position:relative;--lw:12em;margin:8px 0 6px;font-size:13px}

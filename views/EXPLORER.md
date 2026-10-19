@@ -133,8 +133,8 @@ section with its own activity line), then:
   no 10% year by 2100 has no bar). A phone keeps
   the 2030 and 2050 labels only. Milestone names link to their entries.
   Then the entries: a sequence as a numbered rail, independent fronts as
-  cards that fill their row (an opened card takes a row of its own, and a card
-  left alone before it widens with it). Each shows its status dot, name and
+  cards in columns (an opened card takes a row of its own, and the cards left
+  on the row before it widen to fill it; a trailing card keeps the column width). Each shows its status dot, name and
   definition, then the status label, assessment date and event count. Expanded: the
   precise criteria, the assessment (as for the KPI), then folded, as for the KPI,
   **evidence and news**: the **cited evidence** (every event the assessment cites,
