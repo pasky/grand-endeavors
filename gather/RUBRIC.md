@@ -460,9 +460,10 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   against an outside need, name it and the pace it requires ("IPCC 1.5 °C
   pathways need at most 1.79 ppm a year"). If it is judged against the KPI's own
   earlier pace, say what the comparison found ("no slower than the year
-  before", "a quarter of its pre-2019 pace"). Do not describe the rule, the
-  windows or their halves ("The status asks whether it keeps its own pace: the
-  later half…").
+  before", "a quarter of its pre-2019 pace"). Do not describe or justify the
+  rule, the windows or their halves ("The status asks whether it keeps its own
+  pace: the later half…", "No outside path says how fast it must grow, so the
+  test is…"): the KPI's folded explainer covers that.
   (3) Only if a new fact moved the numbers or the status since the previous
   assessment: that fact, as news about the world (a price published, a
   deployment ended), never as the ledger's history ("since the last

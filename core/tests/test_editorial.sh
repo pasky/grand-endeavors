@@ -17,7 +17,7 @@ cat > "$w/bin/pi" <<'EOF'
 #!/bin/sh
 name=""; while [ $# -gt 0 ]; do [ "$1" = --name ] && name="$2"; shift; done
 S="$(grep -o 'ledger/staging/editorial-[0-9TZ]*' | head -1)"
-case "$name" in *-edit) eval "$EDIT" ;; *-check) eval "$CHECK" ;; esac
+case "$name" in *-edit|*-revise) eval "$EDIT" ;; *-check|*-check-2) eval "$CHECK" ;; esac
 EOF
 chmod +x "$w/bin/pi"
 cur() {  # $1 section: the current KPI record's field $2
@@ -64,7 +64,12 @@ A='echo "ACCEPT robots-software" > "$S/factcheck.md"'
 R='echo "REJECT robots-software: wrong" > "$S/factcheck.md"'
 RERUN=1 t "no proposals: report committed, nothing reworded, then nothing unread" 0 "$ORIG" "$E0" ""
 RERUN=1 t "an accepted proposal: appended as the current record, then nothing unread" 0 "Plainer." "$E1" "$A"
-t "a rejected proposal: nothing reworded"                     0 "$ORIG"     "$E1" "$R"
+t "a rejected proposal, given up in revision: nothing reworded" 0 "$ORIG"   "$E1" "$R"
+# the revision (proposals-2.jsonl) for the rejected section, accepted by the second check
+REV="$(printf '%s' "$PROP" | sed 's/Plainer[.]/Revised./')"
+E1R="$E1; [ ! -e \"\$S/factcheck.md\" ] || printf '%s\n' '$REV' > \"\$S/proposals-2.jsonl\""
+CK2='if [ -e "$S/proposals-2.jsonl" ]; then echo "ACCEPT robots-software" > "$S/factcheck-2.md"; else echo "REJECT robots-software: wrong" > "$S/factcheck.md"; fi'
+t "a rejected proposal, revised and accepted: the revision is appended" 0 "Revised." "$E1R" "$CK2"
 t "a proposal with a new number: dropped mechanically"        0 "$ORIG"     "$(echo "$E1" | sed 's/Plainer[.]/Plainer, 987654./')" "$A"
 t "EDITS disagrees with proposals.jsonl: fails, nothing merged" 1 "$ORIG"   "$(echo "$E1" | sed 's/EDITS: 1/EDITS: 2/')" "$A"
 # a valid copy of the current record, planted where the pipeline once wrote its own copies

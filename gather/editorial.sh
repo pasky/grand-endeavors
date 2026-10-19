@@ -11,7 +11,8 @@
 #                oracle when best is the assessor's own model) writes a report and proposals;
 #                it edits nothing else
 #   3. check     a fact check on the assessor's model accepts or rejects each proposal against
-#                the full record (basis included); it edits nothing
+#                the full record (basis included); it edits nothing. Rejected proposals get one
+#                revision by the editor (proposals-2.jsonl) and one more check (factcheck-2.md)
 #   4. apply     accepted proposals that pass core/textcheck.py (label/rationale only, verdict
 #                word kept, every number from the record as is or rounded) are appended as copies
 #                of the current record (same status, made_at, evidence and basis; by
@@ -105,27 +106,59 @@ edits="$(tail -n 1 "$STAGE/editorial.md" 2>/dev/null | sed -n 's/^EDITS: 0*\([0-
 [ "$(printf '%s\n' "$before" | grep " $STAGE/current.jsonl\$")" = "$(sums | grep " $STAGE/current.jsonl\$")" ] \
 	|| { echo "ERROR: the editor modified $STAGE/current.jsonl" >&2; exit 1; }
 
+check_prompt() {  # $1 = proposals file, $2 = output file
+cat <<EOF
+Fact-check proposed rewordings of public dashboard texts. $STAGE/current.jsonl holds, per section,
+the current KPI assessment record (status, label, rationale, basis: the data and the judgment);
+$1 proposes a new label and rationale for some of them ($STAGE/editorial.md says why). For each
+proposal, compare it with the full record: does every statement follow from the record (basis
+included)? Does each number keep its meaning (the right quantity, period, unit)? Does it claim more
+than the basis supports (e.g. "accelerating" when the basis finds the halves' paces within noise of
+each other)? Does it still give the reader the level, the pace and why it has its status, and keep
+any caveat that could change what the reader takes away? Does it follow $ROOT/gather/RUBRIC.md §6
+(no sentence about how the status is judged or why it is judged that way, no caveat explained
+away, no ledger history)? Wording taste is not your call: reject only for a fact, a meaning, a
+missing essential, or a §6 violation, and say exactly what to change.
+Write $2: per proposal a short paragraph, then a line exactly "ACCEPT <section>" or
+"REJECT <section>: <reason>". Modify no other file; never run git add/commit.
+EOF
+}
+only_changed() {  # $1 = before (sums), $2 = the one staged file the stage may write; else abort
+	[ "$(printf '%s\n' "$1" | grep -v " $2\$")" = "$(sums | grep -v " $2\$")" ] \
+		|| { echo "ERROR: a stage wrote staged files other than $2" >&2; exit 1; }
+}
 OUTCOME=""
 if [ "$edits" != 0 ]; then
 	before="$(sums)"
-	pi_run check "$(cat <<EOF
-Fact-check proposed rewordings of public dashboard texts. $STAGE/current.jsonl holds, per section,
-the current KPI assessment record (status, label, rationale, basis: the data and the judgment);
-$STAGE/proposals.jsonl proposes a new label and rationale for some of them ($STAGE/editorial.md
-says why). For each proposal, compare it with the full record: does every statement follow from
-the record (basis included)? Does each number keep its meaning (the right quantity, period, unit)?
-Does it claim more than the basis supports (e.g. "accelerating" when the basis finds the halves'
-paces within noise of each other)? Does it still give the reader the level, the pace and why it
-has its status, and keep any caveat that could change what the reader takes away ($ROOT/gather/RUBRIC.md
-§6)? Wording taste is not your call: reject only for a fact, a meaning, a missing essential, or a
-§6 violation.
-Write $STAGE/factcheck.md: per proposal a short paragraph, then a line exactly "ACCEPT <section>" or
-"REJECT <section>: <reason>". Modify no other file; never run git add/commit.
+	pi_run check "$(check_prompt "$STAGE/proposals.jsonl" "$STAGE/factcheck.md")"
+	only_changed "$before" "$STAGE/factcheck.md"
+	[ -s "$STAGE/factcheck.md" ] || { echo "ERROR: the fact check wrote no $STAGE/factcheck.md" >&2; exit 1; }
+	# one revision round: the editor corrects (or gives up) the rejected proposals, and the fact
+	# check reads the corrections
+	if grep -q '^REJECT ' "$STAGE/factcheck.md"; then
+		before="$(sums)"
+		PI_MODEL="$emodel"
+		pi_run revise "$(cat <<EOF
+You proposed rewordings of public dashboard texts ($STAGE/proposals.jsonl, your reasons in
+$STAGE/editorial.md; the records in $STAGE/current.jsonl; writing rules $ROOT/gather/RUBRIC.md §6).
+A fact check on another model ($STAGE/factcheck.md) rejected some of them. For each rejected
+section, write a corrected proposal (the same JSON fields, full label and rationale) that fixes what
+the fact check found, under the same hard limits as before: status and verdict word kept, label at
+most 100 characters, every number from the record as is or rounded, nothing the basis does not
+support. Leave a section out to give it up (e.g. when no fix beats the current text).
+Write only $STAGE/proposals-2.jsonl (one JSON object per line; empty if you give them all up).
+Modify no other file; never run git add/commit.
 EOF
 )"
-	[ "$(printf '%s\n' "$before" | grep -v " $STAGE/factcheck.md\$")" = "$(sums | grep -v " $STAGE/factcheck.md\$")" ] \
-		|| { echo "ERROR: the fact check modified the staged files" >&2; exit 1; }
-	[ -s "$STAGE/factcheck.md" ] || { echo "ERROR: the fact check wrote no $STAGE/factcheck.md" >&2; exit 1; }
+		PI_MODEL=""
+		only_changed "$before" "$STAGE/proposals-2.jsonl"
+		if [ -s "$STAGE/proposals-2.jsonl" ]; then
+			before="$(sums)"
+			pi_run check-2 "$(check_prompt "$STAGE/proposals-2.jsonl" "$STAGE/factcheck-2.md")"
+			only_changed "$before" "$STAGE/factcheck-2.md"
+			[ -s "$STAGE/factcheck-2.md" ] || { echo "ERROR: the fact check wrote no $STAGE/factcheck-2.md" >&2; exit 1; }
+		fi
+	fi
 	# the copies go to a directory created after both agents finished (staging is theirs to write),
 	# and only the sections apply names are merged
 	OUT="$(mktemp -d)"
@@ -167,6 +200,11 @@ print(" ".join(r["section"] + ":" + r["record"]["id"] for r in map(json.loads, f
 		sed 's/^/    /' "$STAGE/proposals.jsonl"
 	fi
 	if [ -s "$STAGE/factcheck.md" ]; then echo; echo "# Fact check"; echo; cat "$STAGE/factcheck.md"; fi
+	if [ -s "$STAGE/proposals-2.jsonl" ]; then
+		echo; echo "# Revised proposals"; echo
+		sed 's/^/    /' "$STAGE/proposals-2.jsonl"
+	fi
+	if [ -s "$STAGE/factcheck-2.md" ]; then echo; echo "# Fact check of the revisions"; echo; cat "$STAGE/factcheck-2.md"; fi
 } > "$REPORT"
 paths="$REPORT"
 for s in $reworded; do paths="$paths ledger/assessments/$s.jsonl"; done

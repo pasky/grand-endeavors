@@ -11,7 +11,9 @@ labels and rationales (DESIGN.md §4b). Run with cwd = the data repo.
                                           many of them no earlier pass has read (the "Read:" line of
                                           <notes dir>/*.md)
   editorial.py apply <stage> <run id> <made at> <out dir>
-                                          for every proposal the fact check accepted: re-check it
+                                          for every proposal the fact check accepted (proposals.jsonl
+                                          by factcheck.md, then, for sections not yet reworded,
+                                          proposals-2.jsonl by factcheck-2.md): re-check it
                                           mechanically (core/textcheck.py: only label/rationale,
                                           verdict word kept, numbers from the record, as is or
                                           rounded) against the still-current record, and write
@@ -71,50 +73,67 @@ def accepted(factcheck: str) -> set[str]:
 # one-shot authorizations of the record reworded (gather/RUBRIC.md rules 4, 6, 8): a text copy does
 # not re-judge, so it must not claim them again (check_hysteresis would count a second use)
 ONE_SHOT = ("rubric_correction", "audit_correction", "definition_change")
+PREFIX_RE = re.compile(r"Label and rationale reworded by the cross-section editorial pass \([^)]*\); "
+                       r"the judgment is (\S+)'s, unchanged \(by ([^)]*)\)\. ?")
 
 
 def apply(stage: str, run_id: str, made: str, out: str) -> int:
     cur = {r["section"]: r["record"] for r in current_kpis(dt.date.fromisoformat(made))}
-    ok = accepted(os.path.join(stage, "factcheck.md"))
-    props = [json.loads(ln) for ln in open(os.path.join(stage, "proposals.jsonl"), encoding="utf-8") if ln.strip()]
-    seen = set()
-    for p in props:
-        s, rid = p.get("section"), p.get("id")
-        a = cur.get(s)
-        why = None
-        if s in seen:
-            why = "a second proposal for the section"
-        elif s not in ok:
-            why = "not accepted by the fact check"
-        elif a is None or a["id"] != rid:
-            why = f"{rid} is no longer the current KPI assessment"
-        elif not isinstance(p.get("label"), str) or not isinstance(p.get("rationale"), str):
-            why = "label/rationale missing"
-        else:
-            probs = textcheck.problems(a, a | {"label": p["label"], "rationale": p["rationale"]})
-            if len(p["label"]) > 100:
-                probs.append("label longer than 100 chars")
-            if (p["label"], p["rationale"]) == (a["label"], a["rationale"]):
-                probs.append("no change")
-            why = "; ".join(probs) or None
-        seen.add(s)
-        if why:
-            print(f"SKIP {s}: {why}")
-            continue
-        ids = {x["id"] for x in ledger.assessments(s)}
-        base = f"{a['made_at']}-kpi"
-        nid = base if base not in ids else next(f"{base}-{n}" for n in range(2, 1000) if f"{base}-{n}" not in ids)
-        basis = dict(a.get("basis") or {})
-        basis["change_note"] = (f"Label and rationale reworded by the cross-section editorial pass (editorial:{run_id}, "
-                                f"{made}); the judgment is {a['id']}'s, unchanged (by {a.get('by')}). "
-                                + str(basis.get("change_note") or "")).strip()
-        rec = {k: v for k, v in a.items() if k not in ONE_SHOT} | {"id": nid, "label": p["label"], "rationale": p["rationale"], "by": f"editorial:{run_id}",
-                   "basis": basis}
-        with open(os.path.join(out, f"{s}.jsonl"), "w", encoding="utf-8") as f:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        print(f"REWORD {s}: {a['id']} -> {nid}")
+    rounds = []
+    for props, check in (("proposals.jsonl", "factcheck.md"), ("proposals-2.jsonl", "factcheck-2.md")):
+        pp, cp = os.path.join(stage, props), os.path.join(stage, check)
+        if os.path.exists(pp):
+            rounds.append((accepted(cp) if os.path.exists(cp) else set(),
+                           [json.loads(ln) for ln in open(pp, encoding="utf-8") if ln.strip()]))
+    done: set[str] = set()
+    for ok, props in rounds:
+        seen: set[str] = set()
+        for p in props:
+            rec = reword(p, ok, cur, seen | done, run_id, made, out)
+            seen.add(p.get("section"))
+            if rec:
+                done.add(rec)
     return 0
 
+
+def reword(p: dict, ok: set[str], cur: dict, taken: set[str], run_id: str, made: str, out: str) -> str | None:
+    """Check one proposal; write its copy and return the section, or print why not."""
+    s, rid = p.get("section"), p.get("id")
+    a = cur.get(s)
+    why = None
+    if s in taken:
+        why = "another proposal for the section came first"
+    elif s not in ok:
+        why = "not accepted by the fact check"
+    elif a is None or a["id"] != rid:
+        why = f"{rid} is no longer the current KPI assessment"
+    elif not isinstance(p.get("label"), str) or not isinstance(p.get("rationale"), str):
+        why = "label/rationale missing"
+    else:
+        probs = textcheck.problems(a, a | {"label": p["label"], "rationale": p["rationale"]})
+        if len(p["label"]) > 100:
+            probs.append("label longer than 100 chars")
+        if (p["label"], p["rationale"]) == (a["label"], a["rationale"]):
+            probs.append("no change")
+        why = "; ".join(probs) or None
+    if why:
+        print(f"SKIP {s}: {why}")
+        return None
+    ids = {x["id"] for x in ledger.assessments(s)}
+    base = f"{a['made_at']}-kpi"
+    nid = base if base not in ids else next(f"{base}-{n}" for n in range(2, 1000) if f"{base}-{n}" not in ids)
+    basis = dict(a.get("basis") or {})
+    note, judged, by = str(basis.get("change_note") or ""), a["id"], a.get("by")
+    if m := PREFIX_RE.match(note):  # rewording a rewording: still name the judgment itself
+        note, judged, by = note[m.end():], m.group(1), m.group(2)
+    basis["change_note"] = (f"Label and rationale reworded by the cross-section editorial pass (editorial:{run_id}, "
+                            f"{made}); the judgment is {judged}'s, unchanged (by {by}). {note}").strip()
+    rec = {k: v for k, v in a.items() if k not in ONE_SHOT} | {
+        "id": nid, "label": p["label"], "rationale": p["rationale"], "by": f"editorial:{run_id}", "basis": basis}
+    with open(os.path.join(out, f"{s}.jsonl"), "w", encoding="utf-8") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    print(f"REWORD {s}: {a['id']} -> {nid}")
+    return s
 
 if __name__ == "__main__":
     cmd, *args = sys.argv[1:] or ["?"]
