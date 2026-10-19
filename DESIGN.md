@@ -292,12 +292,16 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    is the assessor's own model) reads only the staged labels and
    rationales, as the dashboard's reader (RUBRIC.md §6: every sentence tells a
    general reader something; the words match the numbers), without editing
-   them; it ends "EDITS: <n>". Records it would change get one fix by the
-   assessor, limited to label and rationale text: the verdict word stays, every
-   number in the new text occurs in the drafted record, and no other staged file
+   them; it ends "EDITS: <n>". It reads as an editor, not a copy editor: it may
+   restructure a text and drop any sentence §6 does not require. Records it would
+   change get one fix by the assessor, limited to label and rationale text: the
+   verdict word stays, every number in the new text occurs in the drafted record
+   or rounds one of its numbers (`core/textcheck.py`), and no other staged file
    changes (else the fix is discarded and the draft restored). Committed as
    `notes/<section>/<run id>.reader.md`; never fatal (a reviewer that edits any
    staged file aborts); `READER=0` skips it.
+   Last, the **editorial pass** (§4b) reads every section's KPI text side by
+   side whenever one of them is new; `EDITORIAL=0` skips it.
 7. Each step commits only its own paths. The write-scope guard (cooperative,
    not isolation) lets agents touch only staging and the registry. It checks
    committed changes, uncommitted changes and already-dirty files, and runs
@@ -363,6 +367,33 @@ gather's write-scope guard never sees the collector's commits. Nested calls
 hence its own lock. The LLM stages (gather intake, assessments, bulletins,
 round-ups) are not scheduled; see TODO.md.
 
+## 4b. Editorial pass (`gather/editorial.sh`; the last step of every gather run)
+
+The reader pass sees one section's records at a time and polishes them. The
+editorial pass reads every section's current KPI label and rationale side by
+side, so it catches habits that only show in comparison: one KPI describes its
+status rule while another states what was found, or one keeps a caveat that
+another drops.
+It runs only when some current KPI record is unread, meaning no earlier pass
+lists it on its report's `Read:` line (`FORCE=1` re-reads, e.g. after a §6
+change).
+An editor on another model than the assessor's (`EDITORIAL_MODE`, default
+`best`, `oracle` when `best` is the assessor's model) writes a report and
+proposals. It may restructure a text freely under RUBRIC.md §6, and it edits
+nothing else. A fact check on the assessor's model then accepts or rejects each
+proposal against the full record (basis included), on facts, meanings, missing
+essentials and §6, not on taste.
+An accepted proposal must also pass `core/textcheck.py`, the same mechanical
+check the reader fix gets. It is then appended as a copy of the current record
+with only label and rationale changed: same status, made_at, evidence, digest and
+basis, with `by: editorial:<run id>` and a sentence prefixed to
+`basis.change_note` naming the record it rewords. The copy wins on the made_at
+tie by file order, the hysteresis rules see no status change, and staleness is
+unaffected.
+The report (editor, proposals, fact check, outcome) is committed as
+`ledger/assessments/notes/editorial/<run id>.md`. Milestones and statuses are
+never touched.
+
 ## 5. Bulletin (`views/bulletin.sh <period-dir> <section>`)
 
 1. **snapshot** (`ledger.py snapshot`, deterministic, **self-contained**): the
@@ -423,7 +454,8 @@ tests in its own `tests/` directory:
 - `core/tests/test_guard.sh`: the write-scope guard; `core/tests/test_lock.sh`:
   the pipeline lock (§4a); `core/tests/test_review.sh`: assess.sh's review
   stage (fix, rollback, blocked and failed rounds, with stubbed stages);
-  `core/tests/test_reader.sh`: its reader pass (text-only fix, discarded fixes);
+  `core/tests/test_reader.sh`: its reader pass (text-only fix, rounding, discarded
+  fixes; `core/textcheck.py`, which the editorial pass shares);
 - `core/tests/test_paths.py`: every `$ROOT/...` path and module the pipeline
   scripts use exists (a broken one inside a prompt heredoc fails silently),
   and every runnable script declares `pyyaml` in its PEP 723 block (`uv run`

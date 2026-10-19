@@ -14,6 +14,8 @@
 #   5. assess   re-judge milestone/KPI status for targets touched by the run
 #               (made_at = UNTIL; evidence must be public by then)
 #   6. state    ledger/state/<section>.json: per-watch-item watermarks
+#   7. editorial every section's current KPI label and rationale read side by side
+#               (gather/editorial.sh; runs only when one of them is new)
 # Windows OVERLAP (default: each item's last UNTIL - 3 days) because articles
 # get published/indexed late; dedup + idempotent merges make overlap safe.
 # Assessment triggers are stateless (ledger.py stale: evidence newer than the
@@ -32,6 +34,7 @@
 #                            run, e.g. quantitative data an ETA needs; still windowed)
 #         SKIP_ASSESS=1      stop after merge (a later assess.sh run judges the new
 #                            evidence: stale triggers are stateless)
+#         EDITORIAL=0        skip the editorial pass (step 7)
 #         ALLOW_DIRTY=1      skip the clean-worktree preflight
 # =============================================================================
 SECTION="${1:?usage: gather.sh <section>}"
@@ -257,4 +260,7 @@ for s in $SECTIONS; do
 		fi
 	done
 done
+# --- 7. editorial: every section's KPI text side by side (editorial.sh; done at once unless one is unread;
+# it refreshes the site itself when it rewords)
+if [ -z "${SKIP_ASSESS:-}" ] && [ "${EDITORIAL:-1}" != 0 ]; then ALLOW_DIRTY=1 sh "$ROOT/gather/editorial.sh"; fi
 echo ">>> done: gather $SECTION until $UNTIL"

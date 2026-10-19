@@ -356,8 +356,8 @@ case "$TARGETS" in *milestone:*) if [ "${REVIEW:-1}" != 0 ]; then review_stage; 
 # assessor's own model) reads only those, as a reader (gather/RUBRIC.md §6: every sentence must tell a
 # general reader something, the words must match the numbers). Records it would change get ONE fix by
 # the assessor, limited to label and rationale: the verdict word stays, every number in the new text
-# occurs in the record as drafted (a number may go, none may appear or change), and nothing else in the
-# staged files changes; else the fix is discarded. Never fatal, except a reviewer that edits any staged
+# occurs in the record as drafted or rounds one of its numbers (core/textcheck.py: a number may go or be
+# rounded, none may appear), and nothing else in the staged files changes; else the fix is discarded. Never fatal, except a reviewer that edits any staged
 # file; READER=0 skips it. Added 2026-10-18 after an editorial review (best, oracle) caught run bookkeeping
 # ("no new measurements have arrived since the previous assessment") that the ETA review had passed.
 # --- reader pass (core/tests/test_reader.sh runs this block with stubs) ---
@@ -371,14 +371,23 @@ What the dashboard shows: the KPI's name and definition ($ROOT/framework.yaml), 
 visible, its rationale; a milestone's name, definition and label, with its rationale shown once the
 reader opens the milestone. The reader is smart and technical but not a specialist; the numbers'
 derivation (basis) is folded away. Writing rules: $ROOT/gather/RUBRIC.md §6 (label, rationale).
-For every sentence and label clause ask what it tells this reader. Flag: run or process bookkeeping
-("no new measurements since the previous assessment", "the same points give the same statistics"),
-internal ids, file or metric names, commit hashes, statistics jargon, restating the definition shown just
-above, words that claim more than the numbers in the record's basis support (e.g. "accelerating" when
-the halves' rate intervals overlap), and anything a reader cannot understand from what is on the page.
-Keep the level, the pace, the benchmark it is judged against and the one caveat that matters; beyond
-that, shorter is better when nothing is lost, and add no new caveats or numbers unless the reader would
-otherwise misread one. Never change the status, the verdict word or a number (dropping one is fine).
+First read each record whole, as an editor: does it tell this reader what the level means in the
+world, how fast it moves, and why that earns its status? Is it the text they would want to read?
+Then ask of every sentence and label clause what it tells this reader, and whether they would miss
+it if it were gone. Flag: sentences about how the status is computed rather than what was found (the
+rule, windows, halves: "the status asks whether it keeps its own pace"); a caveat the text itself
+dismisses, or one that could not change what the reader takes away; a level the reader cannot picture;
+precision the data cannot support; run or process bookkeeping ("no new measurements since the previous
+assessment", "since the last assessment, two deployments were found"); internal ids, file or metric
+names, rubric terms, commit hashes, statistics jargon; restating the definition shown just above;
+words that claim more than the numbers in the record's basis support (e.g. "accelerating" when the
+halves' rate intervals overlap); and anything a reader cannot understand from what is on the page.
+You may restructure a rationale completely and drop any sentence or slot that §6 does not require
+(the caveat included). Keep the level, the pace and why it has its status (a clause can be enough).
+Shorter is better when nothing is lost, but do not cut what the reader needs to read the status.
+Never change the status or the verdict word. Every number must come from the record, its basis
+included, as is or rounded (7.9 -> 8, 1.79 -> 1.8); never a figure computed from them (a ratio, a
+conversion), which the pipeline rejects.
 For each record you would change, write a section "## <target>" with the exact current text, your
 proposed label and/or rationale (full text), and one line why. Records you would leave as they are: list
 them in one line. The LAST line of $1 must be exactly "EDITS: <the number of records you would change>".
@@ -389,10 +398,11 @@ fix_prompt() {
 cat <<EOF4
 You staged the assessment records $AS for "$SECTION" in this run. A reader review ($STAGE/reader.md)
 proposes better labels and rationales for the dashboard. Rewrite ONLY the "label" and "rationale" fields
-of the records it names, adopting each proposal where it is right under $ROOT/gather/RUBRIC.md §6.
-Keep each label's verdict word (the text before its first colon) and at most 100 characters; introduce
-or change no number (an ETA year, a level, a rate: dropping one is fine); change nothing else in $AS and
-no other file. Then validate:
+of the records it names, adopting each proposal where it is right under $ROOT/gather/RUBRIC.md §6
+(restructuring is fine; correct a proposal that misstates what a number means). Keep each label's
+verdict word (the text before its first colon) and at most 100 characters; every number must occur in
+the record as drafted, as is or rounded to fewer decimals (an ETA year, a level, a rate: dropping one is
+fine, computing a new one is not); change nothing else in $AS and no other file. Then validate:
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
 Never run git add/commit.
 EOF4
@@ -410,17 +420,8 @@ staged_sums() {  # every staged file the run commits (a reviewer or a fix must n
 	for f in "$AS" "$STAGE/eta-notes.md" "$STAGE/review.md"; do [ -e "$f" ] && cksum "$f"; done; true
 }
 text_fix_ok() {  # $1 = draft, $2 = fixed records: only label/rationale changed, verdict words kept, no
-	# number that the drafted record lacks; prints the number of records whose text changed
-	uv run python -c 'import json, re, sys
-a, b = ([json.loads(l) for l in open(f) if l.strip()] for f in sys.argv[1:])
-rest = lambda r: {k: v for k, v in r.items() if k not in ("label", "rationale")}
-verdict = lambda r: str(r.get("label", "")).split(":", 1)[0]
-nums = lambda t: re.findall(r"\d+(?:[.,]\d+)*", str(t))
-ok = len(a) == len(b) and all(rest(x) == rest(y) and verdict(x) == verdict(y)
-                              and all(n in json.dumps(x, ensure_ascii=False) for n in nums(y.get("label")) + nums(y.get("rationale")))
-                              for x, y in zip(a, b))
-print(sum((x.get("label"), x.get("rationale")) != (y.get("label"), y.get("rationale")) for x, y in zip(a, b)))
-sys.exit(not ok)' "$1" "$2"
+	# number that the drafted record lacks (rounding allowed); prints the number of records whose text changed
+	uv run python "$ROOT/core/textcheck.py" "$1" "$2"
 }
 reader_pass() {  # updates NOTE; writes $STAGE/reader.md (nothing when the review failed)
 	ASSESS_MODEL="${PI_MODEL:-}"

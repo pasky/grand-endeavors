@@ -3,15 +3,17 @@
 # run with stubbed pi_run / pi_mode_model / as_complete).
 #   sh core/tests/test_reader.sh
 set -u
-ASSESS="$(cd "$(dirname "$0")/../.." && pwd)/gather/assess.sh"
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+ASSESS="$REPO/gather/assess.sh"
 FAILS=0
 w=$(mktemp -d)
 sed -n '/^# --- reader pass/,/^# --- end reader pass ---/p' "$ASSESS" > "$w/block.sh"
-R0='{"id": "k", "status": "green", "label": "Ahead: 1.8 h, doubling every 2.9 mo", "rationale": "No new measurements. It rose 42-fold.", "basis": {"p": 2034}}'
-R1='{"id": "k", "status": "green", "label": "Ahead: 1.8 h, doubling every 2.9 mo", "rationale": "It rose 42-fold by 2034.", "basis": {"p": 2034}}'
-RS='{"id": "k", "status": "red", "label": "Ahead: 1.8 h, doubling every 2.9 mo", "rationale": "It rose.", "basis": {"p": 2034}}'
-RV='{"id": "k", "status": "green", "label": "On track: 1.8 h, doubling every 2.9 mo", "rationale": "It rose.", "basis": {"p": 2034}}'
-RN='{"id": "k", "status": "green", "label": "Ahead: 1.8 h, doubling every 2.9 mo", "rationale": "It rose, ETA 2099.", "basis": {"p": 2034}}'
+R0='{"id": "k", "status": "green", "label": "Ahead: 1.8 h, doubling every 2.9 mo", "rationale": "No new measurements. It rose 42-fold.", "basis": {"p": 2034, "m": 5.67}}'
+R1='{"id": "k", "status": "green", "label": "Ahead: 1.8 h, doubling every 2.9 mo", "rationale": "It rose 42-fold by 2034.", "basis": {"p": 2034, "m": 5.67}}'
+RS='{"id": "k", "status": "red", "label": "Ahead: 1.8 h, doubling every 2.9 mo", "rationale": "It rose.", "basis": {"p": 2034, "m": 5.67}}'
+RV='{"id": "k", "status": "green", "label": "On track: 1.8 h, doubling every 2.9 mo", "rationale": "It rose.", "basis": {"p": 2034, "m": 5.67}}'
+RN='{"id": "k", "status": "green", "label": "Ahead: 1.8 h, doubling every 2.9 mo", "rationale": "It rose, ETA 2099.", "basis": {"p": 2034, "m": 5.67}}'
+RR='{"id": "k", "status": "green", "label": "Ahead: 1.8 h, doubling every 2.9 mo", "rationale": "It rose 42-fold, about 5.7 a year.", "basis": {"p": 2034, "m": 5.67}}'
 
 # $1 name, $2 expected exit (0|1), $3 expected substring of NOTE, $4 expected records afterwards,
 # $5 reader body, $6 fix body (shell snippets; "$out" = the report path; set RC/BLOCK); env: LAB =
@@ -20,7 +22,7 @@ t() {
 	rm -rf "$w/s"; mkdir -p "$w/s"; printf '%s\n' "$R0" > "$w/s/assessments.jsonl"; echo notes > "$w/s/eta-notes.md"
 	(
 		set -eu
-		STAGE="$w/s"; AS="$STAGE/assessments.jsonl"; NOTES_DIR=n; SECTION=x; RUN_ID=r; ROOT=/r; AGENT_DIR=/nonexistent
+		STAGE="$w/s"; AS="$STAGE/assessments.jsonl"; NOTES_DIR=n; SECTION=x; RUN_ID=r; ROOT="$REPO"; AGENT_DIR=/nonexistent
 		NOTE=""; PI_MODEL="assessor/model"; RD="$5"; FIX="$6"
 		pi_mode_model() { [ "${NO_MODE:-}" = "" ] && echo "${LAB:-reader/model}:high"; }
 		as_complete() { ! grep -q BROKEN "$AS"; }
@@ -56,6 +58,8 @@ t "a fix that adopts nothing: counted as 0 reworded"       0 "(reader: 1 suggest
 t "a fix that changes the status: discarded"               0 "fix discarded"                            "$R0" "$E1" "$(put "$RS")"
 t "a fix that changes the verdict word: discarded"         0 "fix discarded"                            "$R0" "$E1" "$(put "$RV")"
 t "a fix that introduces a number: discarded"              0 "fix discarded"                            "$R0" "$E1" "$(put "$RN")"
+t "a fix that misrounds a number (5.67 -> 5.8): discarded" 0 "fix discarded"                            "$R0" "$E1" "$(put "$RR" | sed 's/5[.]7 a/5.8 a/')"
+t "a fix that rounds a number (5.67 -> 5.7): kept"          0 "1 record(s) reworded"                     "$RR" "$E1" "$(put "$RR")"
 t "a fix that also edits the notes: discarded, restored"   0 "fix discarded"                            "$R0" "$E1" "$(put "$R1"); echo x > \"\$STAGE/eta-notes.md\""
 t "a fix that breaks the records: discarded"               0 "fix discarded"                            "$R0" "$E1" 'echo BROKEN > "$AS"'
 t "a blocked fix: discarded"                               0 "fix discarded"                            "$R0" "$E1" "$(put "$R1"); BLOCK=1"

@@ -446,18 +446,36 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   rates or doubling times in basis.window do not overlap; without intervals,
   leave it out), and then in a word ("accelerating", "slowing"), never as a
   second number.
-- **rationale**: the dashboard shows it, always visible, under the label, as
-  the answer to "why this status?". Write it for a general reader, in 2–4
-  sentences, consistent with the basis: (1) where the quantity stands and how
-  fast it moves, in plain units; (2) the pace needed (the benchmark, by name)
-  and hence the status; (3) only if something moved the numbers or the status
-  since the previous assessment, what (otherwise say nothing about it: "no new
-  measurements" tells the reader nothing); (4) the one caveat that matters most. Name a source by what it is
-  ("Epoch's capability index"), not by an event id. No metric or event ids,
-  commit hashes, file names, commands, CI arithmetic or robustness lists, and
-  no run bookkeeping ("nothing new since…", "the same points give the same
-  statistics"): those go in the basis (`window`, `change_note`), which the
-  dashboard folds under "How the status was judged".
+- **rationale**: the dashboard shows it, always visible, under the label. It
+  answers the reader's question, "where does this stand, and is it moving fast
+  enough?", not the auditor's "how was the status computed?" (that is the
+  basis, folded under "How the status was judged"). Write it for a smart reader
+  who is not a specialist and sees only the KPI's name and definition, in 2–4
+  sentences, consistent with the basis:
+  (1) what the level means in the world, in plain units (what AI can now do,
+  what a kilogram to orbit costs), and how fast it moves. A round figure
+  ("about 1.8 hours", "every ~3 months") beats a precise one the data cannot
+  support.
+  (2) Why that is the status, in a clause or a sentence. If the status is judged
+  against an outside need, name it and the pace it requires ("IPCC 1.5 °C
+  pathways need at most 1.79 ppm a year"). If it is judged against the KPI's own
+  earlier pace, say what the comparison found ("no slower than the year
+  before", "a quarter of its pre-2019 pace"). Do not describe the rule, the
+  windows or their halves ("The status asks whether it keeps its own pace: the
+  later half…").
+  (3) Only if a new fact moved the numbers or the status since the previous
+  assessment: that fact, as news about the world (a price published, a
+  deployment ended), never as the ledger's history ("since the last
+  assessment, two deployments were found"). Otherwise say nothing about it.
+  (4) A caveat only if it could change what the reader takes away (the level
+  may be off by 2×; the latest data predate a known turn). Never add one only to
+  dismiss it ("…so it hardly affects the comparison"). Without such a caveat,
+  stop after (2).
+  Name a source by what it is ("Epoch's capability index"), not by an event
+  id. Leave out metric or event ids, commit hashes, file names, commands, rubric
+  terms (tiers, benchmark stage names, "window"), CI arithmetic and robustness
+  lists, and run bookkeeping ("nothing new since…", "the same points give the
+  same statistics"): those go in the basis (`window`, `change_note`).
 - **basis.window** (KPI) is rendered as structure: nested objects as nested
   lists, an object of date (or period) → number as a row of data cells. Keep
   the data points in such an object, statistics as numbers (not numbers inside
