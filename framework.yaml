@@ -149,8 +149,9 @@ endeavors:
                   them). It ends in March 2026 (METR's last model has no ECI score) at −0.4: its newest models
                   measured somewhat shorter than the line gives them.
                 - **[Terminal-Bench 4.0](https://www.tbench.ai/leaderboard/terminal-bench/4.0)** (long
-                  command-line tasks, not part of ECI): an independent success rate. Its tasks' human-time
-                  estimates do not predict which tasks fail, so it yields no horizon, only a second pace signal.
+                  command-line tasks, not part of ECI): a horizon needs agents to fail more often on the tasks
+                  that take human experts longer, and here they do not, so it gives no horizon to compare with
+                  the conversion. Its best success rate is only a second, ECI-independent reading of the pace.
               metrics: [swe-marathon-h80-by-release, horizon-80-gap-swe-marathon, horizon-80-gap-metr,
                         terminal-bench-4-pass-by-release]
             - title: "UK AISI's cyber time horizon: checks the conversion's slope (hours per ECI point), not its level"

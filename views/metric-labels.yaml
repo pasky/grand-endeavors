@@ -2,23 +2,23 @@
 # Presentation only: the registry (data/metrics/<section>.csv) keeps the metric ids
 # and their full definitions (shown as the tile's tooltip). A metric without a label
 # here is shown by the first clause of its definition (else its id), and explore.py
-# warns: add one when registering a metric.
+# warns: add one when registering a metric. A section's order here is the order of its
+# folded "more metrics" tiles: keep related series together.
 # _inputs: per section, metrics that only feed another indicator (e.g. the two sides of
 # a derived ratio); a supplemental section's pane folds them under "Fine print", and
 # its overview card leaves them out.
 _inputs:
   knowledge-beyond: [qday-rsa2048-qubits-needed, qday-largest-device-qubits]
+# _levels: per metric, the names of the rungs of a ladder metric (value 1, 2, ...): its tile shows
+# "n of N" and the rung's name, not a bare number.
+_levels:
+  ai-paper-venue-tier-max:
+    - workshop at a major conference
+    - main track of a major conference, or a journal below the top tier
+    - top journal of its field
+    - Nature or Science
 robots-software:
   horizon-80-blended: AI task horizon at 80% success, software and remote work blended
-  swe-marathon-h80-by-release: AI software task horizon at 80% success, measured on SWE-Marathon
-  swe-marathon-h50-by-release: AI software task horizon at 50% success, measured on SWE-Marathon
-  horizon-80-gap-swe-marathon: "SWE-Marathon check: measured vs ECI-converted horizon, in doublings (0 = they agree)"
-  horizon-80-gap-metr: "METR check: measured vs ECI-converted horizon, in doublings (0 = they agree)"
-  terminal-bench-4-pass-by-release: "Terminal-Bench 4.0: best success rate (not part of ECI)"
-  aisi-cyber-h80-by-release: "UK AISI cyber task horizon at 80% success (2.5M-token cap; not METR-comparable)"
-  ai-contribution-lines-merged-max: Largest AI-written code contribution merged (lines)
-  ai-paper-venue-tier-max: Highest venue tier of an accepted AI-generated paper
-  solo-company-arr-max: Highest reported ARR of a one-person company
   horizon-80-software-eci: AI software task horizon at 80% success (METR-equivalent, from ECI)
   horizon-80-remote-rli: AI remote-work task horizon at 80% success (from the Remote Labor Index)
   horizon-50-blended: AI task horizon at 50% success, software and remote work blended
@@ -26,23 +26,32 @@ robots-software:
   horizon-50-remote-rli: AI remote-work task horizon at 50% success (from the Remote Labor Index)
   eci-frontier-by-release: Epoch Capabilities Index, by model release
   rli-automation-by-release: Remote Labor Index automation rate, by model release
+  swe-marathon-h80-by-release: AI software task horizon at 80% success, measured on SWE-Marathon
+  swe-marathon-h50-by-release: AI software task horizon at 50% success, measured on SWE-Marathon
+  horizon-80-gap-swe-marathon: "SWE-Marathon check: measured vs ECI-converted horizon, in doublings (0 = they agree)"
+  horizon-80-gap-metr: "METR check: measured vs ECI-converted horizon, in doublings (0 = they agree)"
+  terminal-bench-4-pass-by-release: "Terminal-Bench 4.0: best success rate (not part of ECI)"
+  aisi-cyber-h80-by-release: "UK AISI cyber task horizon at 80% success (2.5M-token cap; not METR-comparable)"
   metr-80-horizon-by-release: AI task horizon at 80% success, by model release
   metr-50-horizon-by-release: AI task horizon at 50% success, by model release
   metr-50-horizon-frontier: AI task horizon at 50% success, frontier as evaluated
+  ai-contribution-lines-merged-max: Largest AI-written code contribution merged (lines)
+  ai-paper-venue-tier-max: Most prestigious venue that has accepted an AI-generated paper
+  solo-company-arr-max: Highest reported ARR of a one-person company
 robots-hardware:
   gp-deployments: General-purpose robots at work, deployments (one maker at one customer)
   gp-deployment-pairs: General-purpose robot deployments ever documented (superseded by gp-deployments)
-  manifold-92rpicoun9-p: "Forecast: robot passes the Coffee Test by 2028 (Manifold)"
   manifold-za8292n5qc-p: "Forecast: robot passes the Coffee Test by 2026 (Manifold)"
+  manifold-92rpicoun9-p: "Forecast: robot passes the Coffee Test by 2028 (Manifold)"
 rockets:
   cost-to-leo-best-real: Cheapest launch to low Earth orbit, per kg (constant 2025 $)
+  cost-to-leo-best: Cheapest launch to low Earth orbit (list price as reported)
   rideshare-price-per-kg-spacex-real: SpaceX rideshare price per kg, smallest ticket to orbit (constant 2025 $)
   rideshare-price-per-kg-spacex: SpaceX rideshare price per kg (current $)
   list-price-falcon-9: Falcon 9 list price per launch ($M, current $)
   list-leo-kg-falcon-9: Falcon 9 payload to low Earth orbit (as published with its price)
   list-price-falcon-heavy: Falcon Heavy list price per launch ($M, current $)
   list-leo-kg-falcon-heavy: Falcon Heavy payload to low Earth orbit (as published with its price)
-  cost-to-leo-best: Cheapest launch to low Earth orbit (list price as reported)
   payload-mass-to-orbit: Payload mass launched to orbit in the year
   manifold-infkbfl3unm9gnq9qgky-p: "Forecast: self-sustaining extraterrestrial colony by 2050 (Manifold)"
 fusion:
@@ -53,9 +62,9 @@ fusion:
   elec-wholesale-us: US wholesale electricity price (IEA)
   lcoe-solar-pv-irena: Cost of new utility-scale solar power (IRENA)
   lcoe-onshore-wind-irena: Cost of new onshore wind power (IRENA)
+  lcoe-offshore-wind-irena: Cost of new offshore wind power (IRENA)
   manifold-pr0qngelph-p: "Forecast: commercial fusion electricity by 2035 (Manifold)"
   manifold-iubcricrjrizushzxq97-p: "Forecast: fusion engineering breakeven by 2040 (Manifold)"
-  lcoe-offshore-wind-irena: Cost of new offshore wind power (IRENA)
 health:
   hale-median-country: Healthy life expectancy, median country (WHO)
   hale-global: Healthy life expectancy, world population-weighted (WHO)
@@ -72,17 +81,17 @@ knowledge-beyond:
   exoplanets-confirmed: Confirmed exoplanets (NASA)
 climate:
   co2-mlo-monthly: CO₂ at Mauna Loa, monthly mean (NOAA)
+  co2-mlo-monthly-scripps: CO₂ at Mauna Loa, monthly mean (Scripps)
+  co2-mlo-daily: CO₂ at Mauna Loa, daily mean (NOAA)
+  co2-mlo-annual: CO₂ at Mauna Loa, annual mean (NOAA)
+  co2-global-monthly: CO₂ global, monthly mean (NOAA)
+  co2-global-annual: CO₂ global, annual mean (NOAA)
   co2-trend-10yr-mlo-jan-dec: CO₂ growth, 10-year average (Mauna Loa)
   co2-trend-10yr-global-jan-dec: CO₂ growth, 10-year average (global)
   co2-trend-5yr-mlo-jan-dec: CO₂ growth, 5-year average (Mauna Loa)
   co2-trend-5yr-global-jan-dec: CO₂ growth, 5-year average (global)
   co2-trend-10yr-mlo-scripps: CO₂ growth, decade average (Scripps, Mauna Loa)
   co2-trend-2020s-mlo-scripps: CO₂ growth, 2020s average so far (Scripps, Mauna Loa)
-  co2-mlo-annual: CO₂ at Mauna Loa, annual mean (NOAA)
-  co2-mlo-daily: CO₂ at Mauna Loa, daily mean (NOAA)
-  co2-mlo-monthly-scripps: CO₂ at Mauna Loa, monthly mean (Scripps)
-  co2-global-annual: CO₂ global, annual mean (NOAA)
-  co2-global-monthly: CO₂ global, monthly mean (NOAA)
   co2-growth-mlo-jan-dec: CO₂ growth in the year (Mauna Loa)
   co2-growth-global-jan-dec: CO₂ growth in the year (global)
   co2-growth-mlo-annual-mean: CO₂ annual-mean increase (Mauna Loa, NOAA)

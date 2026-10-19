@@ -95,10 +95,12 @@ section with its own activity line), then:
     point shows the model and value (tooltips);
   - **how the status was judged** (the assessment basis), **evidence and
     news** (the cited evidence, newest first, then the other KPI-tagged
-    events) and **more metrics we track** (the section's other metrics):
+    events) and **more metrics we track** (the section's other metrics, in
+    their `metric-labels.yaml` order; precursor series show with their milestone):
   - **KPI tiles**: a tile shows the metric's name (`views/metric-labels.yaml`;
     hover: its id and full registry definition), the latest value (minutes
-    from 2 hours on shown as hours, a value in hours under 1 hour as minutes; hover: the
+    from 2 hours on shown as hours, a value in hours under 1 hour as minutes, a ladder
+    metric (`_levels` in metric-labels.yaml) as "1 of 4" and the rung's name; hover: the
     recorded value), the period it is for (hover: when it was published), a `source` link and a `legacy`
     badge for values from the unverified 2025 report; for monthly series the
     like-for-like change vs the same month a year earlier (the change vs the
@@ -136,7 +138,8 @@ section with its own activity line), then:
   cards in columns (an opened card takes a row of its own, and the cards left
   on the row before it widen to fill it; a trailing card keeps the column width). Each shows its status dot, name and
   definition, then the status label, assessment date and event count. Expanded: the
-  precise criteria, the assessment (as for the KPI), then folded, as for the KPI,
+  precise criteria, **closest so far** (the tiles of its framework.yaml `precursors:`
+  series), the assessment (as for the KPI), then folded, as for the KPI,
   **evidence and news**: the **cited evidence** (every event the assessment cites,
   whatever its topic tags; one superseded or withdrawn since is flagged), then
   the milestone's latest 5 other events, with a link to the rest in the event

@@ -605,6 +605,14 @@ def _metric_labels() -> dict[str, dict[str, str]]:
 
 METRIC_LABELS = _metric_labels()
 METRIC_INPUTS: dict[str, list[str]] = METRIC_LABELS.pop("_inputs", None) or {}  # section -> fine-print metrics
+METRIC_LEVELS: dict[str, list[str]] = METRIC_LABELS.pop("_levels", None) or {}  # metric -> name of level 1, 2, ...
+
+
+def label_order(sec: str, rows: list) -> list:
+    """Metric rows in the section's metric-labels.yaml order (the reading order), unlabelled
+    ones last in their given order."""
+    pos = {m: i for i, m in enumerate(METRIC_LABELS.get(sec) or {})}
+    return sorted(rows, key=lambda t: pos.get(t["metric"], len(pos)))
 
 _UNLABELLED: set[tuple[str, str]] = set()
 
@@ -703,10 +711,17 @@ def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200,
             f'<circle cx="{sx(d):.1f}" cy="{sy(v):.1f}" r="2.5" fill="currentColor"/>{"".join(hov)}</svg>')
 
 
-def human_value(value_text, unit) -> tuple[str, str]:
+def human_value(value_text, unit, metric: str | None = None) -> tuple[str, str]:
     """A value in a readable unit: minutes from 2 hours on as hours (METR task horizons:
     1044.78 min -> 17.4 hours); hours (task horizons: 9.567 h) as hours, under 1 hour as minutes
-    (1.79 h stays 1.8 hours, as the assessment label quotes it)."""
+    (1.79 h stays 1.8 hours, as the assessment label quotes it); a level of a ladder
+    (metric-labels.yaml _levels) as 'n of N' and its name."""
+    if (levels := METRIC_LEVELS.get(metric or "")):
+        try:
+            n = int(float(value_text))
+        except (TypeError, ValueError):
+            return str(value_text), unit
+        return f"{n} of {len(levels)}", (levels[n - 1] if 1 <= n <= len(levels) else unit)
     if unit in ("min", "minutes", "h"):
         try:
             v = float(value_text) * (60 if unit == "h" else 1)
@@ -728,7 +743,7 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
     if k["obs"] is None:
         return (f'<div class="tile nodata">{head}<div class="v gap">—</div>'
                 f'<div class="gap">no data yet</div><div class="d">{esc(k["unit"])}, {esc(k["cadence"])}</div></div>')
-    v, u = human_value(k["value_text"], k["unit"])
+    v, u = human_value(k["value_text"], k["unit"], k["metric"])
     body = (f'<div class="v" title="{esc(k["value_text"])} {esc(k["unit"])}">{esc(v)} <small>{esc(u)}</small></div>'
             f'<div class="d"><span title="published {esc(k["known_at"])}">{esc(fmt_period(k["obs"]))}</span> · '
             f'{link(k["source"], "source")}{badge("legacy") if k["verification"] == "legacy" else ""}</div>')
@@ -736,7 +751,7 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
         # seasonal cycle cancels); not for a gap series (a cross-check's residual has no year-on-year meaning)
         body += (f'<div class="c" title="{esc(fmt_period(k["year_ago_obs"]))}: {esc(k["year_ago_value_text"])}">'
                  f'{_arrow(k["year_ago_change_text"])} vs {esc(fmt_period(k["year_ago_obs"]))}</div>')
-    body += sparkline(*spark_points(db, k), fmt=lambda x: " ".join(human_value(f"{x:.6g}", k["unit"])))
+    body += sparkline(*spark_points(db, k), fmt=lambda x: " ".join(human_value(f"{x:.6g}", k["unit"], k["metric"])))
     if k["overdue"]:
         body += f'<div class="gap">update overdue since {esc(fmt_date(k["next_expected"]))}</div>'
     elif k["next_expected"]:
@@ -1059,6 +1074,10 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
     body = ""
     if item.get("details"):
         body += '<ul class="md">' + "".join(f"<li>{md_inline(d)}</li>" for d in item["details"]) + "</ul>"
+    pre = [t for m_id in item.get("precursors") or [] for t in db.execute(
+        "SELECT * FROM latest_kpi WHERE section=? AND metric=? AND NOT retired", (sec, m_id))]
+    if pre:   # the milestone's precursor ladder: the best achieved so far
+        body += ('<h4>Closest so far</h4><div class="tiles">' + "".join(kpi_tile(db, t) for t in pre) + "</div>")
     if kind == "milestone":
         body += assessment_html(m) if m else '<div class="gap">not yet assessed</div>'
     # a milestone's evidence folds (its detail is criteria + assessment + evidence: long);
@@ -1230,8 +1249,10 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set, f
     main = heads or tiles
     about, placed = kpi_about_html(db, sec, (fsec or {}).get("kpi_about"),
                                    {t["metric"]: t for t in tiles if t not in heads}, s["kpi"])
+    # precursor series are shown with their milestone (topic_li)
+    placed |= {p for it in (fsec or {}).get("milestones") or [] for p in it.get("precursors") or []}
     main = [t for t in main if t in heads or t["metric"] not in placed]
-    rest = [t for t in tiles if t not in main and t["metric"] not in placed]
+    rest = label_order(sec, [t for t in tiles if t not in main and t["metric"] not in placed])
     status = (f'{dot(km["status"])}<b>{esc(km["label"])}</b> <span class="mute">· assessed {esc(km["made_at"])}</span>'
               if assessed else f'{dot(None)}<span class="gap">not yet assessed</span>')
     why = f'{assessment_note(km)}<p class="why">{esc(km["rationale"])}</p>' if assessed else ""
@@ -1623,7 +1644,7 @@ def recency(last: str | None, as_of: dt.date) -> str:
 def _value(t: sqlite3.Row, named: bool = False) -> str:
     """A metric's latest value (named: with its short name after it, for an indicator)."""
     label = metric_label(t["section"], t["metric"], t["definition"])
-    v, u = human_value(t["value_text"], t["unit"])
+    v, u = human_value(t["value_text"], t["unit"], t["metric"])
     return (f'<span class="hv" title="{esc(label)}, {esc(fmt_period(t["obs"]))}"><b>{esc(v)}</b> {esc(u)}'
             + (f' <span class="mute">{esc(label)}</span>' if named else "") + "</span>")
 
@@ -1633,7 +1654,7 @@ def _headline(db, g: dict, w: int, h: int, axis: str = "below") -> str:
     if t is None or t["obs"] is None:
         return f'<span class="mute">{"no KPI data yet" if t is not None else "no KPI metric yet"}</span>'
     return _value(t) + sparkline(*spark_points(db, t), w=w, h=h, pad=2, axis=axis,
-                                 fmt=lambda x: " ".join(human_value(f"{x:.6g}", t["unit"])))
+                                 fmt=lambda x: " ".join(human_value(f"{x:.6g}", t["unit"], t["metric"])))
 
 
 def _kpi_dot(g: dict) -> str:

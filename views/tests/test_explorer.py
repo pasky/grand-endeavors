@@ -613,6 +613,13 @@ def main():
              and explore.human_value("185.91", "min") == ("3.1", "hours")
              and explore.human_value("90", "min") == ("90", "min") and explore.human_value("89", "s") == ("89", "s")
              and explore.human_value("9.567", "h") == ("9.6", "hours") and explore.human_value("0.225", "h") == ("14", "min"))
+        explore.METRIC_LEVELS["lad"] = ["low", "high"]
+        try:
+            case("a ladder metric (metric-labels _levels) reads 'n of N' and the rung's name (off the ladder: the unit)",
+                 explore.human_value("2", "tier", "lad") == ("2 of 2", "high")
+                 and explore.human_value("3", "tier", "lad") == ("3 of 2", "tier"))
+        finally:
+            del explore.METRIC_LEVELS["lad"]
         bend = re.search(r'<li class="topic" id="t-climate-milestone-the-bend">.*?</li>', page, re.S)[0]
         case("an expanded status does not repeat its status line", bend.count("Peak in sight") == 1)
         ah = explore.assessment_html({"assessment_id": "a", "status": "yellow", "prev_status": None, "legacy_evidence": 0,
