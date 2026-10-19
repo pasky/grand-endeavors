@@ -248,6 +248,10 @@ uv run $ROOT/core/ledger.py state "$SECTION" --record "$(printf '{"run": "%s", "
 	"$RUN_ID" "${SINCE:-per-item}" "$UNTIL" "$items_json" "$n_ev" "$RUN_START" "$(pi --version 2>&1 | head -1)")"
 uv run $ROOT/core/ledger.py check "$SECTION"
 commit "gather $SECTION: state (until $UNTIL, run $RUN_ID)" $LEDGER_PATHS
+# --- 7. editorial: every section's KPI text side by side (editorial.sh; done at once unless one is
+# unread). The run is committed whatever it does; a failure fails this run, after the site refresh.
+ed_rc=0
+if [ -z "${SKIP_ASSESS:-}" ] && [ "${EDITORIAL:-1}" != 0 ]; then ALLOW_DIRTY=1 SITE=0 sh "$ROOT/gather/editorial.sh" || ed_rc=$?; fi
 # refresh the published site, $ROOT/build/ (derived; best effort: the ledger is already committed)
 uv run $ROOT/views/explore.py site >/dev/null || echo "WARN: site refresh failed (see above); the ledger is fine" >&2
 # KNOWN GAP (TODO.md, deferred): milestones of OTHER sections whose ETA rests on this section's
@@ -260,7 +264,5 @@ for s in $SECTIONS; do
 		fi
 	done
 done
-# --- 7. editorial: every section's KPI text side by side (editorial.sh; done at once unless one is unread;
-# it refreshes the site itself when it rewords)
-if [ -z "${SKIP_ASSESS:-}" ] && [ "${EDITORIAL:-1}" != 0 ]; then ALLOW_DIRTY=1 sh "$ROOT/gather/editorial.sh"; fi
+[ "$ed_rc" = 0 ] || { echo "ERROR: the editorial pass failed (exit $ed_rc, see above); the gather itself is committed" >&2; exit "$ed_rc"; }
 echo ">>> done: gather $SECTION until $UNTIL"

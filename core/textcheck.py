@@ -12,17 +12,19 @@ Standard library only (assess.sh runs it with plain `uv run python`).
 import json
 import re
 import sys
+from decimal import Decimal
 
-NUM_RE = re.compile(r"\d+(?:[.,]\d+)*")
+NUM_RE = re.compile(r"\d+(?:[.,]\d+)*(?:[eE][-+]?\d+)?")
 TEXT = ("label", "rationale")
 
 
-def _value(tok: str) -> tuple[float, int] | None:
-    """(value, decimals) of a number token: commas are thousands separators
-    ("1,673"); None for anything else ("2016,17", "1.2.3")."""
+def _value(tok: str) -> tuple[Decimal, int] | None:
+    """(exact value, decimals) of a plain number token: commas are thousands separators
+    ("1,673"); None for anything else ("2016,17", "1.2.3", and scientific notation
+    "9.96e-05", which only ever matches as a whole token)."""
     if re.fullmatch(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?", tok):
         t = tok.replace(",", "")
-        return float(t), len(t.split(".")[1]) if "." in t else 0
+        return Decimal(t), len(t.split(".")[1]) if "." in t else 0
     return None
 
 
@@ -31,15 +33,15 @@ def numbers_ok(text: str, record: dict) -> list[str]:
     toks = set(NUM_RE.findall(json.dumps(record, ensure_ascii=False)))
     have = [v for v in map(_value, toks) if v]
     bad = []
-    near = lambda x, d, v: abs(x - v[0]) < 1e-9 or d > v[1] and abs(x - v[0]) <= 0.5 * 10 ** -v[1] + 1e-9
+    # the same value, or rounded: x has more decimals and lies within half a unit of v's last digit
+    near = lambda x, d, v: x == v[0] or d > v[1] and abs(x - v[0]) <= Decimal(5) * Decimal(10) ** -(v[1] + 1)
     for m in re.finditer(NUM_RE.pattern + r"(\s?%)?", str(text)):
         tok = m.group(0).rstrip("% ")
         if tok in toks:  # a whole number token, not a substring ("3" is not in "2034")
             continue
         v = _value(tok)
-        # the same value ("1,673" = 1673), or rounded: x has more decimals and lies within half a
-        # unit of the token's last digit; "96%" may state a share of 0.96 (p_achieved)
-        if not (v and any(near(x, d, v) or m.group(1) and 0 < x <= 1 and near(100 * x, max(d - 2, 0), v)
+        # the same value ("1,673" = 1673), or a rounding of it; "96%" may state a share 0.96 (p_achieved)
+        if not (v and any(near(x, d, v) or m.group(1) and 0 < x <= 1 and near(100 * x, d - 2, v)
                           for x, d in have)):
             bad.append(tok)
     return bad

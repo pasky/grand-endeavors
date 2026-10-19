@@ -468,9 +468,10 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   deployment ended), never as the ledger's history ("since the last
   assessment, two deployments were found"). Otherwise say nothing about it.
   (4) A caveat only if it could change what the reader takes away (the level
-  may be off by 2×; the latest data predate a known turn). Never add one only to
-  dismiss it ("…so it hardly affects the comparison"). Without such a caveat,
-  stop after (2).
+  may be off by 2×; the latest data predate a known turn); otherwise none. Never
+  explain one away ("…so it hardly affects the comparison"): an uncertainty that
+  matters for the level but cancels out of the status stays, said as what it
+  means for the level, and the explaining-away goes.
   Name a source by what it is ("Epoch's capability index"), not by an event
   id. Leave out metric or event ids, commit hashes, file names, commands, rubric
   terms (tiers, benchmark stage names, "window"), CI arithmetic and robustness

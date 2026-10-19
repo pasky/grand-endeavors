@@ -17,13 +17,14 @@
 #                of the current record (same status, made_at, evidence and basis; by
 #                editorial:<run id>), merged and committed with the report
 #                ledger/assessments/notes/editorial/<run id>.md
-# gather.sh runs it after every gather (EDITORIAL=0 skips); it exits at once unless some current KPI
+# gather.sh runs it at the end of every gather (EDITORIAL=0 skips); it exits at once unless some current KPI
 # text is unread by an earlier pass. FORCE=1 re-reads (e.g. after a RUBRIC.md §6 change). Never
 # touches milestones or a status.
 #
 # USAGE:  gather/editorial.sh
 # ENV:    FORCE=1          run even when every current KPI text was read by an earlier pass
 #         EDITORIAL_MODE   the editor's pi mode (default: best, else oracle; never the assessor's model)
+#         SITE=0           do not refresh the site after a rewording (gather.sh refreshes it)
 #         ALLOW_DIRTY=1    skip the clean-worktree preflight
 # =============================================================================
 . "$(dirname "$0")/../core/lib.sh"
@@ -55,10 +56,12 @@ if [ -z "$EMODE" ]; then
 	done
 fi
 [ -n "$EMODE" ] || { echo "ERROR: no pi mode (best, oracle) on a model other than the assessor's ($amodel); set EDITORIAL_MODE" >&2; exit 1; }
+emodel="$(pi_mode_model "$EMODE")"
+[ "${emodel%%:*}" != "$amodel" ] || { echo "ERROR: EDITORIAL_MODE=$EMODE runs the assessor's own model ($amodel)" >&2; exit 1; }
 
-sums() { for f in "$STAGE"/*; do [ -f "$f" ] && cksum "$f"; done; true; }
+sums() { for f in "$STAGE"/*.jsonl "$STAGE"/*.md; do [ -f "$f" ] && cksum "$f"; done; true; }
 before="$(sums)"
-PI_MODEL="$(pi_mode_model "$EMODE")"
+PI_MODEL="$emodel"
 pi_run edit "$(cat <<EOF
 You are the editor of a public dashboard that tracks humanity's great endeavors (AI, robots,
 rockets, fusion, health, climate, ...). Each endeavor shows a KPI: its name and definition, a
@@ -123,23 +126,30 @@ EOF
 	[ "$(printf '%s\n' "$before" | grep -v " $STAGE/factcheck.md\$")" = "$(sums | grep -v " $STAGE/factcheck.md\$")" ] \
 		|| { echo "ERROR: the fact check modified the staged files" >&2; exit 1; }
 	[ -s "$STAGE/factcheck.md" ] || { echo "ERROR: the fact check wrote no $STAGE/factcheck.md" >&2; exit 1; }
-	OUTCOME="$(uv run $ROOT/gather/editorial.py apply "$STAGE" "$RUN_ID" "$TODAY")"
+	# the copies go to a directory created after both agents finished (staging is theirs to write),
+	# and only the sections apply names are merged
+	OUT="$(mktemp -d)"
+	OUTCOME="$(uv run $ROOT/gather/editorial.py apply "$STAGE" "$RUN_ID" "$TODAY" "$OUT")"
 	echo "$OUTCOME"
 fi
 
-reworded=""
-for f in "$STAGE"/out/*.jsonl; do
-	[ -f "$f" ] || continue
-	s="$(basename "$f" .jsonl)"
-	uv run $ROOT/core/ledger.py merge "$s" --assessments "$f"
-	uv run $ROOT/core/ledger.py check "$s"
-	reworded="$reworded $s"
+reworded="$(printf '%s\n' "$OUTCOME" | sed -n 's/^REWORD \([a-z-]*\): .*/\1/p' | tr '\n' ' ')"
+reworded="${reworded% }"
+for s in $reworded; do  # every copy validates before the first merge writes anything
+	uv run $ROOT/core/ledger.py lint "$s" --assessments "$OUT/$s.jsonl" \
+		|| { echo "ERROR: the reworded $s record does not validate; nothing merged ($OUT)" >&2; exit 1; }
 done
+for s in $reworded; do
+	uv run $ROOT/core/ledger.py merge "$s" --assessments "$OUT/$s.jsonl" \
+		|| { echo "ERROR: merging $s failed after the sections before it merged: commit or revert ledger/assessments/*.jsonl by hand ($OUT)" >&2; exit 1; }
+	uv run $ROOT/core/ledger.py check "$s"
+done
+[ -z "${OUT:-}" ] || rm -r "$OUT"
 mkdir -p "$NOTES_DIR/editorial"
 {
 	echo "# Editorial pass $RUN_ID ($TODAY): the current KPI labels and rationales, side by side"
 	echo
-	echo "Editor: $EMODE ($(pi_mode_model "$EMODE")); fact check: the assessor's model ($amodel)."
+	echo "Editor: $EMODE ($emodel); fact check: the assessor's model ($amodel)."
 	echo
 	# what this pass read (for the next pass's unread test): the current records and its rewordings
 	echo "Read: $(uv run python -c 'import json, sys
@@ -160,8 +170,8 @@ print(" ".join(r["section"] + ":" + r["record"]["id"] for r in map(json.loads, f
 } > "$REPORT"
 paths="$REPORT"
 for s in $reworded; do paths="$paths ledger/assessments/$s.jsonl"; done
-commit "editorial pass $RUN_ID: KPI labels and rationales side by side (${edits} proposed; reworded:${reworded:- none})" $paths
-if [ -n "$reworded" ]; then  # the published site, $ROOT/build/ (derived; best effort, as in gather.sh)
+commit "editorial pass $RUN_ID: KPI labels and rationales side by side (${edits} proposed; reworded: ${reworded:-none})" $paths
+if [ -n "$reworded" ] && [ "${SITE:-1}" != 0 ]; then  # the published site, $ROOT/build/ (derived; best effort, as in gather.sh)
 	uv run $ROOT/views/explore.py site >/dev/null || echo "WARN: site refresh failed (see above); the ledger is fine" >&2
 fi
 echo ">>> done: editorial pass $RUN_ID"

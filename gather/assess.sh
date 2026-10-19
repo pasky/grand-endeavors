@@ -375,8 +375,9 @@ First read each record whole, as an editor: does it tell this reader what the le
 world, how fast it moves, and why that earns its status? Is it the text they would want to read?
 Then ask of every sentence and label clause what it tells this reader, and whether they would miss
 it if it were gone. Flag: sentences about how the status is computed rather than what was found (the
-rule, windows, halves: "the status asks whether it keeps its own pace"); a caveat the text itself
-dismisses, or one that could not change what the reader takes away; a level the reader cannot picture;
+rule, windows, halves: "the status asks whether it keeps its own pace"); a caveat explained away
+(keep an uncertainty that matters for the level, drop the explaining-away), or one that could not
+change what the reader takes away; a level the reader cannot picture;
 precision the data cannot support; run or process bookkeeping ("no new measurements since the previous
 assessment", "since the last assessment, two deployments were found"); internal ids, file or metric
 names, rubric terms, commit hashes, statistics jargon; restating the definition shown just above;

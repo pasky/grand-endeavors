@@ -10,13 +10,15 @@ labels and rationales (DESIGN.md §4b). Run with cwd = the data repo.
                                           judged (not unknown): {section, kpi, record}; prints how
                                           many of them no earlier pass has read (the "Read:" line of
                                           <notes dir>/*.md)
-  editorial.py apply <stage> <run id> <made at>
+  editorial.py apply <stage> <run id> <made at> <out dir>
                                           for every proposal the fact check accepted: re-check it
                                           mechanically (core/textcheck.py: only label/rationale,
                                           verdict word kept, numbers from the record, as is or
                                           rounded) against the still-current record, and write
-                                          the reworded copy to <stage>/out/<section>.jsonl; prints
-                                          one outcome line per proposal
+                                          the reworded copy to <out dir>/<section>.jsonl (a
+                                          directory the agents never saw); prints one outcome line
+                                          per proposal ("REWORD <section>: <old id> -> <new id>"
+                                          is the manifest of what to merge)
 """
 import datetime as dt
 import json
@@ -66,11 +68,15 @@ def accepted(factcheck: str) -> set[str]:
     return ok
 
 
-def apply(stage: str, run_id: str, made: str) -> int:
+# one-shot authorizations of the record reworded (gather/RUBRIC.md rules 4, 6, 8): a text copy does
+# not re-judge, so it must not claim them again (check_hysteresis would count a second use)
+ONE_SHOT = ("rubric_correction", "audit_correction", "definition_change")
+
+
+def apply(stage: str, run_id: str, made: str, out: str) -> int:
     cur = {r["section"]: r["record"] for r in current_kpis(dt.date.fromisoformat(made))}
     ok = accepted(os.path.join(stage, "factcheck.md"))
     props = [json.loads(ln) for ln in open(os.path.join(stage, "proposals.jsonl"), encoding="utf-8") if ln.strip()]
-    os.makedirs(os.path.join(stage, "out"), exist_ok=True)
     seen = set()
     for p in props:
         s, rid = p.get("section"), p.get("id")
@@ -102,9 +108,9 @@ def apply(stage: str, run_id: str, made: str) -> int:
         basis["change_note"] = (f"Label and rationale reworded by the cross-section editorial pass (editorial:{run_id}, "
                                 f"{made}); the judgment is {a['id']}'s, unchanged (by {a.get('by')}). "
                                 + str(basis.get("change_note") or "")).strip()
-        rec = a | {"id": nid, "label": p["label"], "rationale": p["rationale"], "by": f"editorial:{run_id}",
+        rec = {k: v for k, v in a.items() if k not in ONE_SHOT} | {"id": nid, "label": p["label"], "rationale": p["rationale"], "by": f"editorial:{run_id}",
                    "basis": basis}
-        with open(os.path.join(stage, "out", f"{s}.jsonl"), "w", encoding="utf-8") as f:
+        with open(os.path.join(out, f"{s}.jsonl"), "w", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
         print(f"REWORD {s}: {a['id']} -> {nid}")
     return 0
@@ -114,6 +120,6 @@ if __name__ == "__main__":
     cmd, *args = sys.argv[1:] or ["?"]
     if cmd == "collect" and len(args) == 2:
         sys.exit(collect(*args))
-    if cmd == "apply" and len(args) == 3:
+    if cmd == "apply" and len(args) == 4:
         sys.exit(apply(*args))
     sys.exit(__doc__)

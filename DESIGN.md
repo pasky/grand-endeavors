@@ -385,9 +385,12 @@ proposal against the full record (basis included), on facts, meanings, missing
 essentials and §6, not on taste.
 An accepted proposal must also pass `core/textcheck.py`, the same mechanical
 check the reader fix gets. It is then appended as a copy of the current record
-with only label and rationale changed: same status, made_at, evidence, digest and
-basis, with `by: editorial:<run id>` and a sentence prefixed to
-`basis.change_note` naming the record it rewords. The copy wins on the made_at
+with only label and rationale changed: same status, made_at, evidence, digest
+(merge seals one if the record had none) and basis, with `by: editorial:<run
+id>`, a sentence prefixed to `basis.change_note` naming the record it rewords,
+and no one-shot correction flags (`rubric_correction`, `audit_correction`,
+`definition_change`: the copy re-judges nothing). The copies are written to a
+directory the agents never saw, and all of them validate before the first merge. The copy wins on the made_at
 tie by file order, the hysteresis rules see no status change, and staleness is
 unaffected.
 The report (editor, proposals, fact check, outcome) is committed as
@@ -456,6 +459,8 @@ tests in its own `tests/` directory:
   stage (fix, rollback, blocked and failed rounds, with stubbed stages);
   `core/tests/test_reader.sh`: its reader pass (text-only fix, rounding, discarded
   fixes; `core/textcheck.py`, which the editorial pass shares);
+  `core/tests/test_editorial.sh`: the editorial pass end to end on a scratch clone
+  of the data repo with a stub `pi` (only checked copies merge, the unread test);
 - `core/tests/test_paths.py`: every `$ROOT/...` path and module the pipeline
   scripts use exists (a broken one inside a prompt heredoc fails silently),
   and every runnable script declares `pyyaml` in its PEP 723 block (`uv run`
@@ -471,7 +476,7 @@ Run them all (offline) with:
 
 ```sh
 f=0; for t in */tests/test_*.py; do uv run "$t" >/dev/null || { echo "FAIL $t"; f=1; }; done
-for t in core/tests/test_guard.sh core/tests/test_review.sh core/tests/test_reader.sh; do sh "$t" >/dev/null || { echo "FAIL $t"; f=1; }; done; [ $f = 0 ]
+for t in core/tests/test_guard.sh core/tests/test_review.sh core/tests/test_reader.sh core/tests/test_editorial.sh; do sh "$t" >/dev/null || { echo "FAIL $t"; f=1; }; done; [ $f = 0 ]
 ```
 
 Verification happens at ingest (step 4), so it is done once per fact rather
