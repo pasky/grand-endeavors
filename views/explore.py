@@ -500,15 +500,16 @@ details>summary:hover::before{background:var(--acc)}details>summary:hover::after
 details[open]>summary::after{transform:rotate(90deg)}
 li.topic summary,.kpid summary{color:var(--ink)}
 li.topic{border-bottom:1px solid var(--line)}ul.topics{margin:0 0 4px}
-/* milestones: a sequence = a numbered rail; parallel = cards (an open one spans the row) */
+/* milestones: a sequence = a numbered rail; parallel = cards that fill their row (an open one
+   takes a row of its own, so the card left alone before it widens with it) */
 ol.topics{list-style:none;padding:0;margin:4px 0;counter-reset:step}
 ol.seq>li.topic{position:relative;padding-left:32px;counter-increment:step;border:0}
 ol.seq>li.topic::before{content:counter(step);position:absolute;left:0;top:7px;width:22px;height:22px;
 border:2px solid var(--mute);border-radius:50%;color:var(--mute);font:700 12px/18px system-ui,sans-serif;text-align:center}
 ol.seq>li.topic:not(:last-child)::after{content:"";position:absolute;left:10px;top:31px;bottom:-5px;width:2px;background:var(--line)}
-ul.par{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;margin:8px 0}
-ul.par>li.topic{border:1px solid var(--line);border-radius:10px;padding:0 10px 0 8px;background:var(--tile)}
-ul.par>li.topic:has(details[open]){grid-column:1/-1}
+ul.par{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+ul.par>li.topic{flex:1 1 280px;min-width:0;border:1px solid var(--line);border-radius:10px;padding:0 10px 0 8px;background:var(--tile)}
+ul.par>li.topic:has(details[open]){flex-basis:100%}
 /* the milestone timeline */
 .ec{position:relative;--lw:12em;margin:8px 0 6px;font-size:13px}
 .eg{position:absolute;top:0;bottom:18px;left:calc(var(--lw) + 8px);right:8px;pointer-events:none}
@@ -1025,6 +1026,17 @@ def evidence_and_events(db, sec: str, topic: str, m: sqlite3.Row | None, names, 
     return "".join(out)
 
 
+def evidence_fold(db, sec: str, topic: str, m: sqlite3.Row | None, names, succ, shown: set,
+                  other: str = "other event(s)") -> str:
+    """evidence_and_events folded, its counts in the summary (a KPI's and a milestone's)."""
+    cited = json.loads(m["evidence"] or "[]") if m and m["assessment_id"] else []
+    n_other = len({e["id"] for e in topic_events(db, sec, topic)} - set(cited))
+    what = ", ".join(x for x in ((f"{len(cited)} cited by the assessment" if cited else ""),
+                                 (f"{n_other} {other}" if n_other else "")) if x) or "none yet"
+    return (f'<details class="kev"><summary>Evidence and news: {what}</summary><div class="more">'
+            f'{evidence_and_events(db, sec, topic, m, names, succ, shown)}</div></details>')
+
+
 def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, succ, shown: set) -> str:
     """One milestone/challenge, README-style (dot, name, definition, status line); the
     detail (criteria, assessment, evidence) expands."""
@@ -1045,7 +1057,10 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
         body += '<ul class="md">' + "".join(f"<li>{md_inline(d)}</li>" for d in item["details"]) + "</ul>"
     if kind == "milestone":
         body += assessment_html(m) if m else '<div class="gap">not yet assessed</div>'
-    body += evidence_and_events(db, sec, topic, m, names, succ, shown)
+    # a milestone's evidence folds (its detail is criteria + assessment + evidence: long);
+    # a challenge's events are its whole detail
+    body += (evidence_fold(db, sec, topic, m, names, succ, shown) if kind == "milestone"
+             else evidence_and_events(db, sec, topic, m, names, succ, shown))
     return (f'<li class="topic" id="t-{esc(sec)}-{esc(kind)}-{esc(item["slug"])}"><details><summary>{head}</summary>'
             f'<div class="more">{body}</div></details></li>')
 
@@ -1165,17 +1180,19 @@ def eta_chart(sec: str, items: list, by_topic: dict, seq: bool, as_of: dt.date) 
             f'<div class="mute small">{cap}</div>')
 
 
-def kpi_about_html(db, sec: str, about, tiles: dict) -> tuple[str, set[str]]:
+def kpi_about_html(db, sec: str, about, tiles: dict, definition: str = "") -> tuple[str, set[str]]:
     """framework.yaml kpi_about: markdown, or {summary, sections: [{title?, text?, chart?, metrics?}]}
-    (a chart id of views/kpi_charts.py; metrics = tiles shown with the section). Returns the
-    folded explainer and the metrics it placed."""
-    if not about:
+    (a chart id of views/kpi_charts.py; metrics = tiles shown with the section), opened by the
+    KPI's framework definition (the headline tile names it; the precise wording folds here).
+    Returns the folded explainer and the metrics it placed."""
+    if not about and not definition:
         return "", set()
     if isinstance(about, str):
         about = {"sections": [{"text": about}]}
+    about = about or {"summary": "The KPI's precise definition"}
     placed: set[str] = set()
     as_of = D(db.execute("SELECT value FROM build_info WHERE key='as_of'").fetchone()[0])
-    body = []
+    body = [f'<p class="kdef"><b>The KPI, as defined:</b> {md_inline(definition)}</p>'] if definition else []
     for part in about.get("sections") or []:
         if part.get("title"):
             body.append(f'<h4 class="ab">{md_inline(part["title"])}</h4>')
@@ -1192,21 +1209,23 @@ def kpi_about_html(db, sec: str, about, tiles: dict) -> tuple[str, set[str]]:
 
 
 def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set, fsec: dict | None = None) -> str:
-    """The KPI, top down. Shown: its definition, the headline tile(s) next to the status and
-    why (the rationale). Folded: how the KPI is built (framework.yaml kpi_about: the story,
-    charts and the tiles of its parts), how the status was judged (the basis), the evidence
+    """The KPI, top down. Shown: the headline tile(s) next to the status and why (the
+    rationale). Folded: its precise definition and how it is built (framework.yaml kpi_about:
+    the story, charts and the tiles of its parts), how the status was judged (the basis), the evidence
     and news, and the section's other metrics."""
     tiles = db.execute("SELECT * FROM latest_kpi WHERE section=? AND NOT retired "
                        "ORDER BY required DESC, metric", (sec,)).fetchall()
     km = next((m for m in ms if m["kind"] == "kpi"), None)
     assessed = bool(km and km["assessment_id"])
-    out = [f'<div class="kpiblk" id="t-{esc(sec)}-kpi"><div class="kpi"><b>KPI:</b> {md_inline(s["kpi"])}</div>']
+    # the heading only: the headline tile names the metric; the framework's precise
+    # definition opens the folded explainer
+    out = [f'<div class="kpiblk" id="t-{esc(sec)}-kpi"><h3>KPI</h3>']
     heads = [t for t in tiles if t["required"]]
     # shown: the required metric(s) only (or every tile, while none is required); the explainer
     # places its tiles; the rest folds (an overdue or empty one keeps its warning in the fold)
     main = heads or tiles
     about, placed = kpi_about_html(db, sec, (fsec or {}).get("kpi_about"),
-                                   {t["metric"]: t for t in tiles if t not in heads})
+                                   {t["metric"]: t for t in tiles if t not in heads}, s["kpi"])
     main = [t for t in main if t in heads or t["metric"] not in placed]
     rest = [t for t in tiles if t not in main and t["metric"] not in placed]
     status = (f'{dot(km["status"])}<b>{esc(km["label"])}</b> <span class="mute">· assessed {esc(km["made_at"])}</span>'
@@ -1229,12 +1248,7 @@ def kpi_block(db, sec: str, s: sqlite3.Row, ms: list, names, succ, shown: set, f
     if assessed:
         out.append(assessment_html(km, rationale=False,
                                    tech_title="How the status was judged: the data window, the pace benchmark, the rule"))
-    n_cited = len(json.loads(km["evidence"] or "[]")) if assessed else 0
-    n_other = len({e["id"] for e in topic_events(db, sec, "kpi")} - set(json.loads(km["evidence"] or "[]") if assessed else []))
-    what = ", ".join(x for x in ((f"{n_cited} cited by the assessment" if n_cited else ""),
-                                 (f"{n_other} other KPI news" if n_other else "")) if x) or "none yet"
-    out.append(f'<details class="kev"><summary>Evidence and news: {what}</summary><div class="more">'
-               f'{evidence_and_events(db, sec, "kpi", km, names, succ, shown)}</div></details>')
+    out.append(evidence_fold(db, sec, "kpi", km, names, succ, shown, "other KPI news"))
     if rest:
         out.append(f"<details><summary>{len(rest)} more metric(s) we track</summary>"
                    '<div class="tiles">' + "".join(kpi_tile(db, t) for t in rest) + "</div></details>")

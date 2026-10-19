@@ -78,10 +78,12 @@ three latest major (significance 3) events instead of a KPI.
 **Endeavor pane**: its event count, latest news and news per week; the intro
 (Robots and Automation: the group intro, links to its sections, then each
 section with its own activity line), then:
-- **KPI**, top down. Shown: its definition, then the headline tile (the
-  required metric) next to the **status line** (the latest assessment's label)
+- **KPI**, top down. Shown: the headline tile (the required metric; it names
+  what is measured) next to the **status line** (the latest assessment's label)
   and its **rationale**. Folded:
-  - **how the KPI is built** (framework.yaml `kpi_about`: markdown, or
+  - **how the KPI is built**, opened by the KPI's framework definition (its
+    precise wording; without a `kpi_about`, the fold holds just that)
+    (framework.yaml `kpi_about`: markdown, or
     `{summary, sections: [{title, text, chart, metrics}]}`): the derivation
     story, section by section, each with its chart (a `views/kpi_charts.py`
     id) and the tiles of the metrics it explains. Software's charts: the KPI
@@ -131,9 +133,11 @@ section with its own activity line), then:
   no 10% year by 2100 has no bar). A phone keeps
   the 2030 and 2050 labels only. Milestone names link to their entries.
   Then the entries: a sequence as a numbered rail, independent fronts as
-  cards (an opened card spans the row). Each shows its status dot, name and
+  cards that fill their row (an opened card takes a row of its own, and a card
+  left alone before it widens with it). Each shows its status dot, name and
   definition, then the status label, assessment date and event count. Expanded: the
-  precise criteria, the assessment (as for the KPI), the **cited evidence** (every event the assessment cites,
+  precise criteria, the assessment (as for the KPI), then folded, as for the KPI,
+  **evidence and news**: the **cited evidence** (every event the assessment cites,
   whatever its topic tags; one superseded or withdrawn since is flagged), then
   the milestone's latest 5 other events, with a link to the rest in the event
   log. Statuses follow

@@ -342,7 +342,7 @@ def main():
         case("dashboard is self-explanatory: tagline, manifesto, intros, definitions, legend",
              all(s in page for s in ("Tracking humanity&#x27;s progress.", "<p>Science has a communication problem.</p>",
                                      "<p>Fixing the past.</p>", "<b>The Bend:</b> Global emissions peak &amp; decline.",
-                                     "<b>KPI:</b> Atmospheric CO₂", "How to read this page", "<h3>Milestone Countdown</h3>",
+                                     "<h3>KPI</h3>", "<b>The KPI, as defined:</b> Atmospheric CO₂", "How to read this page", "<h3>Milestone Countdown</h3>",
                                      "<h3>Major Open Challenges</h3>", '<div class="crumb">Supplemental</div>')))
         case("dashboard: milestone line shows its status, detail shows rationale + evidence",
              re.search(r'<li class="topic" id="t-climate-milestone-the-bend"><details><summary>'
@@ -417,7 +417,8 @@ def main():
         case("events of a topic the framework no longer lists are not dropped",
              "Events under no current topic: 2" in sec and "cover 88%" in sec)
         case("cited evidence shown under the target even when tagged with another topic",
-             re.search(r"<b>The Balance:</b>.*?Cited evidence \(1\).*?An agency projected", page, re.S) is not None)
+             re.search(r"<b>The Balance:</b>.*?<details class=\"kev\"><summary>Evidence and news: 1 cited by the "
+                       r"assessment.*?Cited evidence \(1\).*?An agency projected", page, re.S) is not None)
         ev_sec = explore.evidence_and_events(
             db, "climate", "milestone:the-balance",
             {"assessment_id": "x", "evidence": '["2026-05-01-pledge-coverage", "nope"]'}, {},
