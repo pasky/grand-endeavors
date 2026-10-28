@@ -279,15 +279,17 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    milestone's pre-anchor p50 before the anchors are read, and `lint` prints
    the anchor-gap and driver warnings about the staged records.
    **Review** (permanent since 2026-10-15, after the manual audit rounds of
-   2026-10-14): when milestones are assessed, a fresh agent in another mode
+   2026-10-14; challenges since 2026-10-28, when an audit of their first
+   assessments changed 4 of 21 colours): when milestones or challenges are
+   assessed, a fresh agent in another mode
    (`ASSESS_REVIEW_MODE`, default `deep`) audits the staged records + notes
    against a checklist and a fixed severity bar, without editing them. MAJOR
    findings get one fix attempt by the assessor (a failed fix restores the
    draft) and one re-review; the rounds are committed as
    `notes/<section>/<run id>.review.md`. Each round ends with a
-   "MAJOR <target>: <n>" line per milestone target and "MAJOR: <n>" (their
+   "MAJOR <target>: <n>" line per milestone or challenge target and "MAJOR: <n>" (their
    total); the file ends with the findings left, in the same format (the last
-   accepted round's counts). `ledger.py check` warns per current milestone
+   accepted round's counts). `ledger.py check` warns per current milestone or challenge
    with MAJOR findings left (files without per-target lines, and rounds whose
    per-target lines do not list exactly the targets or do not add up to the
    total, charge the total to every milestone of the run).

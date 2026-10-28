@@ -531,7 +531,10 @@ goes in the label and the rationale.
 - **Window** \*: `basis.window` = `{from: made_at minus one year, to: made_at}`.
   An event is in it when its `date` overlaps that span (a YYYY or YYYY-MM date
   counts if any part of it does, but ends no later than its publication). The
-  date is when the result happened, not when it was gathered.
+  date is when the result happened, not when it was gathered: when the claim
+  dates the result earlier than the event's `date` (a 2026 paper on a 2024
+  run), the claim's date counts, and a result that falls before the window is
+  context, not an advance.
 - **Advance**: a demonstrated result in the window that moves the problem
   itself: a better measured number on it, a first demonstration, a scale-up, a
   negative result that settles an open question. Announcements, projections,
@@ -545,7 +548,8 @@ goes in the label and the rationale.
   replication, or a third party reporting the result).
 - **Setback**: a result in the window that shows the problem harder or
   further away: a failed trial, a retraction, a safety finding, a flagship
-  programme cancelled for technical reasons.
+  programme cancelled for technical reasons. Look for them among all the
+  section's events in the window, not only those tagged with the challenge.
 
 Decide in this order; the first that holds is the status:
 
@@ -587,4 +591,7 @@ Decide in this order; the first that holds is the status:
   scheduled trial readout, a plant coming online), only when a source names
   one. No forecast years of your own.
 - **basis** \*: `rule`, `window`, `advances`, `setbacks`, `prospects` (one or
-  two sentences: what is next and what to watch), `prev`, `change_note`.
+  two sentences for the reader, shown in the detail: what is next and what to
+  watch, in plain words, no event ids), `prev`, `change_note`.
+- **Review**: the assess run's review stage audits challenge records too
+  (substantive calls, missing setbacks, the status, the numbers).

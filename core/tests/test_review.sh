@@ -14,11 +14,12 @@ sed -n '/^# --- review stage/,/^# --- end review stage ---/p' "$ASSESS" > "$w/bl
 # $6 review-1, $7 fix, $8 review-2 (shell snippets; "$rev" = the report path; set RC/BLOCK),
 # optional $9: one more milestone target
 t() {
-	rm -rf "$w/s"; mkdir -p "$w/s"; echo draft > "$w/s/assessments.jsonl"; echo notes > "$w/s/eta-notes.md"
+	rm -rf "$w/s"; mkdir -p "$w/s"; echo draft > "$w/s/assessments.jsonl"
+	[ -n "${NONOTES:-}" ] || echo notes > "$w/s/eta-notes.md"   # NONOTES: a challenge-only run has no ETA notes
 	(
 		set -eu
 		STAGE="$w/s"; AS="$STAGE/assessments.jsonl"; NOTES_DIR=n; SECTION=x; RUN_ID=r; UNTIL=2026-01-01; ROOT=/r
-		TARGETS="$(printf 'milestone:b|b1\nkpi|k1\nmilestone:a|a1')${9:+
+		TARGETS="$(printf "${TG:-milestone:b|b1\nkpi|k1\nmilestone:a|a1}")${9:+
 $9|x1}"
 		NOTE=""; PI_MODEL="assessor/model"; R1="$6"; FIX="$7"; R2="$8"
 		pi_mode_model() { [ "${NO_MODE:-}" = "" ] && echo "reviewer/model"; }
@@ -45,6 +46,7 @@ $9|x1}"
 		case "$(cat "$w/note")" in *"not restored"*) ok="" ;; esac
 		[ "$(cat "$w/s/assessments.jsonl")" = "$5" ] || ok=""
 		[ ! -e "$w/s/assessments.jsonl.draft" ] || ok=""
+		[ -z "${NONOTES:-}" ] || [ ! -e "$w/s/eta-notes.md" ] || [ -n "${NOTES_OK:-}" ] || ok=""
 	fi
 	if [ -n "$ok" ]; then echo "ok   $1"; else echo "FAIL $1 (exit $got, final '$fin', note '$(cat "$w/note" 2>/dev/null)')"; FAILS=$((FAILS + 1)); fi
 }
@@ -76,6 +78,17 @@ LC_ALL=en_US.UTF-8 t "prefix slugs sort alike in any locale; 0-padded" 0 "MAJOR 
 t "a duplicated target: the total only"              0 "MAJOR: 0" "(review: 0 MAJOR)"             draft 'printf "x\nMAJOR milestone:a: 0\nMAJOR milestone:a: 0\nMAJOR milestone:b: 0\nMAJOR: 0\n" > "$rev"' "" ""
 t "accepted re-review without valid lines: its total, not round 1's lines" \
                                                      0 "MAJOR: 1" "(review: 2 MAJOR, 1 after one fix)" fixed "$M2" "$FIXED" 'printf "x\nMAJOR: 1\n" > "$rev"'
+C0='printf "fine\nMAJOR challenge:a: 0\nMAJOR challenge:b: 0\nMAJOR: 0\n" > "$rev"'
+C1='printf "x\nMAJOR challenge:a: 1\nMAJOR challenge:b: 0\nMAJOR: 1\n" > "$rev"'
+CH='challenge:b|b1\nkpi|k1\nchallenge:a|a1'
+NONOTES=1 TG="$CH" t "challenges without notes: reviewed per target"   0 "MAJOR challenge:a: 0|MAJOR challenge:b: 0|MAJOR: 0" \
+	"(review: 0 MAJOR)" draft "$C0" "" ""
+NONOTES=1 TG="$CH" t "challenges: a failed fix leaves no notes it made" 0 "MAJOR challenge:a: 1|MAJOR challenge:b: 0|MAJOR: 1" \
+	"fix failed" draft "$C1" 'echo r > "$STAGE/eta-notes.md"; '"$FIXED; RC=1" ""
+NONOTES=1 NOTES_OK=1 TG="$CH" t "challenges: a fix may answer in new notes" 0 "MAJOR challenge:a: 0|MAJOR challenge:b: 0|MAJOR: 0" \
+	"(review: 1 MAJOR, 0 after one fix)" fixed "$C1" 'echo r > "$STAGE/eta-notes.md"; '"$FIXED" "$C0"
+NONOTES=1 TG="$CH" t "challenges: a reviewer that creates notes aborts the run" 1 "" "" "" \
+	'echo x > "$STAGE/eta-notes.md"; '"$C0" "" ""
 
 rm -rf "$w"
 echo "$FAILS failure(s)"

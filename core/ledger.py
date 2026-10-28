@@ -1107,7 +1107,7 @@ def check_notes(section: str, ass: list[dict]) -> list[str]:
     warns = []
     for t, a in sorted(latest.items(), key=lambda kv: str(kv[0])):
         run = assess_run(a)
-        major = review_major(section, run, str(t)) if str(t).startswith("milestone:") and run else None
+        major = review_major(section, run, str(t)) if str(t).startswith(("milestone:", "challenge:")) and run else None
         if major:  # whatever the status
             warns.append(f"assessment {a.get('id')}: current {t} has {major} unresolved "
                          f"MAJOR review finding(s) in {os.path.relpath(review_path(section, run), DATA)}")
