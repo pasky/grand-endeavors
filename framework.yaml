@@ -188,7 +188,7 @@ endeavors:
               maintainers judge an openly AI-submitted patch on its merits (no blanket ban on
               AI-written code, no human-submitter rule); it tracks AI engineering capability,
               not project policy.
-            precursors: [ai-contribution-lines-merged-max]
+            precursors: [ai-contribution-lines-merged-max, ai-submitted-lines-merged-max]
           - slug: the-nature-author
             name: First Automated Scientist
             description: >-
@@ -208,7 +208,7 @@ endeavors:
           - slug: the-10m-solopreneur
             name: Automated Economy Kickoff
             description: A single-person company reaches $10M ARR with <10 hours/week human oversight.
-            precursors: [solo-company-arr-max]
+            precursors: [solo-company-arr-max, unattended-business-arr-max]
             details:
               - >-
                 Single person: no employees, and no contractors running its operations (incidental

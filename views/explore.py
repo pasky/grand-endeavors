@@ -752,15 +752,15 @@ def human_value(value_text, unit, metric: str | None = None) -> tuple[str, str]:
     return str(value_text), unit
 
 
-def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
+def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row, empty: str = "no data yet") -> str:
     """A metric: its name (id + definition as the tooltip), the latest value, the period
     it is for, its source, the like-for-like change of a monthly series, the series,
-    and when the next value is due."""
+    and when the next value is due. `empty`: what a series without values says."""
     head = (f'<div class="m" title="{esc(k["metric"])}: {esc(k["definition"])}">'
             f'{esc(metric_label(k["section"], k["metric"], k["definition"]))}</div>')
     if k["obs"] is None:
         return (f'<div class="tile nodata">{head}<div class="v gap">—</div>'
-                f'<div class="gap">no data yet</div><div class="d">{esc(k["unit"])}, {esc(k["cadence"])}</div></div>')
+                f'<div class="gap">{esc(empty)}</div><div class="d">{esc(k["unit"])}, {esc(k["cadence"])}</div></div>')
     v, u = human_value(k["value_text"], k["unit"], k["metric"])
     body = (f'<div class="v" title="{esc(k["value_text"])} {esc(k["unit"])}">{esc(v)} <small>{esc(u)}</small></div>'
             + ladder_html(k["value_text"], k["metric"]) +
@@ -1095,8 +1095,9 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
         body += '<ul class="md">' + "".join(f"<li>{md_inline(d)}</li>" for d in item["details"]) + "</ul>"
     pre = [t for m_id in item.get("precursors") or [] for t in db.execute(
         "SELECT * FROM latest_kpi WHERE section=? AND metric=? AND NOT retired", (sec, m_id))]
-    if pre:   # the milestone's precursor ladder: the best achieved so far
-        body += ('<h4>Closest so far</h4><div class="tiles">' + "".join(kpi_tile(db, t) for t in pre) + "</div>")
+    if pre:   # the milestone's precursor ladder: the best achieved so far (a record series
+        # without values: nothing has qualified yet, not missing data)
+        body += ('<h4>Closest so far</h4><div class="tiles">' + "".join(kpi_tile(db, t, empty="none qualifies yet") for t in pre) + "</div>")
     if kind == "milestone":
         body += assessment_html(m) if m else '<div class="gap">not yet assessed</div>'
     # a milestone's evidence folds (its detail is criteria + assessment + evidence: long);

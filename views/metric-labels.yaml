@@ -32,9 +32,11 @@ robots-software:
   metr-80-horizon-by-release: AI task horizon at 80% success, by model release
   metr-50-horizon-by-release: AI task horizon at 50% success, by model release
   metr-50-horizon-frontier: AI task horizon at 50% success, frontier as evaluated
-  ai-contribution-lines-merged-max: Largest AI-written code contribution merged (lines)
+  ai-contribution-lines-merged-max: Largest AI-written contribution a person submitted and independent maintainers merged (lines)
+  ai-submitted-lines-merged-max: Largest contribution an AI agent submitted and saw through review itself, merged by independent maintainers (lines)
   ai-paper-venue-tier-max: Most prestigious venue that has accepted an AI-generated paper
   solo-company-arr-max: Highest reported ARR of a one-person company
+  unattended-business-arr-max: Highest annualized revenue of a business an AI runs, covering its costs, on under 10 h/week of human time
 robots-hardware:
   gp-deployments: General-purpose robots at work, deployments (one maker at one customer)
   gp-deployment-pairs: General-purpose robot deployments ever documented (superseded by gp-deployments)
