@@ -100,7 +100,8 @@ section with its own activity line), then:
   - **KPI tiles**: a tile shows the metric's name (`views/metric-labels.yaml`;
     hover: its id and full registry definition), the latest value (minutes
     from 2 hours on shown as hours, a value in hours under 1 hour as minutes, a ladder
-    metric (`_levels` in metric-labels.yaml) as "1 of 4" and the rung's name; hover: the
+    metric (`_levels` in metric-labels.yaml) as its rung's name, with the whole ladder under it
+    (lowest first, the rungs reached in bold); hover: the
     recorded value), the period it is for (hover: when it was published), a `source` link and a `legacy`
     badge for values from the unverified 2025 report; for monthly series the
     like-for-like change vs the same month a year earlier (the change vs the

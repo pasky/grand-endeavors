@@ -613,11 +613,14 @@ def main():
              and explore.human_value("185.91", "min") == ("3.1", "hours")
              and explore.human_value("90", "min") == ("90", "min") and explore.human_value("89", "s") == ("89", "s")
              and explore.human_value("9.567", "h") == ("9.6", "hours") and explore.human_value("0.225", "h") == ("14", "min"))
-        explore.METRIC_LEVELS["lad"] = ["low", "high"]
+        explore.METRIC_LEVELS["lad"] = ["Low", "Mid", "High"]
         try:
-            case("a ladder metric (metric-labels _levels) reads 'n of N' and the rung's name (off the ladder: the unit)",
-                 explore.human_value("2", "tier", "lad") == ("2 of 2", "high")
-                 and explore.human_value("3", "tier", "lad") == ("3 of 2", "tier"))
+            lad = explore.ladder_html("2", "lad")
+            case("a ladder metric (metric-labels _levels) reads as its rung's name, the ladder lowest first, reached rungs bold",
+                 explore.human_value("2", "tier", "lad") == ("Mid", "")
+                 and "rung 2 of 3" in lad and lad.index("<b>Low</b>") < lad.index("<b>Mid</b>") < lad.index(">High<")
+                 and "<b>High</b>" not in lad
+                 and explore.human_value("4", "tier", "lad") == ("4", "tier") and explore.ladder_html("4", "lad") == "")
         finally:
             del explore.METRIC_LEVELS["lad"]
         bend = re.search(r'<li class="topic" id="t-climate-milestone-the-bend">.*?</li>', page, re.S)[0]

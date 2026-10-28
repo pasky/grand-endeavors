@@ -711,17 +711,35 @@ def sparkline(points: list[tuple[dt.date, float]], kind: str = "", w: int = 200,
             f'<circle cx="{sx(d):.1f}" cy="{sy(v):.1f}" r="2.5" fill="currentColor"/>{"".join(hov)}</svg>')
 
 
+def ladder_rung(value_text, metric: str | None) -> int | None:
+    """The rung (1 = lowest) a ladder metric's value stands for (metric-labels.yaml _levels),
+    None for any other metric or a value off the ladder."""
+    levels = METRIC_LEVELS.get(metric or "")
+    try:
+        n = int(float(value_text)) if levels else 0
+    except (TypeError, ValueError):
+        return None
+    return n if 1 <= n <= len(levels or []) else None
+
+
+def ladder_html(value_text, metric: str) -> str:
+    """A ladder metric's rungs, lowest first, the ones reached in bold (empty for any other
+    metric)."""
+    if (n := ladder_rung(value_text, metric)) is None:
+        return ""
+    steps = [f'<b>{esc(x)}</b>' if i < n else f'<span class="mute">{esc(x)}</span>'
+             for i, x in enumerate(METRIC_LEVELS[metric])]
+    return (f'<div class="d" title="the ladder, lowest rung first; reached so far in bold">'
+            f'rung {n} of {len(steps)}: {" → ".join(steps)}</div>')
+
+
 def human_value(value_text, unit, metric: str | None = None) -> tuple[str, str]:
     """A value in a readable unit: minutes from 2 hours on as hours (METR task horizons:
     1044.78 min -> 17.4 hours); hours (task horizons: 9.567 h) as hours, under 1 hour as minutes
     (1.79 h stays 1.8 hours, as the assessment label quotes it); a level of a ladder
-    (metric-labels.yaml _levels) as 'n of N' and its name."""
-    if (levels := METRIC_LEVELS.get(metric or "")):
-        try:
-            n = int(float(value_text))
-        except (TypeError, ValueError):
-            return str(value_text), unit
-        return f"{n} of {len(levels)}", (levels[n - 1] if 1 <= n <= len(levels) else unit)
+    (metric-labels.yaml _levels) as its rung's name."""
+    if (n := ladder_rung(value_text, metric)) is not None:
+        return METRIC_LEVELS[metric][n - 1], ""
     if unit in ("min", "minutes", "h"):
         try:
             v = float(value_text) * (60 if unit == "h" else 1)
@@ -745,6 +763,7 @@ def kpi_tile(db: sqlite3.Connection, k: sqlite3.Row) -> str:
                 f'<div class="gap">no data yet</div><div class="d">{esc(k["unit"])}, {esc(k["cadence"])}</div></div>')
     v, u = human_value(k["value_text"], k["unit"], k["metric"])
     body = (f'<div class="v" title="{esc(k["value_text"])} {esc(k["unit"])}">{esc(v)} <small>{esc(u)}</small></div>'
+            + ladder_html(k["value_text"], k["metric"]) +
             f'<div class="d"><span title="published {esc(k["known_at"])}">{esc(fmt_period(k["obs"]))}</span> · '
             f'{link(k["source"], "source")}{badge("legacy") if k["verification"] == "legacy" else ""}</div>')
     if k["year_ago_obs"] is not None and k["unit"] != "doublings":  # monthly: the like-for-like change (the
