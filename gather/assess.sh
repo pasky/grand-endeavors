@@ -1,12 +1,12 @@
 #!/bin/sh
-# Grand Endeavors — ASSESS: (re)judge KPI/milestone status under RUBRIC.md.
+# Grand Endeavors — ASSESS: (re)judge KPI/milestone/challenge status under RUBRIC.md.
 # =============================================================================
 # Normally called by gather.sh for targets with new evidence (ledger.py stale).
 # Standalone uses: re-assessment after a rubric change, or backfilling statuses.
 #
 # USAGE:  gather/assess.sh <section>
 # ENV:    UNTIL=YYYY-MM-DD   assessment as-of date = made_at (default: today UTC)
-#         FORCE=1            assess ALL targets (kpi + milestones), not just stale ones
+#         FORCE=1            assess ALL targets (kpi, milestones, challenges), not just stale ones
 #         CORRECTION=1       records are rubric corrections (RUBRIC.md rule 4:
 #                            once per target per rubric version, no new-evidence claim)
 #         DEFCHANGE=<commit> the framework.yaml definition of the targets changed in that
@@ -89,7 +89,7 @@ in $ROOT/gather/RUBRIC.md (read it fully; it is binding). Targets (target|assess
 $TARGETS
 
 Inputs:
-- $ROOT/framework.yaml: the "$SECTION" KPI and milestone definitions (their literal wording).
+- $ROOT/framework.yaml: the "$SECTION" KPI, milestone and challenge definitions (their literal wording).
 - KPI spec (fixed; do not choose your own metric, window or benchmark):
 $SPEC
 - Evidence: the effective events in ledger/events/$SECTION.jsonl with published <= $UNTIL.
@@ -156,6 +156,10 @@ Exponential quantities must be extrapolated exponentially.
 A milestone with an "assumes:" entry in framework.yaml is judged as if that assumption held
 (RUBRIC.md §4.2): the gate never blocks it, basis.eta.assumes repeats it, the label says
 "ETA ~YYYY*" (or "P(by 2100) NN%*" without a median), and basis.blockers reports the gate's real state.
+Open challenges (targets challenge:<slug>): follow RUBRIC.md §7, not the ETA steps (no eta-notes
+section, no forecast): list the window's advances (each marked substantive or not) and setbacks
+from the challenge's events in basis, choose the status they imply, and write the label and
+rationale as current status and prospects. Judge results, never the number of events.
 If the rubric cannot judge a target (e.g. its KPI series does not cover the
 window), write status "unknown" with the label "Unassessed: <reason>" and the
 basis keys rule, reason, prev and change_note (evidence may be empty). Never
@@ -166,7 +170,7 @@ target, status (green|yellow|red, or achieved for milestones), label
 ("<Verdict>: ..." per RUBRIC.md, at most 100 chars), made_at "$UNTIL", rationale
 (2-4 sentences for a general reader, consistent with basis: RUBRIC.md §6), evidence [event ids], by
 "$BY", rubric "$RUBRIC", basis (the keys $ROOT/DESIGN.md §3 "Assessment" lists for
-KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
+KPI, milestone or challenge targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
 Validate until 0 errors, and fix the WARN lines it prints about your records (an unexplained
 anchor gap, an unnamed shared driver):
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
@@ -368,9 +372,9 @@ Read, as a general reader of the dashboard, the status label and rationale of ea
 another agent just staged for "$SECTION" in $AS (one JSON object per line). Do NOT modify any file in
 $STAGE; write only $1.
 What the dashboard shows: the KPI's name and definition ($ROOT/framework.yaml), its label and, always
-visible, its rationale; a milestone's name, definition and label, with its rationale shown once the
-reader opens the milestone. The reader is smart and technical but not a specialist; the numbers'
-derivation (basis) is folded away. Writing rules: $ROOT/gather/RUBRIC.md §6 (label, rationale).
+visible, its rationale; a milestone's or challenge's name, definition and label, with its rationale
+shown once the reader opens it. The reader is smart and technical but not a specialist; the numbers'
+derivation (basis) is folded away. Writing rules: $ROOT/gather/RUBRIC.md §6 (label, rationale; challenges also §7).
 First read each record whole, as an editor: does it tell this reader what the level means in the
 world, how fast it moves, and why that earns its status? Is it the text they would want to read?
 Then ask of every sentence and label clause what it tells this reader, and whether they would miss

@@ -475,6 +475,10 @@ border:1px solid currentColor;vertical-align:1px}.b-legacy{color:var(--legacy);b
 .b-verified,.b-corrected,.b-collector{color:var(--green)}.b-req{color:var(--acc)}
 .nc{opacity:.75}.b-nc{color:var(--mute);font-size:10px}
 .dot{display:inline-block;flex:none;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
+.mo{display:inline-flex;flex:none;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;
+margin-right:6px;font-size:12px;line-height:1;vertical-align:-4px}.m-green{background:color-mix(in srgb,var(--green) 28%,transparent)}
+.m-yellow{background:color-mix(in srgb,var(--yellow) 32%,transparent)}.m-red{background:color-mix(in srgb,var(--red) 28%,transparent)}
+.m-unknown{background:color-mix(in srgb,var(--unk) 40%,transparent)}
 .s-green{background:var(--green)}.s-yellow{background:var(--yellow)}.s-red{background:var(--red)}.s-achieved{background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 5.2l1.8 1.8 3.3-3.6' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") center/100% no-repeat}.s-unknown{background:var(--unk)}
 .s-none{border:2px dashed var(--mute)}ul{padding-left:0;list-style:none;margin:0}
 li.ms,li.ev{padding:5px 0;border-bottom:1px solid var(--line)}li.ev .meta{font-size:12px;color:var(--mute)}
@@ -907,7 +911,13 @@ STATUS_WORDS = {"green": "on track or ahead", "yellow": "progressing, behind pac
 BASIS_LABELS = {"eta": "ETA", "path": "Path", "blockers": "Blockers", "assessed_quantity": "Assessed quantity",
                 "window": "Window", "benchmark": "Benchmark", "benchmark_source": "Benchmark source",
                 "transients_discounted": "Transients discounted", "data_as_of": "Data as of",
+                "advances": "Advances in the window", "setbacks": "Setbacks in the window", "prospects": "Prospects",
                 "reason": "Reason", "change_note": "Change", "rule": "Rubric rule"}
+# an open challenge's momentum (gather/RUBRIC.md §7): its status as an animal on the status colour
+MOMENTUM = {"green": ("🐇", "advancing: a real step forward in the last 12 months"),
+            "yellow": ("🐢", "inching: only small steps in the last 12 months"),
+            "red": ("🧱", "stalled or set back: no real headway, or setbacks outweighed advances, in the last 12 months"),
+            "unknown": ("❔", "unassessed: too little evidence to judge yet")}
 
 
 ETA_LABELS = {"method": "ETA method", "calc": "ETA calculation", "cruxes": "ETA cruxes"}
@@ -967,9 +977,25 @@ def dot(status, title: str | None = None) -> str:
     return f'<span class="dot s-{esc(st)}" title="{esc(title or STATUS_WORDS.get(st, "not yet assessed"))}"></span>'
 
 
+CHALLENGE_KEY = (("green", "a real step forward"), ("yellow", "only small steps"), ("red", "stalled or set back"))
+
+
+def momentum(status, title: str | None = None) -> str:
+    """An open challenge's status marker (MOMENTUM); empty when not yet assessed."""
+    if status not in MOMENTUM:
+        return ""
+    sym, words = MOMENTUM[status]
+    return f'<span class="mo m-{esc(status)}" role="img" title="{esc(title or words)}" aria-label="{esc(words)}">{sym}</span>'
+
+
+def marker(status, kind: str | None, title: str | None = None) -> str:
+    """A target's status marker: an open challenge's momentum, else the status dot."""
+    return momentum(status, title) if kind == "challenge" else dot(status, title)
+
+
 def assessment_note(m) -> str:
     """The previous status if it changed, and a legacy-only flag (a small line, or "")."""
-    prev = (f'Previously {dot(m["prev_status"])}{esc(m["prev_status"])} (assessed {esc(m["prev_made_at"])}).'
+    prev = (f'Previously {marker(m["prev_status"], m["kind"])}{esc(m["prev_status"])} (assessed {esc(m["prev_made_at"])}).'
             if m["prev_status"] and m["prev_status"] != m["status"] else "")
     note = " ".join(x for x in (prev, badge("legacy") + " rests on unverified evidence only"
                                 if m["legacy_evidence"] else "") if x)
@@ -1082,11 +1108,12 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
     # events = tagged with the topic, or cited by its assessment
     evs = {e["id"] for e in topic_events(db, sec, topic)}
     evs |= set(json.loads(m["evidence"] or "[]")) if m and m["assessment_id"] else set()
-    head = (f'{dot(m["status"]) if (m and m["assessment_id"]) else (dot(None) if kind == "milestone" else "")}'
+    assessed = bool(m and m["assessment_id"])
+    head = (f'{marker(m["status"], kind) if assessed else (dot(None) if kind == "milestone" else "")}'
             f'<b>{md_inline(item["name"])}:</b> {md_inline(item["description"])}')
-    if kind == "milestone":
+    if kind == "milestone" or assessed:
         st = (f'{esc(m["label"])} <span class="mute">· assessed {esc(m["made_at"])}</span>'
-              if m and m["assessment_id"] else '<span class="gap">not yet assessed</span>')
+              if assessed else '<span class="gap">not yet assessed</span>')
         head += f'<span class="st">{st} <span class="mute">· {len(evs)} event(s)</span></span>'
     else:
         head += f'<span class="st mute">{len(evs)} event(s)</span>'
@@ -1099,6 +1126,8 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
         body += ('<h4>Closest so far</h4><div class="tiles">' + "".join(kpi_tile(db, t) for t in pre) + "</div>")
     if kind == "milestone":
         body += assessment_html(m) if m else '<div class="gap">not yet assessed</div>'
+    elif assessed:
+        body += assessment_html(m, tech_title="How the momentum was judged: advances, setbacks and prospects")
     # a milestone's evidence folds (its detail is criteria + assessment + evidence: long);
     # a challenge's events are its whole detail
     body += (evidence_fold(db, sec, topic, m, names, succ, shown) if kind == "milestone"
@@ -1421,7 +1450,11 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
         ordered = items if kind == "challenge" or seq else eta_order(items, by_topic)
         lis = [topic_li(db, sec, it, by_topic.get(f"{kind}:{it['slug']}"), kind, names, succ, shown) for it in ordered]
         if kind == "challenge":
-            out.append(f'<h3>{md_inline(title)}</h3><ul class="topics">{"".join(lis)}</ul>')
+            key = ""
+            if any((by_topic.get(f"challenge:{it['slug']}") or {"assessment_id": None})["assessment_id"] for it in items):
+                key = ('<div class="mute small">Momentum over the last 12 months: '
+                       + " · ".join(f"{momentum(st)}{esc(w)}" for st, w in CHALLENGE_KEY) + "</div>")
+            out.append(f'<h3>{md_inline(title)}</h3>{key}<ul class="topics">{"".join(lis)}</ul>')
             continue
         as_of = D(db.execute("SELECT value FROM build_info WHERE key='as_of'").fetchone()[0])
         out.append(f'<h3>{md_inline(title)}</h3><div class="mute small">'
@@ -1563,6 +1596,8 @@ def legend_html() -> str:
         f"<li>{dot(None)}<b>not yet assessed</b></li></ul>"
         "<p>A KPI's status is its <i>pace</i> toward the goal versus the pace the goal needs, not its level. "
         "A milestone's status is its evidence-based ETA. A status changes only on newer evidence.</p>"
+        "<p>An open challenge's status is its <i>momentum</i> over the last 12 months, not how close it is "
+        "to being solved: " + ", ".join(f"{momentum(st)}{esc(w)}" for st, w in CHALLENGE_KEY) + ".</p>"
         "<p>An endeavor's milestones are either a <b>sequence</b> (each expected after the one before: "
         "numbered, joined by a line) or <b>independent fronts</b> (any order: cards). Its timeline puts "
         "them on one time axis: the median year and the 80% range of each ETA.</p>"
@@ -1802,11 +1837,11 @@ def stream_html(db: sqlite3.Connection, as_of: dt.date, where: dict[str, tuple[s
         sec = c["section"]
         pane, title = where[sec]
         a = f't-{sec}-{c["target"].replace(":", "-")}'
-        frm = f'{dot(c["prev"])}→' if c["prev"] else '<span class="mute">first assessed</span> '
+        frm = f'{marker(c["prev"], c["kind"])}→' if c["prev"] else '<span class="mute">first assessed</span> '
         items.append((c["day"], 0,
                       f'<li class="si chg x-{esc(pane)}"><a href="#{esc(a if a in anchors else sec)}">'
                       f'<span class="sm">{icon(sec)} {esc(title)} · status change</span>'
-                      f'<span class="cl">{frm}{dot(c["status"])} <b>{plain_md(c["name"])}</b>: '
+                      f'<span class="cl">{frm}{marker(c["status"], c["kind"])} <b>{plain_md(c["name"])}</b>: '
                       f'{esc(c["label"])}</span></a></li>'))
     for e in evs:
         sec, sig = e["section"], int(e["significance"] or 0)

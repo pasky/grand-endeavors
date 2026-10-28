@@ -1,6 +1,6 @@
 # Status rubric (v6)
 
-Every KPI and milestone in framework.yaml carries a **status**: a colour plus a
+Every KPI, milestone and open challenge in framework.yaml carries a **status**: a colour plus a
 one-line label such as "Off track: 421 ppm, +2.4 ppm/yr vs ≤0 needed". This
 file defines how that status is chosen, so it means the same thing across
 sections and runs and does not flap.
@@ -36,7 +36,9 @@ similar event); every failure scenario of 10 % or more
 names its reference class with counts (§4.1 step 5); clarified 2026-10-16
 (owner): attempts that cost a gatekeeper's goodwill, such as AI patches and
 papers, are not freely repeatable, so they use the 80 % level (§4.1 step 3).
-KPI rules are
+Extended 2026-10-19 (owner): open challenges get a status, their momentum
+over the last 12 months (§7); a new kind of target, so the KPI and
+milestone rules are unchanged and it is not a new version. KPI rules are
 unchanged in v2–v6. Any change in meaning is a new rubric version (rule 4).
 
 ## 1. What the colours mean
@@ -46,6 +48,8 @@ A status answers a different question for each kind of target:
   status scores the **trend**, never the level.
 - **Milestone**: on today's evidence, **when** do we get there? The answer is
   the median of a reasoned forecast (§4.1), not a pessimistic bound.
+- **Open challenge**: did the field make real headway on it in the last 12
+  months? Momentum, never distance to a solution; its own verdict words (§7).
 
 | status | KPI | milestone | label starts with |
 |---|---|---|---|
@@ -393,10 +397,12 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
 
 1. \* A status change needs at least one evidence record with known_at after
    the previous assessment's made_at. For a KPI, a newer observation of its
-   assessed metric also counts. Exceptions: a rubric correction (rule 4), an
+   assessed metric also counts; for a challenge, an advance or setback the
+   previous assessment relied on that has since left the 12-month window (§7).
+   Exceptions: a rubric correction (rule 4), an
    audit correction (rule 8), and moves to or from `unknown`.
 2. The trigger must hold for a full window (KPI) or be a verified event
-   (milestone). One observation never flips a status.
+   (milestone, challenge). One observation never flips a status.
 3. Reverting to the previous status within 12 months requires naming the
    observation that reversed it and explaining why the earlier change was not
    a transient.
@@ -512,3 +518,69 @@ exponential *is* evidence, and it must be extrapolated as an exponential.
   ~2034*" under an assumed gate); without a median it quotes the chance:
   "..., P(by 2100) 20%". `ledger.py check` warns when the latest
   assessment of a gated milestone lacks the asterisk or `basis.eta.assumes`.
+
+## 7. Challenge rules (momentum over 12 months)
+
+An open challenge (framework.yaml `challenges:`; fusion's tech-tree branches
+too) is a problem with no finish line: no ETA and no `achieved`. Its status
+answers one question: **over the 12 months to made_at, did the field make
+real headway on the problem, as the framework's description words it?** It
+scores momentum, never how far the problem is from solved; where it stands
+goes in the label and the rationale.
+
+- **Window** \*: `basis.window` = `{from: made_at minus one year, to: made_at}`.
+  An event is in it when its `date` overlaps that span (a YYYY or YYYY-MM date
+  counts if any part of it does). The date is when the result happened, not
+  when it was published or gathered.
+- **Advance**: a demonstrated result in the window that moves the problem
+  itself: a better measured number on it, a first demonstration, a scale-up, a
+  negative result that settles an open question. Announcements, projections,
+  plans, funding and orders are not advances, and neither is a result on a
+  neighbouring problem. They may inform the prospects.
+- **Substantive advance**: a step change rather than a refinement (a new
+  capability or regime, a multi-fold gain on a measured quantity, an
+  independent replication that turns a claim into an established result),
+  from a verified (non-legacy) event, and resting on more than its
+  proponent's word (peer review, an independent benchmark or measurement, a
+  replication, or a third party reporting the result).
+- **Setback**: a result in the window that shows the problem harder or
+  further away: a failed trial, a retraction, a safety finding, a flagship
+  programme cancelled for technical reasons.
+
+| status | verdict | when \* |
+|---|---|---|
+| green | Advancing | at least one substantive advance |
+| yellow | Inching | advances, none of them substantive |
+| red | Stalled | no advance in the window |
+| red | Setback | the window's setbacks outweigh its advances (at least one setback) |
+| unknown | Unassessed | no verified event on the challenge at all |
+
+- \* The status must agree with `basis.advances` (`{event, what,
+  substantive}`) and `basis.setbacks` (`{event, what}`): green needs a
+  substantive advance, yellow advances and none substantive, Stalled none,
+  Setback a setback. Every listed event is in `evidence` and in the window.
+  A substantive advance with a status other than green needs the Setback
+  verdict, and the rationale says why the setback weighs more.
+- Stalled still cites evidence: the latest events that show where the problem
+  stands, even from before the window.
+- **Never count events.** How many events the ledger holds reflects the news
+  gathering (one backfill search before October 2026, the daily runs since),
+  not the field's activity. For the same reason, do not compare the window
+  with the 12 months before it.
+- A branch of a tech tree (fusion) is judged the same way; its prospects may
+  say how it compares with the other branches.
+- **Aging** \*: an advance or setback that leaves the window re-opens the
+  challenge (`ledger.py stale`), and its status may then change without new
+  evidence (rule 1).
+- **label** = "<Verdict>: <the window's key result>; <what still blocks>", at
+  most 100 chars (what still blocks, not how far from done), in plain words for a reader who sees only the
+  challenge's name and description ("Advancing: models now catch most of
+  their own errors; hours-long tasks still derail").
+- **rationale**, 2–3 sentences, under the same writing rules as §6 (no ids,
+  rule descriptions or run bookkeeping): (1) the window's key advance or
+  setback, as news about the world, with when; (2) what still stands in the
+  way; (3) the prospects: the next result that would show it moving (a
+  scheduled trial readout, a plant coming online), only when a source names
+  one. No forecast years of your own.
+- **basis** \*: `rule`, `window`, `advances`, `setbacks`, `prospects` (one or
+  two sentences: what is next and what to watch), `prev`, `change_note`.

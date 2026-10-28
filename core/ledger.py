@@ -74,7 +74,11 @@ ETA_KEYS = {"p10", "p50", "p90", "method", "calc", "cruxes"}  # rubric v2+: mile
 VERDICTS = {"green": ("Ahead", "On track"), "yellow": ("Behind pace", "Progressing"),
             "red": ("Off track", "Stalled", "Regressing", "Distant", "Blocked"), "achieved": ("Achieved",),
             "unknown": ("Unassessed",)}
+# gather/RUBRIC.md §7: an open challenge's status is its momentum over the last 12 months
+CHALLENGE_VERDICTS = {"green": ("Advancing",), "yellow": ("Inching",), "red": ("Stalled", "Setback"),
+                      "unknown": ("Unassessed",)}
 BASIS_UNKNOWN = {"rule", "reason", "prev", "change_note"}
+BASIS_CHALLENGE = {"rule", "window", "advances", "setbacks", "prospects", "prev", "change_note"}
 BASIS_KPI = {"rule", "assessed_quantity", "window", "benchmark", "benchmark_source",
              "transients_discounted", "data_as_of", "prev", "change_note"}
 BASIS_MILESTONE = {"rule", "eta", "path", "blockers", "prev", "change_note"}
@@ -151,6 +155,27 @@ def date_end(s: str) -> dt.date:
     """Last day covered by a YYYY / YYYY-MM / YYYY-MM-DD date."""
     import kpi
     return kpi.obs_range(s)[1]
+
+
+def momentum_from(made_at: dt.date) -> dt.date:
+    """gather/RUBRIC.md §7: a challenge's window is the 12 months after this day, up to made_at."""
+    try:
+        return made_at.replace(year=made_at.year - 1)
+    except ValueError:  # 29 February
+        return made_at.replace(year=made_at.year - 1, day=28)
+
+
+def in_momentum_window(date: str, made_at: dt.date) -> bool:
+    """An event's date (YYYY / YYYY-MM / YYYY-MM-DD) overlaps the window (momentum_from, made_at]."""
+    import kpi
+    start, end = kpi.obs_range(date)
+    return end > momentum_from(made_at) and start <= made_at
+
+
+def momentum_events(a: dict) -> list[str]:
+    """The event ids a challenge assessment's basis lists as advances or setbacks."""
+    basis = a.get("basis") if isinstance(a.get("basis"), dict) else {}
+    return [x.get("event") for k in ("advances", "setbacks") for x in basis.get(k) or [] if isinstance(x, dict)]
 
 
 # --- framework (framework.yaml: the endeavor definitions) ---------------------
@@ -562,6 +587,43 @@ def check_eta(at: str, eta, status: str, made_at: str, rubric: str = RUBRIC) -> 
     return errs
 
 
+def check_momentum(at: str, a: dict, basis: dict, evs: dict[str, dict]) -> list[str]:
+    """gather/RUBRIC.md §7: a challenge's basis.window is the 12 months to made_at; its advances and
+    setbacks are evidence events dated in it, and the verdict follows from them."""
+    made = day(a["made_at"])
+    errs = []
+    want = {"from": str(momentum_from(made)), "to": a["made_at"]}
+    if basis["window"] != want:
+        errs.append(f"{at}: basis.window must be {want} (the 12 months to made_at; gather/RUBRIC.md §7)")
+    items = {}
+    for k in ("advances", "setbacks"):
+        xs = basis[k]
+        if not isinstance(xs, list) or not all(isinstance(x, dict) and x.get("event") and x.get("what") for x in xs):
+            errs.append(f"{at}: basis.{k} must be a list of {{event, what"
+                        + (", substantive}" if k == "advances" else "}") + " objects (may be empty)")
+            return errs
+        if k == "advances" and not all(isinstance(x.get("substantive"), bool) for x in xs):
+            errs.append(f"{at}: every basis.advances item needs substantive: true|false")
+        items[k] = xs
+        for x in xs:
+            eid = x["event"]
+            if eid not in (a.get("evidence") or []):
+                errs.append(f"{at}: basis.{k} event '{eid}' is not in evidence")
+            elif eid in evs and _valid_date(evs[eid].get("date", "")) and not in_momentum_window(evs[eid]["date"], made):
+                errs.append(f"{at}: basis.{k} event '{eid}' (dated {evs[eid]['date']}) is outside the window "
+                            f"{want['from']}..{want['to']}")
+    verdict = str(a["label"]).split(":", 1)[0]
+    big = any(x.get("substantive") is True for x in items["advances"])
+    rule = {"green": (big, "needs a substantive advance"),
+            "yellow": (items["advances"] and not big, "needs advances, none of them substantive"),
+            "red": ((not items["advances"]) if verdict == "Stalled" else bool(items["setbacks"]),
+                    "Stalled needs no advance" if verdict == "Stalled" else "Setback needs a setback")}
+    ok, why = rule.get(a["status"], (True, ""))
+    if not ok:
+        errs.append(f"{at}: {a['status']} ({verdict}) {why} in basis (gather/RUBRIC.md §7)")
+    return errs
+
+
 def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[str]:
     """made_at = the as-of date of the evidence considered (not wall-clock), so
     every evidence event must be known by then; `by` records the actual run."""
@@ -587,14 +649,16 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
         if a["rubric"] not in RUBRICS:
             errs.append(f"{at}: unknown rubric '{a['rubric']}'")
         else:
-            words = VERDICTS.get(a["status"], ())
+            challenge = str(a["target"]).startswith("challenge:")
+            words = (CHALLENGE_VERDICTS if challenge else VERDICTS).get(a["status"], ())
             verdict_part = re.sub(r"^Stale \(data to \d{4}(-\d{2})?\): ", "", str(a["label"]))  # gather/RUBRIC.md stale prefix
             if not any(verdict_part.startswith(w + ":") for w in words):
                 errs.append(f"{at}: label must start with a verdict bound to '{a['status']}': "
                             + ", ".join(f"'{w}:'" for w in words))
             if len(str(a["label"])) > 100:
                 errs.append(f"{at}: label longer than 100 chars")
-            want = BASIS_UNKNOWN if a["status"] == "unknown" else BASIS_KPI if a["target"] == "kpi" else BASIS_MILESTONE
+            want = BASIS_UNKNOWN if a["status"] == "unknown" else BASIS_KPI if a["target"] == "kpi" \
+                else BASIS_CHALLENGE if challenge else BASIS_MILESTONE
             basis = a.get("basis")
             if not isinstance(basis, dict) or want - set(basis):
                 errs.append(f"{at}: basis must be an object with {sorted(want)}"
@@ -608,6 +672,9 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
             if a["rubric"] != "v1" and str(a["target"]).startswith("milestone:") \
                     and a["status"] not in ("unknown", "achieved") and isinstance(basis, dict) and "eta" in basis:
                 errs += check_eta(at, basis["eta"], a["status"], a["made_at"], a["rubric"])
+            if challenge and a["status"] != "unknown" and isinstance(basis, dict) and not (want - set(basis)) \
+                    and _valid_day(a["made_at"]):
+                errs += check_momentum(at, a, basis, evs)
     if a["target"] not in topics - {"beyond"}:
         errs.append(f"{at}: unknown target '{a['target']}'")
     if not _valid_day(a["made_at"]):
@@ -1005,6 +1072,8 @@ def check_hysteresis(section: str, ass: list[dict], evs: dict[str, dict], obs: l
             elif obs and (pre := fw_precursors(section).get(target)):  # a milestone moves on its precursor series
                 newer_obs = any(r["metric"] in pre and tier(r)
                                 and day(prev["made_at"]) < known_at(r) <= day(a["made_at"]) for r in obs)
+            elif str(target).startswith("challenge:"):  # gather/RUBRIC.md §7: an advance or setback aged out
+                newer_obs = aged_out(prev, evs, day(a["made_at"]))
             if a["status"] != prev["status"] and not newer_obs and not any(
                     e in evs and known_at(evs[e]) > day(prev["made_at"]) for e in a.get("evidence") or []):
                 errs.append(f"assessment {a['id']}: status change {prev['status']}->{a['status']} without evidence "
@@ -1269,12 +1338,20 @@ def evidence_digest(section: str, target: str, when: dt.date) -> str:
     return hashlib.sha1("\n".join(items).encode()).hexdigest()[:16]
 
 
+def aged_out(a: dict, evs: dict[str, dict], when: dt.date) -> bool:
+    """gather/RUBRIC.md §7: an advance or setback that challenge assessment `a` relied on has left
+    the 12-month window as of `when` (so its momentum may change without new evidence)."""
+    return any(e in evs and _valid_date(evs[e].get("date", "")) and not in_momentum_window(evs[e]["date"], when)
+               for e in momentum_events(a))
+
+
 def stale_targets(section: str, until: dt.date, force: bool = False) -> list[tuple[str, str]]:
-    """Assessment targets (kpi + milestones) needing a (re)assessment as of `until`:
+    """Assessment targets (kpi, milestones, challenges) needing a (re)assessment as of `until`:
     never assessed, or their evidence digest changed since the latest assessment
-    (assessments without a digest: evidence published after made_at). Returns
+    (assessments without a digest: evidence published after made_at), or (a challenge) an
+    advance or setback it relied on left the 12-month window. Returns
     [(target, next free assessment id)]."""
-    valid = sorted(t for t in valid_topics(section) if t.startswith("milestone:")
+    valid = sorted(t for t in valid_topics(section) if t.startswith(("milestone:", "challenge:"))
                    or (t == "kpi" and kpi_assessment_spec(section)))  # no KPI spec => not assessable (gather/RUBRIC.md)
     current = assessment_as_of(section, until)
     ids = {a["id"] for a in assessments(section)}
@@ -1296,6 +1373,8 @@ def stale_targets(section: str, until: dt.date, force: bool = False) -> list[tup
                 newer = any(r["metric"] in req and tier(r) and since < known_at(r) <= until for r in observations(section))
             elif not newer and (pre := fw_precursors(section).get(t)):
                 newer = any(r["metric"] in pre and tier(r) and since < known_at(r) <= until for r in observations(section))
+        if a is not None and not newer and t.startswith("challenge:"):
+            newer = aged_out(a, {e["id"]: e for e in events(section)}, until)
         if newer or force:
             base = f"{until}-{t.replace(':', '-')}"
             aid, n = base, 1

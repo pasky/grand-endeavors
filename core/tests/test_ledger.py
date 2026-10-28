@@ -374,6 +374,19 @@ def main():
     write_jsonl(stg, [ev("2026-09-20-late-found", "2026-09-20", "A late-discovered September item about the emissions peak question.")])
     ledger.merge("climate", [stg])
     case("late-discovered evidence (published before made_at) makes the assessment stale", "milestone:the-bend" in fresh())
+    write_jsonl(stg, [ev("2026-03-01-dac", "2026-03-01", "A direct air capture plant stores its first thousand tonnes.",
+                         topics=("challenge:permanent-removal",))])
+    ledger.merge("climate", [stg])
+    write_jsonl(f"{kpi.ROOT}/c.jsonl", [{
+        "id": "2026-09-28-challenge-permanent-removal", "target": "challenge:permanent-removal", "status": "green",
+        "label": "Advancing: x", "made_at": "2026-09-28", "rationale": "r", "evidence": ["2026-03-01-dac"], "by": "t",
+        "rubric": "v6", "basis": {"rule": "x", "window": {"from": "2025-09-28", "to": "2026-09-28"}, "prospects": "x",
+                                 "advances": [{"event": "2026-03-01-dac", "what": "x", "substantive": True}],
+                                 "setbacks": [], "prev": None, "change_note": "x"}}])
+    case("challenge assessment merges clean", ledger.merge("climate", [], [], [f"{kpi.ROOT}/c.jsonl"])[0] == [])
+    stale_c = lambda d: "challenge:permanent-removal" in [t for t, _ in ledger.stale_targets("climate", d)]
+    case("a challenge is stale once the advance it relied on leaves the 12-month window",
+         not stale_c(dt.date(2027, 2, 28)) and stale_c(dt.date(2027, 3, 2)))
     case("assessment ties on made_at: the later appended record wins",
          (write_jsonl(ledger.path("assessments", "climate"), [dict(a, id="x-9", label="old"), dict(a, id="x-10", label="new")]) or True)
          and ledger.assessment_as_of("climate", until)["milestone:the-bend"]["label"] == "new")
@@ -395,6 +408,42 @@ def main():
          has(ledger.check_assessment(A(status="achieved", label="Achieved: x"), topics, evs), "achievement"))
     case("rubric: 'achieved' is for milestones only",
          has(ledger.check_assessment(A(target="kpi", status="achieved", label="Achieved: x"), topics, evs), "milestones only"))
+    # challenges (gather/RUBRIC.md §7): momentum over the 12 months to made_at
+    cev = dict(evs, **{i: ev(i, i[:10], f"Removal result {i}.", topics=("challenge:permanent-removal",))
+                       for i in ("2025-09-01-old", "2026-03-01-dac", "2026-09-01-plant-closes")})
+    win = {"from": "2025-10-01", "to": "2026-10-01"}
+    big = {"event": "2026-03-01-dac", "what": "x", "substantive": True}
+    def C(b=None, **k):
+        k = {"target": "challenge:permanent-removal", "made_at": "2026-10-01", "rubric": "v6",
+             "evidence": ["2026-03-01-dac", "2025-09-01-old", "2026-09-01-plant-closes"], **k}
+        return dict(A(**k), basis=dict({"rule": "x", "window": win, "advances": [big], "setbacks": [],
+                                        "prospects": "x", "prev": None, "change_note": "x"}, **(b or {})))
+    ca = lambda **k: ledger.check_assessment(C(**k), topics, cev)
+    case("challenge: a substantive advance in the window makes Advancing (green) valid",
+         ca(status="green", label="Advancing: x") == [])
+    case("challenge: its own verdict words; milestone verdicts are refused",
+         has(ca(status="green", label="On track: x"), "verdict"))
+    case("challenge: the verdict follows the basis (green needs a substantive advance, Stalled none, "
+         "Inching only small ones, Setback a setback)",
+         has(ca(status="green", label="Advancing: x", b={"advances": [dict(big, substantive=False)]}), "substantive")
+         and has(ca(status="red", label="Stalled: x"), "no advance")
+         and has(ca(status="yellow", label="Inching: x"), "none of them substantive")
+         and ca(status="yellow", label="Inching: x", b={"advances": [dict(big, substantive=False)]}) == []
+         and has(ca(status="red", label="Setback: x"), "needs a setback")
+         and ca(status="red", label="Setback: x",
+                b={"setbacks": [{"event": "2026-09-01-plant-closes", "what": "x"}]}) == [])
+    case("challenge: the window is the 12 months to made_at, and its events are evidence dated inside it",
+         has(ca(status="green", label="Advancing: x", b={"window": {"from": "2025-01-01", "to": "2026-10-01"}}), "window")
+         and has(ca(status="green", label="Advancing: x",
+                    b={"advances": [dict(big, event="2025-09-01-old")]}), "outside the window")
+         and has(ca(status="green", label="Advancing: x", evidence=["2025-09-01-old"]), "not in evidence"))
+    cprev = C(id="cp", status="green", label="Advancing: x", made_at="2026-10-01")
+    cnext = C(id="cn", status="red", label="Stalled: x", made_at="2027-02-01", evidence=["2026-03-01-dac"],
+              b={"window": {"from": "2026-02-01", "to": "2027-02-01"}, "advances": []})
+    case("challenge hysteresis: a status change without new evidence is allowed only once the relied-on "
+         "advance has left the window",
+         ledger.check_hysteresis("climate", [cprev, dict(cnext, made_at="2027-04-01")], cev) == []
+         and has(ledger.check_hysteresis("climate", [cprev, cnext], cev), "hysteresis"))
     evs2 = dict(evs, **{"2026-08-01-late": ev("2026-08-01-late", "2026-08-01", "A later verified event about emissions peaking globally.")})
     prev = A(id="p", status="yellow", label="Progressing: x", made_at="2026-07-14")
     flip = A(id="f", made_at="2026-09-28")
