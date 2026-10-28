@@ -1096,8 +1096,8 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
     pre = [t for m_id in item.get("precursors") or [] for t in db.execute(
         "SELECT * FROM latest_kpi WHERE section=? AND metric=? AND NOT retired", (sec, m_id))]
     if pre:   # the milestone's precursor ladder: the best achieved so far (a record series
-        # without values: nothing has qualified yet, not missing data)
-        body += ('<h4>Closest so far</h4><div class="tiles">' + "".join(kpi_tile(db, t, empty="none qualifies yet") for t in pre) + "</div>")
+        # without values: no qualifying case recorded, which is not proof that none exists)
+        body += ('<h4>Closest so far</h4><div class="tiles">' + "".join(kpi_tile(db, t, empty="none documented yet") for t in pre) + "</div>")
     if kind == "milestone":
         body += assessment_html(m) if m else '<div class="gap">not yet assessed</div>'
     # a milestone's evidence folds (its detail is criteria + assessment + evidence: long);
