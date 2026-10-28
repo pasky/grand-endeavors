@@ -13,7 +13,7 @@ _inputs:
 # its tile shows the reached rung's name and the whole ladder (the registry definition, the tile's
 # tooltip, has the full criteria).
 _levels:
-  ai-paper-venue-tier-max: [Workshop, Conference or journal, Top field journal, Nature or Science]
+  ai-paper-venue-tier-max: [Workshop, Conference main track or journal, Top field journal, Nature or Science]
 robots-software:
   horizon-80-blended: AI task horizon at 80% success, software and remote work blended
   horizon-80-software-eci: AI software task horizon at 80% success (METR-equivalent, from ECI)
