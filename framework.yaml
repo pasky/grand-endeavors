@@ -235,8 +235,8 @@ endeavors:
         title: Robots
         kpi: >-
           General-purpose robots at work: the number of deployments (one robot maker at one named
-          outside customer) in which a humanoid or other self-moving robot with arms does production
-          work, autonomously as reported, minus those a later source says ended or credibly disputes.
+          customer) in which a humanoid or other self-moving robot with arms does production work,
+          autonomously as reported, minus those a later source says ended or credibly disputes.
           *Provisional, for the pioneering stage:* to be replaced by a measure of the work done
           (robots × hours × interventions) once deployments disclose it.
         kpi_about:
@@ -244,28 +244,33 @@ endeavors:
           sections:
             - text: |-
                 A deployment is one **robot maker** whose general-purpose robot works for one **named
-                outside customer**. Four things must hold. The robot moves itself (legs, wheels, a
+                customer**. Four things must hold. The robot moves itself (legs, wheels, a
                 mobile base) and handles the objects of the job: a humanoid, or what the trade calls a
                 mobile manipulator, not an arm bolted in place. It works inside the customer's live
                 operations (a factory line, a warehouse, a store) and the source says what job it does
-                there; a pilot on a live line counts. The customer is an outside organization, not the
-                maker's own or affiliated plant. And a source says the robot works autonomously (on its
-                own, without remote control); not mentioning remote control is not enough.
+                there; a pilot on a live line counts. The customer is an outside organization, or the
+                maker's own company or corporate group if someone outside the group confirms the work.
+                And a source says the robot works autonomously (on its own, without remote control);
+                not mentioning remote control is not enough.
 
                 A deployment counts once, however many robots, sites, jobs or newer models the same
                 customer gets; the same maker at a second customer, or a second maker at the same
                 customer, is a new deployment. The maker is whoever builds the robot, not whoever
-                supplies its AI. Every deployment is in the table above, with the job and the source's
-                words on autonomy.
+                supplies its AI. In-house work counts because the largest deployments may well be
+                in-house (Tesla, Xiaomi, Boston Dynamics at its owner Hyundai), but it needs outside
+                confirmation, such as reporters who saw it on site or a regulator: the maker's own
+                announcement, however widely reported, is not enough. An investor in the maker, or a
+                joint-venture partner, is an outside customer. Every deployment is in the table above,
+                with the job and the source's words on autonomy.
 
                 **Not counted:** fixed arms or stations, whatever AI drives them (Dyna Robotics'
                 napkin-folding arms, a humanoid torso on a stand at a sorting conveyor); self-driving
-                carts and forklifts, which move but do not handle; robots in their maker's own or
-                affiliated plants; demos, livestreams, showrooms, training centres and tests outside
-                live operations; on-site training or trial runs, unless the source says their output
-                goes into real production; orders, contracts, plans and deliveries with no reported
-                work; a customer named only in a list of sites or users; and work no source calls
-                autonomous.
+                carts and forklifts, which move but do not handle; work in the maker's own group that
+                no one outside it confirms; demos, livestreams, showrooms, training centres and tests
+                outside live operations; on-site training or trial runs, unless the source says their
+                output goes into real production; orders, contracts, plans and deliveries with no
+                reported work; a customer named only in a list of sites or users; and work no source
+                calls autonomous.
             - title: Why a count of deployments, and why it is provisional
               text: |-
                 The goal is robots doing human work on their own, so the ideal measure is how much work
@@ -275,10 +280,9 @@ endeavors:
                 performances, education, data collection and guided tours, and a shipment says nothing
                 about autonomy. What is documented, one at a time, is deployments, so for this first
                 stage we count those. The number shows how many times a maker has got a robot past
-                demos and into someone else's real operations, and still has it there. It does not show
-                how much work gets done: a deployment with one robot counts the same as one with a
-                hundred. The KPI will be replaced once deployments disclose robots, hours and
-                interventions.
+                demos and into real operations, and still has it there. It does not show how much
+                work gets done: a deployment with one robot counts the same as one with a hundred.
+                The KPI will be replaced once deployments disclose robots, hours and interventions.
             - title: Caveats
               text: |-
                 Autonomy is as reported by the maker, the customer or the press, and none of the
