@@ -1595,9 +1595,11 @@ def legend_html() -> str:
         f'<p>Status (KPIs and milestones), per the status rubric:</p><ul class="md">{dots}'
         f"<li>{dot(None)}<b>not yet assessed</b></li></ul>"
         "<p>A KPI's status is its <i>pace</i> toward the goal versus the pace the goal needs, not its level. "
-        "A milestone's status is its evidence-based ETA. A status changes only on newer evidence.</p>"
+        "A milestone's status is its evidence-based ETA. Both change only on newer evidence.</p>"
         "<p>An open challenge's status is its <i>momentum</i> over the last 12 months, not how close it is "
-        "to being solved: " + ", ".join(f"{momentum(st)}{esc(w)}" for st, w in CHALLENGE_KEY) + ".</p>"
+        "to being solved: " + ", ".join(f"{momentum(st)}{esc(w)}" for st, w in CHALLENGE_KEY) + ". "
+        "Because the window rolls, a status can also drop with no new evidence, once the step that earned "
+        "it is more than 12 months old.</p>"
         "<p>An endeavor's milestones are either a <b>sequence</b> (each expected after the one before: "
         "numbered, joined by a line) or <b>independent fronts</b> (any order: cards). Its timeline puts "
         "them on one time axis: the median year and the 80% range of each ETA.</p>"

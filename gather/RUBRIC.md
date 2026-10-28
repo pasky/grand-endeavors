@@ -530,8 +530,8 @@ goes in the label and the rationale.
 
 - **Window** \*: `basis.window` = `{from: made_at minus one year, to: made_at}`.
   An event is in it when its `date` overlaps that span (a YYYY or YYYY-MM date
-  counts if any part of it does). The date is when the result happened, not
-  when it was published or gathered.
+  counts if any part of it does, but ends no later than its publication). The
+  date is when the result happened, not when it was gathered.
 - **Advance**: a demonstrated result in the window that moves the problem
   itself: a better measured number on it, a first demonstration, a scale-up, a
   negative result that settles an open question. Announcements, projections,
@@ -547,20 +547,24 @@ goes in the label and the rationale.
   further away: a failed trial, a retraction, a safety finding, a flagship
   programme cancelled for technical reasons.
 
-| status | verdict | when \* |
+Decide in this order; the first that holds is the status:
+
+| status | verdict | when |
 |---|---|---|
+| unknown | Unassessed | no verified event on the challenge at all \* |
+| red | Setback | the window's setbacks outweigh its advances |
 | green | Advancing | at least one substantive advance |
 | yellow | Inching | advances, none of them substantive |
-| red | Stalled | no advance in the window |
-| red | Setback | the window's setbacks outweigh its advances (at least one setback) |
-| unknown | Unassessed | no verified event on the challenge at all |
+| red | Stalled | neither an advance nor a setback in the window |
 
-- \* The status must agree with `basis.advances` (`{event, what,
-  substantive}`) and `basis.setbacks` (`{event, what}`): green needs a
-  substantive advance, yellow advances and none substantive, Stalled none,
-  Setback a setback. Every listed event is in `evidence` and in the window.
-  A substantive advance with a status other than green needs the Setback
-  verdict, and the rationale says why the setback weighs more.
+- \* Checked against `basis.advances` (`{event, what, substantive}`) and
+  `basis.setbacks` (`{event, what}`): every listed event is in `evidence`
+  and in the window, a substantive advance is a verified event, Setback lists
+  a setback, Advancing a substantive advance, Inching advances and none
+  substantive, Stalled neither. What is left to judgment (and so to the
+  rationale) is whether an advance is substantive and whether the setbacks
+  outweigh the advances: with a substantive advance and the Setback verdict,
+  the rationale says why the setback weighs more.
 - Stalled still cites evidence: the latest events that show where the problem
   stands, even from before the window.
 - **Never count events.** How many events the ledger holds reflects the news

@@ -165,10 +165,14 @@ def momentum_from(made_at: dt.date) -> dt.date:
         return made_at.replace(year=made_at.year - 1, day=28)
 
 
-def in_momentum_window(date: str, made_at: dt.date) -> bool:
-    """An event's date (YYYY / YYYY-MM / YYYY-MM-DD) overlaps the window (momentum_from, made_at]."""
+def in_momentum_window(e: dict, made_at: dt.date) -> bool:
+    """An event's date (YYYY / YYYY-MM / YYYY-MM-DD) overlaps the window (momentum_from, made_at]; a
+    partial date ends no later than the event's publication (a result published in March 2025 dated
+    "2025" does not count until the end of 2026)."""
     import kpi
-    start, end = kpi.obs_range(date)
+    start, end = kpi.obs_range(e["date"])
+    if _valid_day(e.get("published", "")):
+        end = min(end, day(e["published"]))
     return end > momentum_from(made_at) and start <= made_at
 
 
@@ -609,15 +613,18 @@ def check_momentum(at: str, a: dict, basis: dict, evs: dict[str, dict]) -> list[
             eid = x["event"]
             if eid not in (a.get("evidence") or []):
                 errs.append(f"{at}: basis.{k} event '{eid}' is not in evidence")
-            elif eid in evs and _valid_date(evs[eid].get("date", "")) and not in_momentum_window(evs[eid]["date"], made):
+            elif eid in evs and _valid_date(evs[eid].get("date", "")) and not in_momentum_window(evs[eid], made):
                 errs.append(f"{at}: basis.{k} event '{eid}' (dated {evs[eid]['date']}) is outside the window "
                             f"{want['from']}..{want['to']}")
+            elif k == "advances" and x.get("substantive") is True and eid in evs \
+                    and evs[eid].get("verification", {}).get("status") not in ("verified", "corrected"):
+                errs.append(f"{at}: substantive advance '{eid}' is not a verified event (legacy cannot establish it)")
     verdict = str(a["label"]).split(":", 1)[0]
     big = any(x.get("substantive") is True for x in items["advances"])
     rule = {"green": (big, "needs a substantive advance"),
             "yellow": (items["advances"] and not big, "needs advances, none of them substantive"),
-            "red": ((not items["advances"]) if verdict == "Stalled" else bool(items["setbacks"]),
-                    "Stalled needs no advance" if verdict == "Stalled" else "Setback needs a setback")}
+            "red": ((not items["advances"] and not items["setbacks"]) if verdict == "Stalled" else bool(items["setbacks"]),
+                    "Stalled needs no advance and no setback" if verdict == "Stalled" else "Setback needs a setback")}
     ok, why = rule.get(a["status"], (True, ""))
     if not ok:
         errs.append(f"{at}: {a['status']} ({verdict}) {why} in basis (gather/RUBRIC.md §7)")
@@ -675,6 +682,11 @@ def check_assessment(a: dict, topics: set[str], evs: dict[str, dict]) -> list[st
             if challenge and a["status"] != "unknown" and isinstance(basis, dict) and not (want - set(basis)) \
                     and _valid_day(a["made_at"]):
                 errs += check_momentum(at, a, basis, evs)
+            if challenge and a["status"] == "unknown" and _valid_day(a["made_at"]) and any(
+                    a["target"] in (e.get("topics") or []) and not e.get("withdrawn")
+                    and e.get("verification", {}).get("status") in ("verified", "corrected")
+                    and _valid_day(e.get("published", "")) and known_at(e) <= day(a["made_at"]) for e in evs.values()):
+                errs.append(f"{at}: an open challenge with verified events is judged, not 'unknown' (gather/RUBRIC.md §7)")
     if a["target"] not in topics - {"beyond"}:
         errs.append(f"{at}: unknown target '{a['target']}'")
     if not _valid_day(a["made_at"]):
@@ -1341,7 +1353,7 @@ def evidence_digest(section: str, target: str, when: dt.date) -> str:
 def aged_out(a: dict, evs: dict[str, dict], when: dt.date) -> bool:
     """gather/RUBRIC.md §7: an advance or setback that challenge assessment `a` relied on has left
     the 12-month window as of `when` (so its momentum may change without new evidence)."""
-    return any(e in evs and _valid_date(evs[e].get("date", "")) and not in_momentum_window(evs[e]["date"], when)
+    return any(e in evs and _valid_date(evs[e].get("date", "")) and not in_momentum_window(evs[e], when)
                for e in momentum_events(a))
 
 

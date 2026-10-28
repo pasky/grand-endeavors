@@ -427,6 +427,8 @@ def main():
          "Inching only small ones, Setback a setback)",
          has(ca(status="green", label="Advancing: x", b={"advances": [dict(big, substantive=False)]}), "substantive")
          and has(ca(status="red", label="Stalled: x"), "no advance")
+         and has(ca(status="red", label="Stalled: x", b={"advances": [],
+                    "setbacks": [{"event": "2026-09-01-plant-closes", "what": "x"}]}), "no setback")
          and has(ca(status="yellow", label="Inching: x"), "none of them substantive")
          and ca(status="yellow", label="Inching: x", b={"advances": [dict(big, substantive=False)]}) == []
          and has(ca(status="red", label="Setback: x"), "needs a setback")
@@ -437,6 +439,16 @@ def main():
          and has(ca(status="green", label="Advancing: x",
                     b={"advances": [dict(big, event="2025-09-01-old")]}), "outside the window")
          and has(ca(status="green", label="Advancing: x", evidence=["2025-09-01-old"]), "not in evidence"))
+    cev["2026-03-01-dac"]["verification"] = {"status": "legacy"}
+    case("challenge: legacy evidence cannot be a substantive advance",
+         has(ca(status="green", label="Advancing: x"), "not a verified event"))
+    cev["2026-03-01-dac"]["verification"] = {"status": "verified"}
+    cev["2025-09-01-old"].update(date="2025", published="2025-09-01")
+    case("challenge: a partial date ends no later than its publication",
+         has(ca(status="green", label="Advancing: x", b={"advances": [dict(big, event="2025-09-01-old")]}),
+             "outside the window"))
+    case("challenge: 'unknown' only without any verified event on it",
+         has(ca(status="unknown", label="Unassessed: x", b={k: "x" for k in ledger.BASIS_UNKNOWN}), "not 'unknown'"))
     cprev = C(id="cp", status="green", label="Advancing: x", made_at="2026-10-01")
     cnext = C(id="cn", status="red", label="Stalled: x", made_at="2027-02-01", evidence=["2026-03-01-dac"],
               b={"window": {"from": "2026-02-01", "to": "2027-02-01"}, "advances": []})
