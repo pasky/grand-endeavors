@@ -34,9 +34,9 @@ tagline: Tracking humanity's progress in five grand endeavors — our biggest on
 manifesto: |-
   Science has a communication problem. It reports isolated discoveries (with applications often more of an afterthought), not progress towards the big outcomes. Thus, every week, we publish a newsletter updating humanity on the progress of science towards such outcomes — just as a company would report its progress to its board.
 
-  Scientific research is valuable even to its own end, but is largely expected to be the engine of material abundance. We track the needle on five Grand Endeavors that humanity has pursued for all its existence and that will also determine the quality of life for the next 100 years.
+  Scientific research is valuable even to its own end, but is largely expected to be the engine of material abundance. We track the needle on five Grand Endeavors that humanity has pursued through the modern age and that will also determine the quality of life for the next 100 years.
 
-  Each of the endeavors has a KPI assigned, as well as some key milestones and open challenges we need to solve. All of these may update and evolve over time, and are on purpose somewhat opinionated — they capture the current consensus rather than all perspectives. If the top experts' consensus shifts, we will shift. And we will report also on major progress of alternative approaches in each given area.
+  Each of the endeavors has a KPI assigned, as well as some key milestones and open challenges we need to solve. All of these may update and evolve over time, and are on purpose somewhat opinionated.
 endeavors:
   - title: Robots and Automation
     intro: >-
