@@ -475,8 +475,7 @@ border:1px solid currentColor;vertical-align:1px}.b-legacy{color:var(--legacy);b
 .b-verified,.b-corrected,.b-collector{color:var(--green)}.b-req{color:var(--acc)}
 .nc{opacity:.75}.b-nc{color:var(--mute);font-size:10px}
 .dot{display:inline-block;flex:none;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
-.mo{display:inline-flex;flex:none;align-items:center;justify-content:center;width:1.4em;height:1.4em;border-radius:50%;
-margin:-.3em .4em -.3em 0;font-size:.95em;line-height:1;vertical-align:-.3em;overflow:hidden}.m-green{background:color-mix(in srgb,var(--green) 60%,transparent)}
+.mo{display:inline-block;padding:0 .5em;border-radius:1em;line-height:1.4;white-space:nowrap;color:var(--ink)}.m-green{background:color-mix(in srgb,var(--green) 60%,transparent)}
 .m-yellow{background:color-mix(in srgb,var(--yellow) 45%,transparent)}.m-red{background:color-mix(in srgb,var(--red) 40%,transparent)}
 .m-unknown{background:color-mix(in srgb,var(--unk) 50%,transparent)}
 .s-green{background:var(--green)}.s-yellow{background:var(--yellow)}.s-red{background:var(--red)}.s-achieved{background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 5.2l1.8 1.8 3.3-3.6' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") center/100% no-repeat}.s-unknown{background:var(--unk)}
@@ -980,12 +979,15 @@ def dot(status, title: str | None = None) -> str:
 CHALLENGE_KEY = (("green", "a real step forward"), ("yellow", "only small steps"), ("red", "stalled or set back"))
 
 
-def momentum(status, title: str | None = None) -> str:
-    """An open challenge's status marker (MOMENTUM); empty when not yet assessed."""
+def momentum(status, title: str | None = None, text: str = "") -> str:
+    """An open challenge's status marker (MOMENTUM): a pill on the status tint holding the animal and,
+    if given, a few words (the verdict, the key's gloss); empty when not yet assessed. Text in a pill
+    sits on the line's baseline, so no emoji font can push it off the text."""
     if status not in MOMENTUM:
         return ""
     sym, words = MOMENTUM[status]
-    return f'<span class="mo m-{esc(status)}" role="img" title="{esc(title or words)}" aria-label="{esc(words)}">{sym}</span>'
+    inner = f'{sym} {esc(text)}' if text else f'<span role="img" aria-label="{esc(words)}">{sym}</span>'
+    return f'<span class="mo m-{esc(status)}" title="{esc(title or words)}">{inner}</span>'
 
 
 def marker(status, kind: str | None, title: str | None = None) -> str:
@@ -1109,10 +1111,14 @@ def topic_li(db, sec: str, item: dict, m: sqlite3.Row | None, kind: str, names, 
     evs = {e["id"] for e in topic_events(db, sec, topic)}
     evs |= set(json.loads(m["evidence"] or "[]")) if m and m["assessment_id"] else set()
     assessed = bool(m and m["assessment_id"])
-    head = (f'{marker(m["status"], kind) if assessed else (dot(None) if kind == "milestone" else "")}'
+    head = (f'{dot(m["status"]) if assessed and kind == "milestone" else (dot(None) if kind == "milestone" else "")}'
             f'<b>{md_inline(item["name"])}:</b> {md_inline(item["description"])}')
     if kind == "milestone" or assessed:
-        st = (f'{esc(m["label"])} <span class="mute">· assessed {esc(m["made_at"])}</span>'
+        label = esc(m["label"]) if assessed else ""
+        if assessed and kind == "challenge":  # the verdict in its pill: "[🐇 Advancing] renewables passed coal..."
+            verdict, _, rest = str(m["label"]).partition(":")
+            label = f'{momentum(m["status"], text=verdict)} {esc(rest.strip())}'
+        st = (f'{label} <span class="mute">· assessed {esc(m["made_at"])}</span>'
               if assessed else '<span class="gap">not yet assessed</span>')
         head += f'<span class="st">{st} <span class="mute">· {len(evs)} event(s)</span></span>'
     else:
@@ -1453,7 +1459,7 @@ def section_html(db: sqlite3.Connection, s: sqlite3.Row, fsec: dict | None = Non
             key = ""
             if any((by_topic.get(f"challenge:{it['slug']}") or {"assessment_id": None})["assessment_id"] for it in items):
                 key = ('<div class="mute small">Momentum over the last 12 months: '
-                       + " · ".join(f"{momentum(st)}{esc(w)}" for st, w in CHALLENGE_KEY) + "</div>")
+                       + " ".join(momentum(st, text=w) for st, w in CHALLENGE_KEY) + "</div>")
             out.append(f'<h3>{md_inline(title)}</h3>{key}<ul class="topics">{"".join(lis)}</ul>')
             continue
         as_of = D(db.execute("SELECT value FROM build_info WHERE key='as_of'").fetchone()[0])
@@ -1597,7 +1603,7 @@ def legend_html() -> str:
         "<p>A KPI's status is its <i>pace</i> toward the goal versus the pace the goal needs, not its level. "
         "A milestone's status is its evidence-based ETA. Both change only on newer evidence.</p>"
         "<p>An open challenge's status is its <i>momentum</i> over the last 12 months, not how close it is "
-        "to being solved: " + ", ".join(f"{momentum(st)}{esc(w)}" for st, w in CHALLENGE_KEY) + ". "
+        "to being solved: " + " ".join(momentum(st, text=w) for st, w in CHALLENGE_KEY) + ". "
         "Because the window rolls, a status can also drop with no new evidence, once the step that earned "
         "it is more than 12 months old.</p>"
         "<p>An endeavor's milestones are either a <b>sequence</b> (each expected after the one before: "

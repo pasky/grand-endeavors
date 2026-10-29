@@ -468,9 +468,10 @@ def main():
         ch_li = ch_sec[ch_sec.index('id="t-climate-challenge-permanent-removal"'):]
         case("challenge: its momentum marker, label and date on the line; the key under the heading; "
              "rationale and prospects in the detail",
-             re.match(r'id="t-climate-challenge-permanent-removal"><details><summary><span class="mo m-yellow"[^>]*>🐢</span>',
-                      ch_li) is not None
-             and '<span class="st">Inching: pilots only <span class="mute">· assessed 2026-10-01' in ch_li
+             re.match(r'id="t-climate-challenge-permanent-removal"><details><summary><b>Permanent Removal:</b>', ch_li)
+             is not None
+             and re.search(r'<span class="st"><span class="mo m-yellow"[^>]*>🐢 Inching</span> pilots only '
+                           r'<span class="mute">· assessed 2026-10-01', ch_li) is not None
              and "Momentum over the last 12 months: " in ch_sec and "Small plants." in ch_li
              and "A large plant starts in 2027." in ch_li)
         db.execute("DELETE FROM assessments WHERE target LIKE 'challenge:%'")
