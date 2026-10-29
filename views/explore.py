@@ -475,8 +475,8 @@ border:1px solid currentColor;vertical-align:1px}.b-legacy{color:var(--legacy);b
 .b-verified,.b-corrected,.b-collector{color:var(--green)}.b-req{color:var(--acc)}
 .nc{opacity:.75}.b-nc{color:var(--mute);font-size:10px}
 .dot{display:inline-block;flex:none;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
-.mo{display:inline-flex;flex:none;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
-margin-right:6px;font-size:14px;line-height:1;vertical-align:-5px}.m-green{background:color-mix(in srgb,var(--green) 60%,transparent)}
+.mo{display:inline-flex;flex:none;align-items:center;justify-content:center;width:1.4em;height:1.4em;border-radius:50%;
+margin:-.3em .4em -.3em 0;font-size:.95em;line-height:1;vertical-align:-.3em;overflow:hidden}.m-green{background:color-mix(in srgb,var(--green) 60%,transparent)}
 .m-yellow{background:color-mix(in srgb,var(--yellow) 45%,transparent)}.m-red{background:color-mix(in srgb,var(--red) 40%,transparent)}
 .m-unknown{background:color-mix(in srgb,var(--unk) 50%,transparent)}
 .s-green{background:var(--green)}.s-yellow{background:var(--yellow)}.s-red{background:var(--red)}.s-achieved{background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 5.2l1.8 1.8 3.3-3.6' fill='none' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E") center/100% no-repeat}.s-unknown{background:var(--unk)}
