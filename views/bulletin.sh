@@ -74,7 +74,7 @@ Snapshot parts:
 - background_events: earlier context, including verification=legacy records from
   earlier reports. Use them only as explicitly earlier context, never as news.
 - kpi_headlines: current / previous / change / year_ago.
-- assessments: current and previous status per milestone/KPI.
+- assessments: current and previous status per KPI, milestone and open challenge.
 - chartable_metrics, other_metrics.
 
 STRUCTURE (follow the reference format):
@@ -98,8 +98,11 @@ STRUCTURE (follow the reference format):
   the KPI Dashboard, and add a one-line status legend from RUBRIC.md: KPI
   status = pace versus what the goal needs, not the level; milestone status =
   ETA on evidence.
-- Open Challenges: one subsection per framework challenge, covering its new events.
-  If there are none, write "No significant developments this period." (Name every
+- Open Challenges: one subsection per framework challenge: its momentum status
+  (🐇 advancing, 🐢 inching, 🧱 stalled or set back; RUBRIC.md §7: momentum over
+  the last 12 months, not distance to a solution), its label and rationale, what
+  changed since the previous assessment, and its new events. If it has no new
+  events, say "No significant developments this period." (Name every
   challenge and milestone exactly as framework.yaml does.)
 - Beyond the Framework: the "beyond" new events.
 - Reference Data: dataset links from the snapshot sources.

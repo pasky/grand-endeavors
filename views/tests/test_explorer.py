@@ -461,6 +461,20 @@ def main():
         case("milestones: a sequence is a numbered rail, the default independent cards",
              '<ol class="topics seq">' in explore.section_html(db, s_row, dict(fsec, milestones_order="sequence"), 1)
              and '<ul class="topics par">' in explore.section_html(db, s_row, fsec, 1))
+        db.execute("INSERT INTO assessments (section, id, target, status, label, made_at, rationale, evidence, basis, line) "
+                   "VALUES ('climate', 'c1', 'challenge:permanent-removal', 'yellow', 'Inching: pilots only', '2026-10-01', "
+                   "'Small plants.', '[]', '{\"prospects\": \"A large plant starts in 2027.\"}', 20)")
+        ch_sec = explore.section_html(db, s_row, fsec, 1)
+        ch_li = ch_sec[ch_sec.index('id="t-climate-challenge-permanent-removal"'):]
+        case("challenge: its momentum marker, label and date on the line; the key under the heading; "
+             "rationale and prospects in the detail",
+             re.match(r'id="t-climate-challenge-permanent-removal"><details><summary><b>Permanent Removal:</b>', ch_li)
+             is not None
+             and re.search(r'<span class="st"><span class="mo m-yellow"[^>]*>🐢 Inching</span> pilots only '
+                           r'<span class="mute">· assessed 2026-10-01', ch_li) is not None
+             and "Momentum over the last 12 months: " in ch_sec and "Small plants." in ch_li
+             and "A large plant starts in 2027." in ch_li)
+        db.execute("DELETE FROM assessments WHERE target LIKE 'challenge:%'")
         am = {"assessment_id": "x", "status": "yellow", "label": "Progressing: x, ETA ~2034", "made_at": "2026-10-06",
               "prev_status": None, "prev_made_at": None, "legacy_evidence": 0, "rationale": "r", "by": "t",
               "evidence": "[]", "basis": json.dumps({"rule": "§4", "path": "p", "eta": {

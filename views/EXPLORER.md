@@ -147,8 +147,12 @@ section with its own activity line), then:
   log. Statuses follow
   gather/RUBRIC.md: 🟢 green, 🟡 yellow, 🔴 red, ✅ achieved (a green dot with a
   check mark), ⚪ unknown ("Unassessed"), dashed = not yet assessed.
-- **Open challenges** (or fusion's Tech Tree): name, definition and event
-  count; expanded, the details and events. Challenges are not assessed.
+- **Open challenges** (or fusion's Tech Tree): name, definition, then the
+  status label (the window's key result, what still blocks) led by its
+  momentum over the last 12 months (gather/RUBRIC.md §7) as a pill on the
+  status colour (🐇 Advancing, 🐢 Inching, 🧱 Stalled or Setback; a key under
+  the heading), and the event count; expanded, the rationale, the basis (advances, setbacks,
+  prospects) and the events.
 - A **supplemental section** (no KPI, milestones or challenges; nothing in it
   is assessed) shows instead its **indicators** (every registry metric, tiles
   as above; series that only feed another indicator, listed under `_inputs` in

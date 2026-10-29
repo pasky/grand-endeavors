@@ -65,7 +65,7 @@ on-time run, given the same ledger.
 ```
 ledger/events/<section>.jsonl        news/claims (one JSON object per line)
 ledger/observations/<section>.csv    KPI datapoints (tabular, high volume)
-ledger/assessments/<section>.jsonl   timestamped milestone/KPI status judgments
+ledger/assessments/<section>.jsonl   timestamped KPI/milestone/challenge status judgments
 ledger/assessments/notes/<section>/<run id>.md   each assess run's ETA working (by = assess:<run id>)
 ledger/audits/<date>-r<round>/       ETA audit reports (an assess run's AUDIT input)
 ledger/audits/<date>-anchors/        approval of external forecast anchors (framework.yaml anchors:)
@@ -150,7 +150,7 @@ lag, capped at retrieved), not source facts, so correcting a metric's
 not regenerated). Done once: `co2-global-monthly` 7 → 70 d (2026-10).
 
 **Assessment** (`assessments/<section>.jsonl`): `{id, target ("kpi" |
-"milestone:<slug>"), status ("green"|"yellow"|"red"|"achieved"|"unknown"), label,
+"milestone:<slug>" | "challenge:<slug>"), status ("green"|"yellow"|"red"|"achieved"|"unknown"), label,
 made_at, rationale, evidence: [event ids], by, rubric, basis}`. Optional fields:
 - `rubric_correction: "<the record's rubric>"`, `definition_change: "<commit>"` and
   `audit_correction: "<audit id>"` (rubric rules 4, 6 and 8);
@@ -173,6 +173,11 @@ expected content, but it is not checked:
   2100), and a quantile is null when that chance is below its level, so a
   milestone that probably fails has no median and is red. Under v1 it was
   free text;
+- challenge (RUBRIC.md §7): `rule, window: {from, to}, advances: [{event, what,
+  substantive}], setbacks: [{event, what}], prospects, prev, change_note`,
+  checked: the window is the 12 months to made_at, the listed events are
+  evidence dated in it, and the status agrees with them. Its verdict words are
+  Advancing, Inching, Stalled and Setback;
 - unknown: `rule, reason, prev, change_note`.
 
 `made_at` is the as-of date of the evidence that was considered, not the
@@ -244,7 +249,8 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
 6. **assess**: `ledger.py stale` lists targets whose evidence is newer than
    their latest assessment (effective events tagged with the target; for the
    KPI also required-metric observations; for a milestone also the observations
-   of its framework.yaml `precursors:` series), plus never-assessed targets, each
+   of its framework.yaml `precursors:` series; for a challenge also an advance or
+   setback that left its 12-month window), plus never-assessed targets, each
    with its next free assessment id. The trigger is stateless, so a run that
    died before assessing is caught up by the next one. **Known gap**: a
    milestone whose ETA rests on another section's series (`ledger.py drivers`)
@@ -273,15 +279,17 @@ Only rockets `cost-to-leo-best` 2025 stays `legacy` (TODO.md: a sourcing decisio
    milestone's pre-anchor p50 before the anchors are read, and `lint` prints
    the anchor-gap and driver warnings about the staged records.
    **Review** (permanent since 2026-10-15, after the manual audit rounds of
-   2026-10-14): when milestones are assessed, a fresh agent in another mode
+   2026-10-14; challenges since 2026-10-28, when an audit of their first
+   assessments changed 4 of 21 colours): when milestones or challenges are
+   assessed, a fresh agent in another mode
    (`ASSESS_REVIEW_MODE`, default `deep`) audits the staged records + notes
    against a checklist and a fixed severity bar, without editing them. MAJOR
    findings get one fix attempt by the assessor (a failed fix restores the
    draft) and one re-review; the rounds are committed as
    `notes/<section>/<run id>.review.md`. Each round ends with a
-   "MAJOR <target>: <n>" line per milestone target and "MAJOR: <n>" (their
+   "MAJOR <target>: <n>" line per milestone or challenge target and "MAJOR: <n>" (their
    total); the file ends with the findings left, in the same format (the last
-   accepted round's counts). `ledger.py check` warns per current milestone
+   accepted round's counts). `ledger.py check` warns per current milestone or challenge
    with MAJOR findings left (files without per-target lines, and rounds whose
    per-target lines do not list exactly the targets or do not add up to the
    total, charge the total to every milestone of the run).

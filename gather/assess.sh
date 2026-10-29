@@ -1,12 +1,12 @@
 #!/bin/sh
-# Grand Endeavors — ASSESS: (re)judge KPI/milestone status under RUBRIC.md.
+# Grand Endeavors — ASSESS: (re)judge KPI/milestone/challenge status under RUBRIC.md.
 # =============================================================================
 # Normally called by gather.sh for targets with new evidence (ledger.py stale).
 # Standalone uses: re-assessment after a rubric change, or backfilling statuses.
 #
 # USAGE:  gather/assess.sh <section>
 # ENV:    UNTIL=YYYY-MM-DD   assessment as-of date = made_at (default: today UTC)
-#         FORCE=1            assess ALL targets (kpi + milestones), not just stale ones
+#         FORCE=1            assess ALL targets (kpi, milestones, challenges), not just stale ones
 #         CORRECTION=1       records are rubric corrections (RUBRIC.md rule 4:
 #                            once per target per rubric version, no new-evidence claim)
 #         DEFCHANGE=<commit> the framework.yaml definition of the targets changed in that
@@ -89,7 +89,7 @@ in $ROOT/gather/RUBRIC.md (read it fully; it is binding). Targets (target|assess
 $TARGETS
 
 Inputs:
-- $ROOT/framework.yaml: the "$SECTION" KPI and milestone definitions (their literal wording).
+- $ROOT/framework.yaml: the "$SECTION" KPI, milestone and challenge definitions (their literal wording).
 - KPI spec (fixed; do not choose your own metric, window or benchmark):
 $SPEC
 - Evidence: the effective events in ledger/events/$SECTION.jsonl with published <= $UNTIL.
@@ -156,6 +156,10 @@ Exponential quantities must be extrapolated exponentially.
 A milestone with an "assumes:" entry in framework.yaml is judged as if that assumption held
 (RUBRIC.md §4.2): the gate never blocks it, basis.eta.assumes repeats it, the label says
 "ETA ~YYYY*" (or "P(by 2100) NN%*" without a median), and basis.blockers reports the gate's real state.
+Open challenges (targets challenge:<slug>): follow RUBRIC.md §7, not the ETA steps (no eta-notes
+section, no forecast): list the window's advances (each marked substantive or not) and setbacks
+from the challenge's events in basis, choose the status they imply, and write the label and
+rationale as current status and prospects. Judge results, never the number of events.
 If the rubric cannot judge a target (e.g. its KPI series does not cover the
 window), write status "unknown" with the label "Unassessed: <reason>" and the
 basis keys rule, reason, prev and change_note (evidence may be empty). Never
@@ -166,7 +170,7 @@ target, status (green|yellow|red, or achieved for milestones), label
 ("<Verdict>: ..." per RUBRIC.md, at most 100 chars), made_at "$UNTIL", rationale
 (2-4 sentences for a general reader, consistent with basis: RUBRIC.md §6), evidence [event ids], by
 "$BY", rubric "$RUBRIC", basis (the keys $ROOT/DESIGN.md §3 "Assessment" lists for
-KPI or milestone targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
+KPI, milestone or challenge targets)$( [ "${CORRECTION:-}" = 1 ] && echo ", rubric_correction \"$RUBRIC\"" ).
 Validate until 0 errors, and fix the WARN lines it prints about your records (an unexplained
 anchor gap, an unnamed shared driver):
     uv run $ROOT/core/ledger.py lint $SECTION --assessments $AS
@@ -221,21 +225,23 @@ as_complete || exit 1
 
 # REVIEW: the ETA audit (2026-10-14 rounds, data ledger/audits/) as a permanent stage. A fresh agent in
 # another mode (ASSESS_REVIEW_MODE, default deep; the same mode as a deep-fallback assessor, which is
-# then not "another" model) audits the staged milestone records + notes; MAJOR findings get ONE fix
+# then not "another" model) audits the staged milestone and challenge records + notes (challenges since
+# 2026-10-28, after an audit of their first assessments changed 4 of 21 colours); MAJOR findings get ONE fix
 # attempt by the assessor and one re-review. What remains is committed with the run: the accepted
-# review rounds, then the findings left: a "MAJOR <target>: <n>" line per milestone target and a final
+# review rounds, then the findings left: a "MAJOR <target>: <n>" line per reviewed target and a final
 # "MAJOR: <n>" = their total (both from the last accepted round; a fix whose re-review failed keeps
-# round 1's counts; a round whose per-target lines do not list exactly the milestone targets or do not
+# round 1's counts; a round whose per-target lines do not list exactly the reviewed targets or do not
 # sum to its total contributes the total only); ledger.py check warns per current target while its
 # count (else the total) is > 0. A failed or blocked review is noted, never
 # fatal; the one fatal case is a reviewer that edits what it reviews. REVIEW=0 skips the stage.
 # --- review stage (core/tests/test_review.sh runs this block with stubs) ---
 REVIEW_FILE="$NOTES_DIR/$SECTION/$RUN_ID.review.md"  # = ledger.review_path
-REVIEW_TARGETS="$(printf '%s\n' "$TARGETS" | awk -F'|' '$1 ~ /^milestone:/ {print $1}' | LC_ALL=C sort)"
+REVIEW_TARGETS="$(printf '%s\n' "$TARGETS" | awk -F'|' '$1 ~ /^(milestone|challenge):/ {print $1}' | LC_ALL=C sort)"
 review_prompt() {  # $1 = output file, $2 = the previous round's report (re-review after a fix)
 cat <<EOF2
-Audit the ETA assessments that another agent just staged for "$SECTION" as of $UNTIL, before they
-are committed. Records: $AS; their working notes: $STAGE/eta-notes.md. Do NOT modify either file;
+Audit the milestone (ETA) and open-challenge (momentum) assessments that another agent just staged for
+"$SECTION" as of $UNTIL, before they are committed. Records: $AS; the milestones' working notes:
+$STAGE/eta-notes.md (none when only challenges are assessed). Do NOT modify either file;
 write only $1 and scratch files under $STAGE/review-work/. Read $ROOT/gather/RUBRIC.md fully
 (binding) and the milestones' wording in $ROOT/framework.yaml (description + details). Comparison:
 the previous record per target in ledger/assessments/$SECTION.jsonl and its notes
@@ -260,22 +266,32 @@ explained in calc with its crux and the anchor's metric id (for a "similar" anch
 wording differences account for), not closed by an unattributed move; (11)
 every failure scenario of 10% or more names its reference class with counts, or argues why no class
 can be counted and gives a sensitivity (RUBRIC.md §4.1 step 5).
+For each challenge record (RUBRIC.md §7; look up every event in basis.advances and basis.setbacks) check:
+(a) each advance marked substantive is on the challenge as framework.yaml words it (description and
+details), not a neighbouring problem; a step change, not a refinement; a demonstrated result, not an
+announcement or plan; resting on more than its proponent's word; and happened in the window (a claim
+that dates the result before the event's date counts by the claim); (b) significant setbacks in the
+window are not missing, including ones tagged with other topics of the section; (c) the status follows
+§7 from what survives; (d) the label and rationale match the cited events' numbers and claim no more.
 SEVERITY: MAJOR = a factual error vs the ledger, a superseded or corrected claim relied on, the
 wrong quantity, arithmetic that does not reproduce, an unattributed or falsely attributed move,
 an assumed input labelled measured, a shared driver refitted instead of sampled, an anchor gap left
 unexplained or closed without a reason, a failure scenario of 10% or more with neither reference-class
 counts nor an argued reason why none can be counted, or another broken RUBRIC.md rule that changes a number (e.g. an optional adjustment without
-evidence in the median). NOT major: a disclosed assumption with its
+evidence in the median), or a challenge status that §7 does not support. NOT major: a disclosed assumption with its
 sensitivity, an incomplete minor sensitivity, wording.
 
 Write $1: per MAJOR finding the target, what is wrong (with numbers / ids) and what would fix it;
 then minor findings briefly. Paraphrase the notes, never copy long passages. End $1 with one line
-per milestone target, "MAJOR <target>: <its MAJOR count>", for exactly these targets:
+per reviewed target, "MAJOR <target>: <its MAJOR count>", for exactly these targets:
 $(printf '%s\n' "$REVIEW_TARGETS" | sed 's/^/    /')
-e.g. "MAJOR milestone:<slug>: 0", and then the LAST line of $1 must be exactly "MAJOR: <count>"
+e.g. "MAJOR milestone:<slug>: 0" or "MAJOR challenge:<slug>: 0", and then the LAST line of $1 must be exactly "MAJOR: <count>"
 (the total, = the sum of the per-target counts).
 Never run git add/commit: the pipeline commits your report (a commit by you aborts the run).
 EOF2
+}
+review_sums() {  # the records and, if any, the notes (a reviewer must change neither, nor create notes)
+	cksum "$AS"; if [ -e "$STAGE/eta-notes.md" ]; then cksum "$STAGE/eta-notes.md"; fi
 }
 per_target() {  # $1 = report: "<target> <n>" per "MAJOR <target>: <n>" line right before its last line
 	awk 'NF { l[++n] = $0 } END { for (i = n - 1; i > 0 && l[i] ~ /^MAJOR [^ ]+: [0-9]+$/; i--) {
@@ -287,11 +303,11 @@ run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the 
 	if ! PI_MODEL="$(pi_mode_model "$REVIEW_MODE")"; then
 		PI_MODEL="$ASSESS_MODEL"; echo "WARN: review $1 failed: no pi mode '$REVIEW_MODE'" >&2; return 0
 	fi
-	sums="$(cksum "$AS" "$STAGE/eta-notes.md")"
+	sums="$(review_sums)"
 	PI_SOFT_FAIL=1
 	pi_run "review-$1" "$(review_prompt "$rev" "${2:-}")"
 	PI_SOFT_FAIL=; PI_MODEL="$ASSESS_MODEL"
-	[ "$(cksum "$AS" "$STAGE/eta-notes.md")" = "$sums" ] || { echo "ERROR: the reviewer modified $AS or the notes" >&2; exit 1; }
+	[ "$(review_sums)" = "$sums" ] || { echo "ERROR: the reviewer modified $AS or the notes" >&2; exit 1; }
 	REV_MAJOR="$(tail -n 1 "$rev" 2>/dev/null | sed -n 's/^MAJOR: 0*\([0-9][0-9]*\)$/\1/p')"
 	if [ "$PI_RC" != 0 ] || [ -n "${PI_BLOCKED:-}" ] || [ -z "$REV_MAJOR" ]; then
 		echo "WARN: review $1 failed (pi exit $PI_RC$( [ -n "${PI_BLOCKED:-}" ] && echo ', provider block'), or no 'MAJOR: <n>' last line)" >&2
@@ -301,7 +317,7 @@ run_review() {  # $1 = round, $2 = previous report; sets REV_MAJOR (empty = the 
 	REV_TARGETS="$(per_target "$rev")"
 	if [ "$(printf '%s\n' "$REV_TARGETS" | cut -d' ' -f1)" != "$REVIEW_TARGETS" ] \
 		|| [ "$(printf '%s\n' "$REV_TARGETS" | awk '{s += $2} END {print s + 0}')" -ne "$REV_MAJOR" ]; then
-		echo "WARN: review $1: its 'MAJOR <target>: <n>' lines do not list exactly the milestone targets or do not sum to 'MAJOR: $REV_MAJOR'; only the total counts" >&2
+		echo "WARN: review $1: its 'MAJOR <target>: <n>' lines do not list exactly the reviewed targets or do not sum to 'MAJOR: $REV_MAJOR'; only the total counts" >&2
 		REV_TARGETS=""
 	fi
 }
@@ -312,14 +328,14 @@ review_stage() {  # updates NOTE; writes $STAGE/review.md (nothing when round 1 
 	if [ -z "$REV_MAJOR" ]; then NOTE="$NOTE (review failed)"; return 0; fi
 	left="$REV_MAJOR"; left_targets="$REV_TARGETS"; tail_note=""
 	if [ "$REV_MAJOR" -gt 0 ]; then
-		cp "$AS" "$AS.draft"; cp "$STAGE/eta-notes.md" "$STAGE/eta-notes.md.draft"
+		cp "$AS" "$AS.draft"; if [ -e "$STAGE/eta-notes.md" ]; then cp "$STAGE/eta-notes.md" "$STAGE/eta-notes.md.draft"; fi
 		PI_SOFT_FAIL=1
 		pi_run fix "$(prompt)
 
-You already staged $AS and $STAGE/eta-notes.md in this run (they are your draft: do not start over).
-An independent review found $left MAJOR problem(s): read $STAGE/review-1.md. Revise both files in
-place: fix each MAJOR finding, or rebut it with evidence in a final '## Review response' section of the
-notes. Change only what a finding requires (RUBRIC.md rule 7 applies to your own draft too)."
+You already staged $AS (and, for milestones, $STAGE/eta-notes.md) in this run (your draft: do not
+start over). An independent review found $left MAJOR problem(s): read $STAGE/review-1.md. Revise them in
+place: fix each MAJOR finding, or rebut it with evidence in a final '## Review response' section of
+$STAGE/eta-notes.md (create it if this run has none). Change only what a finding requires (RUBRIC.md rule 7 applies to your own draft too)."
 		PI_SOFT_FAIL=
 		if [ "$PI_RC" = 0 ] && [ -z "${PI_BLOCKED:-}" ] && as_complete; then
 			rm -f "$AS.draft" "$STAGE/eta-notes.md.draft"
@@ -329,7 +345,8 @@ notes. Change only what a finding requires (RUBRIC.md rule 7 applies to your own
 			else NOTE="$NOTE (review: $left MAJOR, fixed once, re-review failed)"
 				tail_note="The re-review failed: the fix is unverified, so round 1's counts stand."; fi
 		else  # a failed, blocked or broken fix never replaces the complete draft
-			mv "$AS.draft" "$AS"; mv "$STAGE/eta-notes.md.draft" "$STAGE/eta-notes.md"
+			mv "$AS.draft" "$AS"
+			if [ -e "$STAGE/eta-notes.md.draft" ]; then mv "$STAGE/eta-notes.md.draft" "$STAGE/eta-notes.md"; else rm -f "$STAGE/eta-notes.md"; fi
 			echo "WARN: the fix attempt failed (pi exit $PI_RC$( [ -n "${PI_BLOCKED:-}" ] && echo ', provider block'), or incomplete); committing the reviewed draft" >&2
 			NOTE="$NOTE (review: $left MAJOR, fix failed)"
 			tail_note="The fix attempt failed; the reviewed draft was committed unchanged."
@@ -349,7 +366,7 @@ notes. Change only what a finding requires (RUBRIC.md rule 7 applies to your own
 	fi
 }
 # --- end review stage ---
-case "$TARGETS" in *milestone:*) if [ "${REVIEW:-1}" != 0 ]; then review_stage; fi ;; esac
+case "$TARGETS" in *milestone:*|*challenge:*) if [ "${REVIEW:-1}" != 0 ]; then review_stage; fi ;; esac
 
 # READER PASS: the label and rationale are the dashboard's answer to "where are we, and why?"; a
 # reviewer on ANOTHER MODEL than the assessor (ASSESS_READER_MODE, default best; oracle when best is the
@@ -368,9 +385,9 @@ Read, as a general reader of the dashboard, the status label and rationale of ea
 another agent just staged for "$SECTION" in $AS (one JSON object per line). Do NOT modify any file in
 $STAGE; write only $1.
 What the dashboard shows: the KPI's name and definition ($ROOT/framework.yaml), its label and, always
-visible, its rationale; a milestone's name, definition and label, with its rationale shown once the
-reader opens the milestone. The reader is smart and technical but not a specialist; the numbers'
-derivation (basis) is folded away. Writing rules: $ROOT/gather/RUBRIC.md §6 (label, rationale).
+visible, its rationale; a milestone's or challenge's name, definition and label, with its rationale
+shown once the reader opens it. The reader is smart and technical but not a specialist; the numbers'
+derivation (basis) is folded away. Writing rules: $ROOT/gather/RUBRIC.md §6 (label, rationale; challenges also §7).
 First read each record whole, as an editor: does it tell this reader what the level means in the
 world, how fast it moves, and why that earns its status? Is it the text they would want to read?
 Then ask of every sentence and label clause what it tells this reader, and whether they would miss
